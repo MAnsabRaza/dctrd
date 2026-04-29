@@ -1,0 +1,1 @@
+@include('web.default.includes.webinar.grid-card', ['webinar' => $models])

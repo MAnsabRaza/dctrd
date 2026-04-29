@@ -1,0 +1,486 @@
+# ============================================
+# Laravel RocketLMS Project - .gitignore
+# ============================================
+
+# ============================================
+# Laravel Core
+# ============================================
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+
+# ============================================
+# IDE & Editor Files
+# ============================================
+/.idea
+/.vscode
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+.buildpath
+
+# ============================================
+# Laravel Storage & Cache
+# ============================================
+/storage/app/*
+!/storage/app/.gitignore
+!/storage/app/public
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+# ============================================
+# Compiled Assets
+# ============================================
+/public/css
+/public/js
+/public/mix-manifest.json
+/public/build
+/public/hot
+/public/storage
+/public/uploads/*
+!/public/uploads/.gitignore
+
+# ============================================
+# Database & Backups
+# ============================================
+*.sql
+*.sqlite
+*.db
+/database/*.sqlite
+/database/backups
+*.backup
+*.bak
+
+# ============================================
+# Composer
+# ============================================
+composer.lock
+composer.phar
+/vendor/
+
+# ============================================
+# NPM / Yarn / Node
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log*
+
+# ============================================
+# Laravel Mix / Vite
+# ============================================
+/public/css/
+/public/js/
+/public/fonts/
+mix-manifest.json
+hot
+
+# ============================================
+# Testing
+# ============================================
+.phpunit.result.cache
+/coverage
+/phpunit.xml
+/.phpunit.cache
+
+# ============================================
+# Logs
+# ============================================
+*.log
+/storage/logs/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+error.log
+access.log
+
+# ============================================
+# OS Generated Files
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.cache
+*.swp
+*~
+.#*
+
+# ============================================
+# Security & Credentials
+# ============================================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+firebase-auth.json
+/config/credentials.php
+/storage/oauth-*
+
+# ============================================
+# External Services & APIs
+# ============================================
+# Firebase
+firebase-auth.json
+firebase-config.json
+
+# Google Services
+google-credentials.json
+google-calendar-*.json
+
+# AWS
+.aws/
+
+# API Keys
+api-keys.txt
+credentials.txt
+
+# ============================================
+# Third-Party Directories (Not in Git)
+# ============================================
+# ERP System
+/_ERP/
+/_ERP/*
+
+# Mirror/Backup WordPress
+/_Mirror/
+/_Mirror/*
+
+# NextCloud
+/nextcloud/
+/nextcloud/*
+
+# External Packages
+/bundles/
+/installment/
+/registration_bonus/
+
+# ============================================
+# Rocket LMS Specific
+# ============================================
+# Uploaded Files
+/store/
+/store/*
+/public/store/*
+/public/uploads/*
+!/public/uploads/.gitignore
+
+# User Avatars
+/public/avatars/*
+!/public/avatars/.gitignore
+
+# Course Files
+/public/webinars/*
+!/public/webinars/.gitignore
+
+# Product Images
+/public/products/*
+!/public/products/.gitignore
+
+# Booking Images
+/public/bookings/*
+!/public/bookings/.gitignore
+
+# Certificates
+/storage/certificates/*
+!/storage/certificates/.gitignore
+
+# QR Codes
+/public/qrcodes/*
+!/public/qrcodes/.gitignore
+
+# ============================================
+# Build & Deployment
+# ============================================
+.deployment
+deploy.sh
+deploy.php
+.deployer/
+/dist
+/build
+
+# ============================================
+# Documentation (Exclude Large Files)
+# ============================================
+*.pdf
+!README.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+
+# But KEEP project documentation
+!PROJECT_MILESTONES.md
+!README.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+
+# ============================================
+# Zoom / Video Conference
+# ============================================
+/storage/recordings/*
+!/storage/recordings/.gitignore
+
+# ============================================
+# Payment Gateway Logs
+# ============================================
+/storage/payment-logs/*
+!/storage/payment-logs/.gitignore
+
+# ============================================
+# Exports & Reports
+# ============================================
+/storage/exports/*
+!/storage/exports/.gitignore
+/storage/reports/*
+!/storage/reports/.gitignore
+
+# ============================================
+# Email Templates (Compiled)
+# ============================================
+/storage/email-cache/*
+!/storage/email-cache/.gitignore
+
+# ============================================
+# Optimization Files
+# ============================================
+_ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php
+
+# ============================================
+# Laravel Telescope (if installed)
+# ============================================
+/storage/telescope/*
+
+# ============================================
+# Laravel Horizon (if installed)
+# ============================================
+/storage/horizon/*
+
+# ============================================
+# Laravel Debugbar
+# ============================================
+/storage/debugbar/*
+
+# ============================================
+# FTP Deployment
+# ============================================
+.ftp-deploy-sync-state.json
+.ftpconfig
+.ftpignore
+
+# ============================================
+# Server Configuration (Sensitive)
+# ============================================
+.htaccess.backup
+php.ini.backup
+.php-ini
+.php-version
+
+# ============================================
+# Miscellaneous
+# ============================================
+# Vagrant
+.vagrant/
+Vagrantfile.local
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# Kubernetes
+*.kubeconfig
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# CI/CD
+.gitlab-ci.local.yml
+.github/workflows/local.yml
+
+# Sentry
+.sentryclirc
+
+# ============================================
+# Keep These Files/Folders
+# ============================================
+# Keep these even if parent is ignored
+!.gitkeep
+!.htaccess
+!public/.htaccess
+!public/index.php
+!storage/app/.gitignore
+!storage/app/public/.gitignore
+!storage/framework/.gitignore
+!storage/logs/.gitignore
+!bootstrap/cache/.gitignore
+
+# ============================================
+# Project-Specific Excludes
+# ============================================
+# Noor v3.0 Changes Document
+!Noor v3.0 (Changes) Rocket LMS - Google Docs.pdf
+
+# Configuration Examples
+!config/*.example.php
+
+# Public Assets (Keep these)
+!public/assets/
+!public/vendor/
+
+# Language Files (Keep these)
+!lang/
+!resources/lang/
+
+# ============================================
+# Large Media Files
+# ============================================
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.flv
+*.mp3
+*.wav
+*.flac
+
+# But keep small demo files if any
+!public/demo/*.mp4
+!public/demo/*.mp3
+
+# ============================================
+# Archive Files
+# ============================================
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+*.gz
+
+# But keep distribution archives if any
+!releases/*.zip
+
+# ============================================
+# Development Tools
+# ============================================
+# Composer development dependencies
+/vendor/bin/
+/vendor/phpunit/
+/vendor/phpspec/
+/vendor/mockery/
+
+# PHP CS Fixer
+.php_cs.cache
+.php-cs-fixer.cache
+
+# PHPStan
+phpstan.neon.local
+.phpstan.result.cache
+
+# Psalm
+psalm.xml.local
+.psalm_cache/
+
+# ============================================
+# macOS Extended Attributes
+# ============================================
+*.DS_Store
+.AppleDouble
+.LSOverride
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ============================================
+# Windows Extended Attributes
+# ============================================
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump
+
+# ============================================
+# Linux Extended Attributes
+# ============================================
+*~
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# PowerShell Scripts & Markdown Files
+# ============================================
+# PowerShell Scripts
+*.ps1
+*.psm1
+*.psd1
+*.txt
+
+# Markdown Documentation (except essential files)
+*.md
+!README.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+!CODE_OF_CONDUCT.md
+!SECURITY.md
+!LICENSE.md
+
+# ============================================
+# END OF GITIGNORE
+# ============================================
+
+# Notes:
+# - This .gitignore is comprehensive for Laravel + RocketLMS
+# - Excludes external systems (_ERP, _Mirror, nextcloud)
+# - Excludes PowerShell scripts and temporary MD files
+# - Keeps essential config and documentation files
+# - Protects sensitive credentials and API keys
+# - Excludes large media and backup files
+# - Version: 1.1 (2026-02-13)
