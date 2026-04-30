@@ -1,4 +1,4 @@
-<!--<?php
+<?php
 
 /*namespace App\Models;
 
@@ -44,7 +44,6 @@ class PaymentChannel extends Model
     }
 }
 */
-<?php
 
 namespace App\Models;
 
