@@ -34,6 +34,19 @@ $prefix = getAdminPanelUrlPrefix();
 // You can add as many route groups as needed
 
 /**
+ * Booking Categories Routes
+ */
+Route::group(['prefix' => 'booking'], function () {
+    Route::group(['prefix' => 'categories'], function () {
+        Route::get('/',             'Booking\BookingCategoryController@index');
+        Route::post('/store',       'Booking\BookingCategoryController@store');
+        Route::get('/{id}/edit',    'Booking\BookingCategoryController@edit');
+        Route::post('/{id}/update', 'Booking\BookingCategoryController@update');
+        Route::get('/{id}/delete',  'Booking\BookingCategoryController@delete');
+    });
+});
+
+/**
  * To use these routes, you must have your controller in App\Http\Controllers\Admin namespace
  * or specify the complete namespace like:
  * 

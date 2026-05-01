@@ -126,6 +126,25 @@
     </li>
 @endcan
 
+@can('admin_booking')
+    <li class="nav-item dropdown {{ (request()->is(getAdminPanelUrl('/booking*', false))) ? 'active' : '' }}">
+        <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">
+            <x-iconsax-bul-calendar class="icons" width="24px" height="24px"/>
+            <span>{{ trans('admin/main.booking') }}</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('admin_booking_categories')
+                <li class="{{ (request()->is(getAdminPanelUrl('/booking/categories', false))) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/categories">
+                        {{ trans('admin/main.booking_categories') }}
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
+
 @can('admin_blog')
     <li class="nav-item dropdown {{ (request()->is(getAdminPanelUrl('/blog*', false)) and !request()->is(getAdminPanelUrl('/blog/comments', false))) ? 'active' : '' }}">
         <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">

@@ -182,6 +182,17 @@ return [
 'edit_blog' => 'Edit Blog Post',
 'comments_section' => 'Enable Comments',
 
+//Booking
+'booking'                            => 'Booking',
+'booking_categories'                 => 'Booking Categories',
+'create_booking_category'            => 'New Booking Category',
+'bookings'                           => 'Bookings',
+'parent_category'                    => 'Parent Category',
+'no_parent'                          => 'No Parent (Root)',
+'category_created_successfully'      => 'Category created successfully.',
+'category_updated_successfully'      => 'Category updated successfully.',
+'category_deleted_successfully'      => 'Category deleted successfully.',
+
 // Categories
 'categories_list_page_title' => 'Categories List',
 'categories' => 'Categories',
