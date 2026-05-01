@@ -89,6 +89,7 @@ return [
 'save_and_continue' => 'Save and Continue',
 'yes' => 'Yes',
 'no' => 'No',
+'no_result' => 'No results found',
 'max' => 'Max',
 'to' => 'To',
 'from' => 'From',
