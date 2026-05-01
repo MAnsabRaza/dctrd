@@ -25,21 +25,23 @@
                         <div class="card-body">
 
                             <ul class="nav nav-pills" id="myTab3" role="tablist">
+                                @php
+                                    $bookingCategoriesCreateActive = ((!empty($errors) and $errors->has('title')) or !empty($editCategory) or ((empty($bookingCategories) || !$bookingCategories->count()) and auth()->user()->can('admin_booking_categories_create')));
+                                @endphp
+
                                 @can('admin_booking_categories')
-                                    @if(!empty($bookingCategories) && $bookingCategories->count())
-                                        <li class="nav-item">
-                                            <a class="nav-link {{ (!empty($errors) and $errors->has('title')) ? '' : 'active' }}"
-                                               id="categories-tab" data-toggle="tab" href="#categories"
-                                               role="tab" aria-controls="categories" aria-selected="true">
-                                                {{ trans('admin/main.categories') }}
-                                            </a>
-                                        </li>
-                                    @endif
+                                    <li class="nav-item">
+                                        <a class="nav-link {{ $bookingCategoriesCreateActive ? '' : 'active' }}"
+                                           id="categories-tab" data-toggle="tab" href="#categories"
+                                           role="tab" aria-controls="categories" aria-selected="true">
+                                            {{ trans('admin/main.categories') }}
+                                        </a>
+                                    </li>
                                 @endcan
 
                                 @can('admin_booking_categories_create')
                                     <li class="nav-item">
-                                        <a class="nav-link {{ ((!empty($errors) and $errors->has('title')) or !empty($editCategory) or (empty($bookingCategories) || !$bookingCategories->count())) ? 'active' : '' }}"
+                                        <a class="nav-link {{ $bookingCategoriesCreateActive ? 'active' : '' }}"
                                            id="newCategory-tab" data-toggle="tab" href="#newCategory"
                                            role="tab" aria-controls="newCategory" aria-selected="true">
                                             {{ trans('admin/main.create_booking_category') }}
@@ -51,9 +53,10 @@
                             <div class="tab-content" id="myTabContent2">
 
                                 @can('admin_booking_categories')
-                                    @if(!empty($bookingCategories) && $bookingCategories->count())
-                                        <div class="tab-pane mt-3 fade {{ (!empty($errors) and $errors->has('title')) ? '' : 'active show' }}"
-                                             id="categories" role="tabpanel" aria-labelledby="categories-tab">
+                                    <div class="tab-pane mt-3 fade {{ $bookingCategoriesCreateActive ? '' : 'active show' }}"
+                                         id="categories" role="tabpanel" aria-labelledby="categories-tab">
+
+                                        @if(!empty($bookingCategories) && $bookingCategories->count())
                                             <div class="table-responsive">
                                                 <table class="table custom-table font-14">
                                                     <tr>
@@ -106,12 +109,17 @@
                                                     @endforeach
                                                 </table>
                                             </div>
-                                        </div>
-                                    @endif
+                                        @else
+                                            <div class="text-center text-gray-500 mt-30">
+                                                {{ trans('admin/main.no_result') }}
+                                            </div>
+                                        @endif
+
+                                    </div>
                                 @endcan
 
                                 @can('admin_booking_categories_create')
-                                    <div class="tab-pane mt-3 fade {{ ((!empty($errors) and $errors->has('title')) or !empty($editCategory) or (empty($bookingCategories) || !$bookingCategories->count())) ? 'active show' : '' }}"
+                                    <div class="tab-pane mt-3 fade {{ $bookingCategoriesCreateActive ? 'active show' : '' }}"
                                          id="newCategory" role="tabpanel" aria-labelledby="newCategory-tab">
                                         <div class="row">
                                             <div class="col-12 col-md-6">
