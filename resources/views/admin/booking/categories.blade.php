@@ -39,7 +39,7 @@
 
                                 @can('admin_booking_categories_create')
                                     <li class="nav-item">
-                                        <a class="nav-link {{ ((!empty($errors) and $errors->has('title')) or !empty($editCategory)) ? 'active' : '' }}"
+                                        <a class="nav-link {{ ((!empty($errors) and $errors->has('title')) or !empty($editCategory) or (empty($bookingCategories) || !$bookingCategories->count())) ? 'active' : '' }}"
                                            id="newCategory-tab" data-toggle="tab" href="#newCategory"
                                            role="tab" aria-controls="newCategory" aria-selected="true">
                                             {{ trans('admin/main.create_booking_category') }}
@@ -111,7 +111,7 @@
                                 @endcan
 
                                 @can('admin_booking_categories_create')
-                                    <div class="tab-pane mt-3 fade {{ ((!empty($errors) and $errors->has('title')) or !empty($editCategory)) ? 'active show' : '' }}"
+                                    <div class="tab-pane mt-3 fade {{ ((!empty($errors) and $errors->has('title')) or !empty($editCategory) or (empty($bookingCategories) || !$bookingCategories->count())) ? 'active show' : '' }}"
                                          id="newCategory" role="tabpanel" aria-labelledby="newCategory-tab">
                                         <div class="row">
                                             <div class="col-12 col-md-6">
