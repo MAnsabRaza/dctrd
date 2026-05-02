@@ -60,7 +60,7 @@ class BookingCategoryController extends Controller
 
     public function edit($id)
     {
-        $this->authorize('admin_booking_categories_create');
+        $this->authorize('admin_booking_categories_edit');
 
         $editCategory = BookingCategory::findOrFail($id);
         $bookingCategories = BookingCategory::withCount('bookings')->orderBy('order')->get();
@@ -78,7 +78,7 @@ class BookingCategoryController extends Controller
 
     public function update(Request $request, $id)
     {
-        $this->authorize('admin_booking_categories_create');
+        $this->authorize('admin_booking_categories_edit');
 
         $category = BookingCategory::findOrFail($id);
 

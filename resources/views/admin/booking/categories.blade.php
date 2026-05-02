@@ -84,7 +84,7 @@
                                                                     </button>
 
                                                                     <div class="dropdown-menu dropdown-menu-right">
-                                                                        @can('admin_booking_categories_create')
+                                                                        @can('admin_booking_categories_edit')
                                                                             <a href="{{ getAdminPanelUrl() }}/booking/categories/{{ $category->id }}/edit"
                                                                                class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
                                                                                 <x-iconsax-lin-edit-2 class="icons text-gray-500 mr-2" width="18px" height="18px"/>
