@@ -3,17 +3,17 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
     {
-         Schema::table('bookings', function (Blueprint $table) {
+        // ======================
+        // 1. ADD MISSING COLUMNS
+        // ======================
+
+        Schema::table('bookings', function (Blueprint $table) {
 
             // Pricing
             if (!Schema::hasColumn('bookings', 'price_per')) {
@@ -190,60 +190,63 @@ return new class extends Migration
                 $table->integer('review_count')->default(0);
             }
         });
+
+        // ======================
+        // 2. FIX COLUMN TYPES (FK ISSUE)
+        // ======================
+
+        DB::statement('ALTER TABLE bookings MODIFY creator_id BIGINT UNSIGNED NOT NULL');
+        DB::statement('ALTER TABLE bookings MODIFY category_id BIGINT UNSIGNED NULL');
+
+        // ======================
+        // 3. UNIQUE + INDEX + FK (SAFE)
+        // ======================
+
+        try {
+            DB::statement('ALTER TABLE bookings ADD UNIQUE slug_unique (slug)');
+        } catch (\Exception $e) {}
+
+        try {
+            DB::statement('CREATE INDEX idx_creator_id ON bookings (creator_id)');
+        } catch (\Exception $e) {}
+
+        try {
+            DB::statement('CREATE INDEX idx_category_id ON bookings (category_id)');
+        } catch (\Exception $e) {}
+
+        try {
+            DB::statement('ALTER TABLE bookings 
+                ADD CONSTRAINT fk_creator 
+                FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE');
+        } catch (\Exception $e) {}
+
+        try {
+            DB::statement('ALTER TABLE bookings 
+                ADD CONSTRAINT fk_category 
+                FOREIGN KEY (category_id) REFERENCES booking_categories(id) ON DELETE SET NULL');
+        } catch (\Exception $e) {}
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
-     public function down()
+    public function down()
     {
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->dropColumn([
-                'price_per',
-                'price_unit',
-                'discount_price',
-                'deposit_enabled',
-                'deposit_amount',
-                'deposit_type',
-                'capacity',
-                'min_persons',
-                'max_persons',
-                'max_children',
-                'children_allowed',
-                'duration_minutes',
-                'buffer_before',
-                'buffer_after',
-                'lead_time_hours',
-                'cutoff_time_hours',
-                'instant_booking',
-                'requires_approval',
-                'allow_reschedule',
-                'reschedule_before_hours',
-                'waitlist_enabled',
-                'inventory',
-                'location_enabled',
-                'address_line',
-                'city',
-                'state',
-                'country',
-                'postal_code',
-                'lat',
-                'lng',
-                'forum_enabled',
-                'comments_enabled',
-                'reviews_enabled',
-                'checkout_message',
-                'reviewer_message',
-                'meta',
-                'status',
-                'featured',
-                'sales',
-                'views',
-                'rating',
-                'review_count'
-            ]);
-        });
+        try {
+            DB::statement('ALTER TABLE bookings DROP FOREIGN KEY fk_creator');
+        } catch (\Exception $e) {}
+
+        try {
+            DB::statement('ALTER TABLE bookings DROP FOREIGN KEY fk_category');
+        } catch (\Exception $e) {}
+
+        try {
+            DB::statement('DROP INDEX idx_creator_id ON bookings');
+        } catch (\Exception $e) {}
+
+        try {
+            DB::statement('DROP INDEX idx_category_id ON bookings');
+        } catch (\Exception $e) {}
+
+        try {
+            DB::statement('ALTER TABLE bookings DROP INDEX slug_unique');
+        } catch (\Exception $e) {}
     }
 };

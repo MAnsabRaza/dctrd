@@ -141,6 +141,15 @@
                 </li>
             @endcan
         </ul>
+        <ul class="dropdown-menu">
+            @can('admin_booking')
+                <li class="{{ (request()->is(getAdminPanelUrl('/booking/booking', false))) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/booking">
+                        {{ trans('admin/main.booking') }}
+                    </a>
+                </li>
+            @endcan
+        </ul>
     </li>
 @endcan
 

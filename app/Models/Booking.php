@@ -90,6 +90,28 @@ class Booking extends Model
         'rating',
         'review_count',
     ];
+    public $casts = [
+        'price' => 'decimal:2',
+        'price_per' => 'decimal:2',
+        'discount_price' => 'decimal:2',
+        'deposit_amount' => 'decimal:2',
+        'tax' => 'decimal:2',
+        'commission' => 'decimal:2',
+        'deposit_enabled' => 'boolean',
+        'children_allowed' => 'boolean',
+        'instant_booking' => 'boolean',
+        'requires_approval' => 'boolean',
+        'allow_reschedule' => 'boolean',
+        'waitlist_enabled' => 'boolean',
+        'location_enabled' => 'boolean',
+        'forum_enabled' => 'boolean',
+        'comments_enabled' => 'boolean',
+        'reviews_enabled' => 'boolean',
+        'featured' => 'boolean',
+        'meta' => 'array',
+        'lat' => 'decimal:7',
+        'lng' => 'decimal:7',
+    ];
 
     /**
      * Relationships
