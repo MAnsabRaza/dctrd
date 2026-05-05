@@ -26,7 +26,6 @@ return new class extends Migration
             $table->boolean('status')->default(true);
             $table->integer('sort_order')->default(0);
             $table->timestamps();
-
             $table->foreign('booking_id')->references('id')->on('bookings')->onDelete('cascade');
         });
     }

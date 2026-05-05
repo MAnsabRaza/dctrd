@@ -199,6 +199,13 @@ return [
     'category_updated_successfully' => 'Category updated successfully.',
     'category_deleted_successfully' => 'Category deleted successfully.',
 
+    //booking resource
+    'booking_resources' => 'Booking Resources',
+    'create_booking_resources' => 'New Booking Resources',
+    'booking_resources_created_successfully' => 'Booking Resources created successfully.',
+    'booking_resources_updated_successfully' => 'Booking Resources updated successfully.',
+    'booking_resources_deleted_successfully' => 'Booking Resources deleted successfully.',
+
     // Categories
     'categories_list_page_title' => 'Categories List',
     'categories' => 'Categories',
