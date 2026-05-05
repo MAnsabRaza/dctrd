@@ -97,6 +97,7 @@ class Booking extends Model
         'deposit_amount' => 'decimal:2',
         'tax' => 'decimal:2',
         'commission' => 'decimal:2',
+
         'deposit_enabled' => 'boolean',
         'children_allowed' => 'boolean',
         'instant_booking' => 'boolean',
@@ -108,7 +109,9 @@ class Booking extends Model
         'comments_enabled' => 'boolean',
         'reviews_enabled' => 'boolean',
         'featured' => 'boolean',
+
         'meta' => 'array',
+
         'lat' => 'decimal:7',
         'lng' => 'decimal:7',
     ];
@@ -139,7 +142,12 @@ class Booking extends Model
 
     public function scopeFeatured($query)
     {
-        return $query->where('featured', 1);
+        return $query->where('featured', true);
+    }
+
+      public function scopeActive($query)
+    {
+        return $query->whereIn('status', ['published', 'pending']);
     }
 
     /**
@@ -147,6 +155,31 @@ class Booking extends Model
      */
     public function getFullPriceAttribute()
     {
-        return $this->discount_price ?? $this->price;
+       return $this->discount_price && $this->discount_price > 0
+            ? $this->discount_price
+            : $this->price;
+    }
+     public function getFullAddressAttribute()
+    {
+        return collect([
+            $this->address_line,
+            $this->city,
+            $this->state,
+            $this->country,
+        ])->filter()->implode(', ');
+    }
+
+    /**
+     * Boot (Auto Slug - optional but useful)
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($booking) {
+            if (empty($booking->slug)) {
+                $booking->slug = \Str::slug($booking->title) . '-' . uniqid();
+            }
+        });
     }
 }

@@ -699,6 +699,12 @@ Section::updateOrCreate(['id' => 1935], ['name' => 'admin_forum_settings', 'sect
         Section::updateOrCreate(['id' => 3243], ['name' => 'admin_booking_categories_edit', 'section_group_id' => 3240, 'caption' => 'Booking Categories Edit']);
         Section::updateOrCreate(['id' => 3244], ['name' => 'admin_booking_categories_delete', 'section_group_id' => 3240, 'caption' => 'Booking Categories Delete']);
 
+        
+        Section::updateOrCreate(['id' => 3241], ['name' => 'admin_booking', 'section_group_id' => 3240, 'caption' => 'Booking']);
+        Section::updateOrCreate(['id' => 3242], ['name' => 'admin_booking_create', 'section_group_id' => 3240, 'caption' => 'Booking Create/Edit']);
+        Section::updateOrCreate(['id' => 3243], ['name' => 'admin_booking_edit', 'section_group_id' => 3240, 'caption' => 'Booking Edit']);
+        Section::updateOrCreate(['id' => 3244], ['name' => 'admin_booking_delete', 'section_group_id' => 3240, 'caption' => 'Booking Delete']);
+
         /* Run Panel Sections */
         $this->runPanelSections();
     }

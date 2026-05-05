@@ -51,10 +51,10 @@ Route::group(['prefix' => 'booking'], function () {
     Route::group(['prefix' => 'categories'], function () {
 
         Route::get('/',             [BookingController::class,'index']);
-        // Route::post('/store',       [BookingController::class,'store']);
-        // Route::get('/{id}/edit',    [BookingController::class,'edit']);
-        // Route::post('/{id}/update', [BookingController::class,'update']);
-        // Route::get('/{id}/delete',  [BookingController::class,'delete']);
+        Route::post('/store',       [BookingController::class,'store']);
+        Route::get('/{id}/edit',    [BookingController::class,'edit']);
+        Route::post('/{id}/update', [BookingController::class,'update']);
+        Route::get('/{id}/delete',  [BookingController::class,'delete']);
 
     });
 });
