@@ -176,10 +176,9 @@
                         </div>
                         <div class="card-body">
 
-                            <form method="POST"
-                              <form action="{{ getAdminPanelUrl() }}/booking/booking/{{ !empty($editBooking) ? $editBooking->id . '/update' : 'store' }}">
-                                @csrf
-
+                         {{-- BROKEN --}}
+{{-- FIXED --}}
+<form method="POST" action="{{ getAdminPanelUrl() }}/booking/{{ !empty($editBooking) ? $editBooking->id . '/update' : 'store' }}">
                                 {{-- ── Basic Info ── --}}
                                 <h6 class="text-primary font-weight-bold mb-3 mt-2">
                                     <i class="fa fa-info-circle mr-1"></i> Basic Information

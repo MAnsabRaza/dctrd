@@ -133,6 +133,15 @@
             <span>{{ trans('admin/main.booking') }}</span>
         </a>
         <ul class="dropdown-menu">
+
+            @can('admin_booking')
+                <li class="{{ (request()->is(getAdminPanelUrl('/booking', false))) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking">
+                        {{ trans('admin/main.booking') }}
+                    </a>
+                </li>
+            @endcan
+
             @can('admin_booking_categories')
                 <li class="{{ (request()->is(getAdminPanelUrl('/booking/categories', false))) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/categories">
@@ -140,19 +149,10 @@
                     </a>
                 </li>
             @endcan
-        </ul>
-        <ul class="dropdown-menu">
-            @can('admin_booking')
-                <li class="{{ (request()->is(getAdminPanelUrl('/booking/booking', false))) ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/booking">
-                        {{ trans('admin/main.booking') }}
-                    </a>
-                </li>
-            @endcan
+
         </ul>
     </li>
 @endcan
-
 
 @can('admin_blog')
     <li class="nav-item dropdown {{ (request()->is(getAdminPanelUrl('/blog*', false)) and !request()->is(getAdminPanelUrl('/blog/comments', false))) ? 'active' : '' }}">
