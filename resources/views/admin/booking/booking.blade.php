@@ -26,7 +26,9 @@
                         <div class="card-body">
 
                             {{-- Tabs --}}
-                        
+                            @php
+                                $createActive = ((!empty($errors) && $errors->any()) || !empty($editBooking) || request()->get('tab') == 'create');
+                            @endphp
 
                             <ul class="nav nav-pills" id="bookingTabs" role="tablist">
                                 <li class="nav-item">
@@ -486,4 +488,26 @@
 @push('scripts_bottom')
     <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
     <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
+    
+    <!-- <script>
+        $(document).ready(function() {
+            // Initialize Summernote
+            $('.summernote').summernote({
+                height: 200,
+                codemirror: {
+                    theme: 'monokai'
+                }
+            });
+
+            // File manager view button
+            $('.admin-file-view').on('click', function(e) {
+                e.preventDefault();
+                var inputId = $(this).data('input');
+                var imageUrl = $('#' + inputId).val();
+                if (imageUrl) {
+                    window.open(imageUrl, '_blank');
+                }
+            });
+        });
+    </script> -->
 @endpush
