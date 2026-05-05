@@ -26,9 +26,7 @@
                         <div class="card-body">
 
                             {{-- Tabs --}}
-                            @php
-                                $createActive = ((!empty($errors) && $errors->any()) || !empty($editBooking) || request()->get('tab') == 'create');
-                            @endphp
+                        
 
                             <ul class="nav nav-pills" id="bookingTabs" role="tablist">
                                 <li class="nav-item">
