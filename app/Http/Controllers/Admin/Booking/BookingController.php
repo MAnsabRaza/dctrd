@@ -16,7 +16,7 @@ class BookingController extends Controller
 
         removeContentLocale();
 
-        $booking = Booking::orderBy('order')->get();
+        $booking = Booking::all();
         $data = [
             'pageTitle' => trans('admin/main.booking'),
             'bookingCategories' => $booking,
