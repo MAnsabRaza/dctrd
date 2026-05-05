@@ -12,7 +12,7 @@ class Booking extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'bookings';
-
+    public $timestamps = false;
     protected $fillable = [
 
         // Relations
@@ -145,7 +145,7 @@ class Booking extends Model
         return $query->where('featured', true);
     }
 
-      public function scopeActive($query)
+    public function scopeActive($query)
     {
         return $query->whereIn('status', ['published', 'pending']);
     }
@@ -155,11 +155,11 @@ class Booking extends Model
      */
     public function getFullPriceAttribute()
     {
-       return $this->discount_price && $this->discount_price > 0
+        return $this->discount_price && $this->discount_price > 0
             ? $this->discount_price
             : $this->price;
     }
-     public function getFullAddressAttribute()
+    public function getFullAddressAttribute()
     {
         return collect([
             $this->address_line,
