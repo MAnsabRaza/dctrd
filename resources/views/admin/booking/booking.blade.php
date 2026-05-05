@@ -177,9 +177,7 @@
                         <div class="card-body">
 
                             <form method="POST"
-                                  action="{{ !empty($editBooking)
-                                      ? getAdminPanelUrl('/booking/' . $editBooking->id . '/update')
-                                      : getAdminPanelUrl('/booking/store') }}">
+                              <form action="{{ getAdminPanelUrl() }}/booking/booking/{{ !empty($editBooking) ? $editBooking->id . '/update' : 'store' }}">
                                 @csrf
 
                                 {{-- ── Basic Info ── --}}
