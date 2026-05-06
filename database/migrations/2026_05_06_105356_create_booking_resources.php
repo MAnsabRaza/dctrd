@@ -24,7 +24,7 @@ return new class extends Migration
             $table->json('attributes')->nullable(); // {wifi: true, parking: false, ...}
             $table->string('image')->nullable();
             $table->boolean('status')->default(true);
-            $table->integer('sort_order')->default(0);
+            $table->integer('order')->default(0);
             $table->timestamps();
             $table->foreign('booking_id')->references('id')->on('bookings')->onDelete('cascade');
         });
