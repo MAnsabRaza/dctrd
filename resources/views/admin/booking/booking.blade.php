@@ -1,4 +1,4 @@
-{{-- resources/views/admin/booking/index.blade.php --}}
+{{-- resources/views/admin/booking/booking.blade.php --}}
 
 @extends('admin.layouts.app')
 
@@ -25,23 +25,22 @@
                     <div class="card">
                         <div class="card-body">
 
-                            {{-- Tabs --}}
                             @php
                                 $createActive = ((!empty($errors) && $errors->any()) || !empty($editBooking) || request()->get('tab') == 'create');
                             @endphp
 
                             <ul class="nav nav-pills" id="bookingTabs" role="tablist">
                                 <li class="nav-item">
-                                    <a class="nav-link {{ $createActive ? '' : 'active' }}" 
-                                       id="list-tab" data-toggle="tab" href="#listTab" 
+                                    <a class="nav-link {{ $createActive ? '' : 'active' }}"
+                                       id="list-tab" data-toggle="tab" href="#listTab"
                                        role="tab" aria-controls="listTab" aria-selected="true">
                                         <i class="fas fa-list mr-1"></i>
                                         {{ trans('admin/main.booking_list') }}
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link {{ $createActive ? 'active' : '' }}" 
-                                       id="create-tab" data-toggle="tab" href="#createTab" 
+                                    <a class="nav-link {{ $createActive ? 'active' : '' }}"
+                                       id="create-tab" data-toggle="tab" href="#createTab"
                                        role="tab" aria-controls="createTab" aria-selected="false">
                                         <i class="fas fa-plus mr-1"></i>
                                         {{ trans('admin/main.create_booking') }}
@@ -52,88 +51,82 @@
                             <div class="tab-content" id="bookingTabsContent">
 
                                 {{-- ==================== LIST TAB ==================== --}}
-                                <div class="tab-pane mt-4 fade {{ $createActive ? '' : 'active show' }}" 
+                                <div class="tab-pane mt-4 fade {{ $createActive ? '' : 'active show' }}"
                                      id="listTab" role="tabpanel" aria-labelledby="list-tab">
 
                                     {{-- Search Filters --}}
-                                    <section class="mb-4">
-                                        <form action="{{ getAdminPanelUrl() }}/booking" method="get" class="mb-0">
-                                            <div class="row">
-                                                <div class="col-md-4">
-                                                    <div class="form-group">
-                                                        <label class="input-label">{{ trans('admin/main.search') }}</label>
-                                                        <input name="title" type="text" class="form-control" 
-                                                               value="{{ request()->get('title') }}" 
-                                                               placeholder="{{ trans('admin/main.search_by_title') }}">
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label class="input-label">{{ trans('admin/main.category') }}</label>
-                                                        <select name="category_id" data-plugin-selectTwo class="form-control">
-                                                            <option value="">{{ trans('admin/main.all_categories') }}</option>
-                                                            @foreach($categories ?? [] as $category)
-                                                                <option value="{{ $category->id }}" 
-                                                                        @if(request()->get('category_id') == $category->id) selected @endif>
-                                                                    {{ $category->title }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label class="input-label">{{ trans('admin/main.booking_type') }}</label>
-                                                        <select name="booking_type" data-plugin-selectTwo class="form-control">
-                                                            <option value="">{{ trans('admin/main.all_types') }}</option>
-                                                            @foreach(['tour','activity','rental','event','service','accommodation'] as $type)
-                                                                <option value="{{ $type }}" 
-                                                                        @if(request()->get('booking_type') == $type) selected @endif>
-                                                                    {{ ucfirst($type) }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-2 d-flex align-items-center">
-                                                    <button type="submit" class="btn btn-primary btn-block">
-                                                        <i class="fas fa-search mr-1"></i>
-                                                        {{ trans('admin/main.show_results') }}
-                                                    </button>
+                                    <form action="{{ getAdminPanelUrl() }}/booking" method="get" class="mb-4">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.search') }}</label>
+                                                    <input name="title" type="text" class="form-control"
+                                                           value="{{ request()->get('title') }}"
+                                                           placeholder="{{ trans('admin/main.search_by_title') }}">
                                                 </div>
                                             </div>
-
-                                            <div class="row mt-2">
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label class="input-label">{{ trans('admin/main.start_date') }}</label>
-                                                        <input type="date" name="from" class="form-control" 
-                                                               value="{{ request()->get('from') }}">
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label class="input-label">{{ trans('admin/main.end_date') }}</label>
-                                                        <input type="date" name="to" class="form-control" 
-                                                               value="{{ request()->get('to') }}">
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <div class="form-group">
-                                                        <label class="input-label">{{ trans('admin/main.status') }}</label>
-                                                        <select name="status" data-plugin-selectTwo class="form-control">
-                                                            <option value="">{{ trans('admin/main.all_status') }}</option>
-                                                            <option value="draft" @if(request()->get('status') == 'draft') selected @endif>{{ trans('admin/main.draft') }}</option>
-                                                            <option value="published" @if(request()->get('status') == 'published') selected @endif>{{ trans('admin/main.published') }}</option>
-                                                        </select>
-                                                    </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.category') }}</label>
+                                                    <select name="category_id" data-plugin-selectTwo class="form-control">
+                                                        <option value="">{{ trans('admin/main.all_categories') }}</option>
+                                                        @foreach($categories ?? [] as $category)
+                                                            <option value="{{ $category->id }}"
+                                                                    @if(request()->get('category_id') == $category->id) selected @endif>
+                                                                {{ $category->title }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
                                                 </div>
                                             </div>
-                                        </form>
-                                    </section>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.booking_type') }}</label>
+                                                    <select name="booking_type" data-plugin-selectTwo class="form-control">
+                                                        <option value="">{{ trans('admin/main.all_types') }}</option>
+                                                        @foreach(['tour','activity','rental','event','service','accommodation'] as $type)
+                                                            <option value="{{ $type }}"
+                                                                    @if(request()->get('booking_type') == $type) selected @endif>
+                                                                {{ ucfirst($type) }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2 d-flex align-items-center">
+                                                <button type="submit" class="btn btn-primary btn-block">
+                                                    <i class="fas fa-search mr-1"></i>
+                                                    {{ trans('admin/main.show_results') }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.start_date') }}</label>
+                                                    <input type="date" name="from" class="form-control"
+                                                           value="{{ request()->get('from') }}">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.end_date') }}</label>
+                                                    <input type="date" name="to" class="form-control"
+                                                           value="{{ request()->get('to') }}">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.status') }}</label>
+                                                    <select name="status" data-plugin-selectTwo class="form-control">
+                                                        <option value="">{{ trans('admin/main.all_status') }}</option>
+                                                        <option value="draft"     @if(request()->get('status') == 'draft')     selected @endif>{{ trans('admin/main.draft') }}</option>
+                                                        <option value="published" @if(request()->get('status') == 'published') selected @endif>{{ trans('admin/main.published') }}</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
 
                                     {{-- Bookings Table --}}
                                     <div class="table-responsive">
@@ -153,39 +146,45 @@
                                                 @forelse($bookings as $booking)
                                                     <tr>
                                                         <td>
-                                                            <a class="text-dark font-weight-bold" href="{{ $booking->getUrl() ?? '#' }}" target="_blank">
+                                                            <a class="text-dark font-weight-bold"
+                                                               href="{{ $booking->getUrl() ?? '#' }}" target="_blank">
                                                                 {{ $booking->title }}
                                                             </a>
                                                             @if($booking->featured)
                                                                 <span class="badge badge-warning ml-1">{{ trans('admin/main.featured') }}</span>
                                                             @endif
                                                         </td>
-                                                        <td>
-                                                            {{ $booking->category->title ?? '-' }}
-                                                        </td>
+                                                        <td>{{ $booking->category->title ?? '-' }}</td>
                                                         <td>
                                                             <span class="badge badge-info">{{ ucfirst($booking->booking_type) }}</span>
                                                         </td>
                                                         <td>
                                                             @if($booking->discount_price && $booking->discount_price < $booking->price)
-                                                                <span class="text-muted text-decoration-line-through">{{ $booking->currency }} {{ number_format($booking->price, 2) }}</span>
-                                                                <br>
-                                                                <span class="text-success font-weight-bold">{{ $booking->currency }} {{ number_format($booking->discount_price, 2) }}</span>
+                                                                <span class="text-muted" style="text-decoration:line-through">
+                                                                    {{ $booking->currency }} {{ number_format($booking->price, 2) }}
+                                                                </span><br>
+                                                                <span class="text-success font-weight-bold">
+                                                                    {{ $booking->currency }} {{ number_format($booking->discount_price, 2) }}
+                                                                </span>
                                                             @else
-                                                                <span class="font-weight-bold">{{ $booking->currency }} {{ number_format($booking->price, 2) }}</span>
+                                                                <span class="font-weight-bold">
+                                                                    {{ $booking->currency }} {{ number_format($booking->price, 2) }}
+                                                                </span>
                                                             @endif
-                                                            @if($booking->price_per)
-                                                                <small class="d-block text-muted">/ {{ $booking->price_per }}</small>
+                                                            {{-- price_per migration mein decimal hai —
+                                                                 price_unit string hai "per night" etc. --}}
+                                                            @if($booking->price_unit)
+                                                                <small class="d-block text-muted">{{ $booking->price_unit }}</small>
+                                                            @elseif($booking->price_per)
+                                                                <small class="d-block text-muted">/ {{ number_format($booking->price_per, 2) }}</small>
                                                             @endif
-                                                         </td>
-                                                        <td>
-                                                            {{ dateTimeFormat($booking->created_at, 'j M Y | H:i') }}
-                                                         </td>
+                                                        </td>
+                                                        <td>{{ dateTimeFormat($booking->created_at, 'j M Y | H:i') }}</td>
                                                         <td>
                                                             <span class="badge-status {{ $booking->status == 'draft' ? 'text-warning bg-warning-30' : 'text-success bg-success-30' }}">
                                                                 {{ $booking->status == 'draft' ? trans('admin/main.draft') : trans('admin/main.published') }}
                                                             </span>
-                                                         </td>
+                                                        </td>
                                                         <td width="150px">
                                                             <div class="btn-group dropdown table-actions position-relative">
                                                                 <button type="button" class="btn-transparent dropdown-toggle" data-toggle="dropdown">
@@ -199,7 +198,6 @@
                                                                             <span>{{ trans('admin/main.edit') }}</span>
                                                                         </a>
                                                                     @endcan
-                                                                    
                                                                     @can('admin_booking_delete')
                                                                         <a href="#"
                                                                            data-href="{{ getAdminPanelUrl() }}/booking/{{ $booking->id }}/delete"
@@ -225,24 +223,23 @@
                                         </table>
                                     </div>
 
-                                    {{-- Pagination --}}
                                     <div class="text-center mt-3">
                                         {{ $bookings->appends(request()->input())->links() }}
                                     </div>
                                 </div>
 
-                                {{-- ==================== CREATE TAB ==================== --}}
-                                <div class="tab-pane mt-4 fade {{ $createActive ? 'active show' : '' }}" 
+                                {{-- ==================== CREATE / EDIT TAB ==================== --}}
+                                <div class="tab-pane mt-4 fade {{ $createActive ? 'active show' : '' }}"
                                      id="createTab" role="tabpanel" aria-labelledby="create-tab">
 
-                                    <form action="{{ getAdminPanelUrl() }}/booking/{{ !empty($editBooking) ? $editBooking->id . '/update' : 'store' }}" 
+                                    <form action="{{ getAdminPanelUrl() }}/booking/{{ !empty($editBooking) ? $editBooking->id . '/update' : 'store' }}"
                                           method="POST">
                                         {{ csrf_field() }}
 
                                         <div class="row">
                                             <div class="col-12 col-md-6">
 
-                                                {{-- Basic Info --}}
+                                                {{-- Title --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.title') }} <span class="text-danger">*</span></label>
                                                     <input type="text" name="title"
@@ -254,6 +251,7 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Slug --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.url') }} / Slug</label>
                                                     <input type="text" name="slug"
@@ -266,27 +264,29 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Category --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.category') }}</label>
-                                                    <select name="category_id" class="form-control @error('category_id') is-invalid @enderror">
+                                                    <select name="category_id" data-plugin-selectTwo
+                                                            class="form-control @error('category_id') is-invalid @enderror">
                                                         <option value="">— {{ trans('admin/main.choose_category') }} —</option>
-                                                        @if(!empty($allCategories))
-                                                            @foreach($allCategories as $cat)
-                                                                <option value="{{ $cat->id }}"
-                                                                    {{ (!empty($editBooking) && $editBooking->category_id == $cat->id) || old('category_id') == $cat->id ? 'selected' : '' }}>
-                                                                    {{ $cat->title }}
-                                                                </option>
-                                                            @endforeach
-                                                        @endif
+                                                        @foreach($allCategories ?? [] as $cat)
+                                                            <option value="{{ $cat->id }}"
+                                                                {{ (!empty($editBooking) && $editBooking->category_id == $cat->id) || old('category_id') == $cat->id ? 'selected' : '' }}>
+                                                                {{ $cat->title }}
+                                                            </option>
+                                                        @endforeach
                                                     </select>
                                                     @error('category_id')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
 
+                                                {{-- Booking Type --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.booking_type') }} <span class="text-danger">*</span></label>
-                                                    <select name="booking_type" class="form-control @error('booking_type') is-invalid @enderror">
+                                                    <select name="booking_type" data-plugin-selectTwo
+                                                            class="form-control @error('booking_type') is-invalid @enderror">
                                                         <option value="">— {{ trans('admin/main.select_type') }} —</option>
                                                         @foreach(['tour','activity','rental','event','service','accommodation'] as $type)
                                                             <option value="{{ $type }}"
@@ -300,23 +300,25 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Sub Type --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.sub_type') }}</label>
-                                                    <input type="text" name="sub_type"
-                                                           class="form-control"
+                                                    <input type="text" name="sub_type" class="form-control"
                                                            value="{{ !empty($editBooking) ? $editBooking->sub_type : old('sub_type') }}"
                                                            placeholder="{{ trans('admin/main.sub_type_placeholder') }}">
                                                 </div>
 
+                                                {{-- Requirements --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.requirements') }}</label>
-                                                    <input type="text" name="requirements"
-                                                           class="form-control"
+                                                    <input type="text" name="requirements" class="form-control"
                                                            value="{{ !empty($editBooking) ? $editBooking->requirements : old('requirements') }}"
                                                            placeholder="{{ trans('admin/main.requirements_placeholder') }}">
                                                 </div>
 
-                                                {{-- Pricing --}}
+                                                {{-- ─── PRICING ─── --}}
+
+                                                {{-- Price --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.price') }} <span class="text-danger">*</span></label>
                                                     <input type="number" name="price" step="0.01" min="0"
@@ -328,6 +330,7 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Discount Price --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.discount_price') }}</label>
                                                     <input type="number" name="discount_price" step="0.01" min="0"
@@ -336,9 +339,10 @@
                                                            placeholder="0.00">
                                                 </div>
 
+                                                {{-- Currency --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.currency') }}</label>
-                                                    <select name="currency" class="form-control">
+                                                    <select name="currency" data-plugin-selectTwo class="form-control">
                                                         @foreach(['USD','EUR','GBP','PKR','AED','SAR','INR'] as $cur)
                                                             <option value="{{ $cur }}"
                                                                 {{ (!empty($editBooking) && $editBooking->currency === $cur) || old('currency', 'USD') === $cur ? 'selected' : '' }}>
@@ -348,109 +352,152 @@
                                                     </select>
                                                 </div>
 
+                                                {{--
+                                                    price_per — migration mein decimal(12,2) hai
+                                                    Iska matlab yeh hai numeric value hogi, jaise:
+                                                    1.00 (per 1 person), 5.00 (per 5 hours) etc.
+                                                    Agar aapko "per person / per day" label chahiye
+                                                    toh price_unit (string) use karo.
+                                                --}}
                                                 <div class="form-group">
-                                                    <label class="input-label">{{ trans('admin/main.price_per') }}</label>
-                                                    <select name="price_per" class="form-control">
-                                                        <option value="">— {{ trans('admin/main.none') }} —</option>
-                                                        @foreach(['person','group','hour','day','night','session','item'] as $pp)
-                                                            <option value="{{ $pp }}"
-                                                                {{ (!empty($editBooking) && $editBooking->price_per === $pp) || old('price_per') === $pp ? 'selected' : '' }}>
-                                                                {{ ucfirst($pp) }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
+                                                    <label class="input-label">
+                                                        {{ trans('admin/main.price_per') }}
+                                                        <small class="text-muted">({{ trans('admin/main.numeric_value') }})</small>
+                                                    </label>
+                                                    <input type="number" name="price_per" step="0.01" min="0"
+                                                           class="form-control @error('price_per') is-invalid @enderror"
+                                                           value="{{ !empty($editBooking) ? $editBooking->price_per : old('price_per') }}"
+                                                           placeholder="e.g. 1.00">
+                                                    @error('price_per')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
                                                 </div>
 
+                                                {{-- Price Unit — STRING label, migration mein string hai --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.price_unit_label') }}</label>
-                                                    <input type="text" name="price_unit"
-                                                           class="form-control"
+                                                    <input type="text" name="price_unit" class="form-control"
                                                            value="{{ !empty($editBooking) ? $editBooking->price_unit : old('price_unit') }}"
                                                            placeholder="e.g. per night, per adult">
+                                                    <div class="text-gray-500 text-small mt-1">
+                                                        Yeh label table mein show hoga — migration mein string column hai
+                                                    </div>
                                                 </div>
 
-                                            </div>
-                                        </div>
+                                            </div>{{-- col-md-6 --}}
+
+                                            {{-- ─── RIGHT COLUMN: Capacity + Duration + Location ─── --}}
+                                            <div class="col-12 col-md-6">
+
+                                                {{-- Capacity --}}
+                                                <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.capacity') }}</label>
+                                                    <input type="number" name="capacity" min="1"
+                                                           class="form-control"
+                                                           value="{{ !empty($editBooking) ? $editBooking->capacity : old('capacity') }}"
+                                                           placeholder="Leave empty for unlimited">
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <div class="form-group">
+                                                            <label class="input-label">{{ trans('admin/main.min_persons') }}</label>
+                                                            <input type="number" name="min_persons" min="1"
+                                                                   class="form-control"
+                                                                   value="{{ !empty($editBooking) ? $editBooking->min_persons : old('min_persons', 1) }}">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-group">
+                                                            <label class="input-label">{{ trans('admin/main.max_persons') }}</label>
+                                                            <input type="number" name="max_persons" min="1"
+                                                                   class="form-control"
+                                                                   value="{{ !empty($editBooking) ? $editBooking->max_persons : old('max_persons') }}"
+                                                                   placeholder="No limit">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Duration --}}
+                                                <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.duration_minutes') }}</label>
+                                                    <input type="number" name="duration_minutes" min="1"
+                                                           class="form-control"
+                                                           value="{{ !empty($editBooking) ? $editBooking->duration_minutes : old('duration_minutes') }}"
+                                                           placeholder="Minutes — e.g. 60">
+                                                </div>
+
+                                                {{-- Location Toggle --}}
+                                                <div class="form-group mt-20 d-flex align-items-center">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" name="location_enabled"
+                                                               id="locationSwitch" value="on"
+                                                               class="custom-control-input"
+                                                               {{ (!empty($editBooking) && $editBooking->location_enabled) ? 'checked' : '' }}
+                                                               onchange="toggleLocation(this.checked)">
+                                                        <label class="custom-control-label" for="locationSwitch"></label>
+                                                    </div>
+                                                    <label for="locationSwitch" class="mb-0 ml-2">{{ trans('admin/main.enable_location') }}</label>
+                                                </div>
+
+                                                {{-- Location Fields --}}
+                                                <div id="locationFields" style="{{ (!empty($editBooking) && $editBooking->location_enabled) ? '' : 'display:none' }}">
+                                                    <div class="form-group">
+                                                        <label class="input-label">{{ trans('admin/main.address_line') }}</label>
+                                                        <input type="text" name="address_line" class="form-control"
+                                                               value="{{ !empty($editBooking) ? $editBooking->address_line : old('address_line') }}">
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <div class="form-group">
+                                                                <label class="input-label">{{ trans('admin/main.city') }}</label>
+                                                                <input type="text" name="city" class="form-control"
+                                                                       value="{{ !empty($editBooking) ? $editBooking->city : old('city') }}">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <div class="form-group">
+                                                                <label class="input-label">{{ trans('admin/main.country') }}</label>
+                                                                <input type="text" name="country" class="form-control"
+                                                                       value="{{ !empty($editBooking) ? $editBooking->country : old('country') }}">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <div class="form-group">
+                                                                <label class="input-label">Latitude</label>
+                                                                <input type="number" name="lat" step="0.0000001" class="form-control"
+                                                                       value="{{ !empty($editBooking) ? $editBooking->lat : old('lat') }}"
+                                                                       placeholder="e.g. 31.5204">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <div class="form-group">
+                                                                <label class="input-label">Longitude</label>
+                                                                <input type="number" name="lng" step="0.0000001" class="form-control"
+                                                                       value="{{ !empty($editBooking) ? $editBooking->lng : old('lng') }}"
+                                                                       placeholder="e.g. 74.3587">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>{{-- col-md-6 right --}}
+                                        </div>{{-- row --}}
 
                                         {{-- Description --}}
                                         <div class="form-group mt-15">
                                             <label class="input-label">{{ trans('admin/main.description') }}</label>
                                             <textarea name="description" rows="4"
-                                                      class="summernote form-control @error('description') is-invalid @enderror"
-                                                      placeholder="{{ trans('admin/main.description_placeholder') }}">{{ !empty($editBooking) ? $editBooking->description : old('description') }}</textarea>
+                                                      class="summernote form-control @error('description') is-invalid @enderror">{{ !empty($editBooking) ? $editBooking->description : old('description') }}</textarea>
                                             @error('description')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
                                         </div>
 
-                                        {{-- Full Content --}}
-                                        <div class="form-group mt-15">
-                                            <label class="input-label">{{ trans('admin/main.content') }}</label>
-                                            <div class="text-gray-500 text-small mb-3">{{ trans('admin/main.create_booking_content_hint') }}</div>
-                                            <textarea id="contentSummernote" name="content"
-                                                      class="summernote form-control @error('content') is-invalid @enderror"
-                                                      placeholder="{{ trans('admin/main.content_placeholder') }}">{!! !empty($editBooking) ? $editBooking->content : old('content') !!}</textarea>
-                                            @error('content')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-
-                                        {{-- Meta Description (SEO) --}}
-                                        <div class="form-group mt-15">
-                                            <label class="input-label">{{ trans('admin/pages/blog.meta_description') }}</label>
-                                            <textarea name="meta_description" rows="5"
-                                                      class="form-control @error('meta_description') is-invalid @enderror"
-                                                      placeholder="{{ trans('admin/pages/blog.meta_description_placeholder') }}">{!! !empty($editBooking) ? $editBooking->meta_description : old('meta_description') !!}</textarea>
-                                            @error('meta_description')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-
-                                        {{-- Cover Image --}}
-                                        <div class="form-group">
-                                            <label class="input-label">{{ trans('public.cover_image') }}</label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <button type="button" class="input-group-text admin-file-manager" 
-                                                            data-input="image" data-preview="holder">
-                                                        <i class="fa fa-upload"></i>
-                                                    </button>
-                                                </div>
-                                                <input type="text" name="image" id="image" 
-                                                       value="{{ (!empty($editBooking)) ? $editBooking->image : old('image') }}" 
-                                                       class="form-control @error('image') is-invalid @enderror" 
-                                                       placeholder="{{ trans('update.booking_cover_image_placeholder') }}"/>
-                                                <div class="input-group-append">
-                                                    <button type="button" class="input-group-text admin-file-view" data-input="image">
-                                                        <i class="fa fa-eye"></i>
-                                                    </button>
-                                                </div>
-                                                @error('image')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        {{-- Gallery Images --}}
-                                        <div class="form-group">
-                                            <label class="input-label">{{ trans('admin/main.gallery') }}</label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <button type="button" class="input-group-text admin-file-manager" 
-                                                            data-input="gallery" data-preview="holder" data-multi="true">
-                                                        <i class="fa fa-upload"></i>
-                                                    </button>
-                                                </div>
-                                                <input type="text" name="gallery" id="gallery" 
-                                                       value="{{ (!empty($editBooking)) ? $editBooking->gallery : old('gallery') }}" 
-                                                       class="form-control" 
-                                                       placeholder="{{ trans('update.booking_gallery_placeholder') }}"/>
-                                            </div>
-                                            <div class="text-gray-500 text-small mt-1">{{ trans('update.multi_image_hint') }}</div>
-                                        </div>
-
                                         {{-- Status Switches --}}
-                                        <div class="form-group mt-30 d-flex align-items-center cursor-pointer">
+                                        <div class="form-group mt-30 d-flex align-items-center">
                                             <div class="custom-control custom-switch">
                                                 <input type="checkbox" name="featured" id="featuredSwitch" value="on"
                                                        class="custom-control-input"
@@ -460,7 +507,7 @@
                                             <label for="featuredSwitch" class="mb-0 ml-2">{{ trans('admin/main.featured') }}</label>
                                         </div>
 
-                                        <div class="form-group mt-30 d-flex align-items-center cursor-pointer">
+                                        <div class="form-group mt-15 d-flex align-items-center">
                                             <div class="custom-control custom-switch">
                                                 <input type="checkbox" name="status" id="statusSwitch" value="published"
                                                        class="custom-control-input"
@@ -474,11 +521,13 @@
                                             <i class="fas fa-save mr-1"></i>
                                             {{ trans('admin/main.save_change') }}
                                         </button>
+
                                     </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                                </div>{{-- createTab --}}
+
+                            </div>{{-- tab-content --}}
+                        </div>{{-- card-body --}}
+                    </div>{{-- card --}}
                 </div>
             </div>
         </div>
@@ -488,26 +537,21 @@
 @push('scripts_bottom')
     <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
     <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
-    
-    <!-- <script>
-        $(document).ready(function() {
-            // Initialize Summernote
+    <script>
+        $(document).ready(function () {
             $('.summernote').summernote({
                 height: 200,
-                codemirror: {
-                    theme: 'monokai'
-                }
-            });
-
-            // File manager view button
-            $('.admin-file-view').on('click', function(e) {
-                e.preventDefault();
-                var inputId = $(this).data('input');
-                var imageUrl = $('#' + inputId).val();
-                if (imageUrl) {
-                    window.open(imageUrl, '_blank');
-                }
+                toolbar: [
+                    ['style', ['bold', 'italic', 'underline', 'clear']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['link']],
+                    ['view', ['codeview']]
+                ]
             });
         });
-    </script> -->
+
+        function toggleLocation(show) {
+            document.getElementById('locationFields').style.display = show ? '' : 'none';
+        }
+    </script>
 @endpush

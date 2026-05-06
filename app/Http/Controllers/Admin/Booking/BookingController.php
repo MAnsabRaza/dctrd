@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
@@ -13,52 +12,33 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $this->authorize('admin_booking');
-
         removeContentLocale();
 
-        // Build query with filters
         $query = Booking::query();
 
-        // Apply filters if present
-        if ($request->get('title')) {
+        if ($request->get('title'))
             $query->where('title', 'like', '%' . $request->get('title') . '%');
-        }
-
-        if ($request->get('category_id')) {
+        if ($request->get('category_id'))
             $query->where('category_id', $request->get('category_id'));
-        }
-
-        if ($request->get('booking_type')) {
+        if ($request->get('booking_type'))
             $query->where('booking_type', $request->get('booking_type'));
-        }
-
-        if ($request->get('status')) {
+        if ($request->get('status'))
             $query->where('status', $request->get('status'));
-        }
-
-        if ($request->get('from')) {
+        if ($request->get('from'))
             $query->whereDate('created_at', '>=', $request->get('from'));
-        }
-
-        if ($request->get('to')) {
+        if ($request->get('to'))
             $query->whereDate('created_at', '<=', $request->get('to'));
-        }
 
-        // Get paginated bookings (15 per page)
-        $bookings = $query->orderBy('created_at', 'desc')->paginate(15);
-
-        // Get categories for filters and forms
-        $categories = BookingCategory::where('status', 1)->orderBy('order')->get();
+        $bookings      = $query->orderBy('created_at', 'desc')->paginate(15);
+        $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
         $allCategories = BookingCategory::orderBy('order')->get();
 
-        $data = [
-            'pageTitle' => trans('admin/main.booking'),
-            'bookings' => $bookings,           // ← Plural for list
-            'categories' => $categories,       // ← For filter dropdown
-            'allCategories' => $allCategories, // ← For create form
-        ];
-
-        return view('admin.booking.booking', $data);
+        return view('admin.booking.booking', [
+            'pageTitle'     => trans('admin/main.booking'),
+            'bookings'      => $bookings,
+            'categories'    => $categories,
+            'allCategories' => $allCategories,
+        ]);
     }
 
     public function store(Request $request)
@@ -66,67 +46,78 @@ class BookingController extends Controller
         $this->authorize('admin_booking_create');
 
         $this->validate($request, [
-            'title' => 'required|string|max:255',
-            'category_id' => 'nullable|exists:booking_categories,id',
+            'title'        => 'required|string|max:255',
+            'category_id'  => 'nullable|exists:booking_categories,id',
             'booking_type' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
+            'price'        => 'required|numeric|min:0',
+            // price_per — migration mein decimal hai, isliye numeric validate karo
+            'price_per'    => 'nullable|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
         ]);
-
-        $data = $request->all();
 
         Booking::create([
-            'created_id' => auth()->id(),
-            'category_id' => $data['category_id'] ?? null,
-            'title' => $data['title'],
-            'slug' => !empty($data['slug']) 
-                ? Str::slug($data['slug']) 
-                : Str::slug($data['title']) . '-' . uniqid(),
-            'booking_type' => $data['booking_type'],
-            'sub_type' => $data['sub_type'] ?? null,
-            'description' => $data['description'] ?? null,
-            'content' => $data['content'] ?? null,
-            'meta_description' => $data['meta_description'] ?? null,
-            'requirements' => $data['requirements'] ?? null,
-            'image' => $data['image'] ?? null,
-            'gallery' => $data['gallery'] ?? null,
+            'creator_id'       => auth()->id(),
+            'category_id'      => $request->category_id,
+            'title'            => $request->title,
+            'slug'             => $request->slug
+                                    ? Str::slug($request->slug)
+                                    : Str::slug($request->title) . '-' . uniqid(),
+            'booking_type'     => $request->booking_type,
+            'sub_type'         => $request->sub_type,
+            'description'      => $request->description,
+            'requirements'     => $request->requirements,
+
             // Pricing
-            'price' => $data['price'],
-            'price_per' => $data['price_per'] ?? null,
-            'price_unit' => $data['price_unit'] ?? null,
-            'discount_price' => $data['discount_price'] ?? null,
-            'currency' => $data['currency'] ?? 'USD',
+            'price'            => $request->price,
+            'price_per'        => $request->price_per ?: null,  // decimal — null agar empty
+            'price_unit'       => $request->price_unit,         // string — "per night" etc.
+            'discount_price'   => $request->discount_price ?: null,
+            'currency'         => $request->currency ?? 'USD',
+
+            // Capacity
+            'min_persons'      => $request->min_persons ?? 1,
+            'max_persons'      => $request->max_persons ?: null,
+            'capacity'         => $request->capacity ?: null,
+
+            // Duration
+            'duration_minutes' => $request->duration_minutes ?: null,
+
+            // Location
+            'location_enabled' => $request->location_enabled === 'on',
+            'address_line'     => $request->address_line,
+            'city'             => $request->city,
+            'state'            => $request->state,
+            'country'          => $request->country,
+            'postal_code'      => $request->postal_code,
+            'lat'              => $request->lat ?: null,
+            'lng'              => $request->lng ?: null,
+
             // Status
-            'status' => isset($data['status']) && $data['status'] === 'published' ? 'published' : 'draft',
-            'featured' => isset($data['featured']) && $data['featured'] === 'on',
+            'status'           => $request->status === 'published' ? 'published' : 'draft',
+            'featured'         => $request->featured === 'on',
         ]);
 
-        return redirect(getAdminPanelUrl('/booking'))->with('success', trans('admin/main.created_successfully'));
+        return redirect(getAdminPanelUrl('/booking'))
+            ->with('success', trans('admin/main.created_successfully'));
     }
 
     public function edit($id)
     {
         $this->authorize('admin_booking_edit');
-
         removeContentLocale();
 
-        $editBooking = Booking::findOrFail($id);
-        
-        // Get paginated bookings for list tab
-        $bookings = Booking::orderBy('created_at', 'desc')->paginate(15);
-        
-        // Get categories
-        $categories = BookingCategory::where('status', 1)->orderBy('order')->get();
+        $editBooking   = Booking::findOrFail($id);
+        $bookings      = Booking::orderBy('created_at', 'desc')->paginate(15);
+        $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
         $allCategories = BookingCategory::orderBy('order')->get();
 
-        $data = [
-            'pageTitle' => trans('admin/main.edit_booking'),
-            'bookings' => $bookings,
-            'editBooking' => $editBooking,
-            'categories' => $categories,
+        return view('admin.booking.booking', [
+            'pageTitle'     => trans('admin/main.edit_booking'),
+            'bookings'      => $bookings,
+            'editBooking'   => $editBooking,
+            'categories'    => $categories,
             'allCategories' => $allCategories,
-        ];
-
-        return view('admin.booking.booking', $data);
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -136,49 +127,66 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($id);
 
         $this->validate($request, [
-            'title' => 'required|string|max:255',
-            'category_id' => 'nullable|exists:booking_categories,id',
-            'booking_type' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
+            'title'          => 'required|string|max:255',
+            'category_id'    => 'nullable|exists:booking_categories,id',
+            'booking_type'   => 'required|string|max:255',
+            'price'          => 'required|numeric|min:0',
+            'price_per'      => 'nullable|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
         ]);
-
-        $data = $request->all();
 
         $booking->update([
-            'category_id' => $data['category_id'] ?? null,
-            'title' => $data['title'],
-            'slug' => !empty($data['slug']) 
-                ? Str::slug($data['slug']) 
-                : Str::slug($data['title']) . '-' . uniqid(),
-            'booking_type' => $data['booking_type'],
-            'sub_type' => $data['sub_type'] ?? null,
-            'description' => $data['description'] ?? null,
-            'content' => $data['content'] ?? null,
-            'meta_description' => $data['meta_description'] ?? null,
-            'requirements' => $data['requirements'] ?? null,
-            'image' => $data['image'] ?? null,
-            'gallery' => $data['gallery'] ?? null,
+            'category_id'      => $request->category_id,
+            'title'            => $request->title,
+            'slug'             => $request->slug
+                                    ? Str::slug($request->slug)
+                                    : Str::slug($request->title) . '-' . uniqid(),
+            'booking_type'     => $request->booking_type,
+            'sub_type'         => $request->sub_type,
+            'description'      => $request->description,
+            'requirements'     => $request->requirements,
+
             // Pricing
-            'price' => $data['price'],
-            'price_per' => $data['price_per'] ?? null,
-            'price_unit' => $data['price_unit'] ?? null,
-            'discount_price' => $data['discount_price'] ?? null,
-            'currency' => $data['currency'] ?? 'USD',
+            'price'            => $request->price,
+            'price_per'        => $request->price_per ?: null,
+            'price_unit'       => $request->price_unit,
+            'discount_price'   => $request->discount_price ?: null,
+            'currency'         => $request->currency ?? 'USD',
+
+            // Capacity
+            'min_persons'      => $request->min_persons ?? 1,
+            'max_persons'      => $request->max_persons ?: null,
+            'capacity'         => $request->capacity ?: null,
+
+            // Duration
+            'duration_minutes' => $request->duration_minutes ?: null,
+
+            // Location
+            'location_enabled' => $request->location_enabled === 'on',
+            'address_line'     => $request->address_line,
+            'city'             => $request->city,
+            'state'            => $request->state,
+            'country'          => $request->country,
+            'postal_code'      => $request->postal_code,
+            'lat'              => $request->lat ?: null,
+            'lng'              => $request->lng ?: null,
+
             // Status
-            'status' => isset($data['status']) && $data['status'] === 'published' ? 'published' : 'draft',
-            'featured' => isset($data['featured']) && $data['featured'] === 'on',
+            'status'           => $request->status === 'published' ? 'published' : 'draft',
+            'featured'         => $request->featured === 'on',
         ]);
 
-        return redirect(getAdminPanelUrl('/booking'))->with('success', trans('admin/main.updated_successfully'));
+        return redirect(getAdminPanelUrl('/booking'))
+            ->with('success', trans('admin/main.updated_successfully'));
     }
 
     public function delete($id)
     {
         $this->authorize('admin_booking_delete');
 
-        $booking = Booking::findOrFail($id);
-        $booking->delete();
+        Booking::findOrFail($id)->delete();
 
-        return redirect(getAdminPanelUrl('/booking'))->with('success', trans('admin/main.deleted_successfully'));
+        return redirect(getAdminPanelUrl('/booking'))
+            ->with('success', trans('admin/main.deleted_successfully'));
     }
 }
