@@ -206,6 +206,27 @@ return [
     'booking_resources_updated_successfully' => 'Booking Resources updated successfully.',
     'booking_resources_deleted_successfully' => 'Booking Resources deleted successfully.',
 
+    //booking value
+    'booking_type'=>'Booking Type',
+    'search_by_title'=>'Search By Title',
+    'min_persons'=>'Min Person',
+    'max_persons'=>'Max Persons',
+    'duration_minutes'=>'Duration Minutes',
+    'sub_type'=>'Sub Type',
+    'requirements'=>'Requirements',
+    'discount_price'=>'Discount Price',
+    'price_per'=>'Price Per',
+    'price_unit_label'=>'Price Unit Label',
+    'featured'=>'Featured',
+    'enable_location'=>'Enable Location',
+    'address_line'=>'Address Line',
+    'city'=>'City',
+    'country'=>'Country',
+    
+
+
+
+
     // Categories
     'categories_list_page_title' => 'Categories List',
     'categories' => 'Categories',
