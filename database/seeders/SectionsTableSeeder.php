@@ -187,7 +187,7 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 706], ['name' => 'admin_blog_categories_create', 'section_group_id' => 700, 'caption' => 'Blog categories create']);
         Section::updateOrCreate(['id' => 707], ['name' => 'admin_blog_categories_edit', 'section_group_id' => 700, 'caption' => 'Blog categories edit']);
         Section::updateOrCreate(['id' => 708], ['name' => 'admin_blog_categories_delete', 'section_group_id' => 700, 'caption' => 'Blog categories delete']);
-Section::updateOrCreate(['id' => 709], ['name' => 'admin_blog_featured_categories', 'section_group_id' => 700, 'caption' => 'Blog Featured Categories (List/Create/Delete)']);
+        Section::updateOrCreate(['id' => 709], ['name' => 'admin_blog_featured_categories', 'section_group_id' => 700, 'caption' => 'Blog Featured Categories (List/Create/Delete)']);
         Section::updateOrCreate(['id' => 710], ['name' => 'admin_blog_featured_contents', 'section_group_id' => 700, 'caption' => 'Blog Featured Contents (List/Create/Delete)']);
 
         // sales 750 - 799
@@ -443,7 +443,7 @@ Section::updateOrCreate(['id' => 709], ['name' => 'admin_blog_featured_categorie
         Section::updateOrCreate(['id' => 1833], ['name' => 'admin_store_in_house_orders', 'section_group_id' => 1800, 'caption' => 'In-house Products Orders']);
         // Sellers
         Section::updateOrCreate(['id' => 1834], ['name' => 'admin_store_products_sellers', 'section_group_id' => 1800, 'caption' => 'Products Sellers']);
-// Top Category
+        // Top Category
         Section::updateOrCreate(['id' => 1835], ['name' => 'admin_store_top_categories', 'section_group_id' => 1800, 'caption' => 'Store Top Categories (List/Create/Delete)']);
         // featured products
         Section::updateOrCreate(['id' => 1836], ['name' => 'admin_store_featured_products', 'section_group_id' => 1800, 'caption' => 'Store Featured Products (List/Create/Delete)']);
@@ -480,7 +480,7 @@ Section::updateOrCreate(['id' => 709], ['name' => 'admin_blog_featured_categorie
         Section::updateOrCreate(['id' => 1932], ['name' => 'admin_forum_topics_delete', 'section_group_id' => 1925, 'caption' => 'Forums topics delete']);
         Section::updateOrCreate(['id' => 1933], ['name' => 'admin_forum_topics_posts', 'section_group_id' => 1925, 'caption' => 'Forums topic posts']);
         Section::updateOrCreate(['id' => 1934], ['name' => 'admin_forum_topics_create_posts', 'section_group_id' => 1925, 'caption' => 'Forums topic store posts']);
-Section::updateOrCreate(['id' => 1935], ['name' => 'admin_forum_settings', 'section_group_id' => 1925, 'caption' => 'Forums Settings']);
+        Section::updateOrCreate(['id' => 1935], ['name' => 'admin_forum_settings', 'section_group_id' => 1925, 'caption' => 'Forums Settings']);
 
         // 1950 - 1974 featured topics
         Section::updateOrCreate(['id' => 1950], ['name' => 'admin_featured_topics', 'caption' => 'Featured topics']);
@@ -632,7 +632,7 @@ Section::updateOrCreate(['id' => 1935], ['name' => 'admin_forum_settings', 'sect
         // Translator 3120 - 3129
         Section::updateOrCreate(['id' => 3130], ['name' => 'admin_translator', 'caption' => 'Translator']);
         Section::updateOrCreate(['id' => 3131], ['name' => 'admin_translator_actions', 'section_group_id' => 3130, 'caption' => 'Actions (Create/Edit/Delete)']);
-// Instructor Finder 3140 - 3149
+        // Instructor Finder 3140 - 3149
         Section::updateOrCreate(['id' => 3140], ['name' => 'admin_instructor_finder', 'caption' => 'Instructor Finder']);
         Section::updateOrCreate(['id' => 3141], ['name' => 'admin_instructor_finder_settings', 'section_group_id' => 3140, 'caption' => 'Settings']);
 
@@ -699,24 +699,24 @@ Section::updateOrCreate(['id' => 1935], ['name' => 'admin_forum_settings', 'sect
         Section::updateOrCreate(['id' => 3243], ['name' => 'admin_booking_categories_edit', 'section_group_id' => 3240, 'caption' => 'Booking Categories Edit']);
         Section::updateOrCreate(['id' => 3244], ['name' => 'admin_booking_categories_delete', 'section_group_id' => 3240, 'caption' => 'Booking Categories Delete']);
 
-        
+
         Section::updateOrCreate(['id' => 3245], ['name' => 'admin_booking', 'section_group_id' => 3240, 'caption' => 'Booking']);
         Section::updateOrCreate(['id' => 3246], ['name' => 'admin_booking_create', 'section_group_id' => 3240, 'caption' => 'Booking Create/Edit']);
         Section::updateOrCreate(['id' => 3247], ['name' => 'admin_booking_edit', 'section_group_id' => 3240, 'caption' => 'Booking Edit']);
         Section::updateOrCreate(['id' => 3248], ['name' => 'admin_booking_delete', 'section_group_id' => 3240, 'caption' => 'Booking Delete']);
 
-        
+
         Section::updateOrCreate(['id' => 3250], ['name' => 'admin_booking_resources', 'section_group_id' => 3240, 'caption' => 'Booking Resources']);
         Section::updateOrCreate(['id' => 3251], ['name' => 'admin_booking_resources_create', 'section_group_id' => 3240, 'caption' => 'Booking Resources Create/Edit']);
         Section::updateOrCreate(['id' => 3252], ['name' => 'admin_booking_resources_edit', 'section_group_id' => 3240, 'caption' => 'Booking Resources Edit']);
         Section::updateOrCreate(['id' => 3253], ['name' => 'admin_booking_resources_delete', 'section_group_id' => 3240, 'caption' => 'Booking Resources Delete']);
 
         //booking rate plan
-        
-Section::updateOrCreate(['id' => 3255], ['name' => 'admin_booking_rate_plan',        'section_group_id' => 3240, 'caption' => 'Booking Rate Plan']);
-Section::updateOrCreate(['id' => 3256], ['name' => 'admin_booking_rate_plan_create', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Create/Edit']);
-Section::updateOrCreate(['id' => 3257], ['name' => 'admin_booking_rate_plan_edit',   'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Edit']);
-Section::updateOrCreate(['id' => 3258], ['name' => 'admin_booking_rate_plan_delete', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Delete']);
+
+        Section::updateOrCreate(['id' => 3255], ['name' => 'admin_booking_rate_plan', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan']);
+        Section::updateOrCreate(['id' => 3256], ['name' => 'admin_booking_rate_plan_create', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Create/Edit']);
+        Section::updateOrCreate(['id' => 3257], ['name' => 'admin_booking_rate_plan_edit', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Edit']);
+        Section::updateOrCreate(['id' => 3258], ['name' => 'admin_booking_rate_plan_delete', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Delete']);
 
         /* Run Panel Sections */
         $this->runPanelSections();
@@ -879,7 +879,7 @@ Section::updateOrCreate(['id' => 3258], ['name' => 'admin_booking_rate_plan_dele
         $this->createPanelSection(['id' => 301], ['name' => 'panel_others_profile_setting', 'section_group_id' => 300, 'caption' => 'Profile Settings']);
         $this->createPanelSection(['id' => 302], ['name' => 'panel_others_profile_url', 'section_group_id' => 300, 'caption' => 'Profile Url']);
         $this->createPanelSection(['id' => 303], ['name' => 'panel_others_logout', 'section_group_id' => 300, 'caption' => 'Logout']);
- // Attendances 320 - 329
+        // Attendances 320 - 329
         $this->createPanelSection(['id' => 320], ['name' => 'panel_attendances', 'caption' => 'Attendances']);
         $this->createPanelSection(['id' => 321], ['name' => 'panel_attendances_lists', 'section_group_id' => 320, 'caption' => 'Attendances lists']);
 
