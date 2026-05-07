@@ -224,8 +224,11 @@ return [
     'address_line'=>'Address Line',
     'city'=>'City',
     'country'=>'Country',
-
-
+    'create_booking_resource' => 'Create Booking Resource',
+    'choose_name'=>'Choose Name',
+    'extra_price'=>'Extra Price',
+    'attributes'=>'Attributes',
+    'booking_id'=>'booking_id',
 
 
 

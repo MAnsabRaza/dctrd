@@ -46,7 +46,7 @@ Route::group(['prefix' => 'booking'], function () {
     Route::post('/store', [BookingController::class, 'store']);
     Route::get('/{id}/edit', [BookingController::class, 'edit']);
     Route::post('/{id}/update', [BookingController::class, 'update']);
-    Route::delete('/{id}/delete', [BookingController::class, 'delete']);
+    Route::get('/{id}/delete', [BookingController::class, 'delete']);
 
     // Booking Categories
     Route::group(['prefix' => 'categories'], function () {
