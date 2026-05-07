@@ -150,6 +150,14 @@
                 </li>
             @endcan
 
+            @can('admin_booking_resources')
+                <li class="{{ (request()->is(getAdminPanelUrl('/booking/resources', false))) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/resources">
+                        {{ trans('admin/main.booking_resources') }}
+                    </a>
+                </li>
+            @endcan
+
         </ul>
     </li>
 @endcan

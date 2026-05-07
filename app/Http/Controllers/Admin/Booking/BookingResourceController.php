@@ -21,7 +21,7 @@ class BookingResourceController extends Controller
         $bookingResources = BookingResource::orderBy('sort_order')->paginate(20);
 
         $data = [
-            'pageTitle'        => trans('admin/main.booking_resources'),
+            'pageTitle' => trans('admin/main.booking_resources'),
             'bookingResources' => $bookingResources,
         ];
 
@@ -36,28 +36,29 @@ class BookingResourceController extends Controller
         $this->authorize('admin_booking_resources_create');
 
         $this->validate($request, [
-            'name'        => 'required|string|max:255',
-            'type'        => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
+            'type' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'capacity'    => 'nullable|integer|min:0',
+            'capacity' => 'nullable|integer|min:0',
             'extra_price' => 'nullable|numeric|min:0',
-            'attributes'  => 'nullable|json',
-            'image'       => 'nullable|string',
-            'sort_order'  => 'nullable|integer|min:0',
-            'booking_id'  => 'nullable|exists:bookings,id',
+            'attributes' => 'nullable|json',
+            'image' => 'nullable|string',
+            'sort_order' => 'nullable|integer|min:0',
+            'booking_id' => 'nullable|exists:bookings,id',
         ]);
+        $data = $request->all();
 
         BookingResource::create([
-            'booking_id'  => $request->booking_id ?? null,
-            'name'        => $request->name,
-            'type'        => $request->type ?? null,
-            'description' => $request->description ?? null,
-            'capacity'    => $request->capacity ?? null,
-            'extra_price' => $request->extra_price ?? 0,
-            'attributes'  => $request->attributes ?? null,
-            'image'       => $request->image ?? null,
-            'status'      => $request->has('status') ? 1 : 0,
-            'sort_order'  => $request->sort_order ?? 0,
+            'booking_id' => $data['booking_id'] ?? null,
+            'name' => $data['name'],
+            'type' => $data['type'] ?? null,
+            'description' => $data['description'] ?? null,
+            'capacity' => $data['capacity'] ?? null,
+            'extra_price' => $data['extra_price'] ?? 0,
+            'attributes' => $data['attributes'] ?? null,
+            'image' => $data['image'] ?? null,
+            'status' => !empty($data['status']) ? 1 : 0,
+            'sort_order' => $data['sort_order'] ?? 0,
         ]);
 
         return redirect(getAdminPanelUrl('/booking/resources'))
@@ -71,13 +72,13 @@ class BookingResourceController extends Controller
     {
         $this->authorize('admin_booking_resources_edit');
 
-        $editResource     = BookingResource::findOrFail($id);
+        $editResource = BookingResource::findOrFail($id);
         $bookingResources = BookingResource::orderBy('sort_order')->paginate(20);
 
         $data = [
-            'pageTitle'        => trans('admin/main.booking_resources'),
+            'pageTitle' => trans('admin/main.booking_resources'),
             'bookingResources' => $bookingResources,
-            'editResource'     => $editResource,
+            'editResource' => $editResource,
         ];
 
         return view('admin.booking.resources', $data);
@@ -93,28 +94,29 @@ class BookingResourceController extends Controller
         $resource = BookingResource::findOrFail($id);
 
         $this->validate($request, [
-            'name'        => 'required|string|max:255',
-            'type'        => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
+            'type' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'capacity'    => 'nullable|integer|min:0',
+            'capacity' => 'nullable|integer|min:0',
             'extra_price' => 'nullable|numeric|min:0',
-            'attributes'  => 'nullable|json',
-            'image'       => 'nullable|string',
-            'sort_order'  => 'nullable|integer|min:0',
-            'booking_id'  => 'nullable|exists:bookings,id',
+            'attributes' => 'nullable|json',
+            'image' => 'nullable|string',
+            'sort_order' => 'nullable|integer|min:0',
+            'booking_id' => 'nullable|exists:bookings,id',
         ]);
+        $data = $request->all();
 
         $resource->update([
-            'booking_id'  => $request->booking_id ?? null,
-            'name'        => $request->name,
-            'type'        => $request->type ?? null,
-            'description' => $request->description ?? null,
-            'capacity'    => $request->capacity ?? null,
-            'extra_price' => $request->extra_price ?? 0,
-            'attributes'  => $request->attributes ?? null,
-            'image'       => $request->image ?? null,
-            'status'      => $request->has('status') ? 1 : 0,
-            'sort_order'  => $request->sort_order ?? 0,
+            'booking_id' => $data['booking_id'] ?? null,
+            'name' => $data['name'],
+            'type' => $data['type'] ?? null,
+            'description' => $data['description'] ?? null,
+            'capacity' => $data['capacity'] ?? null,
+            'extra_price' => $data['extra_price'] ?? 0,
+            'attributes' => $data['attributes'] ?? null,
+            'image' => $data['image'] ?? null,
+            'status' => !empty($data['status']) ? 1 : 0,
+            'sort_order' => $data['sort_order'] ?? 0,
         ]);
 
         return redirect(getAdminPanelUrl('/booking/resources'))

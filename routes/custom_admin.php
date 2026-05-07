@@ -9,6 +9,7 @@
 
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingController;
+use App\Http\Controllers\Admin\Booking\BookingResourceController;
 use Illuminate\Support\Facades\Route;
 
 // Get the admin panel prefix from the main application
@@ -54,6 +55,13 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/edit',    [BookingCategoryController::class, 'edit']);
         Route::post('/{id}/update', [BookingCategoryController::class, 'update']);
         Route::get('/{id}/delete',  [BookingCategoryController::class, 'delete']);
+    });
+      Route::group(['prefix' => 'resources'], function () {
+        Route::get('/',             [BookingResourceController::class, 'index']);
+        Route::post('/store',       [BookingResourceController::class, 'store']);
+        Route::get('/{id}/edit',    [BookingResourceController::class, 'edit']);
+        Route::post('/{id}/update', [BookingResourceController::class, 'update']);
+        Route::get('/{id}/delete',  [BookingResourceController::class, 'delete']);
     });
 
 });
