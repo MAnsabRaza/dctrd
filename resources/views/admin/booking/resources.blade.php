@@ -27,7 +27,7 @@
                             <ul class="nav nav-pills" id="myTab3" role="tablist">
                                 @php
                                     $resourceCreateActive = (
-                                        (!empty($errors) && $errors->has('name')) ||
+                                        (!empty($errors) && $errors->any()) ||
                                         !empty($editResource) ||
                                         ((empty($bookingResources) || !$bookingResources->count()) && auth()->user()->can('admin_booking_resources_create'))
                                     );
@@ -155,6 +155,25 @@
                                                         @enderror
                                                     </div>
 
+                                                    {{-- Booking --}}
+                                                    <div class="form-group">
+                                                        <label>{{ trans('admin/main.booking_id') }}</label>
+                                                        @php
+                                                            $selectedBookingId = !empty($editResource) ? $editResource->booking_id : old('booking_id');
+                                                        @endphp
+                                                        <select name="booking_id" class="form-control @error('booking_id') is-invalid @enderror">
+                                                            <option value="">{{ trans('admin/main.select') }}</option>
+                                                            @foreach($bookings as $booking)
+                                                                <option value="{{ $booking->id }}" {{ (string) $selectedBookingId === (string) $booking->id ? 'selected' : '' }}>
+                                                                    #{{ $booking->id }} - {{ $booking->title }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                        @error('booking_id')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+
                                                     {{-- Type --}}
                                                     <div class="form-group">
                                                         <label>{{ trans('admin/main.type') }}</label>
@@ -204,12 +223,75 @@
 
                                                     {{-- Attributes --}}
                                                     <div class="form-group">
-                                                        <label>{{ trans('admin/main.attributes') }} <small class="text-gray-500">(JSON)</small></label>
-                                                        <textarea name="attributes" rows="3"
-                                                                  class="form-control @error('attributes') is-invalid @enderror"
-                                                                  placeholder='{"key": "value"}'>{{ !empty($editResource) ? $editResource->attributes : old('attributes') }}</textarea>
-                                                        @error('attributes')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        <label>{{ trans('admin/main.attributes') }}</label>
+                                                        @php
+                                                            $attributeRows = [];
+                                                            $oldAttributeKeys = old('attribute_keys');
+
+                                                            if (is_array($oldAttributeKeys)) {
+                                                                $oldAttributeValues = old('attribute_values', []);
+
+                                                                foreach ($oldAttributeKeys as $index => $key) {
+                                                                    $attributeRows[] = [
+                                                                        'key' => $key,
+                                                                        'value' => $oldAttributeValues[$index] ?? '',
+                                                                    ];
+                                                                }
+                                                            } elseif (!empty($editResource)) {
+                                                                $resourceAttributes = $editResource->attributes;
+
+                                                                if (is_string($resourceAttributes)) {
+                                                                    $resourceAttributes = json_decode($resourceAttributes, true) ?: [];
+                                                                }
+
+                                                                if (is_array($resourceAttributes)) {
+                                                                    foreach ($resourceAttributes as $key => $value) {
+                                                                        $attributeRows[] = [
+                                                                            'key' => $key,
+                                                                            'value' => is_array($value) || is_bool($value) ? json_encode($value) : $value,
+                                                                        ];
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            if (empty($attributeRows)) {
+                                                                $attributeRows[] = ['key' => '', 'value' => ''];
+                                                            }
+                                                        @endphp
+
+                                                        <div id="resourceAttributes">
+                                                            @foreach($attributeRows as $attributeRow)
+                                                                <div class="row align-items-center mb-2 js-resource-attribute-row">
+                                                                    <div class="col-5">
+                                                                        <input type="text" name="attribute_keys[]"
+                                                                               class="form-control @error('attribute_keys.*') is-invalid @enderror"
+                                                                               value="{{ $attributeRow['key'] }}"
+                                                                               placeholder="Key"/>
+                                                                    </div>
+                                                                    <div class="col-5">
+                                                                        <input type="text" name="attribute_values[]"
+                                                                               class="form-control @error('attribute_values.*') is-invalid @enderror"
+                                                                               value="{{ $attributeRow['value'] }}"
+                                                                               placeholder="Value"/>
+                                                                    </div>
+                                                                    <div class="col-2 text-right">
+                                                                        <button type="button" class="btn btn-sm btn-danger js-remove-resource-attribute">
+                                                                            {{ trans('admin/main.remove') }}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+
+                                                        <button type="button" class="btn btn-sm btn-primary mt-2 js-add-resource-attribute">
+                                                            {{ trans('admin/main.add') }}
+                                                        </button>
+
+                                                        @error('attribute_keys.*')
+                                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                        @enderror
+                                                        @error('attribute_values.*')
+                                                            <div class="invalid-feedback d-block">{{ $message }}</div>
                                                         @enderror
                                                     </div>
 
@@ -219,43 +301,28 @@
                                                         <div class="input-group">
                                                             <div class="input-group-prepend">
                                                                 <button type="button" class="input-group-text admin-file-manager"
-                                                                        data-input="image" data-preview="image_holder">
+                                                                        data-input="image" data-preview="holder">
                                                                     <i class="fa fa-upload"></i>
                                                                 </button>
                                                             </div>
                                                             <input type="text" name="image" id="image"
                                                                    value="{{ !empty($editResource) ? $editResource->image : old('image') }}"
                                                                    class="form-control @error('image') is-invalid @enderror"/>
+                                                            <div class="input-group-append">
+                                                                <button type="button" class="input-group-text admin-file-view" data-input="image">
+                                                                    <i class="fa fa-eye"></i>
+                                                                </button>
+                                                            </div>
                                                             <div class="invalid-feedback">@error('image') {{ $message }} @enderror</div>
                                                         </div>
                                                         @if(!empty($editResource) && $editResource->image)
                                                             <div class="mt-2">
-                                                                <img id="image_holder" src="{{ $editResource->image }}" alt="image" width="80" class="rounded"/>
+                                                                <img id="holder" src="{{ $editResource->image }}" alt="image" width="80" class="rounded"/>
                                                             </div>
                                                         @endif
                                                     </div>
 
-                                                    {{-- Sort Order --}}
-                                                    <div class="form-group">
-                                                        <label>{{ trans('admin/main.order') }}</label>
-                                                        <input type="number" name="sort_order" min="0"
-                                                               class="form-control @error('sort_order') is-invalid @enderror"
-                                                               value="{{ !empty($editResource) ? $editResource->sort_order : old('sort_order', 0) }}"/>
-                                                        @error('sort_order')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
-                                                        @enderror
-                                                    </div>
-
-                                                    {{-- Booking ID (optional) --}}
-                                                    <div class="form-group">
-                                                        <label>{{ trans('admin/main.booking_id') }} <small class="text-gray-500">({{ trans('admin/main.optional') }})</small></label>
-                                                        <input type="number" name="booking_id" min="1"
-                                                               class="form-control @error('booking_id') is-invalid @enderror"
-                                                               value="{{ !empty($editResource) ? $editResource->booking_id : old('booking_id') }}"/>
-                                                        @error('booking_id')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
-                                                        @enderror
-                                                    </div>
+                                                    <input type="hidden" name="order" value="{{ !empty($editResource) ? $editResource->order : '' }}"/>
 
                                                     {{-- Status --}}
                                                     <div class="form-group">
@@ -298,4 +365,40 @@
 
 @push('scripts_bottom')
     <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
+    <script>
+        (function () {
+            var wrapper = document.getElementById('resourceAttributes');
+
+            if (!wrapper) {
+                return;
+            }
+
+            document.addEventListener('click', function (event) {
+                var addButton = event.target.closest('.js-add-resource-attribute');
+                var removeButton = event.target.closest('.js-remove-resource-attribute');
+
+                if (addButton) {
+                    var row = wrapper.querySelector('.js-resource-attribute-row').cloneNode(true);
+                    row.querySelectorAll('input').forEach(function (input) {
+                        input.value = '';
+                    });
+
+                    wrapper.appendChild(row);
+                }
+
+                if (removeButton) {
+                    var rows = wrapper.querySelectorAll('.js-resource-attribute-row');
+                    var rowToRemove = removeButton.closest('.js-resource-attribute-row');
+
+                    if (rows.length > 1) {
+                        rowToRemove.remove();
+                    } else {
+                        rowToRemove.querySelectorAll('input').forEach(function (input) {
+                            input.value = '';
+                        });
+                    }
+                }
+            });
+        })();
+    </script>
 @endpush

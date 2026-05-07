@@ -186,6 +186,7 @@ return [
     //Booking
     'booking' => 'Booking',
     'bookings' => 'Bookings',
+    'booking_list'=>'Booking List',
     'create_booking' => 'Create Booking',
     'booking_created_successfully' => 'Booking created successfully.',
     'booking_updated_successfully' => 'Booking updated successfully.',
@@ -228,7 +229,7 @@ return [
     'choose_name'=>'Choose Name',
     'extra_price'=>'Extra Price',
     'attributes'=>'Attributes',
-    'booking_id'=>'booking_id',
+    'booking_id'=>'Booking',
 
 
 
