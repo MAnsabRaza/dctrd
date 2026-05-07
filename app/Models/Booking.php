@@ -4,12 +4,11 @@ namespace App\Models;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Booking extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $table = 'bookings';
 
@@ -189,4 +188,12 @@ class Booking extends Model
             }
         });
     }
+    public function resources()
+{
+    return $this->hasMany(BookingResource::class, 'booking_id');
+}
+public function ratePlans()
+{
+    return $this->hasMany(BookingRatePlan::class, 'booking_id');
+}
 }

@@ -43,7 +43,7 @@ class BookingResourceController extends Controller
             'extra_price' => 'nullable|numeric|min:0',
             'attributes' => 'nullable|json',
             'image' => 'nullable|string',
-            'sort_order' => 'nullable|integer|min:0',
+            'order' => 'nullable|integer|min:0',
             'booking_id' => 'nullable|exists:bookings,id',
         ]);
         $data = $request->all();
@@ -73,7 +73,7 @@ class BookingResourceController extends Controller
         $this->authorize('admin_booking_resources_edit');
 
         $editResource = BookingResource::findOrFail($id);
-        $bookingResources = BookingResource::orderBy('sort_order')->paginate(20);
+        $bookingResources = BookingResource::orderBy('order')->paginate(20);
 
         $data = [
             'pageTitle' => trans('admin/main.booking_resources'),
@@ -101,7 +101,7 @@ class BookingResourceController extends Controller
             'extra_price' => 'nullable|numeric|min:0',
             'attributes' => 'nullable|json',
             'image' => 'nullable|string',
-            'sort_order' => 'nullable|integer|min:0',
+            'order' => 'nullable|integer|min:0',
             'booking_id' => 'nullable|exists:bookings,id',
         ]);
         $data = $request->all();
@@ -116,7 +116,7 @@ class BookingResourceController extends Controller
             'attributes' => $data['attributes'] ?? null,
             'image' => $data['image'] ?? null,
             'status' => !empty($data['status']) ? 1 : 0,
-            'sort_order' => $data['sort_order'] ?? 0,
+            'order' => $data['order'] ?? 0,
         ]);
 
         return redirect(getAdminPanelUrl('/booking/resources'))

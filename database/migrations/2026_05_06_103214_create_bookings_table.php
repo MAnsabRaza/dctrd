@@ -88,7 +88,6 @@ return new class extends Migration
             $table->integer('review_count')->default(0);
 
             $table->timestamps();
-            $table->softDeletes();
 
             // ✅ Foreign Keys (manual, correct types)
             $table->foreign('creator_id')

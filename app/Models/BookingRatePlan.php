@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BookingRatePlan extends Model
 {
-    use HasFactory,SoftDeletes;
-    protected $table='booking_rate_plan';
-    protected $fillable=[
+    use HasFactory;
+
+    protected $table = 'booking_rate_plan';
+
+    protected $fillable = [
         'booking_id',
         'name',
         'type',
@@ -21,4 +22,17 @@ class BookingRatePlan extends Model
         'conditions',
         'status'
     ];
+
+    protected $casts = [
+        'price' => 'decimal:2',    
+        'conditions' => 'array',   
+        'status' => 'boolean',   
+        'priority' => 'integer',
+    ];
+
+    // ✅ Relation
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class, 'booking_id');
+    }
 }

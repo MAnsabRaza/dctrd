@@ -4,12 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 class BookingResource extends Model
 {
-    use HasFactory,SoftDeletes;
-    protected $table='booking_resources';
-    protected $fillable=[
+    use HasFactory;
+    protected $table = 'booking_resources';
+    protected $fillable = [
         'booking_id',
         'name',
         'type',
@@ -21,5 +20,13 @@ class BookingResource extends Model
         'status',
         'order'
     ];
+    protected $casts = [
+        'attributes' => 'array',  
+        'status' => 'boolean',   
+    ];
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class, 'booking_id');
+    }
 
 }
