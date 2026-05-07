@@ -718,6 +718,26 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3257], ['name' => 'admin_booking_rate_plan_edit', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Edit']);
         Section::updateOrCreate(['id' => 3258], ['name' => 'admin_booking_rate_plan_delete', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Delete']);
 
+        Section::updateOrCreate(['id' => 3260], [
+            'name' => 'admin_booking_season',
+            'section_group_id' => 3240,
+            'caption' => 'Booking Season',
+        ]);
+        Section::updateOrCreate(['id' => 3261], [
+            'name' => 'admin_booking_season_create',
+            'section_group_id' => 3240,
+            'caption' => 'Booking Season Create/Edit',
+        ]);
+        Section::updateOrCreate(['id' => 3262], [
+            'name' => 'admin_booking_season_edit',
+            'section_group_id' => 3240,
+            'caption' => 'Booking Season Edit',
+        ]);
+        Section::updateOrCreate(['id' => 3263], [
+            'name' => 'admin_booking_season_delete',
+            'section_group_id' => 3240,
+            'caption' => 'Booking Season Delete',
+        ]);
         /* Run Panel Sections */
         $this->runPanelSections();
     }

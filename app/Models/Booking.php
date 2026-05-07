@@ -89,31 +89,31 @@ class Booking extends Model
 
     protected $casts = [
         // Pricing — migration se exact match
-        'price'            => 'decimal:2',
-        'price_per'        => 'decimal:2',   // ✅ decimal hai migration mein
-        'discount_price'   => 'decimal:2',
-        'deposit_amount'   => 'decimal:2',
-        'tax'              => 'decimal:2',
-        'commission'       => 'decimal:2',
-        'rating'           => 'decimal:1',
-        'lat'              => 'decimal:7',
-        'lng'              => 'decimal:7',
+        'price' => 'decimal:2',
+        'price_per' => 'decimal:2',   // ✅ decimal hai migration mein
+        'discount_price' => 'decimal:2',
+        'deposit_amount' => 'decimal:2',
+        'tax' => 'decimal:2',
+        'commission' => 'decimal:2',
+        'rating' => 'decimal:1',
+        'lat' => 'decimal:7',
+        'lng' => 'decimal:7',
 
         // Booleans
-        'deposit_enabled'  => 'boolean',
+        'deposit_enabled' => 'boolean',
         'children_allowed' => 'boolean',
-        'instant_booking'  => 'boolean',
-        'requires_approval'=> 'boolean',
+        'instant_booking' => 'boolean',
+        'requires_approval' => 'boolean',
         'allow_reschedule' => 'boolean',
         'waitlist_enabled' => 'boolean',
         'location_enabled' => 'boolean',
-        'forum_enabled'    => 'boolean',
+        'forum_enabled' => 'boolean',
         'comments_enabled' => 'boolean',
-        'reviews_enabled'  => 'boolean',
-        'featured'         => 'boolean',
+        'reviews_enabled' => 'boolean',
+        'featured' => 'boolean',
 
         // JSON
-        'meta'             => 'array',
+        'meta' => 'array',
     ];
 
     // ─── Relationships ───────────────────────────────────────────────
@@ -172,7 +172,8 @@ class Booking extends Model
      */
     public function getUrl(): ?string
     {
-        if (!$this->slug) return null;
+        if (!$this->slug)
+            return null;
         return url('/booking/' . $this->slug);
     }
 
@@ -189,11 +190,15 @@ class Booking extends Model
         });
     }
     public function resources()
-{
-    return $this->hasMany(BookingResource::class, 'booking_id');
-}
-public function ratePlans()
-{
-    return $this->hasMany(BookingRatePlan::class, 'booking_id');
-}
+    {
+        return $this->hasMany(BookingResource::class, 'booking_id');
+    }
+    public function ratePlans()
+    {
+        return $this->hasMany(BookingRatePlan::class, 'booking_id');
+    }
+    public function seasons()
+    {
+        return $this->hasMany(BookingSeason::class);
+    }
 }

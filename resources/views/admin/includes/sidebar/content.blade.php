@@ -175,6 +175,13 @@
                     </a>
                 </li>
             @endcan
+            @can('admin_booking_season')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/season', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/season">
+                        {{ trans('admin/main.admin_booking_season') }}
+                    </a>
+                </li>
+            @endcan
 
         </ul>
     </li>
