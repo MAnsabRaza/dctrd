@@ -543,14 +543,11 @@
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">
                         {{ trans('admin/main.cancel') }}
                     </button>
-                    {{-- DELETE FORM — yahan action JS se set hoga --}}
-                    <form id="deleteForm" action="" method="POST" style="display:inline;">
-                        {{ csrf_field() }}
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash mr-1"></i>
-                            {{ trans('admin/main.delete') }}
-                        </button>
-                    </form>
+                    {{-- GET route hai isliye simple anchor tag — no form needed --}}
+                    <a id="deleteConfirmBtn" href="#" class="btn btn-danger">
+                        <i class="fas fa-trash mr-1"></i>
+                        {{ trans('admin/main.delete') }}
+                    </a>
                 </div>
             </div>
         </div>
@@ -582,17 +579,16 @@
                 $(this).tab('show');
             });
 
-            // ─── FIX 2: Delete Modal — form action set karo ─────────────
-            // Jab delete button click ho toh modal ka form action set karo
+            // ─── FIX 2: Delete Modal — anchor href set karo ─────────────
             $('#deleteModal').on('show.bs.modal', function (event) {
-                var trigger     = $(event.relatedTarget);       // jo button click hua
-                var deleteUrl   = trigger.data('href');         // data-href se URL lo
-                $('#deleteForm').attr('action', deleteUrl);     // form action set karo
+                var trigger   = $(event.relatedTarget);
+                var deleteUrl = trigger.data('href');
+                $('#deleteConfirmBtn').attr('href', deleteUrl);
             });
 
-            // ─── Modal close pe form action clear karo ──────────────────
+            // ─── Modal close pe href clear karo ─────────────────────────
             $('#deleteModal').on('hidden.bs.modal', function () {
-                $('#deleteForm').attr('action', '');
+                $('#deleteConfirmBtn').attr('href', '#');
             });
 
         });
