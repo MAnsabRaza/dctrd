@@ -710,6 +710,14 @@ Section::updateOrCreate(['id' => 1935], ['name' => 'admin_forum_settings', 'sect
         Section::updateOrCreate(['id' => 3251], ['name' => 'admin_booking_resources_create', 'section_group_id' => 3240, 'caption' => 'Booking Resources Create/Edit']);
         Section::updateOrCreate(['id' => 3252], ['name' => 'admin_booking_resources_edit', 'section_group_id' => 3240, 'caption' => 'Booking Resources Edit']);
         Section::updateOrCreate(['id' => 3253], ['name' => 'admin_booking_resources_delete', 'section_group_id' => 3240, 'caption' => 'Booking Resources Delete']);
+
+        //booking rate plan
+        
+Section::updateOrCreate(['id' => 3255], ['name' => 'admin_booking_rate_plan',        'section_group_id' => 3240, 'caption' => 'Booking Rate Plan']);
+Section::updateOrCreate(['id' => 3256], ['name' => 'admin_booking_rate_plan_create', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Create/Edit']);
+Section::updateOrCreate(['id' => 3257], ['name' => 'admin_booking_rate_plan_edit',   'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Edit']);
+Section::updateOrCreate(['id' => 3258], ['name' => 'admin_booking_rate_plan_delete', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Delete']);
+
         /* Run Panel Sections */
         $this->runPanelSections();
     }

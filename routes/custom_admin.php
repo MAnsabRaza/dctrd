@@ -9,6 +9,7 @@
 
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingController;
+use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
 use App\Http\Controllers\Admin\Booking\BookingResourceController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,6 +63,13 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/edit', [BookingResourceController::class, 'edit']);
         Route::post('/{id}/update', [BookingResourceController::class, 'update']);
         Route::get('/{id}/delete', [BookingResourceController::class, 'delete']);
+    });
+    Route::group(['prefix' => 'rate'], function () {
+        Route::get('/', [BookingRatePlanController::class, 'index']);
+        Route::post('/store', [BookingRatePlanController::class, 'store']);
+        Route::get('/{id}/edit', [BookingRatePlanController::class, 'edit']);
+        Route::post('/{id}/update', [BookingRatePlanController::class, 'update']);
+        Route::get('/{id}/delete', [BookingRatePlanController::class, 'delete']);
     });
 
 });

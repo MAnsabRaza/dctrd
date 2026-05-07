@@ -157,6 +157,13 @@
                     </a>
                 </li>
             @endcan
+               @can('admin_booking_rate')
+                <li class="{{ (request()->is(getAdminPanelUrl('/booking/rate', false))) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/rate">
+                        {{ trans('admin/main.booking_rate') }}
+                    </a>
+                </li>
+            @endcan
 
         </ul>
     </li>

@@ -3,132 +3,141 @@
 namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\BookingRatePlan;
 use Illuminate\Http\Request;
 
 class BookingRatePlanController extends Controller
 {
+    /**
+     * Display a listing of rate plans
+     */
     public function index()
     {
-        $this->authorize('admin_booking_resources');
+        $this->authorize('admin_booking_rate_plan');
 
         removeContentLocale();
 
-        $bookingRatePlan = BookingRatePlan::all()->paginate(20);
+        $bookingRatePlans = BookingRatePlan::with('booking')->paginate(20);
+        $bookings = Booking::select('id', 'title')->orderBy('title')->get();
 
         $data = [
-            'pageTitle' => trans('admin/main.booking_rate_plan'),
-            'bookingRatePlan' => $bookingRatePlan,
+            'pageTitle'        => trans('admin/main.booking_rate_plan'),
+            'bookingRatePlans' => $bookingRatePlans,
+            'bookings'         => $bookings,
         ];
 
-        return view('admin.booking.rate_plan', $data);
+        return view('admin.booking.rateplan', $data);
     }
 
     /**
-     * Store a new booking resource
+     * Store a new rate plan
      */
     public function store(Request $request)
     {
         $this->authorize('admin_booking_rate_plan_create');
 
         $this->validate($request, [
-            'name' => 'required|string|max:255',
-            'type' => 'nullable|string|max:255',
-            'price' => 'nullable|string',
-            'price_unit' => 'nullable|integer|min:0',
+            'name'             => 'required|string|max:255',
+            'type'             => 'nullable|string|max:255',
+            'price'            => 'nullable|numeric|min:0',
+            'price_unit'       => 'nullable|integer|min:0',
             'calculation_type' => 'nullable|numeric|min:0',
-            'priority' => 'nullable|json',
-            'conditions' => 'nullable|integer|min:0',
-            'status'=>'nullable|integer|min:0',
-            'booking_id' => 'nullable|exists:bookings,id',
+            'priority'         => 'nullable|integer|min:0',
+            'conditions'       => 'nullable|array',
+            'status'           => 'nullable',
+            'booking_id'       => 'nullable|exists:bookings,id',
         ]);
+
         $data = $request->all();
 
         BookingRatePlan::create([
-            'booking_id' => $data['booking_id'] ?? null,
-            'name' => $data['name'],
-            'type' => $data['type'] ?? null,
-            'price_unit' => $data['price_unit'] ?? null,
-            'price' => $data['price'] ?? null,
+            'booking_id'       => $data['booking_id'] ?? null,
+            'name'             => $data['name'],
+            'type'             => $data['type'] ?? null,
+            'price_unit'       => $data['price_unit'] ?? null,
+            'price'            => $data['price'] ?? null,
             'calculation_type' => $data['calculation_type'] ?? 0,
-            'priority' => $data['priority'] ?? null,
-            'conditions' => $data['conditions'] ?? null,
-            'status' => !empty($data['status']) ? 1 : 0,
+            'priority'         => $data['priority'] ?? null,
+            'conditions'       => !empty($data['conditions']) ? $data['conditions'] : null,
+            'status'           => !empty($data['status']) ? 1 : 0,
         ]);
 
-        return redirect(getAdminPanelUrl('/booking/rateplan'))
+        return redirect(getAdminPanelUrl('/booking/rate'))
             ->with('success', trans('admin/main.rate_plan_created_successfully'));
     }
 
     /**
-     * Show edit form for a resource
+     * Show edit form for a rate plan
      */
     public function edit($id)
     {
-        $this->authorize('admin_booking_resources_edit');
+        $this->authorize('admin_booking_rate_plan_edit');
 
-        $editResource = BookingResource::findOrFail($id);
-        $bookingResources = BookingResource::orderBy('sort_order')->paginate(20);
+        $editRatePlan    = BookingRatePlan::findOrFail($id);
+        $bookingRatePlans = BookingRatePlan::with('booking')->paginate(20);
+        $bookings        = Booking::select('id', 'title')->orderBy('title')->get();
 
         $data = [
-            'pageTitle' => trans('admin/main.booking_resources'),
-            'bookingResources' => $bookingResources,
-            'editResource' => $editResource,
+            'pageTitle'        => trans('admin/main.booking_rate_plan'),
+            'bookingRatePlans' => $bookingRatePlans,
+            'editRatePlan'     => $editRatePlan,
+            'bookings'         => $bookings,
         ];
 
-        return view('admin.booking.resources', $data);
+        return view('admin.booking.rateplan', $data);
     }
 
     /**
-     * Update an existing resource
+     * Update an existing rate plan
      */
     public function update(Request $request, $id)
     {
-        $this->authorize('admin_booking_resources_edit');
+        $this->authorize('admin_booking_rate_plan_edit');
 
-        $resource = BookingResource::findOrFail($id);
+        $ratePlan = BookingRatePlan::findOrFail($id);
 
         $this->validate($request, [
-            'name' => 'required|string|max:255',
-            'type' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'capacity' => 'nullable|integer|min:0',
-            'extra_price' => 'nullable|numeric|min:0',
-            'attributes' => 'nullable|json',
-            'image' => 'nullable|string',
-            'sort_order' => 'nullable|integer|min:0',
-            'booking_id' => 'nullable|exists:bookings,id',
+            'name'             => 'required|string|max:255',
+            'type'             => 'nullable|string|max:255',
+            'price'            => 'nullable|numeric|min:0',
+            'price_unit'       => 'nullable|integer|min:0',
+            'calculation_type' => 'nullable|numeric|min:0',
+            'priority'         => 'nullable|integer|min:0',
+            'conditions'       => 'nullable|array',
+            'status'           => 'nullable',
+            'booking_id'       => 'nullable|exists:bookings,id',
         ]);
+
         $data = $request->all();
 
-        $resource->update([
-            'booking_id' => $data['booking_id'] ?? null,
-            'name' => $data['name'],
-            'type' => $data['type'] ?? null,
-            'description' => $data['description'] ?? null,
-            'capacity' => $data['capacity'] ?? null,
-            'extra_price' => $data['extra_price'] ?? 0,
-            'attributes' => $data['attributes'] ?? null,
-            'image' => $data['image'] ?? null,
-            'status' => !empty($data['status']) ? 1 : 0,
-            'sort_order' => $data['sort_order'] ?? 0,
+        $ratePlan->update([
+            'booking_id'       => $data['booking_id'] ?? null,
+            'name'             => $data['name'],
+            'type'             => $data['type'] ?? null,
+            'price_unit'       => $data['price_unit'] ?? null,
+            'price'            => $data['price'] ?? null,
+            'calculation_type' => $data['calculation_type'] ?? 0,
+            'priority'         => $data['priority'] ?? null,
+            'conditions'       => !empty($data['conditions']) ? $data['conditions'] : null,
+            'status'           => !empty($data['status']) ? 1 : 0,
         ]);
 
-        return redirect(getAdminPanelUrl('/booking/resources'))
-            ->with('success', trans('admin/main.resource_updated_successfully'));
+        return redirect(getAdminPanelUrl('/booking/rate'))
+            ->with('success', trans('admin/main.rate_plan_updated_successfully'));
     }
 
     /**
-     * Delete a resource
+     * Delete a rate plan
      */
     public function delete($id)
     {
-        $this->authorize('admin_booking_resources_delete');
+        $this->authorize('admin_booking_rate_plan_delete');
 
-        $resource = BookingResource::findOrFail($id);
-        $resource->delete();
+        $ratePlan = BookingRatePlan::findOrFail($id);
+        $ratePlan->delete();
 
-        return redirect(getAdminPanelUrl('/booking/resources'))
-            ->with('success', trans('admin/main.resource_deleted_successfully'));
+        return redirect(getAdminPanelUrl('/booking/rate'))
+            ->with('success', trans('admin/main.rate_plan_deleted_successfully'));
     }
 }
