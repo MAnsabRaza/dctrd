@@ -33,7 +33,7 @@
                                 <li class="nav-item">
                                     <a class="nav-link {{ $createActive ? '' : 'active' }}"
                                        id="list-tab" data-toggle="tab" href="#listTab"
-                                       role="tab" aria-controls="listTab" aria-selected="true">
+                                       role="tab" aria-controls="listTab" aria-selected="{{ $createActive ? 'false' : 'true' }}">
                                         <i class="fas fa-list mr-1"></i>
                                         {{ trans('admin/main.booking_list') }}
                                     </a>
@@ -41,17 +41,17 @@
                                 <li class="nav-item">
                                     <a class="nav-link {{ $createActive ? 'active' : '' }}"
                                        id="create-tab" data-toggle="tab" href="#createTab"
-                                       role="tab" aria-controls="createTab" aria-selected="false">
+                                       role="tab" aria-controls="createTab" aria-selected="{{ $createActive ? 'true' : 'false' }}">
                                         <i class="fas fa-plus mr-1"></i>
                                         {{ trans('admin/main.create_booking') }}
                                     </a>
                                 </li>
                             </ul>
 
-                            <div class="tab-content" id="bookingTabsContent">
+                            <div class="tab-content mt-4" id="bookingTabsContent">
 
                                 {{-- ==================== LIST TAB ==================== --}}
-                                <div class="tab-pane mt-4 fade {{ $createActive ? '' : 'active show' }}"
+                                <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}"
                                      id="listTab" role="tabpanel" aria-labelledby="list-tab">
 
                                     {{-- Search Filters --}}
@@ -125,7 +125,7 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                        </disv>
+                                        </div>
                                     </form>
 
                                     {{-- Bookings Table --}}
@@ -171,8 +171,6 @@
                                                                     {{ $booking->currency }} {{ number_format($booking->price, 2) }}
                                                                 </span>
                                                             @endif
-                                                            {{-- price_per migration mein decimal hai —
-                                                                 price_unit string hai "per night" etc. --}}
                                                             @if($booking->price_unit)
                                                                 <small class="d-block text-muted">{{ $booking->price_unit }}</small>
                                                             @elseif($booking->price_per)
@@ -201,7 +199,8 @@
                                                                     @can('admin_booking_delete')
                                                                         <a href="#"
                                                                            data-href="{{ getAdminPanelUrl() }}/booking/{{ $booking->id }}/delete"
-                                                                           data-toggle="modal" data-target="#deleteModal"
+                                                                           data-toggle="modal"
+                                                                           data-target="#deleteModal"
                                                                            class="dropdown-item d-flex align-items-center text-danger">
                                                                             <i class="fas fa-trash mr-2"></i>
                                                                             <span>{{ trans('admin/main.delete') }}</span>
@@ -227,9 +226,10 @@
                                         {{ $bookings->appends(request()->input())->links() }}
                                     </div>
                                 </div>
+                                {{-- end listTab --}}
 
                                 {{-- ==================== CREATE / EDIT TAB ==================== --}}
-                                <div class="tab-pane mt-4 fade {{ $createActive ? 'active show' : '' }}"
+                                <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}"
                                      id="createTab" role="tabpanel" aria-labelledby="create-tab">
 
                                     <form action="{{ getAdminPanelUrl() }}/booking/{{ !empty($editBooking) ? $editBooking->id . '/update' : 'store' }}"
@@ -316,8 +316,6 @@
                                                            placeholder="{{ trans('admin/main.requirements_placeholder') }}">
                                                 </div>
 
-                                                {{-- ─── PRICING ─── --}}
-
                                                 {{-- Price --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.price') }} <span class="text-danger">*</span></label>
@@ -352,13 +350,7 @@
                                                     </select>
                                                 </div>
 
-                                                {{--
-                                                    price_per — migration mein decimal(12,2) hai
-                                                    Iska matlab yeh hai numeric value hogi, jaise:
-                                                    1.00 (per 1 person), 5.00 (per 5 hours) etc.
-                                                    Agar aapko "per person / per day" label chahiye
-                                                    toh price_unit (string) use karo.
-                                                --}}
+                                                {{-- Price Per --}}
                                                 <div class="form-group">
                                                     <label class="input-label">
                                                         {{ trans('admin/main.price_per') }}
@@ -373,20 +365,17 @@
                                                     @enderror
                                                 </div>
 
-                                                {{-- Price Unit — STRING label, migration mein string hai --}}
+                                                {{-- Price Unit --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.price_unit_label') }}</label>
                                                     <input type="text" name="price_unit" class="form-control"
                                                            value="{{ !empty($editBooking) ? $editBooking->price_unit : old('price_unit') }}"
                                                            placeholder="e.g. per night, per adult">
-                                                    <div class="text-gray-500 text-small mt-1">
-                                                        Yeh label table mein show hoga — migration mein string column hai
-                                                    </div>
                                                 </div>
 
-                                            </div>{{-- col-md-6 --}}
+                                            </div>{{-- col-md-6 left --}}
 
-                                            {{-- ─── RIGHT COLUMN: Capacity + Duration + Location ─── --}}
+                                            {{-- RIGHT COLUMN --}}
                                             <div class="col-12 col-md-6">
 
                                                 {{-- Capacity --}}
@@ -496,7 +485,7 @@
                                             @enderror
                                         </div>
 
-                                        {{-- Status Switches --}}
+                                        {{-- Featured Switch --}}
                                         <div class="form-group mt-30 d-flex align-items-center">
                                             <div class="custom-control custom-switch">
                                                 <input type="checkbox" name="featured" id="featuredSwitch" value="on"
@@ -507,6 +496,7 @@
                                             <label for="featuredSwitch" class="mb-0 ml-2">{{ trans('admin/main.featured') }}</label>
                                         </div>
 
+                                        {{-- Status Switch --}}
                                         <div class="form-group mt-15 d-flex align-items-center">
                                             <div class="custom-control custom-switch">
                                                 <input type="checkbox" name="status" id="statusSwitch" value="published"
@@ -532,6 +522,40 @@
             </div>
         </div>
     </section>
+
+    {{-- ==================== DELETE MODAL ==================== --}}
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">
+                        <i class="fas fa-exclamation-triangle text-danger mr-2"></i>
+                        {{ trans('admin/main.delete_confirm') }}
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {{ trans('admin/main.delete_confirm_msg') ?? 'Are you sure you want to delete this booking? This action cannot be undone.' }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        {{ trans('admin/main.cancel') }}
+                    </button>
+                    {{-- DELETE FORM — yahan action JS se set hoga --}}
+                    <form id="deleteForm" action="" method="POST" style="display:inline;">
+                        {{ csrf_field() }}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash mr-1"></i>
+                            {{ trans('admin/main.delete') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts_bottom')
@@ -539,17 +563,41 @@
     <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
     <script>
         $(document).ready(function () {
+
+            // ─── Summernote init ────────────────────────────────────────
             $('.summernote').summernote({
                 height: 200,
                 toolbar: [
                     ['style', ['bold', 'italic', 'underline', 'clear']],
-                    ['para', ['ul', 'ol', 'paragraph']],
-                    ['insert', ['link']],
-                    ['view', ['codeview']]
+                    ['para',  ['ul', 'ol', 'paragraph']],
+                    ['insert',['link']],
+                    ['view',  ['codeview']]
                 ]
             });
+
+            // ─── FIX 1: Tab switching — proper Bootstrap tab activation ─
+            // Jab tab link click ho toh Bootstrap tab() call karo
+            $('#bookingTabs a[data-toggle="tab"]').on('click', function (e) {
+                e.preventDefault();
+                $(this).tab('show');
+            });
+
+            // ─── FIX 2: Delete Modal — form action set karo ─────────────
+            // Jab delete button click ho toh modal ka form action set karo
+            $('#deleteModal').on('show.bs.modal', function (event) {
+                var trigger     = $(event.relatedTarget);       // jo button click hua
+                var deleteUrl   = trigger.data('href');         // data-href se URL lo
+                $('#deleteForm').attr('action', deleteUrl);     // form action set karo
+            });
+
+            // ─── Modal close pe form action clear karo ──────────────────
+            $('#deleteModal').on('hidden.bs.modal', function () {
+                $('#deleteForm').attr('action', '');
+            });
+
         });
 
+        // ─── Location fields toggle ──────────────────────────────────────
         function toggleLocation(show) {
             document.getElementById('locationFields').style.display = show ? '' : 'none';
         }
