@@ -9,7 +9,7 @@ class BookingRatePlan extends Model
 {
     use HasFactory;
 
-    protected $table = 'booking_rate_plan';
+    protected $table = 'booking_rate_plans';
 
     protected $fillable = [
         'booking_id',
