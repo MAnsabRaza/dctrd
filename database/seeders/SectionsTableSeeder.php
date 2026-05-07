@@ -700,11 +700,16 @@ Section::updateOrCreate(['id' => 1935], ['name' => 'admin_forum_settings', 'sect
         Section::updateOrCreate(['id' => 3244], ['name' => 'admin_booking_categories_delete', 'section_group_id' => 3240, 'caption' => 'Booking Categories Delete']);
 
         
-        Section::updateOrCreate(['id' => 3241], ['name' => 'admin_booking', 'section_group_id' => 3240, 'caption' => 'Booking']);
-        Section::updateOrCreate(['id' => 3242], ['name' => 'admin_booking_create', 'section_group_id' => 3240, 'caption' => 'Booking Create/Edit']);
-        Section::updateOrCreate(['id' => 3243], ['name' => 'admin_booking_edit', 'section_group_id' => 3240, 'caption' => 'Booking Edit']);
-        Section::updateOrCreate(['id' => 3244], ['name' => 'admin_booking_delete', 'section_group_id' => 3240, 'caption' => 'Booking Delete']);
+        Section::updateOrCreate(['id' => 3245], ['name' => 'admin_booking', 'section_group_id' => 3240, 'caption' => 'Booking']);
+        Section::updateOrCreate(['id' => 3246], ['name' => 'admin_booking_create', 'section_group_id' => 3240, 'caption' => 'Booking Create/Edit']);
+        Section::updateOrCreate(['id' => 3247], ['name' => 'admin_booking_edit', 'section_group_id' => 3240, 'caption' => 'Booking Edit']);
+        Section::updateOrCreate(['id' => 3248], ['name' => 'admin_booking_delete', 'section_group_id' => 3240, 'caption' => 'Booking Delete']);
 
+        
+        Section::updateOrCreate(['id' => 3250], ['name' => 'admin_booking_resources', 'section_group_id' => 3240, 'caption' => 'Booking Resources']);
+        Section::updateOrCreate(['id' => 3251], ['name' => 'admin_booking_resources_create', 'section_group_id' => 3240, 'caption' => 'Booking Resources Create/Edit']);
+        Section::updateOrCreate(['id' => 3252], ['name' => 'admin_booking_resources_edit', 'section_group_id' => 3240, 'caption' => 'Booking Resources Edit']);
+        Section::updateOrCreate(['id' => 3253], ['name' => 'admin_booking_resources_delete', 'section_group_id' => 3240, 'caption' => 'Booking Resources Delete']);
         /* Run Panel Sections */
         $this->runPanelSections();
     }

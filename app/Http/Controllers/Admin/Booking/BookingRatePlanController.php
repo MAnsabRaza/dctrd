@@ -3,29 +3,25 @@
 namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
-use App\Models\BookingResource;
+use App\Models\BookingRatePlan;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
-class BookingResourceController extends Controller
+class BookingRatePlanController extends Controller
 {
-    /**
-     * List all booking resources
-     */
     public function index()
     {
         $this->authorize('admin_booking_resources');
 
         removeContentLocale();
 
-        $bookingResources = BookingResource::orderBy('order')->paginate(20);
+        $bookingRatePlan = BookingRatePlan::all()->paginate(20);
 
         $data = [
-            'pageTitle' => trans('admin/main.booking_resources'),
-            'bookingResources' => $bookingResources,
+            'pageTitle' => trans('admin/main.booking_rate_plan'),
+            'bookingRatePlan' => $bookingRatePlan,
         ];
 
-        return view('admin.booking.resources', $data);
+        return view('admin.booking.rate_plan', $data);
     }
 
     /**
@@ -33,36 +29,35 @@ class BookingResourceController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('admin_booking_resources_create');
+        $this->authorize('admin_booking_rate_plan_create');
 
         $this->validate($request, [
             'name' => 'required|string|max:255',
             'type' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'capacity' => 'nullable|integer|min:0',
-            'extra_price' => 'nullable|numeric|min:0',
-            'attributes' => 'nullable|json',
-            'image' => 'nullable|string',
-            'sort_order' => 'nullable|integer|min:0',
+            'price' => 'nullable|string',
+            'price_unit' => 'nullable|integer|min:0',
+            'calculation_type' => 'nullable|numeric|min:0',
+            'priority' => 'nullable|json',
+            'conditions' => 'nullable|integer|min:0',
+            'status'=>'nullable|integer|min:0',
             'booking_id' => 'nullable|exists:bookings,id',
         ]);
         $data = $request->all();
 
-        BookingResource::create([
+        BookingRatePlan::create([
             'booking_id' => $data['booking_id'] ?? null,
             'name' => $data['name'],
             'type' => $data['type'] ?? null,
-            'description' => $data['description'] ?? null,
-            'capacity' => $data['capacity'] ?? null,
-            'extra_price' => $data['extra_price'] ?? 0,
-            'attributes' => $data['attributes'] ?? null,
-            'image' => $data['image'] ?? null,
+            'price_unit' => $data['price_unit'] ?? null,
+            'price' => $data['price'] ?? null,
+            'calculation_type' => $data['calculation_type'] ?? 0,
+            'priority' => $data['priority'] ?? null,
+            'conditions' => $data['conditions'] ?? null,
             'status' => !empty($data['status']) ? 1 : 0,
-            'order' => $data['order'] ?? 0,
         ]);
 
-        return redirect(getAdminPanelUrl('/booking/resources'))
-            ->with('success', trans('admin/main.resource_created_successfully'));
+        return redirect(getAdminPanelUrl('/booking/rateplan'))
+            ->with('success', trans('admin/main.rate_plan_created_successfully'));
     }
 
     /**

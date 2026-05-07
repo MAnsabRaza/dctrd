@@ -206,6 +206,8 @@ return [
     'booking_resources_updated_successfully' => 'Booking Resources updated successfully.',
     'booking_resources_deleted_successfully' => 'Booking Resources deleted successfully.',
 
+    //booking
+
     //booking value
     'booking_type'=>'Booking Type',
     'search_by_title'=>'Search By Title',
@@ -222,7 +224,7 @@ return [
     'address_line'=>'Address Line',
     'city'=>'City',
     'country'=>'Country',
-    
+
 
 
 

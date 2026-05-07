@@ -125,7 +125,7 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </disv>
                                     </form>
 
                                     {{-- Bookings Table --}}
