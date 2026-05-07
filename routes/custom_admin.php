@@ -42,26 +42,26 @@ $prefix = getAdminPanelUrlPrefix();
 Route::group(['prefix' => 'booking'], function () {
 
     // Booking index, store, edit, update, delete
-    Route::get('/',                 [BookingController::class, 'index']);
-    Route::post('/store',           [BookingController::class, 'store']);
-    Route::get('/{id}/edit',        [BookingController::class, 'edit']);
-    Route::post('/{id}/update',     [BookingController::class, 'update']);
-    Route::get('/{id}/delete',      [BookingController::class, 'delete']);
+    Route::get('/', [BookingController::class, 'index']);
+    Route::post('/store', [BookingController::class, 'store']);
+    Route::get('/{id}/edit', [BookingController::class, 'edit']);
+    Route::post('/{id}/update', [BookingController::class, 'update']);
+    Route::delete('/{id}/delete', [BookingController::class, 'delete']);
 
     // Booking Categories
     Route::group(['prefix' => 'categories'], function () {
-        Route::get('/',             [BookingCategoryController::class, 'index']);
-        Route::post('/store',       [BookingCategoryController::class, 'store']);
-        Route::get('/{id}/edit',    [BookingCategoryController::class, 'edit']);
+        Route::get('/', [BookingCategoryController::class, 'index']);
+        Route::post('/store', [BookingCategoryController::class, 'store']);
+        Route::get('/{id}/edit', [BookingCategoryController::class, 'edit']);
         Route::post('/{id}/update', [BookingCategoryController::class, 'update']);
-        Route::get('/{id}/delete',  [BookingCategoryController::class, 'delete']);
+        Route::get('/{id}/delete', [BookingCategoryController::class, 'delete']);
     });
-      Route::group(['prefix' => 'resources'], function () {
-        Route::get('/',             [BookingResourceController::class, 'index']);
-        Route::post('/store',       [BookingResourceController::class, 'store']);
-        Route::get('/{id}/edit',    [BookingResourceController::class, 'edit']);
+    Route::group(['prefix' => 'resources'], function () {
+        Route::get('/', [BookingResourceController::class, 'index']);
+        Route::post('/store', [BookingResourceController::class, 'store']);
+        Route::get('/{id}/edit', [BookingResourceController::class, 'edit']);
         Route::post('/{id}/update', [BookingResourceController::class, 'update']);
-        Route::get('/{id}/delete',  [BookingResourceController::class, 'delete']);
+        Route::get('/{id}/delete', [BookingResourceController::class, 'delete']);
     });
 
 });
@@ -71,4 +71,4 @@ Route::group(['prefix' => 'booking'], function () {
  * or specify the complete namespace like:
  * 
  * Route::get('/custom-page', '\App\Http\Controllers\YourNamespace\YourController@method');
- */ 
+ */
