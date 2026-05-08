@@ -21,12 +21,16 @@ class BookingResource extends Model
         'order'
     ];
     protected $casts = [
-        'attributes' => 'array',  
-        'status' => 'boolean',   
+        'attributes' => 'array',
+        'status' => 'boolean',
     ];
     public function booking()
     {
         return $this->belongsTo(Booking::class, 'booking_id');
+    }
+    public function availabilities()
+    {
+        return $this->hasMany(BookingAvailability::class, 'resource_id');
     }
 
 }

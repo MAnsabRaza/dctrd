@@ -7,6 +7,7 @@
  * Routes defined here will be loaded by the main admin routes file.
  */
 
+use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
@@ -72,12 +73,20 @@ Route::group(['prefix' => 'booking'], function () {
         Route::post('/{id}/update', [BookingRatePlanController::class, 'update']);
         Route::get('/{id}/delete', [BookingRatePlanController::class, 'delete']);
     });
-    // Booking Season
-Route::get('/booking/season',                   [BookingSeasonController::class, 'index']);
-Route::post('/booking/season/store',            [BookingSeasonController::class, 'store']);
-Route::get('/booking/season/{id}/edit',         [BookingSeasonController::class, 'edit']);
-Route::post('/booking/season/{id}/update',      [BookingSeasonController::class, 'update']);
-Route::get('/booking/season/{id}/delete',       [BookingSeasonController::class, 'delete']);
+      Route::group(['prefix' => 'season'], function () {
+        Route::get('/', [BookingSeasonController::class, 'index']);
+        Route::post('/store', [BookingSeasonController::class, 'store']);
+        Route::get('/{id}/edit', [BookingSeasonController::class, 'edit']);
+        Route::post('/{id}/update', [BookingSeasonController::class, 'update']);
+        Route::get('/{id}/delete', [BookingSeasonController::class, 'delete']);
+    });
+      Route::group(['prefix' => 'availability'], function () {
+        Route::get('/', [BookingAvailabilityController::class, 'index']);
+        Route::post('/store', [BookingAvailabilityController::class, 'store']);
+        Route::get('/{id}/edit', [BookingAvailabilityController::class, 'edit']);
+        Route::post('/{id}/update', [BookingAvailabilityController::class, 'update']);
+        Route::get('/{id}/delete', [BookingAvailabilityController::class, 'delete']);
+    });
 
 });
 

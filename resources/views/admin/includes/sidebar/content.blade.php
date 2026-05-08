@@ -144,7 +144,6 @@
             <span>{{ trans('admin/main.booking') }}</span>
         </a>
         <ul class="dropdown-menu">
-
             @can('admin_booking')
                 <li class="{{ (request()->is(getAdminPanelUrl('/booking', false))) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking">
@@ -168,6 +167,7 @@
                     </a>
                 </li>
             @endcan
+
             @can('admin_booking_rate_plan')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/rate', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/rate">
@@ -175,10 +175,19 @@
                     </a>
                 </li>
             @endcan
+
             @can('admin_booking_season')
-                <li class="{{ request()->is(getAdminPanelUrl('/booking/season', false)) ? 'active' : '' }}">
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/season*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/season">
                         {{ trans('admin/main.admin_booking_season') }}
+                    </a>
+                </li>
+            @endcan
+
+            @can('admin_booking_availability')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/availability*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/availability">
+                        {{ trans('admin/main.admin_booking_availability') }}
                     </a>
                 </li>
             @endcan

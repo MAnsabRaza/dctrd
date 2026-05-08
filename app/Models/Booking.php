@@ -201,4 +201,8 @@ class Booking extends Model
     {
         return $this->hasMany(BookingSeason::class);
     }
+    public function availabilities()
+    {
+        return $this->hasMany(BookingAvailability::class);
+    }
 }

@@ -201,7 +201,8 @@ return [
     'percentage' => 'Percentage',
     'per_person' => 'Per Person',
     'per_night' => 'Per Night',
-    
+    //booking season
+
     'admin_booking_season' => 'Booking Seasons',
     'create_booking_season' => 'Create Season',
     'booking_season_created_successfully' => 'Season created successfully.',
@@ -211,6 +212,14 @@ return [
     'end_date' => 'End Date',
     'price_modifier' => 'Price Modifier',
     'modifier_type' => 'Modifier Type',
+    //booking availability
+    'create_booking_availability' => 'Create Booking Availability',
+    'is_available' => 'Is Available',
+    'slots_available' => 'Slots Available',
+    'price_override' => 'Price Override',
+    'close_reason' => 'Close Reason',
+    'close_reason_placeholder' => 'e.g. Holiday, Maintenance',
+    'resource' => 'Resource',
 
     //Booking
     'booking' => 'Booking',
