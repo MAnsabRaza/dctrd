@@ -215,4 +215,8 @@ class Booking extends Model
     {
         return $this->hasMany(BookingVariant::class)->orderBy('sort_order');
     }
+    public function specifications()
+{
+    return $this->hasMany(BookingSpecificationValue::class, 'booking_id');
+}
 }

@@ -200,6 +200,29 @@
                     </a>
                 </li>
             @endcan
+            @can('admin_booking_specification')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/specification*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/specification">
+                        {{ trans('admin/main.admin_booking_specification') }}
+                    </a>
+                </li>
+            @endcan
+
+            @can('admin_booking_specification_value')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/specificationValue*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/specificationValue">
+                        {{ trans('admin/main.admin_booking_specification_value') }}
+                    </a>
+                </li>
+            @endcan
+
+            @can('admin_booking_category_specification')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/categorySpecification*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/categorySpecification">
+                        {{ trans('admin/main.admin_booking_category_specification') }}
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan

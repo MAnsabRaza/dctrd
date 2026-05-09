@@ -43,5 +43,14 @@ class BookingCategory extends Model
     {
         return $query->where('status', true);
     }
+    public function specifications()
+{
+    return $this->belongsToMany(
+        BookingSpecification::class,
+        'booking_category_specifications',
+        'category_id',
+        'specification_id'
+    );
+}
 
 }

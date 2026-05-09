@@ -9,11 +9,14 @@
 
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
+use App\Http\Controllers\Admin\Booking\BookingCategorySpecificationController;
 use App\Http\Controllers\Admin\Booking\BookingController;
 use App\Http\Controllers\Admin\Booking\BookingPolicyController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
 use App\Http\Controllers\Admin\Booking\BookingResourceController;
 use App\Http\Controllers\Admin\Booking\BookingSeasonController;
+use App\Http\Controllers\Admin\Booking\BookingSpecificationController;
+use App\Http\Controllers\Admin\Booking\BookingSpecificationValueController;
 use App\Http\Controllers\Admin\Booking\BookingVariantController;
 use Illuminate\Support\Facades\Route;
 
@@ -98,15 +101,37 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/delete', [BookingPolicyController::class, 'delete']);
     });
 
-       // ✅ CORRECT
-    Route::group(['prefix' => 'variant'], function () {
+     Route::group(['prefix' => 'variant'], function () {
         Route::get('/', [BookingVariantController::class, 'index']);
         Route::post('/store', [BookingVariantController::class, 'store']);
         Route::get('/{id}/edit', [BookingVariantController::class, 'edit']);
         Route::post('/{id}/update', [BookingVariantController::class, 'update']);
         Route::get('/{id}/delete', [BookingVariantController::class, 'delete']);
     });
+       // ✅ CORRECT
+    Route::group(['prefix' => 'specification'], function () {
+        Route::get('/', [BookingSpecificationController::class, 'index']);
+        Route::post('/store', [BookingSpecificationController::class, 'store']);
+        Route::get('/{id}/edit', [BookingSpecificationController::class, 'edit']);
+        Route::post('/{id}/update', [BookingSpecificationController::class, 'update']);
+        Route::get('/{id}/delete', [BookingSpecificationController::class, 'delete']);
+    });
 
+    Route::group(['prefix' => 'specificationValue'], function () {
+        Route::get('/', [BookingSpecificationValueController::class, 'index']);
+        Route::post('/store', [BookingSpecificationValueController::class, 'store']);
+        Route::get('/{id}/edit', [BookingSpecificationValueController::class, 'edit']);
+        Route::post('/{id}/update', [BookingSpecificationValueController::class, 'update']);
+        Route::get('/{id}/delete', [BookingSpecificationValueController::class, 'delete']);
+    });
+    Route::group(['prefix' => 'categorySpecification'], function () {
+        Route::get('/', [BookingCategorySpecificationController::class, 'index']);
+        Route::post('/store', [BookingCategorySpecificationController::class, 'store']);
+        Route::get('/{id}/edit', [BookingCategorySpecificationController::class, 'edit']);
+        Route::post('/{id}/update', [BookingCategorySpecificationController::class, 'update']);
+        Route::get('/{id}/delete', [BookingCategorySpecificationController::class, 'delete']);
+    });
+   
 });
 
 /**

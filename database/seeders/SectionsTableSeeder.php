@@ -738,6 +738,22 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3274], ['name' => 'admin_booking_variants_edit', 'section_group_id' => 3240, 'caption' => 'Booking Variants Edit']);
         Section::updateOrCreate(['id' => 3275], ['name' => 'admin_booking_variants_delete', 'section_group_id' => 3240, 'caption' => 'Booking Variants Delete']);
 
+        Section::updateOrCreate(['id' => 3276], ['name' => 'admin_booking_specification',        'section_group_id' => 3240, 'caption' => 'Booking Specifications']);
+Section::updateOrCreate(['id' => 3277], ['name' => 'admin_booking_specification_create', 'section_group_id' => 3240, 'caption' => 'Booking Specifications Create']);
+Section::updateOrCreate(['id' => 3278], ['name' => 'admin_booking_specification_edit',   'section_group_id' => 3240, 'caption' => 'Booking Specifications Edit']);
+Section::updateOrCreate(['id' => 3279], ['name' => 'admin_booking_specification_delete', 'section_group_id' => 3240, 'caption' => 'Booking Specifications Delete']);
+
+// Specification Values
+Section::updateOrCreate(['id' => 3280], ['name' => 'admin_booking_specification_value',        'section_group_id' => 3240, 'caption' => 'Booking Specification Values']);
+Section::updateOrCreate(['id' => 3281], ['name' => 'admin_booking_specification_value_create', 'section_group_id' => 3240, 'caption' => 'Booking Specification Values Create']);
+Section::updateOrCreate(['id' => 3282], ['name' => 'admin_booking_specification_value_edit',   'section_group_id' => 3240, 'caption' => 'Booking Specification Values Edit']);
+Section::updateOrCreate(['id' => 3283], ['name' => 'admin_booking_specification_value_delete', 'section_group_id' => 3240, 'caption' => 'Booking Specification Values Delete']);
+
+// Category Specifications
+Section::updateOrCreate(['id' => 3284], ['name' => 'admin_booking_category_specification',        'section_group_id' => 3240, 'caption' => 'Booking Category Specifications']);
+Section::updateOrCreate(['id' => 3285], ['name' => 'admin_booking_category_specification_create', 'section_group_id' => 3240, 'caption' => 'Booking Category Specifications Create']);
+Section::updateOrCreate(['id' => 3286], ['name' => 'admin_booking_category_specification_edit',   'section_group_id' => 3240, 'caption' => 'Booking Category Specifications Edit']);
+Section::updateOrCreate(['id' => 3287], ['name' => 'admin_booking_category_specification_delete', 'section_group_id' => 3240, 'caption' => 'Booking Category Specifications Delete']);
         /* Run Panel Sections */
         $this->runPanelSections();
     }

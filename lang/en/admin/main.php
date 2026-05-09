@@ -299,6 +299,33 @@ return [
     'variant_options' => 'Options',
     'affects_availability' => 'Affects Availability',
 
+    //specificaiton
+
+    // Specifications
+    'admin_booking_specification' => 'Booking Specifications',
+    'create_booking_specification' => 'Create Specification',
+    'booking_specification_created_successfully' => 'Specification created successfully.',
+    'booking_specification_updated_successfully' => 'Specification updated successfully.',
+    'booking_specification_deleted_successfully' => 'Specification deleted successfully.',
+
+    // Specification Values
+    'admin_booking_specification_value' => 'Specification Values',
+    'create_booking_specification_value' => 'Create Specification Value',
+    'booking_specification_value_created_successfully' => 'Specification value created successfully.',
+    'booking_specification_value_updated_successfully' => 'Specification value updated successfully.',
+    'booking_specification_value_deleted_successfully' => 'Specification value deleted successfully.',
+
+    // Category Specifications
+    'admin_booking_category_specification' => 'Category Specifications',
+    'create_booking_category_specification' => 'Assign Specification',
+    'booking_category_specification_created_successfully' => 'Category specification assigned successfully.',
+    'booking_category_specification_updated_successfully' => 'Category specification updated successfully.',
+    'booking_category_specification_deleted_successfully' => 'Category specification removed successfully.',
+
+    // Shared
+    'values' => 'Values',
+    'sort_order' => 'Sort Order',
+
 
 
     // Categories
