@@ -223,6 +223,13 @@
                     </a>
                 </li>
             @endcan
+             @can('admin_booking_bundle')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/bundle*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/bundle">
+                        {{ trans('admin/main.admin_booking_bundle') }}
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan

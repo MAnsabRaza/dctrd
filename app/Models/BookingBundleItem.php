@@ -8,9 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class BookingBundleItem extends Model
 {
     use HasFactory;
-
     protected $table = 'booking_bundle_items';
-
     protected $fillable = [
         'bundle_id',
         'booking_id',

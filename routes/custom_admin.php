@@ -8,6 +8,7 @@
  */
 
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
+use App\Http\Controllers\Admin\Booking\BookingBundleController;
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingCategorySpecificationController;
 use App\Http\Controllers\Admin\Booking\BookingController;
@@ -130,6 +131,14 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/edit', [BookingCategorySpecificationController::class, 'edit']);
         Route::post('/{id}/update', [BookingCategorySpecificationController::class, 'update']);
         Route::get('/{id}/delete', [BookingCategorySpecificationController::class, 'delete']);
+    });
+
+     Route::group(['prefix' => 'bundle'], function () {
+        Route::get('/', [BookingBundleController::class, 'index']);
+        Route::post('/store', [BookingBundleController::class, 'store']);
+        Route::get('/{id}/edit', [BookingBundleController::class, 'edit']);
+        Route::post('/{id}/update', [BookingBundleController::class, 'update']);
+        Route::get('/{id}/delete', [BookingBundleController::class, 'delete']);
     });
    
 });

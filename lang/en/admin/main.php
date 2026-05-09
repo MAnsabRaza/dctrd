@@ -299,6 +299,13 @@ return [
     'variant_options' => 'Options',
     'affects_availability' => 'Affects Availability',
 
+    //booking bundles
+    'admin_booking_bundle'                    => 'Booking Bundles',
+'create_booking_bundle'                   => 'Create Bundle',
+'booking_bundle_created_successfully'     => 'Bundle created successfully.',
+'booking_bundle_updated_successfully'     => 'Bundle updated successfully.',
+'booking_bundle_deleted_successfully'     => 'Bundle deleted successfully.',
+
     //specificaiton
 
     // Specifications
