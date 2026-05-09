@@ -211,12 +211,27 @@ class Booking extends Model
     {
         return $this->hasOne(BookingPolicy::class, 'booking_id');
     }
-      public function variants()
+    public function variants()
     {
         return $this->hasMany(BookingVariant::class)->orderBy('sort_order');
     }
     public function specifications()
-{
-    return $this->hasMany(BookingSpecificationValue::class, 'booking_id');
-}
+    {
+        return $this->hasMany(BookingSpecificationValue::class, 'booking_id');
+    }
+    public function bundleItems()
+    {
+        return $this->hasMany(BookingBundleItem::class, 'booking_id');
+    }
+
+    // Bundles relation (many-to-many)
+    public function bundles()
+    {
+        return $this->belongsToMany(
+            BookingBundle::class,
+            'booking_bundle_items',
+            'booking_id',
+            'bundle_id'
+        )->withPivot(['quantity', 'sort_order'])->withTimestamps();
+    }
 }
