@@ -151,7 +151,6 @@
                     </a>
                 </li>
             @endcan
-
             @can('admin_booking_categories')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/categories*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/categories">
@@ -159,7 +158,6 @@
                     </a>
                 </li>
             @endcan
-
             @can('admin_booking_resources')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/resources*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/resources">
@@ -167,7 +165,6 @@
                     </a>
                 </li>
             @endcan
-
             @can('admin_booking_rate_plan')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/rate*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/rate">
@@ -175,7 +172,6 @@
                     </a>
                 </li>
             @endcan
-
             @can('admin_booking_season')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/season*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/season">
@@ -183,7 +179,6 @@
                     </a>
                 </li>
             @endcan
-
             @can('admin_booking_availability')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/availability*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/availability">
@@ -191,11 +186,17 @@
                     </a>
                 </li>
             @endcan
-
             @can('admin_booking_polices')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/policy*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/policy">
                         {{ trans('admin/main.admin_booking_polices') }}
+                    </a>
+                </li>
+            @endcan
+            @can('admin_booking_variants')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/variant*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/variant">
+                        {{ trans('admin/main.admin_booking_variants') }}
                     </a>
                 </li>
             @endcan

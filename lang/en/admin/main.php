@@ -289,6 +289,15 @@ return [
     'deposit_due_days' => 'Deposit Due (Days)',
     'balance_due_days_before' => 'Balance Due Before (Days)',
     'policy_text' => 'Policy Text',
+    // ── Booking Variants 
+    'admin_booking_variants' => 'Booking Variants',
+    'create_booking_variant' => 'Create Variant',
+    'booking_variant_created_successfully' => 'Variant created successfully.',
+    'booking_variant_updated_successfully' => 'Variant updated successfully.',
+    'booking_variant_deleted_successfully' => 'Variant deleted successfully.',
+    'variant_name' => 'Variant Name',
+    'variant_options' => 'Options',
+    'affects_availability' => 'Affects Availability',
 
 
 
