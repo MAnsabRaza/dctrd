@@ -33,33 +33,38 @@ class BookingAvailabilityController extends Controller
         return view('admin.booking.availability', $data);
     }
 
-    public function store(Request $request)
-    {
-        $this->authorize('admin_booking_availability_create');
+  public function store(Request $request)
+{
+    $this->authorize('admin_booking_availability_create');
 
-        $this->validate($request, [
-            'booking_id'      => 'required|exists:bookings,id',
-            'resource_id'     => 'nullable|exists:booking_resources,id',
-            'date'            => 'required|date',
-            'is_available'    => 'nullable|boolean',
-            'slots_available' => 'nullable|integer|min:0',
-            'price_override'  => 'nullable|numeric|min:0',
-            'close_reason'    => 'nullable|string|max:255',
-        ]);
+    // Normalize checkbox value BEFORE validation
+    $request->merge([
+        'is_available' => $request->has('is_available') ? 1 : 0,
+    ]);
 
-        BookingAvailability::create([
-            'booking_id'      => $request->booking_id,
-            'resource_id'     => $request->resource_id ?: null,
-            'date'            => $request->date,
-            'is_available'    => $request->has('is_available') ? 1 : 0,
-            'slots_available' => $request->slots_available,
-            'price_override'  => $request->price_override,
-            'close_reason'    => $request->close_reason,
-        ]);
+    $this->validate($request, [
+        'booking_id'      => 'required|exists:bookings,id',
+        'resource_id'     => 'nullable|exists:booking_resources,id',
+        'date'            => 'required|date',
+        'is_available'    => 'required|boolean',  // now safely 1 or 0
+        'slots_available' => 'nullable|integer|min:0',
+        'price_override'  => 'nullable|numeric|min:0',
+        'close_reason'    => 'nullable|string|max:255',
+    ]);
 
-        return redirect(getAdminPanelUrl('/booking/availability'))
-            ->with('success', trans('admin/main.booking_availability_created_successfully'));
-    }
+    BookingAvailability::create([
+        'booking_id'      => $request->booking_id,
+        'resource_id'     => $request->resource_id ?: null,
+        'date'            => $request->date,
+        'is_available'    => $request->is_available,  // already 1 or 0
+        'slots_available' => $request->slots_available ?: null,
+        'price_override'  => $request->price_override ?: null,
+        'close_reason'    => $request->close_reason,
+    ]);
+
+    return redirect(getAdminPanelUrl('/booking/availability'))
+        ->with('success', trans('admin/main.booking_availability_created_successfully'));
+}
 
     public function edit($id)
     {
