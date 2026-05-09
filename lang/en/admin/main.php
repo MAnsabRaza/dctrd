@@ -212,7 +212,9 @@ return [
     'end_date' => 'End Date',
     'price_modifier' => 'Price Modifier',
     'modifier_type' => 'Modifier Type',
+    
     //booking availability
+    'admin_booking_availability'=>'Booking Availability',
     'create_booking_availability' => 'Create Booking Availability',
     'is_available' => 'Is Available',
     'slots_available' => 'Slots Available',
