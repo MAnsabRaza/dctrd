@@ -6,9 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingPolicy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BookingPolicyController extends Controller
 {
+    // ─────────────────────────────────────────────────────────────────────
+    // LIST
+    // ─────────────────────────────────────────────────────────────────────
     public function index()
     {
         $this->authorize('admin_booking_polices');
@@ -22,25 +26,33 @@ class BookingPolicyController extends Controller
         $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
 
         $data = [
-            'pageTitle' => trans('admin/main.admin_booking_polices'),
-            'policies'  => $policies,
-            'bookings'  => $bookings,
+            'pageTitle'  => trans('admin/main.admin_booking_polices'),
+            'policies'   => $policies,
+            'bookings'   => $bookings,
+            'editPolicy' => null,
         ];
 
-        return view('admin.booking.policies', $data);
+        return view('admin.booking.policy', $data);
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // STORE
+    // ─────────────────────────────────────────────────────────────────────
     public function store(Request $request)
     {
         $this->authorize('admin_booking_polices_create');
 
+        // ── Normalize checkbox fields ─────────────────────────────────────
+        // Checkboxes send "on" when checked, nothing when unchecked.
+        // We convert them to boolean integers before validation.
         $request->merge([
             'reschedule_allowed' => $request->has('reschedule_allowed') ? 1 : 0,
-            'deposit_required'   => $request->has('deposit_required') ? 1 : 0,
+            'deposit_required'   => $request->has('deposit_required')   ? 1 : 0,
         ]);
 
-        $this->validate($request, [
-            'booking_id'               => 'required|exists:bookings,id|unique:booking_policies,booking_id',
+        // ── Validation ───────────────────────────────────────────────────
+        $validated = $request->validate([
+            'booking_id'               => 'required|integer|exists:bookings,id|unique:booking_policies,booking_id',
             'cancellation_type'        => 'required|in:flexible,moderate,strict,non_refundable',
             'free_cancel_hours'        => 'nullable|integer|min:0',
             'cancellation_fee_percent' => 'nullable|numeric|min:0|max:100',
@@ -55,26 +67,30 @@ class BookingPolicyController extends Controller
             'policy_text'              => 'nullable|string',
         ]);
 
+        // ── Create ───────────────────────────────────────────────────────
         BookingPolicy::create([
-            'booking_id'               => $request->booking_id,
-            'cancellation_type'        => $request->cancellation_type,
-            'free_cancel_hours'        => $request->free_cancel_hours ?? 24,
-            'cancellation_fee_percent' => $request->cancellation_fee_percent ?? 0,
-            'reschedule_allowed'       => $request->reschedule_allowed,
-            'reschedule_before_hours'  => $request->reschedule_before_hours ?? 24,
-            'max_reschedules'          => $request->max_reschedules ?? 2,
-            'noshow_fee_percent'       => $request->noshow_fee_percent ?? 100,
-            'deposit_required'         => $request->deposit_required,
-            'deposit_percent'          => $request->deposit_percent ?? 20,
-            'deposit_due_days'         => $request->deposit_due_days ?? 0,
-            'balance_due_days_before'  => $request->balance_due_days_before ?? 0,
-            'policy_text'              => $request->policy_text,
+            'booking_id'               => (int) $validated['booking_id'],
+            'cancellation_type'        => $validated['cancellation_type'],
+            'free_cancel_hours'        => (int) ($validated['free_cancel_hours']        ?? 24),
+            'cancellation_fee_percent' => (float) ($validated['cancellation_fee_percent'] ?? 0),
+            'reschedule_allowed'       => (bool) $validated['reschedule_allowed'],
+            'reschedule_before_hours'  => (int) ($validated['reschedule_before_hours']  ?? 24),
+            'max_reschedules'          => (int) ($validated['max_reschedules']           ?? 2),
+            'noshow_fee_percent'       => (float) ($validated['noshow_fee_percent']      ?? 100),
+            'deposit_required'         => (bool) $validated['deposit_required'],
+            'deposit_percent'          => (float) ($validated['deposit_percent']         ?? 20),
+            'deposit_due_days'         => (int) ($validated['deposit_due_days']          ?? 0),
+            'balance_due_days_before'  => (int) ($validated['balance_due_days_before']  ?? 0),
+            'policy_text'              => $validated['policy_text'] ?? null,
         ]);
 
         return redirect(getAdminPanelUrl('/booking/policy'))
             ->with('success', trans('admin/main.booking_policy_created_successfully'));
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // EDIT
+    // ─────────────────────────────────────────────────────────────────────
     public function edit($id)
     {
         $this->authorize('admin_booking_polices_edit');
@@ -97,19 +113,25 @@ class BookingPolicyController extends Controller
         return view('admin.booking.policy', $data);
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // UPDATE
+    // ─────────────────────────────────────────────────────────────────────
     public function update(Request $request, $id)
     {
         $this->authorize('admin_booking_polices_edit');
 
         $policy = BookingPolicy::findOrFail($id);
 
+        // ── Normalize checkbox fields ─────────────────────────────────────
         $request->merge([
             'reschedule_allowed' => $request->has('reschedule_allowed') ? 1 : 0,
-            'deposit_required'   => $request->has('deposit_required') ? 1 : 0,
+            'deposit_required'   => $request->has('deposit_required')   ? 1 : 0,
         ]);
 
-        $this->validate($request, [
-            'booking_id'               => 'required|exists:bookings,id|unique:booking_policies,booking_id,' . $id,
+        // ── Validation ───────────────────────────────────────────────────
+        // unique rule ignores current record's own booking_id
+        $validated = $request->validate([
+            'booking_id'               => 'required|integer|exists:bookings,id|unique:booking_policies,booking_id,' . $id,
             'cancellation_type'        => 'required|in:flexible,moderate,strict,non_refundable',
             'free_cancel_hours'        => 'nullable|integer|min:0',
             'cancellation_fee_percent' => 'nullable|numeric|min:0|max:100',
@@ -124,26 +146,30 @@ class BookingPolicyController extends Controller
             'policy_text'              => 'nullable|string',
         ]);
 
+        // ── Update ───────────────────────────────────────────────────────
         $policy->update([
-            'booking_id'               => $request->booking_id,
-            'cancellation_type'        => $request->cancellation_type,
-            'free_cancel_hours'        => $request->free_cancel_hours ?? 24,
-            'cancellation_fee_percent' => $request->cancellation_fee_percent ?? 0,
-            'reschedule_allowed'       => $request->reschedule_allowed,
-            'reschedule_before_hours'  => $request->reschedule_before_hours ?? 24,
-            'max_reschedules'          => $request->max_reschedules ?? 2,
-            'noshow_fee_percent'       => $request->noshow_fee_percent ?? 100,
-            'deposit_required'         => $request->deposit_required,
-            'deposit_percent'          => $request->deposit_percent ?? 20,
-            'deposit_due_days'         => $request->deposit_due_days ?? 0,
-            'balance_due_days_before'  => $request->balance_due_days_before ?? 0,
-            'policy_text'              => $request->policy_text,
+            'booking_id'               => (int) $validated['booking_id'],
+            'cancellation_type'        => $validated['cancellation_type'],
+            'free_cancel_hours'        => (int) ($validated['free_cancel_hours']        ?? 24),
+            'cancellation_fee_percent' => (float) ($validated['cancellation_fee_percent'] ?? 0),
+            'reschedule_allowed'       => (bool) $validated['reschedule_allowed'],
+            'reschedule_before_hours'  => (int) ($validated['reschedule_before_hours']  ?? 24),
+            'max_reschedules'          => (int) ($validated['max_reschedules']           ?? 2),
+            'noshow_fee_percent'       => (float) ($validated['noshow_fee_percent']      ?? 100),
+            'deposit_required'         => (bool) $validated['deposit_required'],
+            'deposit_percent'          => (float) ($validated['deposit_percent']         ?? 20),
+            'deposit_due_days'         => (int) ($validated['deposit_due_days']          ?? 0),
+            'balance_due_days_before'  => (int) ($validated['balance_due_days_before']  ?? 0),
+            'policy_text'              => $validated['policy_text'] ?? null,
         ]);
 
         return redirect(getAdminPanelUrl('/booking/policy'))
             ->with('success', trans('admin/main.booking_policy_updated_successfully'));
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // DELETE
+    // ─────────────────────────────────────────────────────────────────────
     public function delete($id)
     {
         $this->authorize('admin_booking_polices_delete');
