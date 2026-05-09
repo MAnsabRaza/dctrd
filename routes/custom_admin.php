@@ -88,12 +88,13 @@ Route::group(['prefix' => 'booking'], function () {
         Route::post('/{id}/update', [BookingAvailabilityController::class, 'update']);
         Route::get('/{id}/delete', [BookingAvailabilityController::class, 'delete']);
     });
+    // ✅ CORRECT
     Route::group(['prefix' => 'policy'], function () {
         Route::get('/', [BookingPolicyController::class, 'index']);
-        Route::post('/store', [BookingAvailabilityController::class, 'store']);
-        Route::get('/{id}/edit', [BookingAvailabilityController::class, 'edit']);
-        Route::post('/{id}/update', [BookingAvailabilityController::class, 'update']);
-        Route::get('/{id}/delete', [BookingAvailabilityController::class, 'delete']);
+        Route::post('/store', [BookingPolicyController::class, 'store']);
+        Route::get('/{id}/edit', [BookingPolicyController::class, 'edit']);
+        Route::post('/{id}/update', [BookingPolicyController::class, 'update']);
+        Route::get('/{id}/delete', [BookingPolicyController::class, 'delete']);
     });
 
 });
