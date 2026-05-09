@@ -27,7 +27,7 @@ class BookingPolicyController extends Controller
             'bookings'  => $bookings,
         ];
 
-        return view('admin.booking.policy', $data);
+        return view('admin.booking.policies', $data);
     }
 
     public function store(Request $request)
