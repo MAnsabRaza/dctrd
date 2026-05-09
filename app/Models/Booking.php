@@ -189,6 +189,8 @@ class Booking extends Model
             }
         });
     }
+
+
     public function resources()
     {
         return $this->hasMany(BookingResource::class, 'booking_id');
@@ -208,5 +210,9 @@ class Booking extends Model
     public function policy()
     {
         return $this->hasOne(BookingPolicy::class, 'booking_id');
+    }
+      public function variants()
+    {
+        return $this->hasMany(BookingVariant::class)->orderBy('sort_order');
     }
 }

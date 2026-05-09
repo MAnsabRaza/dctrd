@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\Booking\BookingPolicyController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
 use App\Http\Controllers\Admin\Booking\BookingResourceController;
 use App\Http\Controllers\Admin\Booking\BookingSeasonController;
+use App\Http\Controllers\Admin\Booking\BookingVariantController;
 use Illuminate\Support\Facades\Route;
 
 // Get the admin panel prefix from the main application
@@ -95,6 +96,15 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/edit', [BookingPolicyController::class, 'edit']);
         Route::post('/{id}/update', [BookingPolicyController::class, 'update']);
         Route::get('/{id}/delete', [BookingPolicyController::class, 'delete']);
+    });
+
+       // ✅ CORRECT
+    Route::group(['prefix' => 'variant'], function () {
+        Route::get('/', [BookingVariantController::class, 'index']);
+        Route::post('/store', [BookingVariantController::class, 'store']);
+        Route::get('/{id}/edit', [BookingVariantController::class, 'edit']);
+        Route::post('/{id}/update', [BookingVariantController::class, 'update']);
+        Route::get('/{id}/delete', [BookingVariantController::class, 'delete']);
     });
 
 });
