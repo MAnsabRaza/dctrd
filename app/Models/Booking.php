@@ -205,4 +205,8 @@ class Booking extends Model
     {
         return $this->hasMany(BookingAvailability::class);
     }
+    public function policy()
+    {
+        return $this->hasOne(BookingPolicy::class, 'booking_id');
+    }
 }

@@ -10,6 +10,7 @@
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingController;
+use App\Http\Controllers\Admin\Booking\BookingPolicyController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
 use App\Http\Controllers\Admin\Booking\BookingResourceController;
 use App\Http\Controllers\Admin\Booking\BookingSeasonController;
@@ -73,15 +74,22 @@ Route::group(['prefix' => 'booking'], function () {
         Route::post('/{id}/update', [BookingRatePlanController::class, 'update']);
         Route::get('/{id}/delete', [BookingRatePlanController::class, 'delete']);
     });
-      Route::group(['prefix' => 'season'], function () {
+    Route::group(['prefix' => 'season'], function () {
         Route::get('/', [BookingSeasonController::class, 'index']);
         Route::post('/store', [BookingSeasonController::class, 'store']);
         Route::get('/{id}/edit', [BookingSeasonController::class, 'edit']);
         Route::post('/{id}/update', [BookingSeasonController::class, 'update']);
         Route::get('/{id}/delete', [BookingSeasonController::class, 'delete']);
     });
-      Route::group(['prefix' => 'availability'], function () {
+    Route::group(['prefix' => 'availability'], function () {
         Route::get('/', [BookingAvailabilityController::class, 'index']);
+        Route::post('/store', [BookingAvailabilityController::class, 'store']);
+        Route::get('/{id}/edit', [BookingAvailabilityController::class, 'edit']);
+        Route::post('/{id}/update', [BookingAvailabilityController::class, 'update']);
+        Route::get('/{id}/delete', [BookingAvailabilityController::class, 'delete']);
+    });
+    Route::group(['prefix' => 'policy'], function () {
+        Route::get('/', [BookingPolicyController::class, 'index']);
         Route::post('/store', [BookingAvailabilityController::class, 'store']);
         Route::get('/{id}/edit', [BookingAvailabilityController::class, 'edit']);
         Route::post('/{id}/update', [BookingAvailabilityController::class, 'update']);

@@ -718,15 +718,21 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3257], ['name' => 'admin_booking_rate_plan_edit', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Edit']);
         Section::updateOrCreate(['id' => 3258], ['name' => 'admin_booking_rate_plan_delete', 'section_group_id' => 3240, 'caption' => 'Booking Rate Plan Delete']);
 
-        Section::updateOrCreate(['id' => 3260], ['name' => 'admin_booking_season','section_group_id' => 3240,'caption' => 'Booking Season',]);
-        Section::updateOrCreate(['id' => 3261], ['name' => 'admin_booking_season_create','section_group_id' => 3240,'caption' => 'Booking Season Create/Edit',]);
-        Section::updateOrCreate(['id' => 3262], ['name' => 'admin_booking_season_edit','section_group_id' => 3240,'caption' => 'Booking Season Edit',]);
-        Section::updateOrCreate(['id' => 3263], ['name' => 'admin_booking_season_delete','section_group_id' => 3240,'caption' => 'Booking Season Delete',]);
-        
-        Section::updateOrCreate(['id' => 3264], ['name' => 'admin_booking_availability','section_group_id' => 3240,'caption' => 'Booking Availability',]);
-        Section::updateOrCreate(['id' => 3265], ['name' => 'admin_booking_availability_create','section_group_id' => 3240,'caption' => 'Booking Availability Create/Edit',]);
-        Section::updateOrCreate(['id' => 3266], ['name' => 'admin_booking_availability_edit','section_group_id' => 3240,'caption' => 'Booking Availability Edit',]);
-        Section::updateOrCreate(['id' => 3267], ['name' => 'admin_booking_availability_delete','section_group_id' => 3240,'caption' => 'Booking Availability Delete',]);
+        Section::updateOrCreate(['id' => 3260], ['name' => 'admin_booking_season', 'section_group_id' => 3240, 'caption' => 'Booking Season',]);
+        Section::updateOrCreate(['id' => 3261], ['name' => 'admin_booking_season_create', 'section_group_id' => 3240, 'caption' => 'Booking Season Create/Edit',]);
+        Section::updateOrCreate(['id' => 3262], ['name' => 'admin_booking_season_edit', 'section_group_id' => 3240, 'caption' => 'Booking Season Edit',]);
+        Section::updateOrCreate(['id' => 3263], ['name' => 'admin_booking_season_delete', 'section_group_id' => 3240, 'caption' => 'Booking Season Delete',]);
+
+        Section::updateOrCreate(['id' => 3264], ['name' => 'admin_booking_availability', 'section_group_id' => 3240, 'caption' => 'Booking Availability',]);
+        Section::updateOrCreate(['id' => 3265], ['name' => 'admin_booking_availability_create', 'section_group_id' => 3240, 'caption' => 'Booking Availability Create/Edit',]);
+        Section::updateOrCreate(['id' => 3266], ['name' => 'admin_booking_availability_edit', 'section_group_id' => 3240, 'caption' => 'Booking Availability Edit',]);
+        Section::updateOrCreate(['id' => 3267], ['name' => 'admin_booking_availability_delete', 'section_group_id' => 3240, 'caption' => 'Booking Availability Delete',]);
+
+        Section::updateOrCreate(['id' => 3268], ['name' => 'admin_booking_polices', 'section_group_id' => 3240, 'caption' => 'Booking Policies']);
+        Section::updateOrCreate(['id' => 3269], ['name' => 'admin_booking_polices_create', 'section_group_id' => 3240, 'caption' => 'Booking Policies Create/Edit']);
+        Section::updateOrCreate(['id' => 3270], ['name' => 'admin_booking_polices_edit', 'section_group_id' => 3240, 'caption' => 'Booking Policies Edit']);
+        Section::updateOrCreate(['id' => 3271], ['name' => 'admin_booking_polices_delete', 'section_group_id' => 3240, 'caption' => 'Booking Policies Delete']);
+
         /* Run Panel Sections */
         $this->runPanelSections();
     }

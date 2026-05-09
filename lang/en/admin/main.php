@@ -212,9 +212,9 @@ return [
     'end_date' => 'End Date',
     'price_modifier' => 'Price Modifier',
     'modifier_type' => 'Modifier Type',
-    
+
     //booking availability
-    'admin_booking_availability'=>'Booking Availability',
+    'admin_booking_availability' => 'Booking Availability',
     'create_booking_availability' => 'Create Booking Availability',
     'is_available' => 'Is Available',
     'slots_available' => 'Slots Available',
@@ -270,6 +270,25 @@ return [
     'extra_price' => 'Extra Price',
     'attributes' => 'Attributes',
     'booking_id' => 'Booking',
+
+    //booking policy
+    'admin_booking_polices' => 'Booking Policies',
+    'create_booking_policy' => 'Create Policy',
+    'booking_policy_created_successfully' => 'Policy created successfully.',
+    'booking_policy_updated_successfully' => 'Policy updated successfully.',
+    'booking_policy_deleted_successfully' => 'Policy deleted successfully.',
+    'cancellation_type' => 'Cancellation Type',
+    'free_cancel_hours' => 'Free Cancel Hours',
+    'cancellation_fee_percent' => 'Cancellation Fee (%)',
+    'reschedule_allowed' => 'Reschedule Allowed',
+    'reschedule_before_hours' => 'Reschedule Before (Hours)',
+    'max_reschedules' => 'Max Reschedules',
+    'noshow_fee_percent' => 'No-show Fee (%)',
+    'deposit_required' => 'Deposit Required',
+    'deposit_percent' => 'Deposit (%)',
+    'deposit_due_days' => 'Deposit Due (Days)',
+    'balance_due_days_before' => 'Balance Due Before (Days)',
+    'policy_text' => 'Policy Text',
 
 
 
