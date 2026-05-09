@@ -270,7 +270,7 @@
                                                             @endif
                                                         </small>
                                                     </label>
-                                                    <input type="number" name="sort_order" min="0"
+                                                    <input type="number" name="sort_order" min="0" readonly
                                                            class="form-control @error('sort_order') is-invalid @enderror"
                                                            value="{{ !empty($editVariant) ? $editVariant->sort_order : old('sort_order', $nextSortOrder) }}"
                                                            placeholder="Leave 0 to auto-assign"/>
