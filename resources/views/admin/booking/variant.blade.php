@@ -22,11 +22,11 @@
                             $createActive = (
                                 (!empty($errors) && $errors->any()) ||
                                 !empty($editVariant) ||
-                                ((empty($variants) || !$variants->count()) &&
-                                  auth()->user()->can('admin_booking_variants_create'))
+                                (empty($variants) || !$variants->count())
                             );
                         @endphp
 
+                        {{-- Tabs --}}
                         <ul class="nav nav-pills" id="variantTab" role="tablist">
                             @can('admin_booking_variants')
                                 <li class="nav-item">
@@ -49,7 +49,9 @@
 
                         <div class="tab-content mt-3">
 
-                            {{-- LIST TAB --}}
+                            {{-- ═══════════════════════════════════════════
+                                 LIST TAB
+                            ════════════════════════════════════════════ --}}
                             @can('admin_booking_variants')
                                 <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}"
                                      id="listTab" role="tabpanel">
@@ -74,9 +76,9 @@
                                                         <tr>
                                                             <td>
                                                                 @if($variant->booking)
-                                                                    #{{ $variant->booking->id }} - {{ $variant->booking->title }}
+                                                                    #{{ $variant->booking->id }} — {{ $variant->booking->title }}
                                                                 @else
-                                                                    -
+                                                                    <span class="text-muted">—</span>
                                                                 @endif
                                                             </td>
                                                             <td>{{ $variant->name }}</td>
@@ -87,9 +89,9 @@
                                                             </td>
                                                             <td class="text-center">
                                                                 @if($variant->price_modifier > 0)
-                                                                    <span class="text-success">+{{ $variant->price_modifier }}</span>
+                                                                    <span class="text-success font-weight-bold">+{{ $variant->price_modifier }}</span>
                                                                 @elseif($variant->price_modifier < 0)
-                                                                    <span class="text-danger">{{ $variant->price_modifier }}</span>
+                                                                    <span class="text-danger font-weight-bold">{{ $variant->price_modifier }}</span>
                                                                 @else
                                                                     <span class="text-muted">0</span>
                                                                 @endif
@@ -101,7 +103,10 @@
                                                                     <span class="badge badge-secondary">No</span>
                                                                 @endif
                                                             </td>
-                                                            <td class="text-center">{{ $variant->sort_order }}</td>
+                                                            {{-- Sort order shown as badge --}}
+                                                            <td class="text-center">
+                                                                <span class="badge badge-primary">{{ $variant->sort_order }}</span>
+                                                            </td>
                                                             <td class="text-center">
                                                                 @if($variant->status)
                                                                     <span class="badge badge-success">{{ trans('admin/main.active') }}</span>
@@ -154,7 +159,9 @@
                                 </div>
                             @endcan
 
-                            {{-- CREATE / EDIT TAB --}}
+                            {{-- ═══════════════════════════════════════════
+                                 CREATE / EDIT TAB
+                            ════════════════════════════════════════════ --}}
                             @can('admin_booking_variants_create')
                                 <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}"
                                      id="createTab" role="tabpanel">
@@ -169,15 +176,19 @@
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.booking') }} <span class="text-danger">*</span></label>
                                                     @php $selBooking = !empty($editVariant) ? $editVariant->booking_id : old('booking_id'); @endphp
-                                                    <select name="booking_id" class="form-control @error('booking_id') is-invalid @enderror">
+                                                    <select name="booking_id"
+                                                            class="form-control @error('booking_id') is-invalid @enderror">
                                                         <option value="">{{ trans('admin/main.select') }}</option>
                                                         @foreach($bookings as $booking)
-                                                            <option value="{{ $booking->id }}" {{ (string)$selBooking === (string)$booking->id ? 'selected' : '' }}>
-                                                                #{{ $booking->id }} - {{ $booking->title }}
+                                                            <option value="{{ $booking->id }}"
+                                                                {{ (string)$selBooking === (string)$booking->id ? 'selected' : '' }}>
+                                                                #{{ $booking->id }} — {{ $booking->title }}
                                                             </option>
                                                         @endforeach
                                                     </select>
-                                                    @error('booking_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                    @error('booking_id')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
                                                 </div>
 
                                                 {{-- Name --}}
@@ -186,72 +197,105 @@
                                                     <input type="text" name="name"
                                                            class="form-control @error('name') is-invalid @enderror"
                                                            value="{{ !empty($editVariant) ? $editVariant->name : old('name') }}"
-                                                           placeholder="e.g. Room Type, Package, Add-on"/>
-                                                    @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                           placeholder="e.g. Room Type, Package, Language"/>
+                                                    @error('name')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
                                                 </div>
 
                                                 {{-- Options (dynamic) --}}
                                                 <div class="form-group">
-                                                    <label>Options <span class="text-danger">*</span>
-                                                        <small class="text-muted ml-1">— one per line or use the + button</small>
+                                                    <label>
+                                                        Options <span class="text-danger">*</span>
+                                                        <small class="text-muted ml-1">— add at least one option</small>
                                                     </label>
+
                                                     <div id="options-wrapper">
                                                         @php
                                                             $existingOptions = !empty($editVariant)
                                                                 ? $editVariant->options
                                                                 : (old('options') ?? ['']);
                                                         @endphp
+
                                                         @foreach($existingOptions as $i => $opt)
                                                             <div class="input-group mb-2 option-row">
-                                                                <input type="text" name="options[]"
+                                                                <input type="text"
+                                                                       name="options[]"
                                                                        class="form-control @error('options.'.$i) is-invalid @enderror"
                                                                        value="{{ $opt }}"
-                                                                       placeholder="Option value"/>
+                                                                       placeholder="e.g. Single Room, English, Morning"/>
                                                                 <div class="input-group-append">
-                                                                    <button type="button" class="btn btn-outline-danger remove-option">
+                                                                    <button type="button"
+                                                                            class="btn btn-outline-danger remove-option"
+                                                                            title="Remove">
                                                                         <i class="fas fa-times"></i>
                                                                     </button>
                                                                 </div>
                                                             </div>
                                                         @endforeach
                                                     </div>
-                                                    @error('options')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-                                                    <button type="button" id="add-option" class="btn btn-outline-secondary btn-sm mt-1">
+
+                                                    @error('options')
+                                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                                    @enderror
+
+                                                    <button type="button" id="add-option"
+                                                            class="btn btn-outline-secondary btn-sm mt-1">
                                                         <i class="fas fa-plus mr-1"></i> Add Option
                                                     </button>
                                                 </div>
 
                                                 {{-- Price Modifier --}}
                                                 <div class="form-group">
-                                                    <label>Price Modifier
-                                                        <small class="text-muted">(positive = surcharge, negative = discount, 0 = no change)</small>
-                                                    </label>
+                                                    <label>Price Modifier</label>
                                                     <input type="number" name="price_modifier" step="0.01"
                                                            class="form-control @error('price_modifier') is-invalid @enderror"
                                                            value="{{ !empty($editVariant) ? $editVariant->price_modifier : old('price_modifier', 0) }}"/>
-                                                    @error('price_modifier')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                    <small class="text-muted">
+                                                        Positive = surcharge &nbsp;|&nbsp; Negative = discount &nbsp;|&nbsp; 0 = no change
+                                                    </small>
+                                                    @error('price_modifier')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+
+                                                {{-- Sort Order — auto-generated, user can override --}}
+                                                <div class="form-group">
+                                                    <label>
+                                                        Sort Order
+                                                        <small class="text-muted ml-1">
+                                                            — auto-assigned
+                                                            @if(empty($editVariant))
+                                                                (next: <strong>{{ $nextSortOrder }}</strong>)
+                                                            @endif
+                                                        </small>
+                                                    </label>
+                                                    <input type="number" name="sort_order" min="0"
+                                                           class="form-control @error('sort_order') is-invalid @enderror"
+                                                           value="{{ !empty($editVariant) ? $editVariant->sort_order : old('sort_order', $nextSortOrder) }}"
+                                                           placeholder="Leave 0 to auto-assign"/>
+                                                    <small class="text-muted">
+                                                        Leave as-is for automatic numbering. Change only to reorder manually.
+                                                    </small>
+                                                    @error('sort_order')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
                                                 </div>
 
                                                 {{-- Affects Availability --}}
                                                 <div class="form-group">
                                                     <div class="custom-control custom-switch">
                                                         <input type="checkbox" name="affects_availability"
-                                                               class="custom-control-input" id="affects_availability"
+                                                               class="custom-control-input"
+                                                               id="affects_availability"
                                                                {{ (!empty($editVariant) && $editVariant->affects_availability) ? 'checked' : '' }}>
                                                         <label class="custom-control-label" for="affects_availability">
                                                             Affects Availability
                                                         </label>
                                                     </div>
-                                                    <small class="text-muted">If enabled, selecting this variant reduces available slots.</small>
-                                                </div>
-
-                                                {{-- Sort Order --}}
-                                                <div class="form-group">
-                                                    <label>Sort Order</label>
-                                                    <input type="number" name="sort_order" min="0"
-                                                           class="form-control @error('sort_order') is-invalid @enderror"
-                                                           value="{{ !empty($editVariant) ? $editVariant->sort_order : old('sort_order', 0) }}"/>
-                                                    @error('sort_order')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                    <small class="text-muted">
+                                                        If enabled, selecting this variant reduces available slots.
+                                                    </small>
                                                 </div>
 
                                                 {{-- Status --}}
@@ -266,6 +310,7 @@
                                                     </div>
                                                 </div>
 
+                                                {{-- Actions --}}
                                                 <div class="text-right col-12 mt-3">
                                                     @if(!empty($editVariant))
                                                         <a href="{{ getAdminPanelUrl() }}/booking/variant"
@@ -284,41 +329,46 @@
                                 </div>
                             @endcan
 
-                        </div>
+                        </div>{{-- /tab-content --}}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
+@endsection
 
-@push('scripts')
+@push('scripts_bottom')
 <script>
-    // Add option row
+(function () {
+    // ── Add option row ────────────────────────────────────────────────────
     document.getElementById('add-option').addEventListener('click', function () {
         const wrapper = document.getElementById('options-wrapper');
         const row = document.createElement('div');
         row.className = 'input-group mb-2 option-row';
-        row.innerHTML = `
-            <input type="text" name="options[]" class="form-control" placeholder="Option value"/>
-            <div class="input-group-append">
-                <button type="button" class="btn btn-outline-danger remove-option">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>`;
+        row.innerHTML =
+            '<input type="text" name="options[]" class="form-control" placeholder="Option value"/>' +
+            '<div class="input-group-append">' +
+                '<button type="button" class="btn btn-outline-danger remove-option" title="Remove">' +
+                    '<i class="fas fa-times"></i>' +
+                '</button>' +
+            '</div>';
         wrapper.appendChild(row);
         row.querySelector('input').focus();
     });
 
-    // Remove option row (keep at least one)
+    // ── Remove option row (keep at least one) ─────────────────────────────
     document.getElementById('options-wrapper').addEventListener('click', function (e) {
-        if (e.target.closest('.remove-option')) {
-            const rows = document.querySelectorAll('.option-row');
-            if (rows.length > 1) {
-                e.target.closest('.option-row').remove();
-            }
+        const btn = e.target.closest('.remove-option');
+        if (!btn) return;
+        const rows = document.querySelectorAll('#options-wrapper .option-row');
+        if (rows.length > 1) {
+            btn.closest('.option-row').remove();
+        } else {
+            // Clear value instead of removing last row
+            btn.closest('.option-row').querySelector('input').value = '';
         }
     });
+})();
 </script>
 @endpush
-@endsection
