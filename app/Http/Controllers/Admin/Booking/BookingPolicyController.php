@@ -40,21 +40,6 @@ class BookingPolicyController extends Controller
             'deposit_required'   => $request->has('deposit_required')   ? 1 : 0,
         ]);
 
-        $this->validate($request, [
-            'booking_id'               => 'required|integer|exists:bookings,id|unique:booking_policies,booking_id',
-            'cancellation_type'        => 'required|in:flexible,moderate,strict,non_refundable',
-            'free_cancel_hours'        => 'nullable|integer|min:0',
-            'cancellation_fee_percent' => 'nullable|numeric|min:0|max:100',
-            'reschedule_allowed'       => 'required|boolean',
-            'reschedule_before_hours'  => 'nullable|integer|min:0',
-            'max_reschedules'          => 'nullable|integer|min:0',
-            'noshow_fee_percent'       => 'nullable|numeric|min:0|max:100',
-            'deposit_required'         => 'required|boolean',
-            'deposit_percent'          => 'nullable|numeric|min:0|max:100',
-            'deposit_due_days'         => 'nullable|integer|min:0',
-            'balance_due_days_before'  => 'nullable|integer|min:0',
-            'policy_text'              => 'nullable|string',
-        ]);
 
         BookingPolicy::create([
             'booking_id'               => $request->booking_id,
@@ -109,21 +94,6 @@ class BookingPolicyController extends Controller
             'deposit_required'   => $request->has('deposit_required')   ? 1 : 0,
         ]);
 
-        $this->validate($request, [
-            'booking_id'               => 'required|integer|exists:bookings,id|unique:booking_policies,booking_id,' . $id,
-            'cancellation_type'        => 'required|in:flexible,moderate,strict,non_refundable',
-            'free_cancel_hours'        => 'nullable|integer|min:0',
-            'cancellation_fee_percent' => 'nullable|numeric|min:0|max:100',
-            'reschedule_allowed'       => 'required|boolean',
-            'reschedule_before_hours'  => 'nullable|integer|min:0',
-            'max_reschedules'          => 'nullable|integer|min:0',
-            'noshow_fee_percent'       => 'nullable|numeric|min:0|max:100',
-            'deposit_required'         => 'required|boolean',
-            'deposit_percent'          => 'nullable|numeric|min:0|max:100',
-            'deposit_due_days'         => 'nullable|integer|min:0',
-            'balance_due_days_before'  => 'nullable|integer|min:0',
-            'policy_text'              => 'nullable|string',
-        ]);
 
         $policy->update([
             'booking_id'               => $request->booking_id,
