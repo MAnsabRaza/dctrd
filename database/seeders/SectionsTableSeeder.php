@@ -755,10 +755,20 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3286], ['name' => 'admin_booking_category_specification_edit', 'section_group_id' => 3240, 'caption' => 'Booking Category Specifications Edit']);
         Section::updateOrCreate(['id' => 3287], ['name' => 'admin_booking_category_specification_delete', 'section_group_id' => 3240, 'caption' => 'Booking Category Specifications Delete']);
 
-        Section::updateOrCreate(['id' => 3288], ['name' => 'admin_booking_bundle',        'section_group_id' => 3240, 'caption' => 'Booking Bundles']);
-Section::updateOrCreate(['id' => 3289], ['name' => 'admin_booking_bundle_create', 'section_group_id' => 3240, 'caption' => 'Booking Bundles Create']);
-Section::updateOrCreate(['id' => 3290], ['name' => 'admin_booking_bundle_edit',   'section_group_id' => 3240, 'caption' => 'Booking Bundles Edit']);
-Section::updateOrCreate(['id' => 3291], ['name' => 'admin_booking_bundle_delete', 'section_group_id' => 3240, 'caption' => 'Booking Bundles Delete']);
+        Section::updateOrCreate(['id' => 3288], ['name' => 'admin_booking_bundle', 'section_group_id' => 3240, 'caption' => 'Booking Bundles']);
+        Section::updateOrCreate(['id' => 3289], ['name' => 'admin_booking_bundle_create', 'section_group_id' => 3240, 'caption' => 'Booking Bundles Create']);
+        Section::updateOrCreate(['id' => 3290], ['name' => 'admin_booking_bundle_edit', 'section_group_id' => 3240, 'caption' => 'Booking Bundles Edit']);
+        Section::updateOrCreate(['id' => 3291], ['name' => 'admin_booking_bundle_delete', 'section_group_id' => 3240, 'caption' => 'Booking Bundles Delete']);
+
+        Section::updateOrCreate(['id' => 3292], ['name' => 'admin_booking_time_slots', 'section_group_id' => 3240, 'caption' => 'Booking Time Slots']);
+        Section::updateOrCreate(['id' => 3293], ['name' => 'admin_booking_time_slots_create', 'section_group_id' => 3240, 'caption' => 'Booking Time Slots Create']);
+        Section::updateOrCreate(['id' => 3294], ['name' => 'admin_booking_time_slots_edit', 'section_group_id' => 3240, 'caption' => 'Booking Time Slots Edit']);
+        Section::updateOrCreate(['id' => 3295], ['name' => 'admin_booking_time_slots_delete', 'section_group_id' => 3240, 'caption' => 'Booking Time Slots Delete']);
+
+        Section::updateOrCreate(['id' => 3296], ['name' => 'admin_booking_orders', 'section_group_id' => 3240, 'caption' => 'Booking Orders']);
+        Section::updateOrCreate(['id' => 3297], ['name' => 'admin_booking_orders_create', 'section_group_id' => 3240, 'caption' => 'Booking Orders Create']);
+        Section::updateOrCreate(['id' => 3294], ['name' => 'admin_booking_orders_edit', 'section_group_id' => 3240, 'caption' => 'Booking Orders Edit']);
+        Section::updateOrCreate(['id' => 3295], ['name' => 'admin_booking_orders_delete', 'section_group_id' => 3240, 'caption' => 'Booking Orders Delete']);
         /* Run Panel Sections */
         $this->runPanelSections();
     }

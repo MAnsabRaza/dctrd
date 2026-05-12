@@ -234,4 +234,8 @@ class Booking extends Model
             'bundle_id'
         )->withPivot(['quantity', 'sort_order'])->withTimestamps();
     }
+    public function timeSlots()
+    {
+        return $this->hasMany(BookingTimeSlot::class, 'booking_id');
+    }
 }

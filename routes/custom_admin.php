@@ -19,6 +19,8 @@ use App\Http\Controllers\Admin\Booking\BookingSeasonController;
 use App\Http\Controllers\Admin\Booking\BookingSpecificationController;
 use App\Http\Controllers\Admin\Booking\BookingSpecificationValueController;
 use App\Http\Controllers\Admin\Booking\BookingVariantController;
+use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
+use App\Http\Controllers\Admin\Booking\BookingOrderController;
 use Illuminate\Support\Facades\Route;
 
 // Get the admin panel prefix from the main application
@@ -108,6 +110,20 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/edit', [BookingVariantController::class, 'edit']);
         Route::post('/{id}/update', [BookingVariantController::class, 'update']);
         Route::get('/{id}/delete', [BookingVariantController::class, 'delete']);
+    });
+    Route::group(['prefix' => 'time-slot'], function () {
+        Route::get('/', [BookingTimeSlotController::class, 'index']);
+        Route::post('/store', [BookingTimeSlotController::class, 'store']);
+        Route::get('/{id}/edit', [BookingTimeSlotController::class, 'edit']);
+        Route::post('/{id}/update', [BookingTimeSlotController::class, 'update']);
+        Route::get('/{id}/delete', [BookingTimeSlotController::class, 'delete']);
+    });
+    Route::group(['prefix' => 'order'], function () {
+        Route::get('/', [BookingOrderController::class, 'index']);
+        Route::post('/store', [BookingOrderController::class, 'store']);
+        Route::get('/{id}/edit', [BookingOrderController::class, 'edit']);
+        Route::post('/{id}/update', [BookingOrderController::class, 'update']);
+        Route::get('/{id}/delete', [BookingOrderController::class, 'delete']);
     });
        // ✅ CORRECT
     Route::group(['prefix' => 'specification'], function () {

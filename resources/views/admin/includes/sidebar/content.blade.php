@@ -230,6 +230,22 @@
                     </a>
                 </li>
             @endcan
+
+             @can('admin_booking_orders')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/order*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/order">
+                        {{ trans('admin/main.admin_booking_orders') }}
+                    </a>
+                </li>
+            @endcan
+
+             @can('admin_booking_time_slot')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/time-slot*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/time-slot">
+                        {{ trans('admin/main.admin_booking_time_slot') }}
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan

@@ -33,4 +33,8 @@ class BookingResource extends Model
         return $this->hasMany(BookingAvailability::class, 'resource_id');
     }
 
+    public function timeSlots()
+    {
+        return $this->hasMany(BookingTimeSlot::class, 'resource_id');
+    }
 }

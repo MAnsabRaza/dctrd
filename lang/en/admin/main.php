@@ -303,9 +303,13 @@ return [
     'admin_booking_bundle'                    => 'Booking Bundles',
 'create_booking_bundle'                   => 'Create Bundle',
 'booking_bundle_created_successfully'     => 'Bundle created successfully.',
-'booking_bundle_updated_successfully'     => 'Bundle updated successfully.',
-'booking_bundle_deleted_successfully'     => 'Bundle deleted successfully.',
-
+    'booking_bundle_updated_successfully'     => 'Bundle updated successfully.',
+    'booking_bundle_deleted_successfully'     => 'Bundle deleted successfully.',
+    'admin_booking_orders' => 'Booking Orders',
+    'create_booking_order' => 'Create Booking Order',
+    'booking_order_created_successfully' => 'Booking order created successfully.',
+    'booking_order_updated_successfully' => 'Booking order updated successfully.',
+    'booking_order_deleted_successfully' => 'Booking order deleted successfully.',
     //specificaiton
 
     // Specifications
