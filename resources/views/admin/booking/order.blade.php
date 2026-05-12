@@ -128,26 +128,11 @@
 
                                 <form action="{{ empty($editOrder) ? getAdminPanelUrl('/booking/order/store') : getAdminPanelUrl('/booking/order/' . $editOrder->id . '/update') }}" method="POST">
                                     @csrf
+                                    <input type="hidden" name="user_id" value="{{ old('user_id') ?? $editOrder->user_id ?? auth()->id() }}">
 
                                     <div class="row">
                                         {{-- Left Column --}}
                                         <div class="col-md-6">
-
-                                            {{-- User --}}
-                                            <div class="form-group">
-                                                <label>{{ trans('admin/main.user') ?? 'User' }} <span class="text-danger">*</span></label>
-                                                <select name="user_id" class="form-control @error('user_id') is-invalid @enderror" required>
-                                                    <option value="">{{ trans('admin/main.select') ?? 'Select...' }}</option>
-                                                    @foreach($users as $user)
-                                                        <option value="{{ $user->id }}" {{ (old('user_id') ?? $editOrder->user_id ?? null) == $user->id ? 'selected' : '' }}>
-                                                            {{ $user->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                @error('user_id')
-                                                    <span class="invalid-feedback">{{ $message }}</span>
-                                                @enderror
-                                            </div>
 
                                             {{-- Currency --}}
                                             <div class="form-group">
@@ -273,11 +258,11 @@
                                                                 <select name="item_id[]" class="form-control item-select" required>
                                                                     <option value="">Select</option>
                                                                     @if($item->item_type == 'booking' && $item->booking_id)
-                                                                        <option value="booking-{{ $item->booking_id }}" selected>
+                                                                        <option value="{{ $item->booking_id }}" selected>
                                                                             {{ $item->booking->title ?? 'Booking #' . $item->booking_id }}
                                                                         </option>
                                                                     @elseif($item->item_type == 'bundle' && $item->bundle_id)
-                                                                        <option value="bundle-{{ $item->bundle_id }}" selected>
+                                                                        <option value="{{ $item->bundle_id }}" selected>
                                                                             {{ $item->bundle->title ?? 'Bundle #' . $item->bundle_id }}
                                                                         </option>
                                                                     @endif
@@ -519,14 +504,14 @@
                     // Load bookings
                     const options = '<option value="">Select Booking</option>';
                     @foreach($bookings as $booking)
-                    options += '<option value="booking-{{ $booking->id }}">{{ $booking->title }}</option>';
+                    options += '<option value="{{ $booking->id }}">{{ $booking->title }}</option>';
                     @endforeach
                     itemSelect.innerHTML = options;
                 } else if (type === 'bundle') {
                     // Load bundles
                     const options = '<option value="">Select Bundle</option>';
                     @foreach($bundles as $bundle)
-                    options += '<option value="bundle-{{ $bundle->id }}">{{ $bundle->title }}</option>';
+                    options += '<option value="{{ $bundle->id }}">{{ $bundle->title }}</option>';
                     @endforeach
                     itemSelect.innerHTML = options;
                 } else {

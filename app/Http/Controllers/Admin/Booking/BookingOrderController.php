@@ -8,7 +8,6 @@ use App\Models\BookingBundle;
 use App\Models\BookingOrder;
 use App\Models\BookingOrderItem;
 use App\Models\BookingResource;
-use App\User;
 use Illuminate\Http\Request;
 
 class BookingOrderController extends Controller
@@ -23,7 +22,6 @@ class BookingOrderController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(20);
 
-        $users = User::orderBy('id', 'desc')->get(['id', 'name']);
         $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
         $bundles = BookingBundle::orderBy('id', 'desc')->get(['id', 'title']);
         $resources = BookingResource::orderBy('name')->get(['id', 'name']);
@@ -31,7 +29,6 @@ class BookingOrderController extends Controller
         return view('admin.booking.order', [
             'pageTitle' => 'Booking Orders',
             'orders' => $orders,
-            'users' => $users,
             'bookings' => $bookings,
             'bundles' => $bundles,
             'resources' => $resources,
@@ -44,7 +41,6 @@ class BookingOrderController extends Controller
         $this->authorize('admin_booking_orders_create');
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
             'currency' => 'required|string|max:10',
             'status' => 'required|in:pending,confirmed,cancelled,completed,no_show',
             'payment_status' => 'required|in:unpaid,partial,paid,refunded',
@@ -78,7 +74,7 @@ class BookingOrderController extends Controller
         $subtotal = 0;
         $order = BookingOrder::create([
             'order_number' => 'TEMP-' . uniqid(),
-            'user_id' => $validated['user_id'],
+            'user_id' => auth()->id(),
             'subtotal' => 0,
             'discount_amount' => $validated['discount_amount'] ?? 0,
             'tax_amount' => $validated['tax_amount'] ?? 0,
@@ -137,7 +133,6 @@ class BookingOrderController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(20);
 
-        $users = User::orderBy('id', 'desc')->get(['id', 'name']);
         $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
         $bundles = BookingBundle::orderBy('id', 'desc')->get(['id', 'title']);
         $resources = BookingResource::orderBy('name')->get(['id', 'name']);
@@ -145,7 +140,6 @@ class BookingOrderController extends Controller
         return view('admin.booking.order', [
             'pageTitle' => 'Booking Orders',
             'orders' => $orders,
-            'users' => $users,
             'bookings' => $bookings,
             'bundles' => $bundles,
             'resources' => $resources,
@@ -194,7 +188,6 @@ class BookingOrderController extends Controller
         $subtotal = 0;
 
         $order->update([
-            'user_id' => $validated['user_id'],
             'currency' => $validated['currency'],
             'status' => $validated['status'],
             'payment_status' => $validated['payment_status'],
