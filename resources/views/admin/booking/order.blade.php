@@ -93,12 +93,16 @@
                                                     </a>
                                                     @endcan
                                                     @can('admin_booking_orders_delete')
-                                                    <form action="{{ getAdminPanelUrl('/booking/order/' . $order->id . '/delete') }}" method="POST" style="display: inline;">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('{{ trans('admin/main.confirm_delete') ?? 'Are you sure?' }}')">
-                                                            <i class="fa fa-trash"></i>
-                                                        </button>
-                                                    </form>
+                                                        @include('admin.includes.delete_button', [
+                                                            'url'       => getAdminPanelUrl('/booking/order/' . $order->id . '/delete'),
+                                                            'btnClass'  => 'btn btn-sm btn-danger ml-1',
+                                                            'btnText'   => '',
+                                                            'btnIcon'   => 'trash',
+                                                            'iconType'  => 'lin',
+                                                            'iconClass' => 'text-white',
+                                                            'tooltip'   => trans('admin/main.delete'),
+                                                            'noBtnTransparent' => true,
+                                                        ])
                                                     @endcan
                                                 </td>
                                             </tr>
