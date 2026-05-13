@@ -279,13 +279,13 @@
                                                                 </select>
                                                             </td>
                                                             <td>
-                                                                <input type="date" name="booking_date[]" class="form-control" value="{{ $item->booking_date }}">
+                                                                <input type="date" name="booking_date[]" class="form-control" value="{{ $item->booking_date ? $item->booking_date->format('Y-m-d') : '' }}">
                                                             </td>
                                                             <td>
-                                                                <input type="time" name="start_time[]" class="form-control" value="{{ $item->start_time }}">
+                                                                <input type="time" name="start_time[]" class="form-control" value="{{ $item->start_time ? substr($item->start_time, 0, 5) : '' }}">
                                                             </td>
                                                             <td>
-                                                                <input type="time" name="end_time[]" class="form-control" value="{{ $item->end_time }}">
+                                                                <input type="time" name="end_time[]" class="form-control" value="{{ $item->end_time ? substr($item->end_time, 0, 5) : '' }}">
                                                             </td>
                                                             <td>
                                                                 <input type="number" name="quantity[]" class="form-control item-qty" min="1" value="{{ $item->quantity }}">
@@ -411,13 +411,37 @@
     const itemsBody  = document.getElementById('items-body');
     const addItemBtn = document.getElementById('add-item');
 
-    // Build resources dropdown HTML
-    const resourcesHtml = `
-        <option value="">Select</option>
-        @foreach($resources as $resource)
-        <option value="{{ $resource->id }}">{{ $resource->name }}</option>
-        @endforeach
-    `;
+    const bookingItems = @json($bookings->values());
+    const bundleItems = @json($bundles->values());
+    const resourceItems = @json($resources->values());
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, function (char) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char];
+        });
+    }
+
+    function buildOptions(items, placeholder, emptyText) {
+        let options = '<option value="">' + escapeHtml(placeholder) + '</option>';
+
+        if (!items.length && emptyText) {
+            options += '<option value="" disabled>' + escapeHtml(emptyText) + '</option>';
+        }
+
+        items.forEach(function (item) {
+            options += '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.title || item.name || ('#' + item.id)) + '</option>';
+        });
+
+        return options;
+    }
+
+    const resourcesHtml = buildOptions(resourceItems, 'Select', 'No resources found');
 
     function buildRow() {
         const tr = document.createElement('tr');
@@ -501,19 +525,9 @@
                 itemSelect.innerHTML = '<option value="">Loading...</option>';
 
                 if (type === 'booking') {
-                    // Load bookings
-                    const options = '<option value="">Select Booking</option>';
-                    @foreach($bookings as $booking)
-                    options += '<option value="{{ $booking->id }}">{{ $booking->title }}</option>';
-                    @endforeach
-                    itemSelect.innerHTML = options;
+                    itemSelect.innerHTML = buildOptions(bookingItems, 'Select Booking', 'No bookings found');
                 } else if (type === 'bundle') {
-                    // Load bundles
-                    const options = '<option value="">Select Bundle</option>';
-                    @foreach($bundles as $bundle)
-                    options += '<option value="{{ $bundle->id }}">{{ $bundle->title }}</option>';
-                    @endforeach
-                    itemSelect.innerHTML = options;
+                    itemSelect.innerHTML = buildOptions(bundleItems, 'Select Bundle', 'No bundles found');
                 } else {
                     itemSelect.innerHTML = '<option value="">Select Item Type First</option>';
                 }

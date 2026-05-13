@@ -127,7 +127,7 @@ class BookingOrderController extends Controller
     {
         $this->authorize('admin_booking_orders_edit');
 
-        $editOrder = BookingOrder::with(['items'])->findOrFail($id);
+        $editOrder = BookingOrder::with(['items.booking', 'items.bundle'])->findOrFail($id);
 
         $orders = BookingOrder::with(['user', 'items.booking', 'items.bundle'])
             ->orderBy('id', 'desc')
