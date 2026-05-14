@@ -310,6 +310,22 @@ return [
     'booking_order_created_successfully' => 'Booking order created successfully.',
     'booking_order_updated_successfully' => 'Booking order updated successfully.',
     'booking_order_deleted_successfully' => 'Booking order deleted successfully.',
+
+    //booking import
+    'admin_booking_imports' => 'Booking Imports',
+    'booking_imports' => 'Booking Imports',
+    'csv_format_note' => 'CSV Format Note',
+    'import_bookings'=>'Import Booking',
+    'csv_columns_info'=>'CSV Columns Information',
+    'import_type'=>'Import Type',
+    'csv_file'=>'CSV File',
+    'max_file_size'=>'Max File Size',
+    'allowed_formats'=>'Allowed Formats',
+    'create_booking_import' => 'Create Booking Import',
+    'booking_import_created_successfully' => 'Booking import created successfully.',
+    'booking_import_deleted_successfully' => 'Booking import deleted successfully.',
+    'download_sample_csv' => 'Download Sample CSV',
+
     //booking order
 
     'booking_orders' => 'Booking Orders',
