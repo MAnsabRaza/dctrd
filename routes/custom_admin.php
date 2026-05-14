@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\Booking\BookingBundleController;
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingCategorySpecificationController;
 use App\Http\Controllers\Admin\Booking\BookingController;
+use App\Http\Controllers\Admin\Booking\BookingImportController;
 use App\Http\Controllers\Admin\Booking\BookingPolicyController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
 use App\Http\Controllers\Admin\Booking\BookingResourceController;
@@ -104,7 +105,7 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/delete', [BookingPolicyController::class, 'delete']);
     });
 
-     Route::group(['prefix' => 'variant'], function () {
+    Route::group(['prefix' => 'variant'], function () {
         Route::get('/', [BookingVariantController::class, 'index']);
         Route::post('/store', [BookingVariantController::class, 'store']);
         Route::get('/{id}/edit', [BookingVariantController::class, 'edit']);
@@ -125,7 +126,7 @@ Route::group(['prefix' => 'booking'], function () {
         Route::post('/{id}/update', [BookingOrderController::class, 'update']);
         Route::get('/{id}/delete', [BookingOrderController::class, 'delete']);
     });
-       // ✅ CORRECT
+    // ✅ CORRECT
     Route::group(['prefix' => 'specification'], function () {
         Route::get('/', [BookingSpecificationController::class, 'index']);
         Route::post('/store', [BookingSpecificationController::class, 'store']);
@@ -149,14 +150,22 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/delete', [BookingCategorySpecificationController::class, 'delete']);
     });
 
-     Route::group(['prefix' => 'bundle'], function () {
+    Route::group(['prefix' => 'bundle'], function () {
         Route::get('/', [BookingBundleController::class, 'index']);
         Route::post('/store', [BookingBundleController::class, 'store']);
         Route::get('/{id}/edit', [BookingBundleController::class, 'edit']);
         Route::post('/{id}/update', [BookingBundleController::class, 'update']);
         Route::get('/{id}/delete', [BookingBundleController::class, 'delete']);
     });
-   
+
+    Route::group(['prefix' => 'import'], function () {
+        Route::get('/', [BookingImportController::class, 'index']);
+        Route::post('/store', [BookingImportController::class, 'store']);
+        Route::get('/{id}/show', [BookingImportController::class, 'show']);
+        Route::get('/{id}/delete', [BookingImportController::class, 'delete']);
+        Route::get('/sample', [BookingImportController::class, 'downloadSample']);
+    });
+
 });
 
 /**

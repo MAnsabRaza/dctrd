@@ -246,6 +246,13 @@
                     </a>
                 </li>
             @endcan
+             @can('admin_booking_imports')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/import*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/import">
+                        {{ trans('admin/main.admin_booking_imports') }}
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan
