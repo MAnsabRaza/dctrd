@@ -239,10 +239,10 @@
                 </li>
             @endcan
 
-             @can('admin_booking_time_slot')
+             @can('admin_booking_time_slots')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/time-slot*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/time-slot">
-                        {{ trans('admin/main.admin_booking_time_slot') }}
+                        {{ trans('admin/main.admin_booking_time_slots') }}
                     </a>
                 </li>
             @endcan

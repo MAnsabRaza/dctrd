@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use \App\Models\Section;
+use Illuminate\Support\Facades\Cache;
 
 class SectionsTableSeeder extends Seeder
 {
@@ -767,10 +768,12 @@ class SectionsTableSeeder extends Seeder
 
         Section::updateOrCreate(['id' => 3296], ['name' => 'admin_booking_orders', 'section_group_id' => 3240, 'caption' => 'Booking Orders']);
         Section::updateOrCreate(['id' => 3297], ['name' => 'admin_booking_orders_create', 'section_group_id' => 3240, 'caption' => 'Booking Orders Create']);
-        Section::updateOrCreate(['id' => 3294], ['name' => 'admin_booking_orders_edit', 'section_group_id' => 3240, 'caption' => 'Booking Orders Edit']);
-        Section::updateOrCreate(['id' => 3295], ['name' => 'admin_booking_orders_delete', 'section_group_id' => 3240, 'caption' => 'Booking Orders Delete']);
+        Section::updateOrCreate(['id' => 3298], ['name' => 'admin_booking_orders_edit', 'section_group_id' => 3240, 'caption' => 'Booking Orders Edit']);
+        Section::updateOrCreate(['id' => 3299], ['name' => 'admin_booking_orders_delete', 'section_group_id' => 3240, 'caption' => 'Booking Orders Delete']);
         /* Run Panel Sections */
         $this->runPanelSections();
+
+        Cache::forget('sections');
     }
 
     private function runPanelSections()
