@@ -14,7 +14,7 @@ return new class extends Migration {
     {
         Schema::create('booking_imports', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->index();
+            $table->unsignedInteger('user_id')->index();
             $table->string('file_path');
             $table->string('file_name');
             $table->string('type')->default('bookings'); // bookings or orders
