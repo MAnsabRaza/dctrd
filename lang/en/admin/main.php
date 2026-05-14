@@ -316,6 +316,7 @@ return [
     'booking_imports' => 'Booking Imports',
     'csv_format_note' => 'CSV Format Note',
     'import_bookings'=>'Import Booking',
+    'orders'=>'Order',
     'csv_columns_info'=>'CSV Columns Information',
     'import_type'=>'Import Type',
     'csv_file'=>'CSV File',
