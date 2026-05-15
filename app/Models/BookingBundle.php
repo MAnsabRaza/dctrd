@@ -58,4 +58,11 @@ class BookingBundle extends Model
             'booking_id'
         )->withPivot(['quantity', 'sort_order'])->withTimestamps();
     }
+     public function getThumbnailUrlAttribute(): string
+    {
+        if (!$this->thumbnail) return asset('assets/images/bundle-placeholder.jpg');
+        return str_starts_with($this->thumbnail, 'http')
+            ? $this->thumbnail
+            : asset('storage/' . $this->thumbnail);
+    }
 }

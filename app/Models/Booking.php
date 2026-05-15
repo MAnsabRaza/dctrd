@@ -145,6 +145,19 @@ class Booking extends Model
         return $query->whereIn('status', ['published', 'pending']);
     }
 
+     public function scopeNearby($query, float $lat, float $lng, float $radiusKm = 50)
+    {
+        return $query->selectRaw("*, (
+            6371 * acos(
+                cos(radians(?)) * cos(radians(lat)) *
+                cos(radians(lng) - radians(?)) +
+                sin(radians(?)) * sin(radians(lat))
+            )
+        ) AS distance_km", [$lat, $lng, $lat])
+        ->having('distance_km', '<=', $radiusKm)
+        ->orderBy('distance_km');
+    }
+
     // ─── Accessors ───────────────────────────────────────────────────
 
     /**
@@ -155,6 +168,16 @@ class Booking extends Model
         return ($this->discount_price && $this->discount_price > 0)
             ? (float) $this->discount_price
             : (float) $this->price;
+    }
+
+    public function getThumbnailUrlAttribute(): string
+    {
+        if (!$this->thumbnail) {
+            return asset('assets/images/booking-placeholder.jpg');
+        }
+        return str_starts_with($this->thumbnail, 'http')
+            ? $this->thumbnail
+            : asset('storage/' . $this->thumbnail);
     }
 
     /**
