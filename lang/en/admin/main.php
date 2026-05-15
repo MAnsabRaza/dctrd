@@ -374,6 +374,10 @@ return [
     'failed_rows'  =>'Failed Rows',
     'imported_by'=>'Imported By',
     'view'=>'View',
+    'import_summary'=>'Import Summary',
+    'row'=>'Row',
+    'error'=>'Error',
+    'data'=>'data',
 
     // Shared
     'values' => 'Values',
