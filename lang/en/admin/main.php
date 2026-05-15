@@ -378,6 +378,7 @@ return [
     'row'=>'Row',
     'error'=>'Error',
     'data'=>'data',
+    'import_details'=>'Import Details',
 
     // Shared
     'values' => 'Values',

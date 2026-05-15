@@ -262,3 +262,4 @@ class Booking extends Model
         return $this->hasMany(BookingTimeSlot::class, 'booking_id');
     }
 }
+

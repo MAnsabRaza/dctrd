@@ -144,11 +144,15 @@ class BookingImportController extends Controller
                     }
 
                     Booking::create([
+                        'creator_id' => !empty($record['creator_id']) ? (int) $record['creator_id'] : $import->user_id,
+                        'category_id' => !empty($record['category_id']) ? (int) $record['category_id'] : null,
                         'title' => $title,
+                        'slug' => \Str::slug($title) . '-' . uniqid(),
+                        'booking_type' => trim($record['booking_type'] ?? 'standard'),
                         'description' => trim($record['description'] ?? ''),
                         'price' => is_numeric($record['price'] ?? null) ? (float) $record['price'] : 0,
                         'capacity' => is_numeric($record['capacity'] ?? null) ? (int) $record['capacity'] : 1,
-                        'status' => isset($record['status']) ? (bool) (int) $record['status'] : true,
+                        'status' => isset($record['status']) && (int) $record['status'] === 1 ? 'published' : 'inactive',
                     ]);
 
                     $successRows++;
