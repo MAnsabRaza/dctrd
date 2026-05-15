@@ -367,6 +367,14 @@ return [
     'booking_category_specification_updated_successfully' => 'Category specification updated successfully.',
     'booking_category_specification_deleted_successfully' => 'Category specification removed successfully.',
 
+    //booking import
+    'file_name'=>'File Name',
+    'total_rows'=>'Total Rows',
+    'success_rows'  =>'Success Rows',
+    'failed_rows'  =>'Failed Rows',
+    'imported_by'=>'Imported By',
+    'view'=>'View',
+
     // Shared
     'values' => 'Values',
     'sort_order' => 'Sort Order',
