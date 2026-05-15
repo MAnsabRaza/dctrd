@@ -379,6 +379,7 @@ return [
     'error'=>'Error',
     'data'=>'data',
     'import_details'=>'Import Details',
+    'no_errors_all_rows_imported '=>'No errors, all rows imported successfully.',
 
     // Shared
     'values' => 'Values',
