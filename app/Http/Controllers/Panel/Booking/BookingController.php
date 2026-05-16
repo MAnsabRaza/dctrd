@@ -62,6 +62,7 @@ class BookingController extends Controller
         return view('design_1.panel.bookings.create.index', [
             'pageTitle' => trans('panel.new_booking'),
             'allCategoryLists' => $allCategoryLists,
+            'booking' => null,
         ]);
     }
 
