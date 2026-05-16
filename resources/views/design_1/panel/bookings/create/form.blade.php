@@ -1,3 +1,68 @@
+{{-- ══════════════════════════════════════════════════════════════
+     Inline toggle CSS  — fixes broken custom-switch labels
+     ══════════════════════════════════════════════════════════════ --}}
+<style>
+.booking-switch-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+}
+.booking-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+}
+.booking-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+.booking-switch-slider {
+    position: absolute;
+    inset: 0;
+    background: #ccc;
+    border-radius: 26px;
+    cursor: pointer;
+    transition: background .2s;
+}
+.booking-switch-slider:before {
+    content: '';
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.booking-switch input:checked + .booking-switch-slider {
+    background: #2196F3;
+}
+.booking-switch input:checked + .booking-switch-slider:before {
+    transform: translateX(22px);
+}
+.booking-switch-label {
+    font-size: 14px;
+    color: #495057;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0;
+}
+.booking-switch-label small {
+    display: block;
+    font-size: 12px;
+    color: #999;
+    font-weight: 400;
+}
+</style>
+
 <div class="row">
     <div class="col-12">
         @if(session('success'))
@@ -19,7 +84,7 @@
         $isEditing = isset($booking) && !is_null($booking);
     @endphp
 
-    {{-- ── Title & Slug ─────────────────────────────────────────────────── --}}
+    {{-- ── Title & Slug ──────────────────────────────────────────────── --}}
     <div class="col-12 col-md-6">
         <div class="form-group">
             <label>{{ trans('panel.title') }} <span class="text-danger">*</span></label>
@@ -41,7 +106,7 @@
         </div>
     </div>
 
-    {{-- ── Category & Booking Type ─────────────────────────────────────── --}}
+    {{-- ── Category & Booking Type ──────────────────────────────────── --}}
     <div class="col-12 col-md-6">
         <div class="form-group">
             <label>{{ trans('panel.category') }}</label>
@@ -76,7 +141,7 @@
         </div>
     </div>
 
-    {{-- ── Sub Type & Requirements ───────────────────────────────────────── --}}
+    {{-- ── Sub Type & Requirements ──────────────────────────────────── --}}
     <div class="col-12 col-md-6">
         <div class="form-group">
             <label>{{ trans('panel.sub_type') }}</label>
@@ -93,7 +158,7 @@
         </div>
     </div>
 
-    {{-- ── Price, Discount, Currency ────────────────────────────────────── --}}
+    {{-- ── Price, Discount, Currency ───────────────────────────────── --}}
     <div class="col-12 col-md-4">
         <div class="form-group">
             <label>{{ trans('panel.price') }}</label>
@@ -129,7 +194,7 @@
         </div>
     </div>
 
-    {{-- ── Price Per & Price Unit ───────────────────────────────────────── --}}
+    {{-- ── Price Per & Price Unit ───────────────────────────────────── --}}
     <div class="col-12 col-md-6">
         <div class="form-group">
             <label>{{ trans('panel.price_per') }} <small class="text-muted">(numeric)</small></label>
@@ -150,7 +215,7 @@
         </div>
     </div>
 
-    {{-- ── Capacity, Min/Max Persons, Duration ─────────────────────────── --}}
+    {{-- ── Capacity, Min/Max Persons, Duration ─────────────────────── --}}
     <div class="col-12 col-md-3">
         <div class="form-group">
             <label>{{ trans('panel.capacity') }}</label>
@@ -186,7 +251,7 @@
         </div>
     </div>
 
-    {{-- ── Description ─────────────────────────────────────────────────── --}}
+    {{-- ── Description ──────────────────────────────────────────────── --}}
     <div class="col-12">
         <div class="form-group">
             <label>{{ trans('panel.description') }}</label>
@@ -196,27 +261,30 @@
         </div>
     </div>
 
-    {{-- ── Location Toggle ──────────────────────────────────────────────── --}}
+    {{-- ── Location Toggle ──────────────────────────────────────────── --}}
     @php
-        $locationEnabled = old('location_enabled', $isEditing && $booking->location_enabled ? 1 : 0);
+        $locationEnabled = old('location_enabled', $isEditing && !empty($booking->location_enabled) ? 1 : 0);
     @endphp
 
     <div class="col-12 mb-15">
-        <div class="custom-control custom-switch">
-            <input type="checkbox"
-                   class="custom-control-input"
-                   id="locationSwitch"
-                   name="location_enabled"
-                   value="1"
-                   {{ $locationEnabled ? 'checked' : '' }}
-                   onchange="toggleLocationFields(this.checked)">
-            <label class="custom-control-label" for="locationSwitch">
-                {{ trans('panel.enable_location') }}
+        <div class="booking-switch-row">
+            <label class="booking-switch" for="locationSwitch">
+                <input type="checkbox"
+                       id="locationSwitch"
+                       name="location_enabled"
+                       value="1"
+                       {{ $locationEnabled ? 'checked' : '' }}
+                       onchange="toggleLocationFields(this.checked)">
+                <span class="booking-switch-slider"></span>
+            </label>
+            <label class="booking-switch-label" for="locationSwitch">
+                Enable location
+                <small>Show address &amp; map coordinates</small>
             </label>
         </div>
     </div>
 
-    {{-- ── Location Fields ─────────────────────────────────────────────── --}}
+    {{-- ── Location Fields ──────────────────────────────────────────── --}}
     <div id="locationFields"
          class="col-12"
          style="{{ $locationEnabled ? 'display:block' : 'display:none' }}">
@@ -224,7 +292,7 @@
 
             <div class="col-12 col-md-6">
                 <div class="form-group">
-                    <label>{{ trans('panel.address_line') }}</label>
+                    <label>Address line</label>
                     <input name="address_line" type="text" class="form-control"
                            value="{{ old('address_line', $isEditing ? $booking->address_line : '') }}">
                 </div>
@@ -232,7 +300,7 @@
 
             <div class="col-12 col-md-6">
                 <div class="form-group">
-                    <label>{{ trans('panel.city') }}</label>
+                    <label>City</label>
                     <input name="city" type="text" class="form-control"
                            value="{{ old('city', $isEditing ? $booking->city : '') }}">
                 </div>
@@ -240,7 +308,7 @@
 
             <div class="col-12 col-md-4">
                 <div class="form-group">
-                    <label>{{ trans('panel.state') }}</label>
+                    <label>State / Province</label>
                     <input name="state" type="text" class="form-control"
                            value="{{ old('state', $isEditing ? $booking->state : '') }}">
                 </div>
@@ -248,7 +316,7 @@
 
             <div class="col-12 col-md-4">
                 <div class="form-group">
-                    <label>{{ trans('panel.country') }}</label>
+                    <label>Country</label>
                     <input name="country" type="text" class="form-control"
                            value="{{ old('country', $isEditing ? $booking->country : '') }}">
                 </div>
@@ -256,7 +324,7 @@
 
             <div class="col-12 col-md-4">
                 <div class="form-group">
-                    <label>{{ trans('panel.postal_code') }}</label>
+                    <label>Postal code</label>
                     <input name="postal_code" type="text" class="form-control"
                            value="{{ old('postal_code', $isEditing ? $booking->postal_code : '') }}">
                 </div>
@@ -283,47 +351,53 @@
         </div>
     </div>
 
-    {{-- ── Status ───────────────────────────────────────────────────────── --}}
+    {{-- ── Status Toggle ────────────────────────────────────────────── --}}
     <div class="col-12 col-md-6 mb-15">
-        <div class="custom-control custom-switch">
-            <input type="checkbox"
-                   class="custom-control-input"
-                   id="bookingStatus"
-                   name="status"
-                   value="1"
-                   {{ old('status', $isEditing && $booking->status === 'published' ? 1 : 0) ? 'checked' : '' }}>
-            <label class="custom-control-label" for="bookingStatus">
-                {{ trans('public.active') }}
+        <div class="booking-switch-row">
+            <label class="booking-switch" for="bookingStatus">
+                <input type="checkbox"
+                       id="bookingStatus"
+                       name="status"
+                       value="1"
+                       {{ old('status', $isEditing && $booking->status === 'published' ? 1 : 0) ? 'checked' : '' }}>
+                <span class="booking-switch-slider"></span>
+            </label>
+            <label class="booking-switch-label" for="bookingStatus">
+                Active / Published
+                <small>Visible to users on the platform</small>
             </label>
         </div>
     </div>
 
-    {{-- ── Featured ─────────────────────────────────────────────────────── --}}
+    {{-- ── Featured Toggle ──────────────────────────────────────────── --}}
     <div class="col-12 col-md-6 mb-15">
-        <div class="custom-control custom-switch">
-            <input type="checkbox"
-                   class="custom-control-input"
-                   id="bookingFeatured"
-                   name="featured"
-                   value="1"
-                   {{ old('featured', $isEditing && $booking->featured ? 1 : 0) ? 'checked' : '' }}>
-            <label class="custom-control-label" for="bookingFeatured">
-                {{ trans('panel.featured') }}
+        <div class="booking-switch-row">
+            <label class="booking-switch" for="bookingFeatured">
+                <input type="checkbox"
+                       id="bookingFeatured"
+                       name="featured"
+                       value="1"
+                       {{ old('featured', $isEditing && $booking->featured ? 1 : 0) ? 'checked' : '' }}>
+                <span class="booking-switch-slider"></span>
+            </label>
+            <label class="booking-switch-label" for="bookingFeatured">
+                Featured
+                <small>Show in featured / homepage section</small>
             </label>
         </div>
     </div>
 
-    {{-- ── Meta JSON ────────────────────────────────────────────────────── --}}
+    {{-- ── Meta JSON ────────────────────────────────────────────────── --}}
     <div class="col-12">
         <div class="form-group">
-            <label>{{ trans('panel.meta_json') }}</label>
+            <label>Meta JSON</label>
             <textarea name="meta" rows="3" class="form-control"
                       placeholder='{"key": "value"}'>{{ old('meta', $isEditing && $booking->meta ? json_encode($booking->meta, JSON_PRETTY_PRINT) : '') }}</textarea>
-            <small class="text-muted">{{ trans('panel.meta_json_hint') }}</small>
+            <small class="text-muted">Meta JSON data for the booking. Can include amenities, policies, etc.</small>
         </div>
     </div>
 
-    {{-- ── Submit ───────────────────────────────────────────────────────── --}}
+    {{-- ── Submit ────────────────────────────────────────────────────── --}}
     <div class="col-12 mt-10">
         <button type="submit" class="btn btn-primary">
             {{ $isEditing ? trans('public.update') : trans('public.save') }}
@@ -334,14 +408,9 @@
     </div>
 </div>
 
-{{-- ── JS: Toggle location fields ──────────────────────────────────────── --}}
+{{-- ── JS ─────────────────────────────────────────────────────────────── --}}
 <script>
     function toggleLocationFields(show) {
-        var el = document.getElementById('locationFields');
-        if (show) {
-            el.style.display = 'block';
-        } else {
-            el.style.display = 'none';
-        }
+        document.getElementById('locationFields').style.display = show ? 'block' : 'none';
     }
 </script>
