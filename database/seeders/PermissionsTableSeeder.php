@@ -439,8 +439,8 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 3313], ['role_id' => 2, 'section_id' => 3313, 'allow' => 1]);
 
         \App\Models\Permission::updateOrCreate(['id' => 3320], ['role_id' => 2, 'section_id' => 3320, 'allow' => 1]);
-\App\Models\Permission::updateOrCreate(['id' => 3321], ['role_id' => 2, 'section_id' => 3321, 'allow' => 1]);
-\App\Models\Permission::updateOrCreate(['id' => 3322], ['role_id' => 2, 'section_id' => 3322, 'allow' => 1]);
-\App\Models\Permission::updateOrCreate(['id' => 3323], ['role_id' => 2, 'section_id' => 3322, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 3321], ['role_id' => 2, 'section_id' => 3321, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 3322], ['role_id' => 2, 'section_id' => 3322, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 3323], ['role_id' => 2, 'section_id' => 3323, 'allow' => 1]);
     }
 }

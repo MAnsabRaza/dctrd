@@ -166,11 +166,12 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/delete', [BookingImportController::class, 'delete']);
         Route::get('/sample', [BookingImportController::class, 'downloadSample']);
     });
-    Route::group(['prefix' => 'review'], function () {
-    Route::get('/', [BookingReviewController::class, 'index']);
-    Route::get('/{id}/edit', [BookingReviewController::class, 'edit']);
+  Route::group(['prefix' => 'review'], function () {
+    Route::get('/',             [BookingReviewController::class, 'index']);
+    Route::post('/store',       [BookingReviewController::class, 'store']);
+    Route::get('/{id}/edit',    [BookingReviewController::class, 'edit']);
     Route::post('/{id}/update', [BookingReviewController::class, 'update']);
-    Route::get('/{id}/delete', [BookingReviewController::class, 'delete']);
+    Route::get('/{id}/delete',  [BookingReviewController::class, 'delete']);
 });
 
 });
