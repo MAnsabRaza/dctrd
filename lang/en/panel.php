@@ -69,6 +69,7 @@ return [
 'all_statuses'=>'All statuses',
 'to'=>'To',
 'from'=>'From',
+'search_by_title'=>'Searh By Title',
 
 
 

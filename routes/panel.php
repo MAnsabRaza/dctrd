@@ -26,6 +26,8 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
         Route::post('/', 'Booking\BookingController@store')->name('panel.bookings.store');
         Route::put('/{id}', 'Booking\BookingController@update')->name('panel.bookings.update');
         Route::delete('/{id}', 'Booking\BookingController@destroy')->name('panel.bookings.destroy');
+        Route::post('/{id}/update', 'Booking\BookingController@update')->name('panel.bookings.update.post');
+        Route::post('/{id}/delete', 'Booking\BookingController@destroy')->name('panel.bookings.destroy.post');
     });
 
     Route::group(['prefix' => 'users'], function () {

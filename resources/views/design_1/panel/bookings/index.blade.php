@@ -379,9 +379,9 @@
             clearErrors();
             bookingFormSubmitBtn.disabled = true;
 
-            const bookingId = fields.id.value;
-            const url    = bookingId ? `/panel/bookings/${bookingId}` : '/panel/bookings';
-            const method = bookingId ? 'PUT' : 'POST';
+            const bookingId = fields.id.value.trim();
+            const url    = bookingId ? `/panel/bookings/${encodeURIComponent(bookingId)}/update` : '/panel/bookings';
+            const method = 'POST';
 
             const body = {
                 title:            fields.title.value.trim(),
@@ -451,9 +451,14 @@
             if (!result.isConfirmed) return;
 
             try {
-                const res = await fetch(`/panel/bookings/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': csrfToken, Accept: 'application/json' },
+                const res = await fetch(`/panel/bookings/${encodeURIComponent(id)}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        Accept: 'application/json',
+                    },
+                    body: JSON.stringify({ _token: csrfToken }),
                     credentials: 'same-origin',
                 });
 
@@ -471,7 +476,12 @@
         const bindTableActions = () => {
             document.querySelectorAll('.btn-edit-booking').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const row     = btn.closest('tr');
+                    const row = btn.closest('tr');
+                    if (!row || !row.dataset.booking) {
+                        showToast('error', '{{ trans('panel.failed_to_load_booking') }}');
+                        return;
+                    }
+
                     const booking = JSON.parse(decodeURIComponent(row.dataset.booking));
                     populateForm(booking);
                     bookingModal.modal('show');
@@ -480,7 +490,22 @@
 
             document.querySelectorAll('.btn-delete-booking').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    deleteBooking(btn.dataset.id, btn.dataset.title);
+                    const row = btn.closest('tr');
+                    let bookingId = btn.dataset.id;
+                    let title = btn.dataset.title;
+
+                    if ((!bookingId || bookingId === '') && row && row.dataset.booking) {
+                        const booking = JSON.parse(decodeURIComponent(row.dataset.booking));
+                        bookingId = booking.id;
+                        title = title || booking.title;
+                    }
+
+                    if (!bookingId) {
+                        showToast('error', '{{ trans('panel.invalid_booking_id') }}');
+                        return;
+                    }
+
+                    deleteBooking(bookingId, title);
                 });
             });
         };
