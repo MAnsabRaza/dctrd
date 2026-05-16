@@ -17,23 +17,18 @@ class BookingController extends Controller
     {
         $this->authorize('panel_bookings');
 
-        $user = auth()->user();
-
         $query = Booking::query()
             ->with('category')
             ->orderBy('created_at', 'desc');
 
         $copyQuery = deepClone($query);
-
-        $query = $this->handleFilters($request, $query);
-
+        $query     = $this->handleFilters($request, $query);
         $getListData = $this->getListsData($request, $query);
 
         if ($request->ajax()) {
             return $getListData;
         }
 
-        $categoryIds = deepClone($copyQuery)->pluck('category_id')->filter()->toArray();
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title')
             ->orderBy('title')
@@ -44,9 +39,7 @@ class BookingController extends Controller
             'allCategoryLists' => $allCategoryLists,
         ];
 
-        $data = array_merge($data, $getListData);
-
-        return view('design_1.panel.bookings.index', $data);
+        return view('design_1.panel.bookings.index', array_merge($data, $getListData));
     }
 
     public function create(Request $request)
@@ -89,7 +82,7 @@ class BookingController extends Controller
 
         $data = $this->validateBooking($request);
 
-        // ✅ Logged-in user ki ID set karo
+        // Logged-in user ki ID
         $data['creator_id'] = auth()->id();
 
         $booking = Booking::create($data);
@@ -110,9 +103,9 @@ class BookingController extends Controller
         $this->authorize('panel_bookings');
 
         $booking = Booking::findOrFail($id);
+        $data    = $this->validateBooking($request, $booking->id);
 
-        $data = $this->validateBooking($request, $booking->id);
-        // creator_id update mein change nahi hoga
+        // creator_id kabhi change nahi hoga update mein
         $booking->update($data);
 
         if ($request->ajax()) {
@@ -143,16 +136,16 @@ class BookingController extends Controller
             ->with('success', trans('panel.booking_deleted'));
     }
 
-    // ─── Private Helpers ──────────────────────────────────────────────────────
+    // ─── Filters ──────────────────────────────────────────────────────────────
 
     private function handleFilters(Request $request, Builder $query): Builder
     {
-        $from       = $request->get('from', null);
-        $to         = $request->get('to', null);
-        $search     = $request->get('search', null);
-        $status     = $request->get('status', null);
-        $categoryId = $request->get('category_id', null);
-        $sort       = $request->get('sort', null);
+        $from       = $request->get('from');
+        $to         = $request->get('to');
+        $search     = $request->get('search');
+        $status     = $request->get('status');
+        $categoryId = $request->get('category_id');
+        $sort       = $request->get('sort');
 
         $query = fromAndToDateFilter($from, $to, $query, 'created_at');
 
@@ -174,25 +167,12 @@ class BookingController extends Controller
             }
         }
 
-        if (!empty($sort)) {
-            switch ($sort) {
-                case 'create_date_asc':
-                    $query->orderBy('created_at', 'asc');
-                    break;
-                case 'create_date_desc':
-                    $query->orderBy('created_at', 'desc');
-                    break;
-                case 'price_asc':
-                    $query->orderBy('price', 'asc');
-                    break;
-                case 'price_desc':
-                    $query->orderBy('price', 'desc');
-                    break;
-                default:
-                    $query->orderBy('created_at', 'desc');
-            }
-        } else {
-            $query->orderBy('created_at', 'desc');
+        $sort = $sort ?: 'create_date_desc';
+        switch ($sort) {
+            case 'create_date_asc':  $query->orderBy('created_at', 'asc');  break;
+            case 'price_asc':        $query->orderBy('price', 'asc');        break;
+            case 'price_desc':       $query->orderBy('price', 'desc');       break;
+            default:                 $query->orderBy('created_at', 'desc');
         }
 
         return $query;
@@ -204,9 +184,7 @@ class BookingController extends Controller
         $count = $this->perPage;
         $total = $query->count();
 
-        $query->limit($count)->offset(($page - 1) * $count);
-
-        $bookings = $query->get();
+        $bookings = $query->limit($count)->offset(($page - 1) * $count)->get();
 
         if ($request->ajax()) {
             return $this->getAjaxResponse($request, $bookings, $total, $count);
@@ -239,16 +217,32 @@ class BookingController extends Controller
     protected function validateBooking(Request $request, $bookingId = null): array
     {
         $data = $request->validate([
+            // Basic
             'title'            => ['required', 'string', 'max:255'],
             'slug'             => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')->ignore($bookingId)],
             'category_id'      => ['nullable', 'integer', 'exists:booking_categories,id'],
+
+            // booking_type: required, NOT NULL in DB
+            'booking_type'     => ['required', 'string', 'in:tour,activity,rental,event,service,accommodation'],
+            'sub_type'         => ['nullable', 'string', 'max:255'],
+            'requirements'     => ['nullable', 'string'],
             'description'      => ['nullable', 'string'],
+
+            // Pricing
             'price'            => ['nullable', 'numeric', 'min:0'],
+            'price_per'        => ['nullable', 'numeric', 'min:0'],
+            'price_unit'       => ['nullable', 'string', 'max:100'],
             'discount_price'   => ['nullable', 'numeric', 'min:0'],
+            'currency'         => ['nullable', 'string', 'max:10'],
+
+            // Capacity
             'capacity'         => ['nullable', 'integer', 'min:0'],
             'min_persons'      => ['nullable', 'integer', 'min:0'],
             'max_persons'      => ['nullable', 'integer', 'min:0'],
             'duration_minutes' => ['nullable', 'integer', 'min:0'],
+
+            // Location
+            'location_enabled' => ['nullable'],
             'address_line'     => ['nullable', 'string', 'max:255'],
             'city'             => ['nullable', 'string', 'max:120'],
             'state'            => ['nullable', 'string', 'max:120'],
@@ -256,18 +250,29 @@ class BookingController extends Controller
             'postal_code'      => ['nullable', 'string', 'max:120'],
             'lat'              => ['nullable', 'numeric'],
             'lng'              => ['nullable', 'numeric'],
+
+            // Extras
             'meta'             => ['nullable', 'string'],
-            'status'           => ['nullable', 'boolean'],
-            'featured'         => ['nullable', 'boolean'],
+            'status'           => ['nullable'],
+            'featured'         => ['nullable'],
         ]);
 
-        $data['status']   = $request->boolean('status') ? 'published' : 'draft';
-        $data['featured'] = $request->boolean('featured');
+        // Boolean fields
+        $data['status']           = $request->boolean('status') ? 'published' : 'draft';
+        $data['featured']         = $request->boolean('featured');
+        $data['location_enabled'] = $request->boolean('location_enabled');
 
+        // Auto slug
         if (empty($data['slug'])) {
             $data['slug'] = Str::slug($data['title']) . '-' . uniqid();
         }
 
+        // Currency default
+        if (empty($data['currency'])) {
+            $data['currency'] = 'USD';
+        }
+
+        // Meta JSON decode
         if (!empty($data['meta'])) {
             try {
                 $data['meta'] = json_decode($data['meta'], true, 512, JSON_THROW_ON_ERROR);
@@ -291,15 +296,21 @@ class BookingController extends Controller
             'slug'             => $booking->slug,
             'category_id'      => $booking->category_id,
             'category_name'    => optional($booking->category)->title,
+            'booking_type'     => $booking->booking_type,
+            'sub_type'         => $booking->sub_type,
             'description'      => $booking->description,
             'price'            => $booking->price,
+            'price_per'        => $booking->price_per,
+            'price_unit'       => $booking->price_unit,
             'discount_price'   => $booking->discount_price,
+            'currency'         => $booking->currency,
             'capacity'         => $booking->capacity,
             'min_persons'      => $booking->min_persons,
             'max_persons'      => $booking->max_persons,
             'duration_minutes' => $booking->duration_minutes,
             'status'           => $booking->status,
             'featured'         => (bool) $booking->featured,
+            'location_enabled' => (bool) $booking->location_enabled,
             'address_line'     => $booking->address_line,
             'city'             => $booking->city,
             'state'            => $booking->state,
