@@ -261,5 +261,10 @@ class Booking extends Model
     {
         return $this->hasMany(BookingTimeSlot::class, 'booking_id');
     }
+    // Ek booking ka ek review hoga
+public function review()
+{
+    return $this->hasOne(BookingReview::class, 'booking_id');
+}
 }
 

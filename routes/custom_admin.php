@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\Booking\BookingImportController;
 use App\Http\Controllers\Admin\Booking\BookingPolicyController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
 use App\Http\Controllers\Admin\Booking\BookingResourceController;
+use App\Http\Controllers\Admin\Booking\BookingReviewController;
 use App\Http\Controllers\Admin\Booking\BookingSeasonController;
 use App\Http\Controllers\Admin\Booking\BookingSpecificationController;
 use App\Http\Controllers\Admin\Booking\BookingSpecificationValueController;
@@ -165,6 +166,12 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/delete', [BookingImportController::class, 'delete']);
         Route::get('/sample', [BookingImportController::class, 'downloadSample']);
     });
+    Route::group(['prefix' => 'review'], function () {
+    Route::get('/', [BookingReviewController::class, 'index']);
+    Route::get('/{id}/edit', [BookingReviewController::class, 'edit']);
+    Route::post('/{id}/update', [BookingReviewController::class, 'update']);
+    Route::get('/{id}/delete', [BookingReviewController::class, 'delete']);
+});
 
 });
 

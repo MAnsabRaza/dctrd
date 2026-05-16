@@ -223,7 +223,7 @@
                     </a>
                 </li>
             @endcan
-             @can('admin_booking_bundle')
+            @can('admin_booking_bundle')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/bundle*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/bundle">
                         {{ trans('admin/main.admin_booking_bundle') }}
@@ -231,7 +231,7 @@
                 </li>
             @endcan
 
-             @can('admin_booking_orders')
+            @can('admin_booking_orders')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/order*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/order">
                         {{ trans('admin/main.admin_booking_orders') }}
@@ -239,17 +239,25 @@
                 </li>
             @endcan
 
-             @can('admin_booking_time_slots')
+            @can('admin_booking_time_slots')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/time-slot*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/time-slot">
                         {{ trans('admin/main.admin_booking_time_slots') }}
                     </a>
                 </li>
             @endcan
-             @can('admin_booking_imports')
+            @can('admin_booking_imports')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/import*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/import">
                         {{ trans('admin/main.admin_booking_imports') }}
+                    </a>
+                </li>
+            @endcan
+
+            @can('admin_booking_review')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/review*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/review">
+                        {{ trans('admin/main.admin_booking_review') }}
                     </a>
                 </li>
             @endcan

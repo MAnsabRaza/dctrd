@@ -59,4 +59,9 @@ class Order extends Model
     {
         return $this->hasMany('App\Models\OrderItem', 'order_id', 'id');
     }
+    // Ek order ka ek review hoga (unique constraint hai order_id + customer_id)
+public function review()
+{
+    return $this->hasOne(BookingReview::class, 'order_id');
+}
 }
