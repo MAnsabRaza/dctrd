@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin\Booking;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingReview;
-use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BookingReviewController extends Controller
 {
@@ -21,13 +21,11 @@ class BookingReviewController extends Controller
                         ->paginate(20);
 
         $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
-        $users    = User::orderBy('id', 'desc')->get(['id', 'name', 'full_name']);
 
         $data = [
             'pageTitle' => trans('admin/main.admin_booking_review'),
             'reviews'   => $reviews,
             'bookings'  => $bookings,
-            'users'     => $users,
         ];
 
         return view('admin.booking.review', $data);
@@ -39,7 +37,6 @@ class BookingReviewController extends Controller
 
         $this->validate($request, [
             'booking_id'      => 'required|exists:bookings,id',
-            'customer_id'     => 'required|exists:users,id',
             'rating'          => 'required|integer|min:1|max:5',
             'comment'         => 'required|string|max:2000',
             'value_rating'    => 'nullable|integer|min:1|max:5',
@@ -52,7 +49,7 @@ class BookingReviewController extends Controller
         BookingReview::create([
             'booking_id'      => $request->booking_id,
             'order_id'        => $request->order_id ?? 0,
-            'customer_id'     => $request->customer_id,
+            'customer_id'     => Auth::id(),   // ← current logged-in user
             'rating'          => $request->rating,
             'comment'         => $request->comment,
             'value_rating'    => $request->value_rating,
@@ -76,14 +73,12 @@ class BookingReviewController extends Controller
                         ->orderBy('id', 'desc')
                         ->paginate(20);
         $bookings   = Booking::orderBy('id', 'desc')->get(['id', 'title']);
-        $users      = User::orderBy('id', 'desc')->get(['id', 'name', 'full_name']);
 
         $data = [
             'pageTitle'  => trans('admin/main.admin_booking_review'),
             'reviews'    => $reviews,
             'editReview' => $editReview,
             'bookings'   => $bookings,
-            'users'      => $users,
         ];
 
         return view('admin.booking.review', $data);
