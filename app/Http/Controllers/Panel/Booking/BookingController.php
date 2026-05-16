@@ -50,6 +50,38 @@ class BookingController extends Controller
         return view('design_1.panel.bookings.index', $data);
     }
 
+    public function create(Request $request)
+    {
+        $this->authorize('panel_bookings');
+
+        $allCategoryLists = BookingCategory::query()
+            ->select('id', 'title')
+            ->orderBy('title')
+            ->get();
+
+        return view('design_1.panel.bookings.create.index', [
+            'pageTitle' => trans('panel.new_booking'),
+            'allCategoryLists' => $allCategoryLists,
+        ]);
+    }
+
+    public function edit(Request $request, $id)
+    {
+        $this->authorize('panel_bookings');
+
+        $booking = Booking::findOrFail($id);
+        $allCategoryLists = BookingCategory::query()
+            ->select('id', 'title')
+            ->orderBy('title')
+            ->get();
+
+        return view('design_1.panel.bookings.create.index', [
+            'pageTitle' => trans('panel.edit_booking'),
+            'booking' => $booking,
+            'allCategoryLists' => $allCategoryLists,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $this->authorize('panel_bookings');

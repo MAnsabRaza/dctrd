@@ -17,9 +17,9 @@
                 <h3 class="font-16">{{ trans('panel.booking_management') }}</h3>
             </div>
             @can('panel_bookings_create')
-                <button id="newBookingButton" type="button" class="btn btn-primary btn-sm">
+                <a id="newBookingButton" href="{{ route('panel.bookings.create') }}" class="btn btn-primary btn-sm">
                     + {{ trans('panel.new_booking') }}
-                </button>
+                </a>
             @endcan
         </div>
 
@@ -62,9 +62,9 @@
                 <div class="text-center py-40">
                     <p class="text-muted">{{ trans('panel.bookings_no_result') }}</p>
                     @can('panel_bookings_create')
-                        <button id="newBookingButtonEmpty" type="button" class="btn btn-primary btn-sm mt-10">
+                        <a id="newBookingButtonEmpty" href="{{ route('panel.bookings.create') }}" class="btn btn-primary btn-sm mt-10">
                             + {{ trans('panel.new_booking') }}
-                        </button>
+                        </a>
                     @endcan
                 </div>
             </div>
@@ -542,33 +542,8 @@
             }
         };
 
-        // ── Bind table Edit / Delete buttons ────────────────────────────────
+        // ── Bind table Delete buttons ────────────────────────────────────
         const bindTableActions = () => {
-            // Edit buttons
-            document.querySelectorAll('.btn-edit-booking').forEach(btn => {
-                // Remove previous listeners by cloning
-                const newBtn = btn.cloneNode(true);
-                btn.parentNode.replaceChild(newBtn, btn);
-
-                newBtn.addEventListener('click', function () {
-                    const row = this.closest('tr');
-                    if (!row || !row.dataset.booking) {
-                        showToast('error', '{{ trans('panel.failed_to_load_booking') }}');
-                        return;
-                    }
-                    try {
-                        const booking = JSON.parse(decodeURIComponent(row.dataset.booking));
-                        resetForm();           // clear first
-                        populateForm(booking); // then fill
-                        $bookingModal.modal('show');
-                    } catch (e) {
-                        console.error('Booking parse error:', e);
-                        showToast('error', '{{ trans('panel.failed_to_load_booking') }}');
-                    }
-                });
-            });
-
-            // Delete buttons
             document.querySelectorAll('.btn-delete-booking').forEach(btn => {
                 const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
@@ -603,20 +578,10 @@
             resetForm();
         });
 
-        // ── New Booking button ───────────────────────────────────────────────
-        const newBtn = document.getElementById('newBookingButton');
-        if (newBtn) {
-            newBtn.addEventListener('click', () => {
-                resetForm();
-                $bookingModal.modal('show');
-            });
-        }
-
         const newBtnEmpty = document.getElementById('newBookingButtonEmpty');
         if (newBtnEmpty) {
             newBtnEmpty.addEventListener('click', () => {
-                resetForm();
-                $bookingModal.modal('show');
+                window.location.href = '{{ route('panel.bookings.create') }}';
             });
         }
 

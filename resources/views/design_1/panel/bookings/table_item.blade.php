@@ -77,11 +77,11 @@
     {{-- Actions --}}
     <td class="text-right">
         @can('panel_bookings_edit')
-            <button type="button"
-                    class="btn btn-sm btn-outline-primary btn-edit-booking"
-                    data-id="{{ $booking->id }}">
+            <a href="{{ route('panel.bookings.edit', ['id' => $booking->id]) }}"
+               class="btn btn-sm btn-outline-primary btn-edit-booking"
+               data-id="{{ $booking->id }}">
                 {{ trans('public.edit') }}
-            </button>
+            </a>
         @endcan
 
         @can('panel_bookings_delete')

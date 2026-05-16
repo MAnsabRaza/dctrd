@@ -23,11 +23,13 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
     Route::group(['prefix' => 'bookings'], function () {
         Route::get('/', 'Booking\BookingController@index')->name('panel.bookings.index');
+        Route::get('/new', 'Booking\BookingController@create')->name('panel.bookings.create');
+        Route::get('/{id}/edit', 'Booking\BookingController@edit')->name('panel.bookings.edit');
         Route::post('/', 'Booking\BookingController@store')->name('panel.bookings.store');
-        Route::put('/{id}', 'Booking\BookingController@update')->name('panel.bookings.update');
-        Route::delete('/{id}', 'Booking\BookingController@destroy')->name('panel.bookings.destroy');
         Route::post('/{id}/update', 'Booking\BookingController@update')->name('panel.bookings.update.post');
         Route::post('/{id}/delete', 'Booking\BookingController@destroy')->name('panel.bookings.destroy.post');
+        Route::put('/{id}', 'Booking\BookingController@update')->name('panel.bookings.update');
+        Route::delete('/{id}', 'Booking\BookingController@destroy')->name('panel.bookings.destroy');
     });
 
     Route::group(['prefix' => 'users'], function () {
