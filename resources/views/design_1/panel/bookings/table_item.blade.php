@@ -27,7 +27,7 @@
 @endphp
 
 <tr id="bookingRow{{ $booking->id }}"
-    data-booking="{{ urlencode(json_encode($bookingData)) }}">
+    data-booking="{{ urlencode(json_encode($bookingData, JSON_UNESCAPED_UNICODE)) }}">
 
     {{-- Title --}}
     <td class="text-left">
@@ -76,17 +76,21 @@
 
     {{-- Actions --}}
     <td class="text-right">
-        <button type="button"
-                class="btn btn-sm btn-outline-primary btn-edit-booking"
-                data-id="{{ $booking->id }}">
-            {{ trans('public.edit') }}
-        </button>
+        @can('panel_bookings_edit')
+            <button type="button"
+                    class="btn btn-sm btn-outline-primary btn-edit-booking"
+                    data-id="{{ $booking->id }}">
+                {{ trans('public.edit') }}
+            </button>
+        @endcan
 
-        <button type="button"
-                class="btn btn-sm btn-outline-danger btn-delete-booking ml-1"
-                data-id="{{ $booking->id }}"
-                data-title="{{ $booking->title }}">
-            {{ trans('panel.delete') }}
-        </button>
+        @can('panel_bookings_delete')
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger btn-delete-booking ml-1"
+                    data-id="{{ $booking->id }}"
+                    data-title="{{ $booking->title }}">
+                {{ trans('panel.delete') }}
+            </button>
+        @endcan
     </td>
 </tr>
