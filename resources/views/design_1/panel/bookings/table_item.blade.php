@@ -88,9 +88,11 @@
                     </a>
                 @endif
 
-                <a href="{{ route('panel.bookings.calendar', ['booking_id' => $booking->id]) }}" class="dropdown-item">
-                    Calendar
-                </a>
+                @can('panel_bookings_calendar')
+                    <a href="{{ route('panel.bookings.calendar', ['booking_id' => $booking->id]) }}" class="dropdown-item">
+                        Calendar
+                    </a>
+                @endcan
 
                 @can('panel_bookings_edit')
                     <a href="{{ route('panel.bookings.edit', ['id' => $booking->id]) }}"

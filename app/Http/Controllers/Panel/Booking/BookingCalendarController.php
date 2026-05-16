@@ -16,7 +16,7 @@ class BookingCalendarController extends Controller
 {
     public function index(Request $request)
     {
-        $this->authorize('panel_bookings');
+        $this->authorize('panel_bookings_calendar');
 
         $user = auth()->user();
 

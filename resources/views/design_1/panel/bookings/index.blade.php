@@ -17,9 +17,11 @@
                 <h3 class="font-16">{{ trans('panel.booking_management') }}</h3>
             </div>
             <div class="d-flex align-items-center gap-8">
-                <a href="{{ route('panel.bookings.calendar') }}" class="btn btn-outline-primary btn-sm">
-                    Calendar
-                </a>
+                @can('panel_bookings_calendar')
+                    <a href="{{ route('panel.bookings.calendar') }}" class="btn btn-outline-primary btn-sm">
+                        Calendar
+                    </a>
+                @endcan
 
                 @can('panel_bookings_create')
                     <a id="newBookingButton" href="{{ route('panel.bookings.create') }}" class="btn btn-primary btn-sm">

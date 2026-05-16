@@ -228,9 +228,11 @@
                                 <a href="/panel/bookings">{{ trans('public.list') }}</a>
                             </li>
 
-                            <li class="mt-5 {{ (request()->is('panel/bookings/calendar')) ? 'active' : '' }}">
-                                <a href="/panel/bookings/calendar">Calendar</a>
-                            </li>
+                            @can('panel_bookings_calendar')
+                                <li class="mt-5 {{ (request()->is('panel/bookings/calendar')) ? 'active' : '' }}">
+                                    <a href="/panel/bookings/calendar">Calendar</a>
+                                </li>
+                            @endcan
                         @endif
                     </ul>
                 </div>
