@@ -23,7 +23,8 @@
     <div class="col-12 col-md-6">
         <div class="form-group">
             <label>{{ trans('panel.title') }} <span class="text-danger">*</span></label>
-            <input name="title" type="text" class="form-control @error('title') is-invalid @enderror"
+            <input name="title" type="text"
+                   class="form-control @error('title') is-invalid @enderror"
                    value="{{ old('title', $isEditing ? $booking->title : '') }}" required>
             @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
@@ -32,18 +33,20 @@
     <div class="col-12 col-md-6">
         <div class="form-group">
             <label>{{ trans('panel.slug') }}</label>
-            <input name="slug" type="text" class="form-control @error('slug') is-invalid @enderror"
+            <input name="slug" type="text"
+                   class="form-control @error('slug') is-invalid @enderror"
                    value="{{ old('slug', $isEditing ? $booking->slug : '') }}"
                    placeholder="auto-generated-if-empty">
             @error('slug')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
     </div>
 
-    {{-- ── Category & Booking Type (required - NOT NULL in DB) ────────── --}}
+    {{-- ── Category & Booking Type ─────────────────────────────────────── --}}
     <div class="col-12 col-md-6">
         <div class="form-group">
             <label>{{ trans('panel.category') }}</label>
-            <select name="category_id" class="form-control @error('category_id') is-invalid @enderror">
+            <select name="category_id"
+                    class="form-control @error('category_id') is-invalid @enderror">
                 <option value="">{{ trans('panel.select_category') }}</option>
                 @foreach($allCategoryLists as $category)
                     <option value="{{ $category->id }}"
@@ -59,7 +62,8 @@
     <div class="col-12 col-md-6">
         <div class="form-group">
             <label>{{ trans('panel.booking_type') }} <span class="text-danger">*</span></label>
-            <select name="booking_type" class="form-control @error('booking_type') is-invalid @enderror">
+            <select name="booking_type"
+                    class="form-control @error('booking_type') is-invalid @enderror">
                 <option value="">— {{ trans('panel.select_type') }} —</option>
                 @foreach(['tour','activity','rental','event','service','accommodation'] as $type)
                     <option value="{{ $type }}"
@@ -104,7 +108,8 @@
     <div class="col-12 col-md-4">
         <div class="form-group">
             <label>{{ trans('panel.discount_price') }}</label>
-            <input name="discount_price" type="number" step="0.01" min="0" class="form-control"
+            <input name="discount_price" type="number" step="0.01" min="0"
+                   class="form-control"
                    value="{{ old('discount_price', $isEditing ? $booking->discount_price : '') }}"
                    placeholder="0.00">
         </div>
@@ -185,26 +190,38 @@
     <div class="col-12">
         <div class="form-group">
             <label>{{ trans('panel.description') }}</label>
-            <textarea name="description" rows="4" class="form-control @error('description') is-invalid @enderror">{{ old('description', $isEditing ? $booking->description : '') }}</textarea>
+            <textarea name="description" rows="4"
+                      class="form-control @error('description') is-invalid @enderror">{{ old('description', $isEditing ? $booking->description : '') }}</textarea>
             @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
     </div>
 
     {{-- ── Location Toggle ──────────────────────────────────────────────── --}}
+    @php
+        $locationEnabled = old('location_enabled', $isEditing && $booking->location_enabled ? 1 : 0);
+    @endphp
+
     <div class="col-12 mb-15">
         <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" id="locationSwitch"
-                   name="location_enabled" value="1"
-                   {{ old('location_enabled', $isEditing && $booking->location_enabled ? 1 : 0) ? 'checked' : '' }}
+            <input type="checkbox"
+                   class="custom-control-input"
+                   id="locationSwitch"
+                   name="location_enabled"
+                   value="1"
+                   {{ $locationEnabled ? 'checked' : '' }}
                    onchange="toggleLocationFields(this.checked)">
-            <label class="custom-control-label" for="locationSwitch">{{ trans('panel.enable_location') }}</label>
+            <label class="custom-control-label" for="locationSwitch">
+                {{ trans('panel.enable_location') }}
+            </label>
         </div>
     </div>
 
     {{-- ── Location Fields ─────────────────────────────────────────────── --}}
-    <div id="locationFields" class="col-12"
-         style="{{ old('location_enabled', $isEditing && $booking->location_enabled ? 1 : 0) ? '' : 'display:none' }}">
+    <div id="locationFields"
+         class="col-12"
+         style="{{ $locationEnabled ? 'display:block' : 'display:none' }}">
         <div class="row">
+
             <div class="col-12 col-md-6">
                 <div class="form-group">
                     <label>{{ trans('panel.address_line') }}</label>
@@ -212,6 +229,7 @@
                            value="{{ old('address_line', $isEditing ? $booking->address_line : '') }}">
                 </div>
             </div>
+
             <div class="col-12 col-md-6">
                 <div class="form-group">
                     <label>{{ trans('panel.city') }}</label>
@@ -219,6 +237,7 @@
                            value="{{ old('city', $isEditing ? $booking->city : '') }}">
                 </div>
             </div>
+
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label>{{ trans('panel.state') }}</label>
@@ -226,6 +245,7 @@
                            value="{{ old('state', $isEditing ? $booking->state : '') }}">
                 </div>
             </div>
+
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label>{{ trans('panel.country') }}</label>
@@ -233,6 +253,7 @@
                            value="{{ old('country', $isEditing ? $booking->country : '') }}">
                 </div>
             </div>
+
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label>{{ trans('panel.postal_code') }}</label>
@@ -240,41 +261,55 @@
                            value="{{ old('postal_code', $isEditing ? $booking->postal_code : '') }}">
                 </div>
             </div>
+
             <div class="col-12 col-md-6">
                 <div class="form-group">
-                    <label>{{ trans('panel.latitude') }}</label>
+                    <label>Latitude</label>
                     <input name="lat" type="number" step="0.000001" class="form-control"
                            value="{{ old('lat', $isEditing ? $booking->lat : '') }}"
                            placeholder="e.g. 31.5204">
                 </div>
             </div>
+
             <div class="col-12 col-md-6">
                 <div class="form-group">
-                    <label>{{ trans('panel.longitude') }}</label>
+                    <label>Longitude</label>
                     <input name="lng" type="number" step="0.000001" class="form-control"
                            value="{{ old('lng', $isEditing ? $booking->lng : '') }}"
                            placeholder="e.g. 74.3587">
                 </div>
             </div>
+
         </div>
     </div>
 
-    {{-- ── Status & Featured ────────────────────────────────────────────── --}}
+    {{-- ── Status ───────────────────────────────────────────────────────── --}}
     <div class="col-12 col-md-6 mb-15">
         <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" id="bookingStatus"
-                   name="status" value="1"
+            <input type="checkbox"
+                   class="custom-control-input"
+                   id="bookingStatus"
+                   name="status"
+                   value="1"
                    {{ old('status', $isEditing && $booking->status === 'published' ? 1 : 0) ? 'checked' : '' }}>
-            <label class="custom-control-label" for="bookingStatus">{{ trans('public.active') }}</label>
+            <label class="custom-control-label" for="bookingStatus">
+                {{ trans('public.active') }}
+            </label>
         </div>
     </div>
 
+    {{-- ── Featured ─────────────────────────────────────────────────────── --}}
     <div class="col-12 col-md-6 mb-15">
         <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" id="bookingFeatured"
-                   name="featured" value="1"
+            <input type="checkbox"
+                   class="custom-control-input"
+                   id="bookingFeatured"
+                   name="featured"
+                   value="1"
                    {{ old('featured', $isEditing && $booking->featured ? 1 : 0) ? 'checked' : '' }}>
-            <label class="custom-control-label" for="bookingFeatured">{{ trans('panel.featured') }}</label>
+            <label class="custom-control-label" for="bookingFeatured">
+                {{ trans('panel.featured') }}
+            </label>
         </div>
     </div>
 
@@ -282,7 +317,8 @@
     <div class="col-12">
         <div class="form-group">
             <label>{{ trans('panel.meta_json') }}</label>
-            <textarea name="meta" rows="3" class="form-control" placeholder='{"key": "value"}'>{{ old('meta', $isEditing && $booking->meta ? json_encode($booking->meta, JSON_PRETTY_PRINT) : '') }}</textarea>
+            <textarea name="meta" rows="3" class="form-control"
+                      placeholder='{"key": "value"}'>{{ old('meta', $isEditing && $booking->meta ? json_encode($booking->meta, JSON_PRETTY_PRINT) : '') }}</textarea>
             <small class="text-muted">{{ trans('panel.meta_json_hint') }}</small>
         </div>
     </div>
@@ -298,8 +334,14 @@
     </div>
 </div>
 
+{{-- ── JS: Toggle location fields ──────────────────────────────────────── --}}
 <script>
     function toggleLocationFields(show) {
-        document.getElementById('locationFields').style.display = show ? '' : 'none';
+        var el = document.getElementById('locationFields');
+        if (show) {
+            el.style.display = 'block';
+        } else {
+            el.style.display = 'none';
+        }
     }
 </script>
