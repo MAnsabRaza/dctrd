@@ -181,22 +181,7 @@
                                                     @error('booking_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                                 </div>
 
-                                                {{-- Customer --}}
-                                                <div class="form-group">
-                                                    <label>{{ trans('admin/main.customer') }} <span class="text-danger">*</span></label>
-                                                    @php $selectedUser = !empty($editReview) ? $editReview->customer_id : old('customer_id'); @endphp
-                                                    <select name="customer_id" class="form-control @error('customer_id') is-invalid @enderror">
-                                                        <option value="">{{ trans('admin/main.select') }}</option>
-                                                        @foreach($users as $user)
-                                                            <option value="{{ $user->id }}"
-                                                                {{ (string)$selectedUser === (string)$user->id ? 'selected' : '' }}>
-                                                                #{{ $user->id }} - {{ $user->full_name ?? $user->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('customer_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                                </div>
-
+                                               
                                                 {{-- Rating --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.rating') }} (1-5) <span class="text-danger">*</span></label>
