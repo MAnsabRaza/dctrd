@@ -23,6 +23,7 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
     Route::group(['prefix' => 'bookings'], function () {
         Route::get('/', 'Booking\BookingController@index')->name('panel.bookings.index');
+        Route::get('/calendar', 'Booking\BookingCalendarController@index')->name('panel.bookings.calendar');
         Route::get('/new', 'Booking\BookingController@create')->name('panel.bookings.create');
         Route::get('/{id}/edit', 'Booking\BookingController@edit')->name('panel.bookings.edit');
         Route::post('/', 'Booking\BookingController@store')->name('panel.bookings.store');
@@ -723,5 +724,4 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
 
 });
-
 

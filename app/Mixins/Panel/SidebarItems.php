@@ -154,6 +154,15 @@ class SidebarItems
                 'url' => '/panel/bookings',
                 'items' => []
             ];
+
+            if ($user->isOrganization() || $user->isTeacher()) {
+                if ($user->can('panel_bookings_create')) {
+                    $items['bookings']['items'][] = ['text' => trans('public.new'), 'url' => '/panel/bookings/new'];
+                }
+
+                $items['bookings']['items'][] = ['text' => trans('public.list'), 'url' => '/panel/bookings'];
+                $items['bookings']['items'][] = ['text' => 'Calendar', 'url' => '/panel/bookings/calendar'];
+            }
         }
 
         if (!empty(getFeaturesSettings('upcoming_courses_status')) and $user->can('panel_upcoming_courses')) {

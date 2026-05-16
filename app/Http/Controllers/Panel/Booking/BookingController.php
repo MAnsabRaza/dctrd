@@ -17,8 +17,14 @@ class BookingController extends Controller
     {
         $this->authorize('panel_bookings');
 
+        $user = auth()->user();
+        if ($user->isUser()) {
+            abort(404);
+        }
+
         $query = Booking::query()
             ->with('category')
+            ->where('creator_id', $user->id)
             ->orderBy('created_at', 'desc');
 
         $copyQuery = deepClone($query);
@@ -46,6 +52,10 @@ class BookingController extends Controller
     {
         $this->authorize('panel_bookings');
 
+        if (auth()->user()->isUser()) {
+            abort(404);
+        }
+
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title')
             ->orderBy('title')
@@ -62,7 +72,12 @@ class BookingController extends Controller
     {
         $this->authorize('panel_bookings');
 
-        $booking = Booking::findOrFail($id);
+        $user = auth()->user();
+        if ($user->isUser()) {
+            abort(404);
+        }
+
+        $booking = Booking::where('creator_id', $user->id)->findOrFail($id);
 
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title')
@@ -79,6 +94,10 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $this->authorize('panel_bookings');
+
+        if (auth()->user()->isUser()) {
+            abort(404);
+        }
 
         $data = $this->validateBooking($request);
 
@@ -102,7 +121,12 @@ class BookingController extends Controller
     {
         $this->authorize('panel_bookings');
 
-        $booking = Booking::findOrFail($id);
+        $user = auth()->user();
+        if ($user->isUser()) {
+            abort(404);
+        }
+
+        $booking = Booking::where('creator_id', $user->id)->findOrFail($id);
         $data    = $this->validateBooking($request, $booking->id);
 
         // creator_id kabhi change nahi hoga update mein
@@ -123,7 +147,12 @@ class BookingController extends Controller
     {
         $this->authorize('panel_bookings');
 
-        $booking = Booking::findOrFail($id);
+        $user = auth()->user();
+        if ($user->isUser()) {
+            abort(404);
+        }
+
+        $booking = Booking::where('creator_id', $user->id)->findOrFail($id);
         $booking->delete();
 
         if ($request->ajax()) {

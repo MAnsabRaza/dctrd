@@ -76,21 +76,39 @@
 
     {{-- Actions --}}
     <td class="text-right">
-        @can('panel_bookings_edit')
-            <a href="{{ route('panel.bookings.edit', ['id' => $booking->id]) }}"
-               class="btn btn-sm btn-outline-primary btn-edit-booking"
-               data-id="{{ $booking->id }}">
-                {{ trans('public.edit') }}
-            </a>
-        @endcan
-
-        @can('panel_bookings_delete')
-            <button type="button"
-                    class="btn btn-sm btn-outline-danger btn-delete-booking ml-1"
-                    data-id="{{ $booking->id }}"
-                    data-title="{{ $booking->title }}">
-                {{ trans('panel.delete') }}
+        <div class="dropdown">
+            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                {{ trans('update.controls') }}
             </button>
-        @endcan
+
+            <div class="dropdown-menu dropdown-menu-right">
+                @if(!empty($booking->getUrl()))
+                    <a href="{{ $booking->getUrl() }}" target="_blank" class="dropdown-item">
+                        View booking
+                    </a>
+                @endif
+
+                <a href="{{ route('panel.bookings.calendar', ['booking_id' => $booking->id]) }}" class="dropdown-item">
+                    Calendar
+                </a>
+
+                @can('panel_bookings_edit')
+                    <a href="{{ route('panel.bookings.edit', ['id' => $booking->id]) }}"
+                       class="dropdown-item btn-edit-booking"
+                       data-id="{{ $booking->id }}">
+                        {{ trans('public.edit') }}
+                    </a>
+                @endcan
+
+                @can('panel_bookings_delete')
+                    <button type="button"
+                            class="dropdown-item text-danger btn-delete-booking"
+                            data-id="{{ $booking->id }}"
+                            data-title="{{ $booking->title }}">
+                        {{ trans('panel.delete') }}
+                    </button>
+                @endcan
+            </div>
+        </div>
     </td>
 </tr>

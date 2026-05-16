@@ -208,12 +208,32 @@
 
         @can('panel_bookings')
             <li class="sidenav-item {{ (request()->is('panel/bookings') or request()->is('panel/bookings/*')) ? 'sidenav-item-active' : '' }}">
-                <a href="/panel/bookings" class="d-flex align-items-center">
+                <a class="d-flex align-items-center" data-toggle="collapse" href="#bookingCollapse" role="button" aria-expanded="false" aria-controls="bookingCollapse">
                 <span class="sidenav-item-icon mr-10">
                     @include('web.default.panel.includes.sidebar_icons.bookings')
                 </span>
                     <span class="font-14 text-dark-blue font-weight-500">{{ trans('panel.bookings') }}</span>
                 </a>
+
+                <div class="collapse {{ (request()->is('panel/bookings') or request()->is('panel/bookings/*')) ? 'show' : '' }}" id="bookingCollapse">
+                    <ul class="sidenav-item-collapse">
+                        @if($authUser->isOrganization() || $authUser->isTeacher())
+                            @can('panel_bookings_create')
+                                <li class="mt-5 {{ (request()->is('panel/bookings/new')) ? 'active' : '' }}">
+                                    <a href="/panel/bookings/new">{{ trans('public.new') }}</a>
+                                </li>
+                            @endcan
+
+                            <li class="mt-5 {{ (request()->is('panel/bookings')) ? 'active' : '' }}">
+                                <a href="/panel/bookings">{{ trans('public.list') }}</a>
+                            </li>
+
+                            <li class="mt-5 {{ (request()->is('panel/bookings/calendar')) ? 'active' : '' }}">
+                                <a href="/panel/bookings/calendar">Calendar</a>
+                            </li>
+                        @endif
+                    </ul>
+                </div>
             </li>
         @endcan
 
