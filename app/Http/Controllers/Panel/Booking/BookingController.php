@@ -36,7 +36,6 @@ class BookingController extends Controller
         $categoryIds = deepClone($copyQuery)->pluck('category_id')->filter()->toArray();
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title')
-            ->whereIn('id', $categoryIds)
             ->orderBy('title')
             ->get();
 
@@ -60,9 +59,9 @@ class BookingController extends Controller
             ->get();
 
         return view('design_1.panel.bookings.create.index', [
-            'pageTitle' => trans('panel.new_booking'),
+            'pageTitle'        => trans('panel.new_booking'),
             'allCategoryLists' => $allCategoryLists,
-            'booking' => null,
+            'booking'          => null,
         ]);
     }
 
@@ -71,14 +70,15 @@ class BookingController extends Controller
         $this->authorize('panel_bookings');
 
         $booking = Booking::findOrFail($id);
+
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title')
             ->orderBy('title')
             ->get();
 
         return view('design_1.panel.bookings.create.index', [
-            'pageTitle' => trans('panel.edit_booking'),
-            'booking' => $booking,
+            'pageTitle'        => trans('panel.edit_booking'),
+            'booking'          => $booking,
             'allCategoryLists' => $allCategoryLists,
         ]);
     }
@@ -87,7 +87,11 @@ class BookingController extends Controller
     {
         $this->authorize('panel_bookings');
 
-        $data    = $this->validateBooking($request);
+        $data = $this->validateBooking($request);
+
+        // ✅ Logged-in user ki ID set karo
+        $data['creator_id'] = auth()->id();
+
         $booking = Booking::create($data);
 
         if ($request->ajax()) {
@@ -108,6 +112,7 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($id);
 
         $data = $this->validateBooking($request, $booking->id);
+        // creator_id update mein change nahi hoga
         $booking->update($data);
 
         if ($request->ajax()) {
@@ -142,14 +147,13 @@ class BookingController extends Controller
 
     private function handleFilters(Request $request, Builder $query): Builder
     {
-        $from      = $request->get('from', null);
-        $to        = $request->get('to', null);
-        $search    = $request->get('search', null);
-        $status    = $request->get('status', null);
+        $from       = $request->get('from', null);
+        $to         = $request->get('to', null);
+        $search     = $request->get('search', null);
+        $status     = $request->get('status', null);
         $categoryId = $request->get('category_id', null);
-        $sort      = $request->get('sort', null);
+        $sort       = $request->get('sort', null);
 
-        // Date range filter (reuses your project's helper)
         $query = fromAndToDateFilter($from, $to, $query, 'created_at');
 
         if (!empty($search)) {
