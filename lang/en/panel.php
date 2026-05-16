@@ -70,6 +70,20 @@ return [
 'to'=>'To',
 'from'=>'From',
 'search_by_title'=>'Searh By Title',
+'booking_type'=>'Booking Type',
+'select_category'=>'Select category',
+'sub_type'=>'Sub Type',
+'requirements'=>'Requirements',
+'currency'=>'Currency',
+'price_per'=>'Price per',
+'price_unit_label'=>'Price unit',
+'min_persons'=>'Min persons',
+'max_persons'=>'Max persons',
+'duration_minutes'=>'Duration (minutes)',
+'meta_json_hint'=>'Meta JSON data for the booking. This can include additional information such as amenities, policies, etc.',
+'meta_json'=>'Meta Json',
+
+
 
 
 
