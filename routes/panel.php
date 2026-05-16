@@ -21,6 +21,13 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
     Route::post('/content-delete-request', 'ContentDeleteRequestController@store');
 
+    Route::group(['prefix' => 'bookings'], function () {
+        Route::get('/', 'Booking\BookingController@index')->name('panel.bookings.index');
+        Route::post('/', 'Booking\BookingController@store')->name('panel.bookings.store');
+        Route::put('/{id}', 'Booking\BookingController@update')->name('panel.bookings.update');
+        Route::delete('/{id}', 'Booking\BookingController@destroy')->name('panel.bookings.destroy');
+    });
+
     Route::group(['prefix' => 'users'], function () {
         Route::post('/offlineToggle', 'UserController@offlineToggle');
         Route::get('/{id}/getInfo', 'UserController@getUserInfo');

@@ -147,6 +147,15 @@ class SidebarItems
             }
         }
 
+        if ($user->can('panel_bookings')) {
+            $items['bookings'] = [
+                'icon' => self::getIcon('bookings'),
+                'text' => trans('panel.bookings'),
+                'url' => '/panel/bookings',
+                'items' => []
+            ];
+        }
+
         if (!empty(getFeaturesSettings('upcoming_courses_status')) and $user->can('panel_upcoming_courses')) {
             $items['upcoming_courses'] = [
                 'icon' => self::getIcon('upcoming_courses'),

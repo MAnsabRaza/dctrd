@@ -815,6 +815,11 @@ class SectionsTableSeeder extends Seeder
         $this->createPanelSection(['id' => 34], ['name' => 'panel_webinars_invoice', 'section_group_id' => 20, 'caption' => 'Invoice']);
         $this->createPanelSection(['id' => 35], ['name' => 'panel_webinars_statistics', 'section_group_id' => 20, 'caption' => 'Statistics']);
 
+        $this->createPanelSection(['id' => 36], ['name' => 'panel_bookings', 'caption' => 'Bookings']);
+        $this->createPanelSection(['id' => 37], ['name' => 'panel_bookings_create', 'section_group_id' => 36, 'caption' => 'Create/Edit']);
+        $this->createPanelSection(['id' => 38], ['name' => 'panel_bookings_edit', 'section_group_id' => 36, 'caption' => 'Edit']);
+        $this->createPanelSection(['id' => 39], ['name' => 'panel_bookings_delete', 'section_group_id' => 36, 'caption' => 'Delete']);
+
         // Upcoming Courses 40 - 49
         $this->createPanelSection(['id' => 40], ['name' => 'panel_upcoming_courses', 'caption' => 'Upcoming Courses']);
         $this->createPanelSection(['id' => 41], ['name' => 'panel_upcoming_courses_lists', 'section_group_id' => 40, 'caption' => 'Lists']);

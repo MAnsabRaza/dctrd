@@ -206,6 +206,17 @@
             </li>
         @endcan
 
+        @can('panel_bookings')
+            <li class="sidenav-item {{ (request()->is('panel/bookings') or request()->is('panel/bookings/*')) ? 'sidenav-item-active' : '' }}">
+                <a href="/panel/bookings" class="d-flex align-items-center">
+                <span class="sidenav-item-icon mr-10">
+                    @include('web.default.panel.includes.sidebar_icons.bookings')
+                </span>
+                    <span class="font-14 text-dark-blue font-weight-500">{{ trans('panel.bookings') }}</span>
+                </a>
+            </li>
+        @endcan
+
         @if(!empty(getFeaturesSettings('upcoming_courses_status')))
             @can('panel_upcoming_courses')
                 <li class="sidenav-item {{ (request()->is('panel/upcoming_courses') or request()->is('panel/upcoming_courses/*')) ? 'sidenav-item-active' : '' }}">

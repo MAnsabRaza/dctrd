@@ -21,6 +21,7 @@ return [
 'webinar_sales' => 'Live course sales',
 'content_sales' => 'Sales',
 'my_webinars' => 'My courses',
+'bookings' => 'Bookings',
 'you_not_have_any_webinar' => 'No course!',
 'no_result_hint' => 'Create your first course and share your knowledge with others.',
 'choose_webinar' => 'Select a course',
