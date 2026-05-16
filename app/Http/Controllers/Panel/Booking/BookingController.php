@@ -186,7 +186,7 @@ class BookingController extends Controller
         $html = '';
         foreach ($bookings as $booking) {
             $html .= (string) view()->make(
-                'design_1.panel.bookings.table_items',
+                'design_1.panel.bookings.table_item',
                 ['booking' => $booking]
             );
         }

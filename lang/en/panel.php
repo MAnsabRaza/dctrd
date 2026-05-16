@@ -65,6 +65,10 @@ return [
 'booking_success_store'=>'Booking created successfully.',
 'booking_success_update'=>'Booking updated successfully.',
 'booking_success_destroy'=>'Booking deleted successfully.',
+'all_categories'=>'All categories',
+'all_statuses'=>'All statuses',
+'to'=>'To',
+'from'=>'From',
 
 
 
