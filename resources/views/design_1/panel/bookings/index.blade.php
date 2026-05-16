@@ -44,7 +44,7 @@
                     </thead>
                     <tbody class="js-table-body-lists">
                         @foreach($bookings as $booking)
-                            @include('design_1.panel.bookings.table_items', ['booking' => $booking])
+                            @include('design_1.panel.bookings.table_item', ['booking' => $booking])
                         @endforeach
                     </tbody>
                 </table>
