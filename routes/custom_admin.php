@@ -11,7 +11,9 @@ use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
 use App\Http\Controllers\Admin\Booking\BookingBundleController;
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingCategorySpecificationController;
+use App\Http\Controllers\Admin\Booking\BookingCommentController;
 use App\Http\Controllers\Admin\Booking\BookingController;
+use App\Http\Controllers\Admin\Booking\BookingFavoriteController;
 use App\Http\Controllers\Admin\Booking\BookingImportController;
 use App\Http\Controllers\Admin\Booking\BookingPolicyController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
@@ -166,13 +168,31 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/delete', [BookingImportController::class, 'delete']);
         Route::get('/sample', [BookingImportController::class, 'downloadSample']);
     });
-  Route::group(['prefix' => 'review'], function () {
-    Route::get('/',             [BookingReviewController::class, 'index']);
-    Route::post('/store',       [BookingReviewController::class, 'store']);
-    Route::get('/{id}/edit',    [BookingReviewController::class, 'edit']);
-    Route::post('/{id}/update', [BookingReviewController::class, 'update']);
-    Route::get('/{id}/delete',  [BookingReviewController::class, 'delete']);
-});
+    Route::group(['prefix' => 'review'], function () {
+        Route::get('/', [BookingReviewController::class, 'index']);
+        Route::post('/store', [BookingReviewController::class, 'store']);
+        Route::get('/{id}/edit', [BookingReviewController::class, 'edit']);
+        Route::post('/{id}/update', [BookingReviewController::class, 'update']);
+        Route::get('/{id}/delete', [BookingReviewController::class, 'delete']);
+    });
+
+    Route::group(['prefix' => 'favorite'], function () {
+        Route::get('/', [BookingFavoriteController::class,'index']);
+        Route::post('/store', [BookingFavoriteController::class,'store']);
+        Route::get('/{id}/edit', [BookingFavoriteController::class,'edit']);
+        Route::post('/{id}/update', [BookingFavoriteController::class,'update']);
+        Route::get('/{id}/delete', [BookingFavoriteController::class,'delete']);
+
+    });
+
+    Route::group(['prefix' => 'comment'], function () {
+        Route::get('/', [BookingCommentController::class,'index']);
+        Route::post('/store', [BookingCommentController::class,'store']);
+        Route::get('/{id}/edit', [BookingCommentController::class,'edit']);
+        Route::post('/{id}/update', [BookingCommentController::class,'update']);
+        Route::get('/{id}/delete', [BookingCommentController::class,'delete']);
+
+    });
 
 });
 

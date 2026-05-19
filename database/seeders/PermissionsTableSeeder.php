@@ -442,5 +442,76 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 3321], ['role_id' => 2, 'section_id' => 3321, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 3322], ['role_id' => 2, 'section_id' => 3322, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 3323], ['role_id' => 2, 'section_id' => 3323, 'allow' => 1]);
+
+        \App\Models\Permission::updateOrCreate(
+            ['id' => 3330],
+            [
+                'role_id' => 2,
+                'section_id' => 3330,
+                'allow' => 1
+            ]
+        );
+
+        \App\Models\Permission::updateOrCreate(
+            ['id' => 3331],
+            [
+                'role_id' => 2,
+                'section_id' => 3331,
+                'allow' => 1
+            ]
+        );
+
+        \App\Models\Permission::updateOrCreate(
+            ['id' => 3332],
+            [
+                'role_id' => 2,
+                'section_id' => 3332,
+                'allow' => 1
+            ]
+        );
+
+        \App\Models\Permission::updateOrCreate(
+            ['id' => 3333],
+            [
+                'role_id' => 2,
+                'section_id' => 3333,
+                'allow' => 1
+            ]
+        );
+        \App\Models\Permission::updateOrCreate(
+            ['id' => 3340],
+            [
+                'role_id' => 2,
+                'section_id' => 3340,
+                'allow' => 1
+            ]
+        );
+
+        \App\Models\Permission::updateOrCreate(
+            ['id' => 3341],
+            [
+                'role_id' => 2,
+                'section_id' => 3341,
+                'allow' => 1
+            ]
+        );
+
+        \App\Models\Permission::updateOrCreate(
+            ['id' => 3342],
+            [
+                'role_id' => 2,
+                'section_id' => 3342,
+                'allow' => 1
+            ]
+        );
+
+        \App\Models\Permission::updateOrCreate(
+            ['id' => 3343],
+            [
+                'role_id' => 2,
+                'section_id' => 3343,
+                'allow' => 1
+            ]
+        );
     }
 }

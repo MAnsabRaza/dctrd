@@ -222,6 +222,8 @@ return [
     'close_reason' => 'Close Reason',
     'close_reason_placeholder' => 'e.g. Holiday, Maintenance',
     'resource' => 'Resource',
+    'admin_booking_favorite' => 'Booking Favorites',
+'admin_booking_comment' => 'Booking Comments',
 
     //Booking
     'booking' => 'Booking',
@@ -400,6 +402,7 @@ return [
     // Shared
     'values' => 'Values',
     'sort_order' => 'Sort Order',
+
 
 
 

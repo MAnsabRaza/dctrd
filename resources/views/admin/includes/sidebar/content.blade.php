@@ -261,6 +261,24 @@
                     </a>
                 </li>
             @endcan
+
+            @can('admin_booking_favorite')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/favorite*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/favorite">
+                        {{ trans('admin/main.admin_booking_favorite') }}
+                    </a>
+                </li>
+            @endcan
+
+            @can('admin_booking_comment')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/comment*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/comment">
+
+                        {{ trans('admin/main.admin_booking_comment') }}
+
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan
