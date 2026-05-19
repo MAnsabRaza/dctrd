@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BookingFavorite;
 use App\Models\Booking;
-use App\User;
 
 class BookingFavoriteController extends Controller
 {
@@ -19,13 +18,11 @@ class BookingFavoriteController extends Controller
             ->latest()
             ->paginate(20);
 
-        $users = User::orderBy('id', 'desc')->get();
         $bookings = Booking::orderBy('id', 'desc')->get();
 
         return view('admin.booking.favorite', [
             'pageTitle' => 'Booking Favorites',
             'favorites' => $favorites,
-            'users' => $users,
             'bookings' => $bookings,
             'editFavorite' => null,
         ]);
@@ -37,12 +34,13 @@ class BookingFavoriteController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
             'booking_id' => 'required|exists:bookings,id',
         ]);
 
+        $validated['user_id'] = auth()->id();
+
         // prevent duplicate
-        $exists = BookingFavorite::where('user_id', $request->user_id)
+        $exists = BookingFavorite::where('user_id', auth()->id())
             ->where('booking_id', $request->booking_id)
             ->exists();
 
@@ -69,13 +67,11 @@ class BookingFavoriteController extends Controller
             ->latest()
             ->paginate(20);
 
-        $users = User::orderBy('id', 'desc')->get();
         $bookings = Booking::orderBy('id', 'desc')->get();
 
         return view('admin.booking.favorite', [
             'pageTitle' => 'Edit Favorite',
             'favorites' => $favorites,
-            'users' => $users,
             'bookings' => $bookings,
             'editFavorite' => $editFavorite,
         ]);
@@ -89,9 +85,10 @@ class BookingFavoriteController extends Controller
         $favorite = BookingFavorite::findOrFail($id);
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
             'booking_id' => 'required|exists:bookings,id',
         ]);
+
+        $validated['user_id'] = auth()->id();
 
         $favorite->update($validated);
 

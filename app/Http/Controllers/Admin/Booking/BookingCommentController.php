@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BookingComment;
 use App\Models\Booking;
-use App\User;
 
 class BookingCommentController extends Controller
 {
@@ -19,13 +18,11 @@ class BookingCommentController extends Controller
             ->latest()
             ->paginate(20);
 
-        $users = User::orderBy('id', 'desc')->get();
         $bookings = Booking::orderBy('id', 'desc')->get();
 
         return view('admin.booking.comment', [
             'pageTitle' => 'Booking Comments',
             'comments' => $comments,
-            'users' => $users,
             'bookings' => $bookings,
             'editComment' => null,
         ]);
@@ -42,10 +39,11 @@ class BookingCommentController extends Controller
 
         $validated = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
-            'user_id' => 'required|exists:users,id',
             'comment' => 'required|string',
             'is_active' => 'required|boolean',
         ]);
+
+        $validated['user_id'] = auth()->id();
 
         BookingComment::create($validated);
 
@@ -64,13 +62,11 @@ class BookingCommentController extends Controller
             ->latest()
             ->paginate(20);
 
-        $users = User::orderBy('id', 'desc')->get();
         $bookings = Booking::orderBy('id', 'desc')->get();
 
         return view('admin.booking.comment', [
             'pageTitle' => 'Edit Comment',
             'comments' => $comments,
-            'users' => $users,
             'bookings' => $bookings,
             'editComment' => $editComment,
         ]);
@@ -89,10 +85,11 @@ class BookingCommentController extends Controller
 
         $validated = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
-            'user_id' => 'required|exists:users,id',
             'comment' => 'required|string',
             'is_active' => 'required|boolean',
         ]);
+
+        $validated['user_id'] = auth()->id();
 
         $comment->update($validated);
 

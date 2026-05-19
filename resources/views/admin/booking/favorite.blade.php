@@ -119,30 +119,6 @@
 
                                     {{ csrf_field() }}
 
-                                    {{-- USER --}}
-                                    <div class="form-group">
-
-                                        <label>User</label>
-
-                                        <select name="user_id"
-                                                class="form-control">
-
-                                            <option value="">Select User</option>
-
-                                            @foreach($users as $user)
-
-                                                <option value="{{ $user->id }}"
-                                                    {{ (!empty($editFavorite) && $editFavorite->user_id == $user->id) ? 'selected' : '' }}>
-
-                                                    {{ $user->full_name }}
-
-                                                </option>
-
-                                            @endforeach
-
-                                        </select>
-
-                                    </div>
 
                                     {{-- BOOKING --}}
                                     <div class="form-group">
