@@ -113,12 +113,13 @@
 
                     </option>
 
-                    <option value="approved"
-                        {{ request()->get('status') == 'approved' ? 'selected' : '' }}>
+                   <option value="active">
+    Active
+</option>
 
-                        Approved
-
-                    </option>
+<option value="rejected">
+    Rejected
+</option>
 
                 </select>
 

@@ -14,13 +14,13 @@
 
     <td class="text-center">
 
-        {{ Str::limit($review->review, 60) }}
+        {{ Str::limit($review->comment, 60) }}
 
     </td>
 
     <td class="text-center">
 
-        @if($review->status == 'approved')
+       @if($review->status == 'active')
 
             <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">
                 Approved
