@@ -20,19 +20,25 @@
 
     <td class="text-center">
 
-       @if($review->status == 'active')
+     @if($review->status == 'active')
 
-            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">
-                Approved
-            </span>
+    <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">
+        Active
+    </span>
 
-        @else
+@elseif($review->status == 'pending')
 
-            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">
-                Pending
-            </span>
+    <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">
+        Pending
+    </span>
 
-        @endif
+@else
+
+    <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-danger-30 font-12 text-danger">
+        Rejected
+    </span>
+
+@endif
 
     </td>
 
