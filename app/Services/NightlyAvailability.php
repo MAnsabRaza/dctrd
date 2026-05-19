@@ -27,9 +27,9 @@ class NightlyAvailability
     ): array {
         if ($checkOut->lte($checkIn)) {
             return [
-                'available'     => false,
+                'available' => false,
                 'blocked_dates' => [],
-                'reason'        => 'Check-out must be after check-in.',
+                'reason' => 'Check-out must be after check-in.',
             ];
         }
 
@@ -43,9 +43,9 @@ class NightlyAvailability
         $leadHours = (int) $booking->lead_time_hours;
         if ($checkIn->diffInHours(now(), false) > -$leadHours) {
             return [
-                'available'     => false,
+                'available' => false,
                 'blocked_dates' => [],
-                'reason'        => "Bookings must be made at least {$leadHours} hours in advance.",
+                'reason' => "Bookings must be made at least {$leadHours} hours in advance.",
             ];
         }
 
@@ -62,9 +62,9 @@ class NightlyAvailability
 
         if (!empty($blockedDates)) {
             return [
-                'available'     => false,
+                'available' => false,
                 'blocked_dates' => $blockedDates,
-                'reason'        => 'Some dates in your range are not available.',
+                'reason' => 'Some dates in your range are not available.',
             ];
         }
 
@@ -74,17 +74,17 @@ class NightlyAvailability
 
         if ($overlapping >= $maxCapacity) {
             return [
-                'available'     => false,
+                'available' => false,
                 'blocked_dates' => [],
-                'reason'        => 'No availability for the selected dates.',
+                'reason' => 'No availability for the selected dates.',
             ];
         }
 
         return [
-            'available'     => true,
+            'available' => true,
             'blocked_dates' => [],
-            'reason'        => '',
-            'nights'        => $nights,
+            'reason' => '',
+            'nights' => $nights,
         ];
     }
 
@@ -104,7 +104,7 @@ class NightlyAvailability
         ?int $resourceId = null
     ): array {
         $start = Carbon::create($year, $month, 1);
-        $end   = $start->copy()->endOfMonth();
+        $end = $start->copy()->endOfMonth();
 
         $calendar = [];
         $period = CarbonPeriod::create($start, $end);
@@ -117,21 +117,37 @@ class NightlyAvailability
             ->keyBy('date');
 
         // Bulk-fetch bookings for the month to count overlaps efficiently
-        $bookingOrders = BookingOrder::where('booking_id', $booking->id)
-            ->when($resourceId, fn($q) => $q->where('resource_id', $resourceId))
+        $bookingOrders = \App\Models\BookingOrderItem::query()
+
+            ->where('booking_id', $booking->id)
+
+            ->when($resourceId, function ($q) use ($resourceId) {
+
+                $q->where('resource_id', $resourceId);
+            })
+
             ->whereIn('status', ['pending', 'confirmed'])
-            ->where('check_in_date', '<=', $end->toDateString())
-            ->where('check_out_date', '>', $start->toDateString())
-            ->get(['check_in_date', 'check_out_date']);
+
+            ->whereBetween('booking_date', [
+                $start->toDateString(),
+                $end->toDateString()
+            ])
+
+            ->get([
+                'booking_date',
+                'start_time',
+                'end_time',
+            ]);
 
         foreach ($period as $date) {
             $dateStr = $date->toDateString();
             $override = $overrides->get($dateStr);
 
-            $bookedCount = $bookingOrders->filter(function ($order) use ($dateStr) {
-                return $order->check_in_date <= $dateStr
-                    && $order->check_out_date > $dateStr;
-            })->count();
+           $bookedCount = $bookingOrders->filter(function ($order) use ($dateStr) {
+
+    return $order->booking_date == $dateStr;
+
+})->count();
 
             $capacity = $resourceId ? 1 : ($booking->capacity ?? PHP_INT_MAX);
             $slotsLeft = $capacity - $bookedCount;
@@ -157,10 +173,10 @@ class NightlyAvailability
             }
 
             $calendar[$dateStr] = [
-                'available'  => $isAvailable,
+                'available' => $isAvailable,
                 'slots_left' => max(0, $slotsLeft),
-                'price'      => $price ?? (float) $booking->price,
-                'reason'     => $reason,
+                'price' => $price ?? (float) $booking->price,
+                'reason' => $reason,
             ];
         }
 
