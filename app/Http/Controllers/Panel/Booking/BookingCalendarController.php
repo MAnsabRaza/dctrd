@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Panel\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingOrder;
+use App\Models\BookingOrderItem;
 use App\Services\SlotEngine;
 use App\Services\NightlyAvailability;
 use Carbon\Carbon;
