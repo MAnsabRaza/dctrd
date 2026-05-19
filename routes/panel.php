@@ -22,15 +22,45 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
     Route::post('/content-delete-request', 'ContentDeleteRequestController@store');
 
     Route::group(['prefix' => 'bookings'], function () {
-        Route::get('/', 'Booking\BookingController@index')->name('panel.bookings.index');
-        Route::get('/calendar', 'Booking\BookingCalendarController@index')->name('panel.bookings.calendar');
-        Route::get('/new', 'Booking\BookingController@create')->name('panel.bookings.create');
-        Route::get('/{id}/edit', 'Booking\BookingController@edit')->name('panel.bookings.edit');
-        Route::post('/', 'Booking\BookingController@store')->name('panel.bookings.store');
-        Route::post('/{id}/update', 'Booking\BookingController@update')->name('panel.bookings.update.post');
-        Route::post('/{id}/delete', 'Booking\BookingController@destroy')->name('panel.bookings.destroy.post');
-        Route::put('/{id}', 'Booking\BookingController@update')->name('panel.bookings.update');
-        Route::delete('/{id}', 'Booking\BookingController@destroy')->name('panel.bookings.destroy');
+
+        // BOOKINGS
+        Route::get('/', 'Booking\BookingController@index')
+            ->name('panel.bookings.index');
+
+        Route::get('/calendar', 'Booking\BookingCalendarController@index')
+            ->name('panel.bookings.calendar');
+
+        Route::get('/new', 'Booking\BookingController@create')
+            ->name('panel.bookings.create');
+
+        Route::get('/{id}/edit', 'Booking\BookingController@edit')
+            ->name('panel.bookings.edit');
+
+        Route::post('/', 'Booking\BookingController@store')
+            ->name('panel.bookings.store');
+
+        Route::post('/{id}/update', 'Booking\BookingController@update')
+            ->name('panel.bookings.update.post');
+
+        Route::post('/{id}/delete', 'Booking\BookingController@destroy')
+            ->name('panel.bookings.destroy.post');
+
+        Route::put('/{id}', 'Booking\BookingController@update')
+            ->name('panel.bookings.update');
+
+        Route::delete('/{id}', 'Booking\BookingController@destroy')
+            ->name('panel.bookings.destroy');
+
+        Route::get('/orders/my-orders', 'Booking\MyBookingOrderController@index')
+            ->name('panel.bookings.orders');
+
+
+        Route::get('/favorites', 'Booking\MyBookingFavoriteController@index')
+            ->name('panel.bookings.favorites');
+
+        Route::get('/reviews', 'Booking\MyBookingReviewController@index')
+            ->name('panel.bookings.reviews');
+
     });
 
     Route::group(['prefix' => 'users'], function () {

@@ -887,6 +887,7 @@ Section::updateOrCreate(
         $this->createPanelSection(['id' => 38], ['name' => 'panel_bookings_edit', 'section_group_id' => 36, 'caption' => 'Edit']);
         $this->createPanelSection(['id' => 39], ['name' => 'panel_bookings_delete', 'section_group_id' => 36, 'caption' => 'Delete']);
         $this->createPanelSection(['id' => 360], ['name' => 'panel_bookings_calendar', 'section_group_id' => 36, 'caption' => 'Calendar']);
+        $this->createPanelSection(['id' => 361], ['name' => 'panel_bookings_my_orders', 'section_group_id' => 36, 'caption' => 'My Order']);
 
         // Upcoming Courses 40 - 49
         $this->createPanelSection(['id' => 40], ['name' => 'panel_upcoming_courses', 'caption' => 'Upcoming Courses']);

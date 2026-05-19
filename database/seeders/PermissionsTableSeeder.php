@@ -513,5 +513,11 @@ class PermissionsTableSeeder extends Seeder
                 'allow' => 1
             ]
         );
+
+        // Panel booking orders
+        \App\Models\Permission::updateOrCreate(['id' => 100361], ['role_id' => 1, 'section_id' => 100361, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 200361], ['role_id' => 2, 'section_id' => 100361, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 300361], ['role_id' => 3, 'section_id' => 100361, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 400361], ['role_id' => 4, 'section_id' => 100361, 'allow' => 1]);
     }
 }

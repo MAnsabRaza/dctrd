@@ -206,7 +206,7 @@
             </li>
         @endcan
 
-        @can('panel_bookings')
+        @if($authUser->can('panel_bookings') or $authUser->can('panel_bookings_my_orders'))
             <li class="sidenav-item {{ (request()->is('panel/bookings') or request()->is('panel/bookings/*')) ? 'sidenav-item-active' : '' }}">
                 <a class="d-flex align-items-center" data-toggle="collapse" href="#bookingCollapse" role="button" aria-expanded="false" aria-controls="bookingCollapse">
                 <span class="sidenav-item-icon mr-10">
@@ -217,7 +217,7 @@
 
                 <div class="collapse {{ (request()->is('panel/bookings') or request()->is('panel/bookings/*')) ? 'show' : '' }}" id="bookingCollapse">
                     <ul class="sidenav-item-collapse">
-                        @if($authUser->isOrganization() || $authUser->isTeacher())
+                        @if(($authUser->isOrganization() || $authUser->isTeacher()) and $authUser->can('panel_bookings'))
                             @can('panel_bookings_create')
                                 <li class="mt-5 {{ (request()->is('panel/bookings/new')) ? 'active' : '' }}">
                                     <a href="/panel/bookings/new">{{ trans('public.new') }}</a>
@@ -234,10 +234,16 @@
                                 </li>
                             @endcan
                         @endif
+
+                        @can('panel_bookings_my_orders')
+                            <li class="mt-5 {{ (request()->is('panel/bookings/orders/my-orders')) ? 'active' : '' }}">
+                                <a href="/panel/bookings/orders/my-orders">My Order</a>
+                            </li>
+                        @endcan
                     </ul>
                 </div>
             </li>
-        @endcan
+        @endif
 
         @if(!empty(getFeaturesSettings('upcoming_courses_status')))
             @can('panel_upcoming_courses')

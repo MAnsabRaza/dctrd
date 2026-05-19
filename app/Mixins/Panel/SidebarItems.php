@@ -147,15 +147,15 @@ class SidebarItems
             }
         }
 
-        if ($user->can('panel_bookings')) {
+        if ($user->can('panel_bookings') or $user->can('panel_bookings_my_orders')) {
             $items['bookings'] = [
                 'icon' => self::getIcon('bookings'),
                 'text' => trans('panel.bookings'),
-                'url' => '/panel/bookings',
+                'url' => $user->can('panel_bookings') ? '/panel/bookings' : '/panel/bookings/orders/my-orders',
                 'items' => []
             ];
 
-            if ($user->isOrganization() || $user->isTeacher()) {
+            if (($user->isOrganization() || $user->isTeacher()) and $user->can('panel_bookings')) {
                 if ($user->can('panel_bookings_create')) {
                     $items['bookings']['items'][] = ['text' => trans('public.new'), 'url' => '/panel/bookings/new'];
                 }
@@ -165,6 +165,10 @@ class SidebarItems
                 if ($user->can('panel_bookings_calendar')) {
                     $items['bookings']['items'][] = ['text' => 'Calendar', 'url' => '/panel/bookings/calendar'];
                 }
+            }
+
+            if ($user->can('panel_bookings_my_orders')) {
+                $items['bookings']['items'][] = ['text' => 'My Order', 'url' => '/panel/bookings/orders/my-orders'];
             }
         }
 
