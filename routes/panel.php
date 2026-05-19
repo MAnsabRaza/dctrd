@@ -21,50 +21,105 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
     Route::post('/content-delete-request', 'ContentDeleteRequestController@store');
 
-    Route::group(['prefix' => 'bookings'], function () {
+   Route::group(['prefix' => 'bookings'], function () {
 
-        // BOOKINGS
-        Route::get('/', 'Booking\BookingController@index')
-            ->name('panel.bookings.index');
+    /*
+    |--------------------------------------------------------------------------
+    | BOOKINGS
+    |--------------------------------------------------------------------------
+    */
 
-        Route::get('/calendar', 'Booking\BookingCalendarController@index')
-            ->name('panel.bookings.calendar');
+    Route::get('/', 'Booking\BookingController@index')
+        ->name('panel.bookings.index');
 
-        Route::get('/new', 'Booking\BookingController@create')
-            ->name('panel.bookings.create');
+    Route::get('/new', 'Booking\BookingController@create')
+        ->name('panel.bookings.create');
 
-        Route::get('/{id}/edit', 'Booking\BookingController@edit')
-            ->name('panel.bookings.edit');
+    Route::post('/', 'Booking\BookingController@store')
+        ->name('panel.bookings.store');
 
-        Route::post('/', 'Booking\BookingController@store')
-            ->name('panel.bookings.store');
+    Route::get('/{id}/edit', 'Booking\BookingController@edit')
+        ->name('panel.bookings.edit');
 
-        Route::post('/{id}/update', 'Booking\BookingController@update')
-            ->name('panel.bookings.update.post');
+    Route::post('/{id}/update', 'Booking\BookingController@update')
+        ->name('panel.bookings.update.post');
 
-        Route::post('/{id}/delete', 'Booking\BookingController@destroy')
-            ->name('panel.bookings.destroy.post');
+    Route::put('/{id}', 'Booking\BookingController@update')
+        ->name('panel.bookings.update');
 
-        Route::put('/{id}', 'Booking\BookingController@update')
-            ->name('panel.bookings.update');
+    Route::post('/{id}/delete', 'Booking\BookingController@destroy')
+        ->name('panel.bookings.destroy.post');
 
-        Route::delete('/{id}', 'Booking\BookingController@destroy')
-            ->name('panel.bookings.destroy');
+    Route::delete('/{id}', 'Booking\BookingController@destroy')
+        ->name('panel.bookings.destroy');
 
-        Route::get('/orders/my-orders', 'Booking\MyBookingOrderController@index')
-            ->name('panel.bookings.orders');
+    /*
+    |--------------------------------------------------------------------------
+    | BOOKING ENGINES
+    |--------------------------------------------------------------------------
+    */
 
-        Route::get('/comments', 'Booking\BookingCommentController@index')
-            ->name('panel.bookings.comments');
+    // CHECK AVAILABILITY
 
+    Route::post('/{id}/availability', 'Booking\BookingController@checkAvailability')
+        ->name('panel.bookings.availability');
 
-        Route::get('/favorites', 'Booking\BookingFavoriteController@index')
-            ->name('panel.bookings.favorites');
+    // CALCULATE PRICE
 
-        Route::get('/reviews', 'Booking\BookingReviewController@index')
-            ->name('panel.bookings.reviews');
+    Route::post('/{id}/pricing', 'Booking\BookingController@calculatePrice')
+        ->name('panel.bookings.pricing');
 
-    });
+    // GET AVAILABLE SLOTS
+
+    Route::get('/{id}/slots', 'Booking\BookingController@getSlots')
+        ->name('panel.bookings.slots');
+
+    /*
+    |--------------------------------------------------------------------------
+    | CALENDAR
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/calendar', 'Booking\BookingCalendarController@index')
+        ->name('panel.bookings.calendar');
+
+    /*
+    |--------------------------------------------------------------------------
+    | ORDERS
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/orders/my-orders', 'Booking\MyBookingOrderController@index')
+        ->name('panel.bookings.orders');
+
+    /*
+    |--------------------------------------------------------------------------
+    | COMMENTS
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/comments', 'Booking\BookingCommentController@index')
+        ->name('panel.bookings.comments');
+
+    /*
+    |--------------------------------------------------------------------------
+    | FAVORITES
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/favorites', 'Booking\BookingFavoriteController@index')
+        ->name('panel.bookings.favorites');
+
+    /*
+    |--------------------------------------------------------------------------
+    | REVIEWS
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/reviews', 'Booking\BookingReviewController@index')
+        ->name('panel.bookings.reviews');
+
+});
 
     Route::group(['prefix' => 'users'], function () {
         Route::post('/offlineToggle', 'UserController@offlineToggle');
