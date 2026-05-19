@@ -7,7 +7,6 @@ use App\Models\BookingTimeSlot;
 use App\Models\BookingOrder;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-
 class SlotEngine
 {
     /**
@@ -66,7 +65,7 @@ class SlotEngine
             $slots = $this->getAvailableSlots($booking, $current->copy());
             if ($slots->isNotEmpty()) {
                 $schedule->push([
-                    'date'  => $current->toDateString(),
+                    'date' => $current->toDateString(),
                     'slots' => $slots,
                 ]);
             }
@@ -122,7 +121,8 @@ class SlotEngine
             ->when($resourceId, fn($q) => $q->where('resource_id', $resourceId))
             ->get()
             ->filter(function ($template) use ($dayOfWeek) {
-                if (!$template->day_of_week) return true; // applies all days
+                if (!$template->day_of_week)
+                    return true; // applies all days
                 $days = array_map('intval', explode(',', $template->day_of_week));
                 return in_array($dayOfWeek, $days);
             });
@@ -131,16 +131,16 @@ class SlotEngine
 
         foreach ($slotTemplates as $template) {
             $start = Carbon::parse($date->toDateString() . ' ' . $template->start_time);
-            $end   = Carbon::parse($date->toDateString() . ' ' . $template->end_time);
+            $end = Carbon::parse($date->toDateString() . ' ' . $template->end_time);
 
             while ($start->copy()->addMinutes($template->duration_minutes)->lte($end)) {
                 $slotEnd = $start->copy()->addMinutes($template->duration_minutes);
                 $slots->push([
-                    'start_time'       => $start->format('H:i'),
-                    'end_time'         => $slotEnd->format('H:i'),
+                    'start_time' => $start->format('H:i'),
+                    'end_time' => $slotEnd->format('H:i'),
                     'duration_minutes' => $template->duration_minutes,
-                    'buffer_minutes'   => $template->buffer_minutes,
-                    'max_bookings'     => $template->max_bookings,
+                    'buffer_minutes' => $template->buffer_minutes,
+                    'max_bookings' => $template->max_bookings,
                 ]);
                 // Move past slot + buffer
                 $start->addMinutes($template->duration_minutes + $template->buffer_minutes);
@@ -150,17 +150,36 @@ class SlotEngine
         return $slots;
     }
 
-    private function getBookedSlots(Booking $booking, Carbon $date, ?int $resourceId): array
-    {
-        $orders = BookingOrder::where('booking_id', $booking->id)
-            ->where('check_in_date', $date->toDateString())
-            ->when($resourceId, fn($q) => $q->where('resource_id', $resourceId))
+    private function getBookedSlots(
+        Booking $booking,
+        Carbon $date,
+        ?int $resourceId
+    ): array {
+
+        $orders = \App\Models\BookingOrderItem::query()
+
+            ->where('booking_id', $booking->id)
+
+            ->where('booking_date', $date->toDateString())
+
+            ->when($resourceId, function ($q) use ($resourceId) {
+
+                $q->where('resource_id', $resourceId);
+            })
+
             ->whereIn('status', ['pending', 'confirmed'])
-            ->get(['start_time', 'end_time']);
+
+            ->get([
+                'start_time',
+                'end_time',
+            ]);
 
         $booked = [];
+
         foreach ($orders as $order) {
+
             $key = $order->start_time . '-' . $order->end_time;
+
             $booked[$key] = true;
         }
 
