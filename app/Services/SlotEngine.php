@@ -98,7 +98,7 @@ class SlotEngine
     private function isDateOpen(Booking $booking, Carbon $date): bool
     {
         // Check explicit availability table
-        $avail = $booking->availability()
+        $avail = $booking->availabilities()
             ->where('date', $date->toDateString())
             ->first();
 
