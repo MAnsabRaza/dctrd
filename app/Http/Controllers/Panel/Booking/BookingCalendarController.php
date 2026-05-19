@@ -100,12 +100,12 @@ class BookingCalendarController extends Controller
 
         $gridEnd = $endOfMonth->copy()->endOfWeek();
 
-        $monthAvailability = $this->nightlyAvailability
-            ->getMonthCalendar(
-                $booking,
-                $month,
-                $year
-            );
+       $monthAvailability = $this->nightlyAvailability
+    ->getMonthCalendar(
+        $booking,
+        $year,
+        $month
+    );
 
         $days = [];
 
