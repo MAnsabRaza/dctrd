@@ -519,5 +519,23 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 200361], ['role_id' => 2, 'section_id' => 100361, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 300361], ['role_id' => 3, 'section_id' => 100361, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 400361], ['role_id' => 4, 'section_id' => 100361, 'allow' => 1]);
+
+        // Panel booking favorites
+        \App\Models\Permission::updateOrCreate(['id' => 100362], ['role_id' => 1, 'section_id' => 100362, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 200362], ['role_id' => 2, 'section_id' => 100362, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 300362], ['role_id' => 3, 'section_id' => 100362, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 400362], ['role_id' => 4, 'section_id' => 100362, 'allow' => 1]);
+
+        // Panel booking reviews
+        \App\Models\Permission::updateOrCreate(['id' => 100363], ['role_id' => 1, 'section_id' => 100363, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 200363], ['role_id' => 2, 'section_id' => 100363, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 300363], ['role_id' => 3, 'section_id' => 100363, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 400363], ['role_id' => 4, 'section_id' => 100363, 'allow' => 1]);
+
+        // Panel booking comments
+        \App\Models\Permission::updateOrCreate(['id' => 100364], ['role_id' => 1, 'section_id' => 100364, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 200364], ['role_id' => 2, 'section_id' => 100364, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 300364], ['role_id' => 3, 'section_id' => 100364, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 400364], ['role_id' => 4, 'section_id' => 100364, 'allow' => 1]);
     }
 }

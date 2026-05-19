@@ -4,19 +4,19 @@ namespace App\Http\Controllers\Panel\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingReview;
+use App\Models\BookingComment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
-class BookingReviewController extends Controller
+class BookingCommentController extends Controller
 {
     public function index(Request $request)
     {
-        $this->authorize('panel_bookings_reviews');
+        $this->authorize('panel_bookings_comments');
 
         $user = auth()->user();
 
-        $query = BookingReview::query()
+        $query = BookingComment::query()
             ->where('user_id', $user->id)
             ->with([
                 'booking'
@@ -42,24 +42,24 @@ class BookingReviewController extends Controller
 
         // STATS
 
-        $allReviewsCount = BookingReview::where('user_id', $user->id)->count();
+        $allCommentsCount = BookingComment::where('user_id', $user->id)->count();
 
-        $approvedReviewsCount = BookingReview::where('user_id', $user->id)
-            ->where('status', 'approved')
+        $activeCommentsCount = BookingComment::where('user_id', $user->id)
+            ->where('is_active', true)
             ->count();
 
         $data = [
-            'pageTitle' => 'My Booking Reviews',
+            'pageTitle' => 'My Booking Comments',
 
             'allBookingsLists' => $allBookingsLists,
 
-            'allReviewsCount' => $allReviewsCount,
-            'approvedReviewsCount' => $approvedReviewsCount,
+            'allCommentsCount' => $allCommentsCount,
+            'activeCommentsCount' => $activeCommentsCount,
         ];
 
         $data = array_merge($data, $getListData);
 
-        return view('design_1.panel.bookings.review.index', $data);
+        return view('design_1.panel.bookings.comment.index', $data);
     }
 
     private function handleFilters(Request $request, Builder $query): Builder
@@ -78,7 +78,7 @@ class BookingReviewController extends Controller
 
         if (!empty($search)) {
 
-            $query->where('review', 'like', "%{$search}%");
+            $query->where('comment', 'like', "%{$search}%");
         }
 
         if (!empty($sort)) {
@@ -113,24 +113,24 @@ class BookingReviewController extends Controller
         $query->limit($count);
         $query->offset(($page - 1) * $count);
 
-        $reviews = $query->get();
+        $comments = $query->get();
 
         if ($request->ajax()) {
 
             return $this->getAjaxResponse(
                 $request,
-                $reviews,
+                $comments,
                 $total,
                 $count
             );
         }
 
         return [
-            'reviews' => $reviews,
+            'comments' => $comments,
 
             'pagination' => $this->makePagination(
                 $request,
-                $reviews,
+                $comments,
                 $total,
                 $count,
                 true
@@ -138,15 +138,15 @@ class BookingReviewController extends Controller
         ];
     }
 
-    private function getAjaxResponse(Request $request, $reviews, $total, $count)
+    private function getAjaxResponse(Request $request, $comments, $total, $count)
     {
         $html = "";
 
-        foreach ($reviews as $reviewRow) {
+        foreach ($comments as $commentRow) {
 
             $html .= (string)view()->make(
-                'design_1.panel.bookings.review.table_items',
-                ['review' => $reviewRow]
+                'design_1.panel.bookings.comment.table_items',
+                ['comment' => $commentRow]
             );
         }
 
@@ -155,7 +155,7 @@ class BookingReviewController extends Controller
 
             'pagination' => $this->makePagination(
                 $request,
-                $reviews,
+                $comments,
                 $total,
                 $count,
                 true

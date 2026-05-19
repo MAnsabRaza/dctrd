@@ -54,11 +54,14 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
         Route::get('/orders/my-orders', 'Booking\MyBookingOrderController@index')
             ->name('panel.bookings.orders');
 
+        Route::get('/comments', 'Booking\BookingCommentController@index')
+            ->name('panel.bookings.comments');
 
-        Route::get('/favorites', 'Booking\MyBookingFavoriteController@index')
+
+        Route::get('/favorites', 'Booking\BookingFavoriteController@index')
             ->name('panel.bookings.favorites');
 
-        Route::get('/reviews', 'Booking\MyBookingReviewController@index')
+        Route::get('/reviews', 'Booking\BookingReviewController@index')
             ->name('panel.bookings.reviews');
 
     });
@@ -754,4 +757,3 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
 
 });
-

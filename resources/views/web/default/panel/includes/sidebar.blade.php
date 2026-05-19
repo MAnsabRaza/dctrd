@@ -206,7 +206,7 @@
             </li>
         @endcan
 
-        @if($authUser->can('panel_bookings') or $authUser->can('panel_bookings_my_orders'))
+        @if($authUser->can('panel_bookings') or $authUser->can('panel_bookings_my_orders') or $authUser->can('panel_bookings_favorites') or $authUser->can('panel_bookings_reviews') or $authUser->can('panel_bookings_comments'))
             <li class="sidenav-item {{ (request()->is('panel/bookings') or request()->is('panel/bookings/*')) ? 'sidenav-item-active' : '' }}">
                 <a class="d-flex align-items-center" data-toggle="collapse" href="#bookingCollapse" role="button" aria-expanded="false" aria-controls="bookingCollapse">
                 <span class="sidenav-item-icon mr-10">
@@ -238,6 +238,24 @@
                         @can('panel_bookings_my_orders')
                             <li class="mt-5 {{ (request()->is('panel/bookings/orders/my-orders')) ? 'active' : '' }}">
                                 <a href="/panel/bookings/orders/my-orders">My Order</a>
+                            </li>
+                        @endcan
+
+                        @can('panel_bookings_favorites')
+                            <li class="mt-5 {{ (request()->is('panel/bookings/favorites')) ? 'active' : '' }}">
+                                <a href="/panel/bookings/favorites">Favorites</a>
+                            </li>
+                        @endcan
+
+                        @can('panel_bookings_reviews')
+                            <li class="mt-5 {{ (request()->is('panel/bookings/reviews')) ? 'active' : '' }}">
+                                <a href="/panel/bookings/reviews">Reviews</a>
+                            </li>
+                        @endcan
+
+                        @can('panel_bookings_comments')
+                            <li class="mt-5 {{ (request()->is('panel/bookings/comments')) ? 'active' : '' }}">
+                                <a href="/panel/bookings/comments">Comments</a>
                             </li>
                         @endcan
                     </ul>

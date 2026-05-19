@@ -4,19 +4,19 @@ namespace App\Http\Controllers\Panel\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingReview;
+use App\Models\BookingFavorite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
-class BookingReviewController extends Controller
+class BookingFavoriteController extends Controller
 {
     public function index(Request $request)
     {
-        $this->authorize('panel_bookings_reviews');
+        $this->authorize('panel_bookings_favorites');
 
         $user = auth()->user();
 
-        $query = BookingReview::query()
+        $query = BookingFavorite::query()
             ->where('user_id', $user->id)
             ->with([
                 'booking'
@@ -42,24 +42,19 @@ class BookingReviewController extends Controller
 
         // STATS
 
-        $allReviewsCount = BookingReview::where('user_id', $user->id)->count();
-
-        $approvedReviewsCount = BookingReview::where('user_id', $user->id)
-            ->where('status', 'approved')
-            ->count();
+        $allFavoritesCount = BookingFavorite::where('user_id', $user->id)->count();
 
         $data = [
-            'pageTitle' => 'My Booking Reviews',
+            'pageTitle' => 'My Booking Favorites',
 
             'allBookingsLists' => $allBookingsLists,
 
-            'allReviewsCount' => $allReviewsCount,
-            'approvedReviewsCount' => $approvedReviewsCount,
+            'allFavoritesCount' => $allFavoritesCount,
         ];
 
         $data = array_merge($data, $getListData);
 
-        return view('design_1.panel.bookings.review.index', $data);
+        return view('design_1.panel.bookings.favorite.index', $data);
     }
 
     private function handleFilters(Request $request, Builder $query): Builder
@@ -67,18 +62,12 @@ class BookingReviewController extends Controller
         $from = $request->get('from');
         $to = $request->get('to');
         $booking_id = $request->get('booking_id');
-        $search = $request->get('search');
         $sort = $request->get('sort');
 
         $query = fromAndToDateFilter($from, $to, $query, 'created_at');
 
         if (!empty($booking_id)) {
             $query->where('booking_id', $booking_id);
-        }
-
-        if (!empty($search)) {
-
-            $query->where('review', 'like', "%{$search}%");
         }
 
         if (!empty($sort)) {
@@ -113,24 +102,24 @@ class BookingReviewController extends Controller
         $query->limit($count);
         $query->offset(($page - 1) * $count);
 
-        $reviews = $query->get();
+        $favorites = $query->get();
 
         if ($request->ajax()) {
 
             return $this->getAjaxResponse(
                 $request,
-                $reviews,
+                $favorites,
                 $total,
                 $count
             );
         }
 
         return [
-            'reviews' => $reviews,
+            'favorites' => $favorites,
 
             'pagination' => $this->makePagination(
                 $request,
-                $reviews,
+                $favorites,
                 $total,
                 $count,
                 true
@@ -138,15 +127,15 @@ class BookingReviewController extends Controller
         ];
     }
 
-    private function getAjaxResponse(Request $request, $reviews, $total, $count)
+    private function getAjaxResponse(Request $request, $favorites, $total, $count)
     {
         $html = "";
 
-        foreach ($reviews as $reviewRow) {
+        foreach ($favorites as $favoriteRow) {
 
             $html .= (string)view()->make(
-                'design_1.panel.bookings.review.table_items',
-                ['review' => $reviewRow]
+                'design_1.panel.bookings.favorite.table_items',
+                ['favorite' => $favoriteRow]
             );
         }
 
@@ -155,7 +144,7 @@ class BookingReviewController extends Controller
 
             'pagination' => $this->makePagination(
                 $request,
-                $reviews,
+                $favorites,
                 $total,
                 $count,
                 true

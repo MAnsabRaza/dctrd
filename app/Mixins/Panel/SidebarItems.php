@@ -147,11 +147,31 @@ class SidebarItems
             }
         }
 
-        if ($user->can('panel_bookings') or $user->can('panel_bookings_my_orders')) {
+        if (
+            $user->can('panel_bookings') or
+            $user->can('panel_bookings_my_orders') or
+            $user->can('panel_bookings_favorites') or
+            $user->can('panel_bookings_reviews') or
+            $user->can('panel_bookings_comments')
+        ) {
+            $bookingUrl = '/panel/bookings';
+
+            if (!$user->can('panel_bookings')) {
+                if ($user->can('panel_bookings_my_orders')) {
+                    $bookingUrl = '/panel/bookings/orders/my-orders';
+                } elseif ($user->can('panel_bookings_favorites')) {
+                    $bookingUrl = '/panel/bookings/favorites';
+                } elseif ($user->can('panel_bookings_reviews')) {
+                    $bookingUrl = '/panel/bookings/reviews';
+                } else {
+                    $bookingUrl = '/panel/bookings/comments';
+                }
+            }
+
             $items['bookings'] = [
                 'icon' => self::getIcon('bookings'),
                 'text' => trans('panel.bookings'),
-                'url' => $user->can('panel_bookings') ? '/panel/bookings' : '/panel/bookings/orders/my-orders',
+                'url' => $bookingUrl,
                 'items' => []
             ];
 
@@ -169,6 +189,18 @@ class SidebarItems
 
             if ($user->can('panel_bookings_my_orders')) {
                 $items['bookings']['items'][] = ['text' => 'My Order', 'url' => '/panel/bookings/orders/my-orders'];
+            }
+
+            if ($user->can('panel_bookings_favorites')) {
+                $items['bookings']['items'][] = ['text' => 'Favorites', 'url' => '/panel/bookings/favorites'];
+            }
+
+            if ($user->can('panel_bookings_reviews')) {
+                $items['bookings']['items'][] = ['text' => 'Reviews', 'url' => '/panel/bookings/reviews'];
+            }
+
+            if ($user->can('panel_bookings_comments')) {
+                $items['bookings']['items'][] = ['text' => 'Comments', 'url' => '/panel/bookings/comments'];
             }
         }
 
