@@ -100,12 +100,12 @@ class BookingCalendarController extends Controller
 
         $gridEnd = $endOfMonth->copy()->endOfWeek();
 
-       $monthAvailability = $this->nightlyAvailability
-    ->getMonthCalendar(
-        $booking,
-        $year,
-        $month
-    );
+        $monthAvailability = $this->nightlyAvailability
+            ->getMonthCalendar(
+                $booking,
+                $year,
+                $month
+            );
 
         $days = [];
 
@@ -123,10 +123,17 @@ class BookingCalendarController extends Controller
                     $date
                 );
 
-            $ordersCount = BookingOrder::query()
+            $ordersCount = BookingOrderItem::query()
+
                 ->where('booking_id', $booking->id)
-                ->whereDate('check_in', '<=', $date)
-                ->whereDate('check_out', '>=', $date)
+
+                ->where('booking_date', $date->toDateString())
+
+                ->whereIn('status', [
+                    'pending',
+                    'confirmed'
+                ])
+
                 ->count();
 
             $days[] = [
