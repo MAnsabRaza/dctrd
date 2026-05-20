@@ -317,6 +317,19 @@ Route::group(['namespace' => 'Web', 'middleware' => ['check_mobile_app', 'impers
 
     Route::get('/reward-courses', 'RewardCoursesController@index');
 
+    Route::get('/booking', function () {
+        return redirect('/bookings');
+    });
+
+    Route::group(['prefix' => 'bookings'], function () {
+        Route::get('/', 'BookingController@index');
+        Route::get('/{slug}', 'BookingController@show');
+        Route::post('/{slug}/pricing', 'BookingController@calculatePrice');
+        Route::get('/{slug}/slots', 'BookingController@getSlots');
+    });
+
+    Route::get('/booking/{slug}', 'BookingController@show');
+
     Route::group(['prefix' => 'blog'], function () {
         Route::get('/', 'BlogController@index');
         Route::get('/categories/{category}', 'BlogController@index');
@@ -526,4 +539,3 @@ Route::group(['namespace' => 'Web', 'middleware' => ['check_mobile_app', 'impers
 // Purchase Code Routes
 Route::get('/purchase-code', [PurchaseCodeController::class, 'show'])->name('purchase.code.show');
 Route::post('/purchase-code', [PurchaseCodeController::class, 'store'])->name('purchase.code.store');
-

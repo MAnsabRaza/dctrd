@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Booking;
-use App\Models\BookingOrder;
+use App\Models\BookingOrderItem;
 use App\Models\BookingAvailability;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -210,11 +210,11 @@ class NightlyAvailability
         Carbon $checkOut,
         ?int $resourceId
     ): int {
-        return BookingOrder::where('booking_id', $booking->id)
+        return BookingOrderItem::where('booking_id', $booking->id)
             ->when($resourceId, fn($q) => $q->where('resource_id', $resourceId))
             ->whereIn('status', ['pending', 'confirmed'])
-            ->where('check_in_date', '<', $checkOut->toDateString())
-            ->where('check_out_date', '>', $checkIn->toDateString())
+            ->where('booking_date', '>=', $checkIn->toDateString())
+            ->where('booking_date', '<', $checkOut->toDateString())
             ->count();
     }
 }

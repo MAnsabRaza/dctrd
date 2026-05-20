@@ -21,6 +21,17 @@ class ThemeHeaderMixins
             }
         }
 
+        $hasBookingLink = collect($links)->contains(function ($link) {
+            return !empty($link['url']) and in_array(trim($link['url'], '/'), ['bookings', 'booking']);
+        });
+
+        if (!$hasBookingLink) {
+            $links[] = [
+                'title' => 'Booking',
+                'url' => '/bookings',
+            ];
+        }
+
         return $links;
     }
 

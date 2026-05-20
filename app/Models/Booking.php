@@ -173,11 +173,31 @@ class Booking extends Model
     public function getThumbnailUrlAttribute(): string
     {
         if (!$this->thumbnail) {
-            return asset('assets/images/booking-placeholder.jpg');
+            return asset('assets/default/img/icons/installment/meeting_default.svg');
         }
+
+        if (str_starts_with($this->thumbnail, '/')) {
+            return asset(ltrim($this->thumbnail, '/'));
+        }
+
         return str_starts_with($this->thumbnail, 'http')
             ? $this->thumbnail
             : asset('storage/' . $this->thumbnail);
+    }
+
+    public function getCoverUrlAttribute(): string
+    {
+        if (empty($this->cover)) {
+            return $this->thumbnail_url;
+        }
+
+        if (str_starts_with($this->cover, '/')) {
+            return asset(ltrim($this->cover, '/'));
+        }
+
+        return str_starts_with($this->cover, 'http')
+            ? $this->cover
+            : asset('storage/' . $this->cover);
     }
 
     /**
@@ -197,7 +217,37 @@ class Booking extends Model
     {
         if (!$this->slug)
             return null;
-        return url('/booking/' . $this->slug);
+        return url('/bookings/' . $this->slug);
+    }
+
+    public function getPriceLabelAttribute(): string
+    {
+        if (empty($this->effective_price) or (float) $this->effective_price <= 0) {
+            return trans('public.free');
+        }
+
+        $price = number_format((float) $this->effective_price, 2);
+        $currency = $this->currency ?: getDefaultCurrency();
+
+        return "{$currency} {$price}";
+    }
+
+    public function getRate(): float
+    {
+        if (!empty($this->rating)) {
+            return (float) $this->rating;
+        }
+
+        return (float) $this->reviews()->active()->avg('rating');
+    }
+
+    public function getRateCount(): int
+    {
+        if (!empty($this->review_count)) {
+            return (int) $this->review_count;
+        }
+
+        return (int) $this->reviews()->active()->count();
     }
 
     // ─── Auto Slug ───────────────────────────────────────────────────
@@ -242,6 +292,18 @@ class Booking extends Model
     {
         return $this->hasMany(BookingSpecificationValue::class, 'booking_id');
     }
+    public function reviews()
+    {
+        return $this->hasMany(BookingReview::class, 'booking_id');
+    }
+    public function comments()
+    {
+        return $this->hasMany(BookingComment::class, 'booking_id');
+    }
+    public function favorites()
+    {
+        return $this->hasMany(BookingFavorite::class, 'booking_id');
+    }
     public function bundleItems()
     {
         return $this->hasMany(BookingBundleItem::class, 'booking_id');
@@ -262,9 +324,8 @@ class Booking extends Model
         return $this->hasMany(BookingTimeSlot::class, 'booking_id');
     }
     // Ek booking ka ek review hoga
-public function review()
-{
-    return $this->hasOne(BookingReview::class, 'booking_id');
+    public function review()
+    {
+        return $this->hasOne(BookingReview::class, 'booking_id');
+    }
 }
-}
-
