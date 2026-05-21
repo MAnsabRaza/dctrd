@@ -3,24 +3,10 @@
 namespace App\Services;
 
 use App\Models\Booking;
-use App\Models\BookingRatePlan;
-use App\Models\BookingSeason;
 use Carbon\Carbon;
 
 class PricingEngine
 {
-    /**
-     * Calculate total price for a booking.
-     *
-     * @param  Booking  $booking
-     * @param  Carbon   $checkIn
-     * @param  Carbon   $checkOut
-     * @param  int      $adults
-     * @param  int      $children
-     * @param  array    $extras   [['label'=>'Breakfast','price'=>10,'qty'=>2], ...]
-     * @param  float    $promoDiscount  flat discount amount
-     * @return array
-     */
     public function calculate(
         Booking $booking,
         Carbon $checkIn,
@@ -32,80 +18,100 @@ class PricingEngine
     ): array {
         $nights = max(1, $checkIn->diffInDays($checkOut));
         $persons = $adults + $children;
+        $basePrice = (float) ($booking->discount_price ?: $booking->price);
 
-        // Step 1: Base price per unit
-        $basePrice = (float) $booking->price;
+        $nightlyRows = $this->getNightlyRows($booking, $checkIn, $checkOut, $basePrice);
+        $subtotal = collect($nightlyRows)->sum('price');
+        $averageNightlyPrice = $nights > 0 ? $subtotal / $nights : $basePrice;
 
-        // Step 2: Apply seasonal modifier
-        $seasonalModifier = $this->getSeasonalModifier($booking, $checkIn, $checkOut);
-        $priceAfterSeason = $basePrice * $seasonalModifier;
-
-        // Step 3: Apply day-of-week rate plan
-        $dowModifier = $this->getDowModifier($booking, $checkIn);
-        $priceAfterDow = $priceAfterSeason * $dowModifier;
-
-        // Step 4: Multiply by nights/hours
-        $subtotal = $priceAfterDow * $nights;
-
-        // Step 5: Apply pax pricing
         $paxModifier = $this->getPaxModifier($booking, $adults, $children);
-        $priceAfterPax = $subtotal + $paxModifier;
+        $extrasTotal = collect($extras)->sum(fn($e) => ((float) ($e['price'] ?? 0)) * ((int) ($e['qty'] ?? 1)));
 
-        // Step 6: Extras
-        $extrasTotal = collect($extras)->sum(fn($e) => ($e['price'] ?? 0) * ($e['qty'] ?? 1));
+        $afterPromo = max(0, $subtotal + $paxModifier + $extrasTotal - $promoDiscount);
 
-        // Step 7: Promo discount
-        $afterPromo = max(0, $priceAfterPax + $extrasTotal - $promoDiscount);
-
-        // Step 8: Tax
         $taxRate = (float) $booking->tax / 100;
         $taxAmount = round($afterPromo * $taxRate, 2);
         $total = round($afterPromo + $taxAmount, 2);
 
         return [
-            'nights'             => $nights,
-            'persons'            => $persons,
-            'base_price'         => round($basePrice, 2),
-            'seasonal_modifier'  => round($seasonalModifier, 4),
-            'dow_modifier'       => round($dowModifier, 4),
-            'price_per_night'    => round($priceAfterDow, 2),
-            'subtotal'           => round($subtotal, 2),
-            'pax_modifier'       => round($paxModifier, 2),
-            'extras_total'       => round($extrasTotal, 2),
-            'promo_discount'     => round($promoDiscount, 2),
-            'tax_rate'           => $booking->tax,
-            'tax_amount'         => $taxAmount,
-            'total'              => $total,
-            'currency'           => $booking->currency,
+            'nights' => $nights,
+            'persons' => $persons,
+            'base_price' => round($basePrice, 2),
+            'price_per_night' => round($averageNightlyPrice, 2),
+            'nightly_prices' => $nightlyRows,
+            'subtotal' => round($subtotal, 2),
+            'pax_modifier' => round($paxModifier, 2),
+            'extras_total' => round($extrasTotal, 2),
+            'promo_discount' => round($promoDiscount, 2),
+            'tax_rate' => $booking->tax,
+            'tax_amount' => $taxAmount,
+            'total' => $total,
+            'currency' => $booking->currency,
         ];
     }
 
-    // ─── Private Helpers ──────────────────────────────────────────────────
-
-    private function getSeasonalModifier(Booking $booking, Carbon $checkIn, Carbon $checkOut): float
+    private function getNightlyRows(Booking $booking, Carbon $checkIn, Carbon $checkOut, float $basePrice): array
     {
-        $seasons = $booking->seasons()
-            ->where('status', true)
-            ->where('start_date', '<=', $checkIn->toDateString())
-            ->where('end_date', '>=', $checkIn->toDateString())
-            ->orderByDesc('id')
-            ->get();
+        $rows = [];
+        $current = $checkIn->copy();
 
-        if ($seasons->isEmpty()) return 1.0;
+        while ($current->lt($checkOut)) {
+            $seasonAdjustment = $this->getSeasonAdjustment($booking, $current);
+            $rateAdjustment = $this->getRatePlanAdjustment($booking, $current);
 
-        $season = $seasons->first();
+            $price = $this->applyAdjustment($basePrice, $seasonAdjustment);
+            $price = $this->applyAdjustment($price, $rateAdjustment);
 
-        if ($season->modifier_type === 'fixed') {
-            // Fixed amount per night — returned as a flat add in step 5 equivalent
-            return 1.0; // handled separately if needed
+            $rows[] = [
+                'date' => $current->toDateString(),
+                'base_price' => round($basePrice, 2),
+                'season_adjustment' => $seasonAdjustment,
+                'rate_plan_adjustment' => $rateAdjustment,
+                'price' => round(max(0, $price), 2),
+            ];
+
+            $current->addDay();
         }
 
-        return (float) $season->price_modifier;
+        return $rows;
     }
 
-    private function getDowModifier(Booking $booking, Carbon $checkIn): float
+    private function applyAdjustment(float $price, ?array $adjustment): float
     {
-        $dayOfWeek = $checkIn->dayOfWeek; // 0=Sun, 6=Sat
+        if (empty($adjustment)) {
+            return $price;
+        }
+
+        if (($adjustment['type'] ?? null) === 'fixed') {
+            return $price + (float) ($adjustment['amount'] ?? 0);
+        }
+
+        return $price * (float) ($adjustment['multiplier'] ?? 1);
+    }
+
+    private function getSeasonAdjustment(Booking $booking, Carbon $date): ?array
+    {
+        $season = $booking->seasons()
+            ->where('status', true)
+            ->where('start_date', '<=', $date->toDateString())
+            ->where('end_date', '>=', $date->toDateString())
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$season) {
+            return null;
+        }
+
+        if ($season->modifier_type === 'fixed') {
+            return ['type' => 'fixed', 'amount' => (float) $season->price_modifier];
+        }
+
+        return ['type' => 'percent', 'multiplier' => (float) $season->price_modifier];
+    }
+
+    private function getRatePlanAdjustment(Booking $booking, Carbon $date): ?array
+    {
+        $dayOfWeek = $date->dayOfWeek; // 0=Sun, 6=Sat
 
         $plan = $booking->ratePlans()
             ->where('type', 'dow')
@@ -115,17 +121,21 @@ class PricingEngine
                 $conditions = is_array($plan->conditions)
                     ? $plan->conditions
                     : json_decode($plan->conditions, true);
+
                 $days = $conditions['days_of_week'] ?? [];
-                return in_array($dayOfWeek, $days);
+
+                return in_array($dayOfWeek, array_map('intval', $days));
             });
 
-        if (!$plan) return 1.0;
-
-        if ($plan->calculation_type === 'fixed') {
-            return 1.0; // fixed handled elsewhere
+        if (!$plan) {
+            return null;
         }
 
-        return (float) $plan->price / 100; // stored as percentage
+        if ($plan->calculation_type === 'fixed') {
+            return ['type' => 'fixed', 'amount' => (float) $plan->price];
+        }
+
+        return ['type' => 'percent', 'multiplier' => (float) $plan->price / 100];
     }
 
     private function getPaxModifier(Booking $booking, int $adults, int $children): float
@@ -134,7 +144,6 @@ class PricingEngine
             return 0.0;
         }
 
-        // Extra persons beyond first
         $extraPersons = max(0, ($adults + $children) - 1);
         $pricePerPerson = (float) ($booking->price_per ?? $booking->price);
 

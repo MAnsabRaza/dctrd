@@ -781,66 +781,102 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3323], ['name' => 'admin_booking_review_delete', 'group' => 'admin_booking']);
 
         Section::updateOrCreate(
-    ['id' => 3330],
-    [
-        'name' => 'admin_booking_favorite',
-        'group' => 'admin_booking'
-    ]
-);
+            ['id' => 3330],
+            [
+                'name' => 'admin_booking_favorite',
+                'group' => 'admin_booking'
+            ]
+        );
 
-Section::updateOrCreate(
-    ['id' => 3331],
-    [
-        'name' => 'admin_booking_favorite_create',
-        'group' => 'admin_booking'
-    ]
-);
+        Section::updateOrCreate(
+            ['id' => 3331],
+            [
+                'name' => 'admin_booking_favorite_create',
+                'group' => 'admin_booking'
+            ]
+        );
 
-Section::updateOrCreate(
-    ['id' => 3332],
-    [
-        'name' => 'admin_booking_favorite_edit',
-        'group' => 'admin_booking'
-    ]
-);
+        Section::updateOrCreate(
+            ['id' => 3332],
+            [
+                'name' => 'admin_booking_favorite_edit',
+                'group' => 'admin_booking'
+            ]
+        );
 
-Section::updateOrCreate(
-    ['id' => 3333],
-    [
-        'name' => 'admin_booking_favorite_delete',
-        'group' => 'admin_booking'
-    ]
-);Section::updateOrCreate(
-    ['id' => 3340],
-    [
-        'name' => 'admin_booking_comment',
-        'group' => 'admin_booking'
-    ]
-);
+        Section::updateOrCreate(
+            ['id' => 3333],
+            [
+                'name' => 'admin_booking_favorite_delete',
+                'group' => 'admin_booking'
+            ]
+        );
+        Section::updateOrCreate(
+            ['id' => 3340],
+            [
+                'name' => 'admin_booking_comment',
+                'group' => 'admin_booking'
+            ]
+        );
 
-Section::updateOrCreate(
-    ['id' => 3341],
-    [
-        'name' => 'admin_booking_comment_create',
-        'group' => 'admin_booking'
-    ]
-);
+        Section::updateOrCreate(
+            ['id' => 3341],
+            [
+                'name' => 'admin_booking_comment_create',
+                'group' => 'admin_booking'
+            ]
+        );
 
-Section::updateOrCreate(
-    ['id' => 3342],
-    [
-        'name' => 'admin_booking_comment_edit',
-        'group' => 'admin_booking'
-    ]
-);
+        Section::updateOrCreate(
+            ['id' => 3342],
+            [
+                'name' => 'admin_booking_comment_edit',
+                'group' => 'admin_booking'
+            ]
+        );
 
-Section::updateOrCreate(
-    ['id' => 3343],
-    [
-        'name' => 'admin_booking_comment_delete',
-        'group' => 'admin_booking'
-    ]
-);
+        Section::updateOrCreate(
+            ['id' => 3343],
+            [
+                'name' => 'admin_booking_comment_delete',
+                'group' => 'admin_booking'
+            ]
+        );
+
+        Section::updateOrCreate(
+            ['id' => 3350],
+            [
+                'name' => 'admin_booking_package',
+                'group' => 'admin_booking'
+            ]
+        );
+
+        Section::updateOrCreate(
+            ['id' => 3351],
+            [
+                'name' => 'admin_booking_package_create',
+                'group' => 'admin_booking'
+            ]
+        );
+
+        Section::updateOrCreate(
+            ['id' => 3352],
+            [
+                'name' => 'admin_booking_package_edit',
+                'group' => 'admin_booking'
+            ]
+        );
+
+        Section::updateOrCreate(
+            ['id' => 3353],
+            [
+                'name' => 'admin_booking_package_delete',
+                'group' => 'admin_booking'
+            ]
+        );
+
+
+
         /* Run Panel Sections */
         $this->runPanelSections();
 

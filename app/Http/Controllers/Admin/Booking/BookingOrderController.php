@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\BookingBundle;
 use App\Models\BookingOrder;
 use App\Models\BookingOrderItem;
+use App\Models\BookingPackage;
 use App\Models\BookingResource;
 use Illuminate\Http\Request;
 
@@ -18,12 +19,13 @@ class BookingOrderController extends Controller
 
         removeContentLocale();
 
-        $orders = BookingOrder::with(['user', 'items.booking', 'items.bundle'])
+        $orders = BookingOrder::with(['user', 'items.booking', 'items.bundle', 'items.package'])
             ->orderBy('id', 'desc')
             ->paginate(20);
 
         $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
         $bundles = BookingBundle::orderBy('id', 'desc')->get(['id', 'title']);
+        $packages = BookingPackage::orderBy('id', 'desc')->get(['id', 'title']);
         $resources = BookingResource::orderBy('name')->get(['id', 'name']);
 
         return view('admin.booking.order', [
@@ -31,6 +33,7 @@ class BookingOrderController extends Controller
             'orders' => $orders,
             'bookings' => $bookings,
             'bundles' => $bundles,
+            'packages' => $packages,
             'resources' => $resources,
             'editOrder' => null,
         ]);
@@ -48,7 +51,7 @@ class BookingOrderController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'tax_amount' => 'nullable|numeric|min:0',
             'item_type' => 'required|array|min:1',
-            'item_type.*' => 'required|in:booking,bundle',
+            'item_type.*' => 'required|in:booking,bundle,package',
             'item_id' => 'required|array|min:1',
             'item_id.*' => 'required|integer',
             'resource_id' => 'nullable|array',
@@ -98,6 +101,7 @@ class BookingOrderController extends Controller
                 'item_type' => $type,
                 'booking_id' => $type === 'booking' ? $validated['item_id'][$index] : null,
                 'bundle_id' => $type === 'bundle' ? $validated['item_id'][$index] : null,
+                'package_id' => $type === 'package' ? $validated['item_id'][$index] : null,
                 'resource_id' => $validated['resource_id'][$index] ?? null,
                 'booking_date' => $validated['booking_date'][$index] ?? null,
                 'start_time' => $validated['start_time'][$index] ?? null,
@@ -119,6 +123,8 @@ class BookingOrderController extends Controller
             'total' => max(0, $subtotal - ($validated['discount_amount'] ?? 0) + ($validated['tax_amount'] ?? 0)),
         ]);
 
+        $order->sendBookingNotifications('created');
+
         return redirect(getAdminPanelUrl('/booking/order'))
             ->with('success', 'Booking order created successfully.');
     }
@@ -127,14 +133,15 @@ class BookingOrderController extends Controller
     {
         $this->authorize('admin_booking_orders_edit');
 
-        $editOrder = BookingOrder::with(['items.booking', 'items.bundle'])->findOrFail($id);
+        $editOrder = BookingOrder::with(['items.booking', 'items.bundle', 'items.package'])->findOrFail($id);
 
-        $orders = BookingOrder::with(['user', 'items.booking', 'items.bundle'])
+        $orders = BookingOrder::with(['user', 'items.booking', 'items.bundle', 'items.package'])
             ->orderBy('id', 'desc')
             ->paginate(20);
 
         $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
         $bundles = BookingBundle::orderBy('id', 'desc')->get(['id', 'title']);
+        $packages = BookingPackage::orderBy('id', 'desc')->get(['id', 'title']);
         $resources = BookingResource::orderBy('name')->get(['id', 'name']);
 
         return view('admin.booking.order', [
@@ -142,6 +149,7 @@ class BookingOrderController extends Controller
             'orders' => $orders,
             'bookings' => $bookings,
             'bundles' => $bundles,
+            'packages' => $packages,
             'resources' => $resources,
             'editOrder' => $editOrder,
         ]);
@@ -152,6 +160,7 @@ class BookingOrderController extends Controller
         $this->authorize('admin_booking_orders_edit');
 
         $order = BookingOrder::findOrFail($id);
+        $wasConfirmed = $order->status === 'confirmed';
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -162,7 +171,7 @@ class BookingOrderController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'tax_amount' => 'nullable|numeric|min:0',
             'item_type' => 'required|array|min:1',
-            'item_type.*' => 'required|in:booking,bundle',
+            'item_type.*' => 'required|in:booking,bundle,package',
             'item_id' => 'required|array|min:1',
             'item_id.*' => 'required|integer',
             'resource_id' => 'nullable|array',
@@ -208,6 +217,7 @@ class BookingOrderController extends Controller
                 'item_type' => $type,
                 'booking_id' => $type === 'booking' ? $validated['item_id'][$index] : null,
                 'bundle_id' => $type === 'bundle' ? $validated['item_id'][$index] : null,
+                'package_id' => $type === 'package' ? $validated['item_id'][$index] : null,
                 'resource_id' => $validated['resource_id'][$index] ?? null,
                 'booking_date' => $validated['booking_date'][$index] ?? null,
                 'start_time' => $validated['start_time'][$index] ?? null,
@@ -227,6 +237,10 @@ class BookingOrderController extends Controller
             'subtotal' => $subtotal,
             'total' => max(0, $subtotal - ($validated['discount_amount'] ?? 0) + ($validated['tax_amount'] ?? 0)),
         ]);
+
+        if (!$wasConfirmed && $order->status === 'confirmed') {
+            $order->sendBookingNotifications('confirmed');
+        }
 
         return redirect(getAdminPanelUrl('/booking/order'))
             ->with('success', 'Booking order updated successfully.');

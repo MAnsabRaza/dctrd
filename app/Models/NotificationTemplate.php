@@ -90,5 +90,6 @@ class NotificationTemplate extends Model
         'forms' => ['submit_form_by_users'],
         'attendance' => ['for_present_students', 'for_late_students', 'for_absent_students'],
         'events' => ['new_purchase_ticket_for_students', 'new_sale_ticket_for_provider', 'cancel_event_for_students', 'online_event_sessions_for_students'],
+        'bookings' => ['booking_created', 'booking_updated', 'new_booking_order', 'booking_order_confirmed', 'booking_new_comment', 'booking_new_rating', 'booking_new_favorite'],
     ];
 }

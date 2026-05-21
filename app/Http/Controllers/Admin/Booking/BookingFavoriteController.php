@@ -50,7 +50,9 @@ class BookingFavoriteController extends Controller
             ]);
         }
 
-        BookingFavorite::create($validated);
+        $favorite = BookingFavorite::create($validated);
+
+        $this->sendFavoriteNotification($favorite);
 
         return redirect(getAdminPanelUrl('/booking/favorite'))
             ->with('success', 'Favorite created successfully.');
@@ -107,5 +109,22 @@ class BookingFavoriteController extends Controller
 
         return redirect(getAdminPanelUrl('/booking/favorite'))
             ->with('success', 'Favorite deleted successfully.');
+    }
+
+    private function sendFavoriteNotification(BookingFavorite $favorite): void
+    {
+        $favorite->loadMissing(['booking', 'user']);
+
+        if (empty($favorite->booking) || empty($favorite->booking->creator_id)) {
+            return;
+        }
+
+        $notifyOptions = [
+            '[c.title]' => $favorite->booking->title,
+            '[item_title]' => $favorite->booking->title,
+            '[u.name]' => optional($favorite->user)->full_name,
+        ];
+
+        sendNotification('booking_new_favorite', $notifyOptions, $favorite->booking->creator_id);
     }
 }

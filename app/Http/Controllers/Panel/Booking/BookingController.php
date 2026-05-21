@@ -103,6 +103,8 @@ class BookingController extends Controller
 
         $booking = Booking::create($data);
 
+        $this->sendBookingNotification($booking, 'booking_created');
+
         return redirect()
             ->route('panel.bookings.index')
             ->with('success', 'Booking created successfully.');
@@ -116,7 +118,7 @@ class BookingController extends Controller
 
     public function edit($id)
     {
-        $booking = Booking::findOrFail($id);
+        $booking = $this->findOwnBooking($id);
 
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title')
@@ -141,11 +143,13 @@ class BookingController extends Controller
 
     public function update(Request $request, $id)
     {
-        $booking = Booking::findOrFail($id);
+        $booking = $this->findOwnBooking($id);
 
         $data = $this->validateBooking($request, $booking->id);
 
         $booking->update($data);
+
+        $this->sendBookingNotification($booking, 'booking_updated');
 
         return redirect()
             ->route('panel.bookings.index')
@@ -160,7 +164,7 @@ class BookingController extends Controller
 
     public function destroy($id)
     {
-        $booking = Booking::findOrFail($id);
+        $booking = $this->findOwnBooking($id);
 
         $booking->delete();
 
@@ -177,7 +181,7 @@ class BookingController extends Controller
 
     public function checkAvailability(Request $request, $id)
     {
-        $booking = Booking::findOrFail($id);
+        $booking = $this->findOwnBooking($id);
 
         $request->validate([
 
@@ -206,7 +210,7 @@ class BookingController extends Controller
 
     public function calculatePrice(Request $request, $id)
     {
-        $booking = Booking::findOrFail($id);
+        $booking = $this->findOwnBooking($id);
 
         $request->validate([
 
@@ -243,17 +247,20 @@ class BookingController extends Controller
 
     public function getSlots(Request $request, $id)
     {
-        $booking = Booking::findOrFail($id);
+        $booking = $this->findOwnBooking($id);
 
         $request->validate([
             'date' => 'required|date',
+            'resource_id' => 'nullable|integer|exists:booking_resources,id',
         ]);
 
         $slots = $this->slotEngine->getAvailableSlots(
 
             $booking,
 
-            Carbon::parse($request->date)
+            Carbon::parse($request->date),
+
+            $request->filled('resource_id') ? (int) $request->resource_id : null
         );
 
         return response()->json([
@@ -360,5 +367,23 @@ class BookingController extends Controller
 
             'lng' => 'nullable|numeric',
         ]);
+    }
+
+    private function findOwnBooking($id): Booking
+    {
+        return Booking::query()
+            ->where('creator_id', auth()->id())
+            ->findOrFail($id);
+    }
+
+    private function sendBookingNotification(Booking $booking, string $template): void
+    {
+        $notifyOptions = [
+            '[c.title]' => $booking->title,
+            '[item_title]' => $booking->title,
+            '[u.name]' => optional(auth()->user())->full_name,
+        ];
+
+        sendNotification($template, $notifyOptions, 1);
     }
 }

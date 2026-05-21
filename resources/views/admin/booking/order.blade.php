@@ -256,6 +256,7 @@
                                                                     <option value="">Select</option>
                                                                     <option value="booking" {{ $item->item_type == 'booking' ? 'selected' : '' }}>Booking</option>
                                                                     <option value="bundle" {{ $item->item_type == 'bundle' ? 'selected' : '' }}>Bundle</option>
+                                                                    <option value="package" {{ $item->item_type == 'package' ? 'selected' : '' }}>Package</option>
                                                                 </select>
                                                             </td>
                                                             <td>
@@ -268,6 +269,10 @@
                                                                     @elseif($item->item_type == 'bundle' && $item->bundle_id)
                                                                         <option value="{{ $item->bundle_id }}" selected>
                                                                             {{ $item->bundle->title ?? 'Bundle #' . $item->bundle_id }}
+                                                                        </option>
+                                                                    @elseif($item->item_type == 'package' && $item->package_id)
+                                                                        <option value="{{ $item->package_id }}" selected>
+                                                                            {{ $item->package->title ?? 'Package #' . $item->package_id }}
                                                                         </option>
                                                                     @endif
                                                                 </select>
@@ -326,6 +331,7 @@
                                                                 <option value="">Select</option>
                                                                 <option value="booking">Booking</option>
                                                                 <option value="bundle">Bundle</option>
+                                                                <option value="package">Package</option>
                                                             </select>
                                                         </td>
                                                         <td>
@@ -417,6 +423,7 @@
 
     const bookingItems = @json($bookings->values());
     const bundleItems = @json($bundles->values());
+    const packageItems = @json($packages->values());
     const resourceItems = @json($resources->values());
 
     function escapeHtml(value) {
@@ -456,6 +463,7 @@
                     '<option value="">Select</option>' +
                     '<option value="booking">Booking</option>' +
                     '<option value="bundle">Bundle</option>' +
+                    '<option value="package">Package</option>' +
                 '</select>' +
             '</td>' +
             '<td>' +
@@ -532,6 +540,8 @@
                     itemSelect.innerHTML = buildOptions(bookingItems, 'Select Booking', 'No bookings found');
                 } else if (type === 'bundle') {
                     itemSelect.innerHTML = buildOptions(bundleItems, 'Select Bundle', 'No bundles found');
+                } else if (type === 'package') {
+                    itemSelect.innerHTML = buildOptions(packageItems, 'Select Package', 'No packages found');
                 } else {
                     itemSelect.innerHTML = '<option value="">Select Item Type First</option>';
                 }

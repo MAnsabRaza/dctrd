@@ -22,7 +22,7 @@ class SlotEngine
         Carbon $date,
         ?int $resourceId = null
     ): Collection {
-        if (!$this->isDateOpen($booking, $date)) {
+        if (!$this->isDateOpen($booking, $date, $resourceId)) {
             return collect();
         }
 
@@ -47,9 +47,10 @@ class SlotEngine
                 }
             }
 
-            // Check if slot is already booked
             $key = $slot['start_time'] . '-' . $slot['end_time'];
-            return !isset($bookedSlots[$key]);
+            $bookedCount = $bookedSlots[$key] ?? 0;
+
+            return $bookedCount < (int) ($slot['max_bookings'] ?? 1);
         })->values();
     }
 
@@ -94,11 +95,12 @@ class SlotEngine
 
     // ─── Private Helpers ──────────────────────────────────────────────────
 
-    private function isDateOpen(Booking $booking, Carbon $date): bool
+    private function isDateOpen(Booking $booking, Carbon $date, ?int $resourceId = null): bool
     {
         // Check explicit availability table
         $avail = $booking->availabilities()
             ->where('date', $date->toDateString())
+            ->when($resourceId ?? null, fn($q) => $q->where('resource_id', $resourceId))
             ->first();
 
         if ($avail) {
@@ -180,7 +182,7 @@ class SlotEngine
 
             $key = $order->start_time . '-' . $order->end_time;
 
-            $booked[$key] = true;
+            $booked[$key] = ($booked[$key] ?? 0) + 1;
         }
 
         return $booked;

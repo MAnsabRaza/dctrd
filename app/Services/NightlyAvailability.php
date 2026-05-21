@@ -70,7 +70,8 @@ class NightlyAvailability
 
         // Check capacity (parallel bookings)
         $overlapping = $this->countOverlapping($booking, $checkIn, $checkOut, $resourceId);
-        $maxCapacity = $resourceId ? 1 : ($booking->capacity ?? PHP_INT_MAX);
+        $resourceCapacity = optional($booking->resources()->where('id', $resourceId)->first())->capacity;
+        $maxCapacity = $resourceId ? ($resourceCapacity ?: 1) : ($booking->capacity ?? PHP_INT_MAX);
 
         if ($overlapping >= $maxCapacity) {
             return [
@@ -149,7 +150,8 @@ class NightlyAvailability
 
 })->count();
 
-            $capacity = $resourceId ? 1 : ($booking->capacity ?? PHP_INT_MAX);
+            $resourceCapacity = optional($booking->resources()->where('id', $resourceId)->first())->capacity;
+            $capacity = $resourceId ? ($resourceCapacity ?: 1) : ($booking->capacity ?? PHP_INT_MAX);
             $slotsLeft = $capacity - $bookedCount;
 
             $isAvailable = true;

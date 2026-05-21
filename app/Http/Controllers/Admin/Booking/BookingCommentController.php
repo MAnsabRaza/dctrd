@@ -45,7 +45,11 @@ class BookingCommentController extends Controller
 
         $validated['user_id'] = auth()->id();
 
-        BookingComment::create($validated);
+        $comment = BookingComment::create($validated);
+
+        if ($comment->is_active) {
+            $this->sendCommentNotification($comment);
+        }
 
         return redirect(getAdminPanelUrl('/booking/comment'))
             ->with('success', 'Comment created successfully.');
@@ -78,6 +82,7 @@ class BookingCommentController extends Controller
     public function update(Request $request, $id)
     {
         $comment = BookingComment::findOrFail($id);
+        $wasActive = (bool) $comment->is_active;
 
         $request->merge([
             'is_active' => $request->has('is_active') ? 1 : 0,
@@ -92,6 +97,10 @@ class BookingCommentController extends Controller
         $validated['user_id'] = auth()->id();
 
         $comment->update($validated);
+
+        if (!$wasActive && $comment->is_active) {
+            $this->sendCommentNotification($comment);
+        }
 
         return redirect(getAdminPanelUrl('/booking/comment'))
             ->with('success', 'Comment updated successfully.');
@@ -108,5 +117,23 @@ class BookingCommentController extends Controller
 
         return redirect(getAdminPanelUrl('/booking/comment'))
             ->with('success', 'Comment deleted successfully.');
+    }
+
+    private function sendCommentNotification(BookingComment $comment): void
+    {
+        $comment->loadMissing(['booking', 'user']);
+
+        if (empty($comment->booking) || empty($comment->booking->creator_id)) {
+            return;
+        }
+
+        $notifyOptions = [
+            '[c.title]' => $comment->booking->title,
+            '[item_title]' => $comment->booking->title,
+            '[u.name]' => optional($comment->user)->full_name,
+        ];
+
+        sendNotification('booking_new_comment', $notifyOptions, $comment->booking->creator_id);
+        sendNotification('booking_new_comment', $notifyOptions, 1);
     }
 }

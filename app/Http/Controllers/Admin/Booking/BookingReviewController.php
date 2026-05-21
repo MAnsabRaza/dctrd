@@ -46,7 +46,7 @@ class BookingReviewController extends Controller
             'reply'           => 'nullable|string|max:2000',
         ]);
 
-        BookingReview::create([
+        $review = BookingReview::create([
             'booking_id'      => $request->booking_id,
             'order_id'        => $request->order_id ?? 0,
             'customer_id'     => Auth::id(),   // ← current logged-in user
@@ -59,6 +59,10 @@ class BookingReviewController extends Controller
             'reply'           => $request->reply,
             'replied_at'      => $request->reply ? now() : null,
         ]);
+
+        if ($review->status === 'active') {
+            $this->sendReviewNotification($review);
+        }
 
         return redirect(getAdminPanelUrl('/booking/review'))
             ->with('success', trans('admin/main.booking_review_created_successfully'));
@@ -89,6 +93,7 @@ class BookingReviewController extends Controller
         $this->authorize('admin_booking_review_edit');
 
         $review = BookingReview::findOrFail($id);
+        $wasActive = $review->status === 'active';
 
         $this->validate($request, [
             'status' => 'required|in:pending,active,rejected',
@@ -100,6 +105,10 @@ class BookingReviewController extends Controller
             'reply'      => $request->reply,
             'replied_at' => $request->reply ? now() : $review->replied_at,
         ]);
+
+        if (!$wasActive && $review->status === 'active') {
+            $this->sendReviewNotification($review);
+        }
 
         return redirect(getAdminPanelUrl('/booking/review'))
             ->with('success', trans('admin/main.booking_review_updated_successfully'));
@@ -114,5 +123,24 @@ class BookingReviewController extends Controller
 
         return redirect(getAdminPanelUrl('/booking/review'))
             ->with('success', trans('admin/main.booking_review_deleted_successfully'));
+    }
+
+    private function sendReviewNotification(BookingReview $review): void
+    {
+        $review->loadMissing(['booking', 'customer']);
+
+        if (empty($review->booking) || empty($review->booking->creator_id)) {
+            return;
+        }
+
+        $notifyOptions = [
+            '[c.title]' => $review->booking->title,
+            '[item_title]' => $review->booking->title,
+            '[u.name]' => optional($review->customer)->full_name,
+            '[rate.count]' => $review->rating,
+        ];
+
+        sendNotification('booking_new_rating', $notifyOptions, $review->booking->creator_id);
+        sendNotification('booking_new_rating', $notifyOptions, 1);
     }
 }

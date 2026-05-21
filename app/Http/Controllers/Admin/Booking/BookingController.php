@@ -55,7 +55,7 @@ class BookingController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
         ]);
 
-        Booking::create([
+        $booking = Booking::create([
             'creator_id'       => auth()->id(),
             'category_id'      => $request->category_id,
             'title'            => $request->title,
@@ -96,6 +96,8 @@ class BookingController extends Controller
             'status'           => $request->status === 'published' ? 'published' : 'draft',
             'featured'         => $request->featured === 'on',
         ]);
+
+        $this->sendBookingNotification($booking, 'booking_created');
 
         return redirect(getAdminPanelUrl('/booking'))
             ->with('success', trans('admin/main.created_successfully'));
@@ -176,6 +178,8 @@ class BookingController extends Controller
             'featured'         => $request->featured === 'on',
         ]);
 
+        $this->sendBookingNotification($booking, 'booking_updated');
+
         return redirect(getAdminPanelUrl('/booking'))
             ->with('success', trans('admin/main.updated_successfully'));
     }
@@ -188,5 +192,20 @@ class BookingController extends Controller
 
         return redirect(getAdminPanelUrl('/booking'))
             ->with('success', trans('admin/main.deleted_successfully'));
+    }
+
+    private function sendBookingNotification(Booking $booking, string $template): void
+    {
+        $notifyOptions = [
+            '[c.title]' => $booking->title,
+            '[item_title]' => $booking->title,
+            '[u.name]' => optional(auth()->user())->full_name,
+        ];
+
+        sendNotification($template, $notifyOptions, 1);
+
+        if (!empty($booking->creator_id) && $booking->creator_id !== auth()->id()) {
+            sendNotification($template, $notifyOptions, $booking->creator_id);
+        }
     }
 }

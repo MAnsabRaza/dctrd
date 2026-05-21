@@ -16,6 +16,7 @@ class BookingOrderItem extends Model
         'item_type',
         'booking_id',
         'bundle_id',
+        'package_id',
         'resource_id',
         'booking_date',
         'start_time',
@@ -50,6 +51,11 @@ class BookingOrderItem extends Model
     public function bundle()
     {
         return $this->belongsTo(BookingBundle::class, 'bundle_id');
+    }
+
+    public function package()
+    {
+        return $this->belongsTo(BookingPackage::class, 'package_id');
     }
 
     public function resource()

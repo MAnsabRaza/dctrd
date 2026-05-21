@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\Booking\BookingController;
 use App\Http\Controllers\Admin\Booking\BookingFavoriteController;
 use App\Http\Controllers\Admin\Booking\BookingImportController;
 use App\Http\Controllers\Admin\Booking\BookingPolicyController;
+use App\Http\Controllers\Admin\Booking\BookingPackageController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
 use App\Http\Controllers\Admin\Booking\BookingResourceController;
 use App\Http\Controllers\Admin\Booking\BookingReviewController;
@@ -159,6 +160,14 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/edit', [BookingBundleController::class, 'edit']);
         Route::post('/{id}/update', [BookingBundleController::class, 'update']);
         Route::get('/{id}/delete', [BookingBundleController::class, 'delete']);
+    });
+
+    Route::group(['prefix' => 'package'], function () {
+        Route::get('/', [BookingPackageController::class, 'index']);
+        Route::post('/store', [BookingPackageController::class, 'store']);
+        Route::get('/{id}/edit', [BookingPackageController::class, 'edit']);
+        Route::post('/{id}/update', [BookingPackageController::class, 'update']);
+        Route::get('/{id}/delete', [BookingPackageController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'import'], function () {

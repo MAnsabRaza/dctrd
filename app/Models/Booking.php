@@ -319,6 +319,22 @@ class Booking extends Model
             'bundle_id'
         )->withPivot(['quantity', 'sort_order'])->withTimestamps();
     }
+
+    public function packageItems()
+    {
+        return $this->hasMany(BookingPackageItem::class, 'booking_id');
+    }
+
+    public function packages()
+    {
+        return $this->belongsToMany(
+            BookingPackage::class,
+            'booking_package_items',
+            'booking_id',
+            'package_id'
+        )->withPivot(['resource_id', 'quantity', 'included_minutes', 'sort_order', 'rules'])->withTimestamps();
+    }
+
     public function timeSlots()
     {
         return $this->hasMany(BookingTimeSlot::class, 'booking_id');

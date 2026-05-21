@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin\Booking;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingImport;
+use App\Models\BookingOrder;
+use App\Models\BookingOrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -92,11 +94,18 @@ class BookingImportController extends Controller
     {
         $this->authorize('admin_booking_imports');
 
-        $headers = ['title', 'description', 'price', 'capacity', 'status'];
-        $rows = [
-            ['Sample Booking 1', 'Description here', '100.00', '10', '1'],
-            ['Sample Booking 2', 'Description here', '200.00', '5', '1'],
-        ];
+        if (request()->get('type') === 'orders') {
+            $headers = ['order_number', 'user_id', 'booking_id', 'booking_date', 'start_time', 'end_time', 'quantity', 'persons', 'unit_price', 'currency', 'status', 'payment_status'];
+            $rows = [
+                ['ORDER-1001', '2', '1', now()->addDay()->toDateString(), '09:00', '10:00', '1', '1', '100.00', 'USD', 'pending', 'unpaid'],
+            ];
+        } else {
+            $headers = ['title', 'description', 'price', 'capacity', 'status'];
+            $rows = [
+                ['Sample Booking 1', 'Description here', '100.00', '10', '1'],
+                ['Sample Booking 2', 'Description here', '200.00', '5', '1'],
+            ];
+        }
 
         $csvContent = implode(',', $headers) . "\n";
         foreach ($rows as $row) {
@@ -137,23 +146,11 @@ class BookingImportController extends Controller
                 $rowNum = $offset + 2; // +2: 1-based + header row
 
                 try {
-                    $title = trim($record['title'] ?? '');
-
-                    if (empty($title)) {
-                        throw new \Exception('Title is required.');
+                    if ($import->type === 'orders') {
+                        $this->importOrderRow($record, $import);
+                    } else {
+                        $this->importBookingRow($record, $import);
                     }
-
-                    Booking::create([
-                        'creator_id' => !empty($record['creator_id']) ? (int) $record['creator_id'] : $import->user_id,
-                        'category_id' => !empty($record['category_id']) ? (int) $record['category_id'] : null,
-                        'title' => $title,
-                        'slug' => \Str::slug($title) . '-' . uniqid(),
-                        'booking_type' => trim($record['booking_type'] ?? 'standard'),
-                        'description' => trim($record['description'] ?? ''),
-                        'price' => is_numeric($record['price'] ?? null) ? (float) $record['price'] : 0,
-                        'capacity' => is_numeric($record['capacity'] ?? null) ? (int) $record['capacity'] : 1,
-                        'status' => isset($record['status']) && (int) $record['status'] === 1 ? 'published' : 'inactive',
-                    ]);
 
                     $successRows++;
 
@@ -185,6 +182,91 @@ class BookingImportController extends Controller
                 'status' => 'failed',
                 'errors' => [['message' => $e->getMessage()]],
             ]);
+        }
+    }
+
+    private function importBookingRow(array $record, BookingImport $import): void
+    {
+        $title = trim($record['title'] ?? '');
+
+        if (empty($title)) {
+            throw new \Exception('Title is required.');
+        }
+
+        $booking = Booking::create([
+            'creator_id' => !empty($record['creator_id']) ? (int) $record['creator_id'] : $import->user_id,
+            'category_id' => !empty($record['category_id']) ? (int) $record['category_id'] : null,
+            'title' => $title,
+            'slug' => \Str::slug($title) . '-' . uniqid(),
+            'booking_type' => trim($record['booking_type'] ?? 'standard'),
+            'description' => trim($record['description'] ?? ''),
+            'price' => is_numeric($record['price'] ?? null) ? (float) $record['price'] : 0,
+            'capacity' => is_numeric($record['capacity'] ?? null) ? (int) $record['capacity'] : 1,
+            'status' => isset($record['status']) && (int) $record['status'] === 1 ? 'published' : 'inactive',
+        ]);
+
+        $notifyOptions = [
+            '[c.title]' => $booking->title,
+            '[item_title]' => $booking->title,
+            '[u.name]' => optional($import->user)->full_name,
+        ];
+
+        sendNotification('booking_created', $notifyOptions, 1);
+    }
+
+    private function importOrderRow(array $record, BookingImport $import): void
+    {
+        $bookingId = !empty($record['booking_id']) ? (int) $record['booking_id'] : null;
+
+        if (empty($bookingId) || !Booking::where('id', $bookingId)->exists()) {
+            throw new \Exception('Valid booking_id is required.');
+        }
+
+        $userId = !empty($record['user_id']) ? (int) $record['user_id'] : $import->user_id;
+        if (!\App\User::where('id', $userId)->exists()) {
+            throw new \Exception('Valid user_id is required.');
+        }
+
+        $quantity = max(1, (int) ($record['quantity'] ?? 1));
+        $unitPrice = is_numeric($record['unit_price'] ?? null) ? (float) $record['unit_price'] : 0;
+        $totalPrice = round($quantity * $unitPrice, 2);
+
+        $order = BookingOrder::create([
+            'order_number' => trim($record['order_number'] ?? '') ?: 'IMPORT-' . uniqid(),
+            'user_id' => $userId,
+            'subtotal' => $totalPrice,
+            'discount_amount' => is_numeric($record['discount_amount'] ?? null) ? (float) $record['discount_amount'] : 0,
+            'tax_amount' => is_numeric($record['tax_amount'] ?? null) ? (float) $record['tax_amount'] : 0,
+            'total' => $totalPrice,
+            'currency' => trim($record['currency'] ?? 'USD'),
+            'status' => trim($record['status'] ?? 'pending'),
+            'payment_status' => trim($record['payment_status'] ?? 'unpaid'),
+            'notes' => trim($record['notes'] ?? '') ?: null,
+        ]);
+
+        $order->update([
+            'total' => max(0, (float) $order->subtotal - (float) $order->discount_amount + (float) $order->tax_amount),
+        ]);
+
+        BookingOrderItem::create([
+            'order_id' => $order->id,
+            'item_type' => 'booking',
+            'booking_id' => $bookingId,
+            'resource_id' => !empty($record['resource_id']) ? (int) $record['resource_id'] : null,
+            'booking_date' => trim($record['booking_date'] ?? '') ?: null,
+            'start_time' => trim($record['start_time'] ?? '') ?: null,
+            'end_time' => trim($record['end_time'] ?? '') ?: null,
+            'quantity' => $quantity,
+            'persons' => max(1, (int) ($record['persons'] ?? 1)),
+            'unit_price' => $unitPrice,
+            'total_price' => $totalPrice,
+            'status' => trim($record['item_status'] ?? $record['status'] ?? 'pending'),
+        ]);
+
+        $order->sendBookingNotifications('created');
+
+        if ($order->status === 'confirmed') {
+            $order->sendBookingNotifications('confirmed');
         }
     }
 }
