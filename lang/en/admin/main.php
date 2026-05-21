@@ -397,7 +397,7 @@ return [
     'admin_booking_review'=>'Booking Review',
     'booking_review_created_successfully' => 'Review created successfully.',
     'booking_review_updated_successfully' => 'Review updated successfully.',
-    'booking_review_deleted_successfully' => 'Review deleted successfully.',R,
+    'booking_review_deleted_successfully' => 'Review deleted successfully.',
     'customer'=>'Customer',
     'rating'=>'Rating',
     'validity_days'=>'Validity Days',
