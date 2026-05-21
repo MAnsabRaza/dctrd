@@ -106,7 +106,7 @@ class CartManagerController extends Controller
                                 $item = new Cart();
                                 $item->uid = $id;
                                 $item->product_order_id = $product->id;
-                                $item->productOrder = (object)[
+                                $item->productOrder = (object) [
                                     'quantity' => $cookieCart['quantity'] ?? 1,
                                     'product' => $product
                                 ];
@@ -159,43 +159,68 @@ class CartManagerController extends Controller
     public function storeCookieCartsToDB(Request $request)
     {
         try {
+
             if (auth()->check()) {
+
                 $user = auth()->user();
+
                 $carts = Cookie::get($this->cookieKey);
 
                 if (!empty($carts)) {
+
                     $carts = json_decode($carts, true);
 
                     if (!empty($carts)) {
+
                         foreach ($carts as $cart) {
+
                             if (!empty($cart['item_name']) and !empty($cart['item_id'])) {
 
                                 if ($cart['item_name'] == 'webinar_id') {
+
                                     $this->storeUserWebinarCart($user, $cart);
+
                                 } elseif ($cart['item_name'] == 'product_id') {
+
                                     $this->storeUserProductCart($request, $user, $cart);
+
                                 } elseif ($cart['item_name'] == 'bundle_id') {
+
                                     $this->storeUserBundleCart($user, $cart);
+
                                 } elseif ($cart['item_name'] == 'event_ticket_id') {
+
                                     $this->storeUserEventTicketCart($user, $cart);
-                                }elseif ($cart['item_name'] == 'meeting_package_id') {
+
+                                } elseif ($cart['item_name'] == 'meeting_package_id') {
+
                                     $this->storeUserMeetingPackageCart($user, $cart);
+
                                 } elseif ($cart['item_name'] == 'booking_id') {
+
                                     $this->storeUserBookingCart($user, $cart);
+
                                 }
-                                
-                                }
+
                             }
+
                         }
+
                     }
 
                     Cookie::queue($this->cookieKey, null, 0);
+
                 }
+
             }
+
         } catch (\Exception $exception) {
+
+            \Log::error($exception);
 
         }
     }
+
 
     public function storeUserWebinarCart($user, $data)
     {
@@ -632,7 +657,7 @@ class CartManagerController extends Controller
                 'cartItems' => $cartItems,
             ];
 
-            $html = (string)view()->make("design_1.web.cart.drawer.body", $data);
+            $html = (string) view()->make("design_1.web.cart.drawer.body", $data);
         } else {
             $cartDiscount = CartDiscount::query()
                 ->where('show_only_on_empty_cart', true)
@@ -643,7 +668,7 @@ class CartManagerController extends Controller
                 'cartDiscount' => $cartDiscount,
             ];
 
-            $html = (string)view()->make("design_1.web.cart.drawer.empty", $data);
+            $html = (string) view()->make("design_1.web.cart.drawer.empty", $data);
         }
 
         return response()->json([
