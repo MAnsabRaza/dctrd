@@ -125,7 +125,9 @@ class SlotEngine
             ->filter(function ($template) use ($dayOfWeek) {
                 if (!$template->day_of_week)
                     return true; // applies all days
-                $days = array_map('intval', explode(',', $template->day_of_week));
+                $days = is_array($template->day_of_week)
+                    ? array_map('intval', $template->day_of_week)
+                    : array_map('intval', explode(',', $template->day_of_week));
                 return in_array($dayOfWeek, $days);
             });
 
