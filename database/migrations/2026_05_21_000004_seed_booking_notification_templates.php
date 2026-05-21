@@ -45,11 +45,10 @@ return new class extends Migration
                 ->exists();
 
             if (!$exists) {
+
                 DB::table('notification_templates')->insert([
-                    'title'      => $data['title'],
-                    'template'   => $data['template'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'title'    => $data['title'],
+                    'template' => $data['template'],
                 ]);
             }
         }
