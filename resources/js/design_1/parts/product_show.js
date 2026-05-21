@@ -98,10 +98,11 @@
         }
 
         const $quantity = $('input[name="quantity"]');
+        const $itemIdInput = $('input[name="item_id"]');
 
-        data['item_id'] = $quantity.attr("data-item");
+        data['item_id'] = $quantity.attr("data-item") || $itemIdInput.val();
         data['item_name'] = "product_id";
-        data['quantity'] = $quantity.val();
+        data['quantity'] = $quantity.val() || 1;
 
         let path = "/cart/store";
 
