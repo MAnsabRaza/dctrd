@@ -26,6 +26,10 @@ class CartItemInfo
             $product = $cart->productOrder->product;
 
             return $this->getProductInfo($cart, $product);
+        } elseif (!empty($cart->booking_id)) {
+            $booking = $cart->booking;
+
+            return $this->getBookingInfo($cart, $booking);
         } elseif (!empty($cart->reserve_meeting_id)) {
             $creator = $cart->reserveMeeting->meeting->creator;
 
@@ -126,6 +130,27 @@ class CartItemInfo
         $info['rate'] = $rates['rate'];
         $info['rateCount'] = $rates['count'];
         $info['price'] = $cart->reserveMeeting->paid_amount;
+
+        return $info;
+    }
+
+    private function getBookingInfo($cart, $booking)
+    {
+        $info = [];
+
+        if (empty($booking)) {
+            return $info;
+        }
+
+        $info['imgPath'] = $booking->thumbnail;
+        $info['itemUrl'] = $booking->getUrl();
+        $info['title'] = $booking->title;
+        $info['profileUrl'] = !empty($booking->creator) ? $booking->creator->getProfileUrl() : null;
+        $info['teacherName'] = !empty($booking->creator) ? $booking->creator->full_name : null;
+        $info['rate'] = $booking->getRate();
+        $info['rateCount'] = $booking->reviews()->pluck('creator_id')->count();
+        $info['price'] = $booking->price;
+        $info['discountPrice'] = null;
 
         return $info;
     }

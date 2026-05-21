@@ -136,6 +136,17 @@ class CartManagerController extends Controller
 
                                 $carts->add($item);
                             }
+                        } elseif (!empty($cookieCart['item_name']) and $cookieCart['item_name'] == 'booking_id') {
+                            $booking = \App\Models\Booking::where('id', $cookieCart['item_id'])->where('status', 'published')->first();
+
+                            if (!empty($booking)) {
+                                $item = new Cart();
+                                $item->uid = $id;
+                                $item->booking_id = $booking->id;
+                                $item->booking = $booking;
+
+                                $carts->add($item);
+                            }
                         }
                     }
                 }
@@ -169,6 +180,10 @@ class CartManagerController extends Controller
                                     $this->storeUserEventTicketCart($user, $cart);
                                 }elseif ($cart['item_name'] == 'meeting_package_id') {
                                     $this->storeUserMeetingPackageCart($user, $cart);
+                                } elseif ($cart['item_name'] == 'booking_id') {
+                                    $this->storeUserBookingCart($user, $cart);
+                                }
+                                
                                 }
                             }
                         }
@@ -216,6 +231,32 @@ class CartManagerController extends Controller
         return [
             'title' => trans('public.request_failed'),
             'msg' => trans('cart.course_not_found'),
+            'status' => 'error'
+        ];
+    }
+
+    public function storeUserBookingCart($user, $data)
+    {
+        $booking_id = $data['item_id'];
+
+        $booking = \App\Models\Booking::where('id', $booking_id)
+            ->where('status', 'published')
+            ->first();
+
+        if (!empty($booking) and !empty($user)) {
+            Cart::updateOrCreate([
+                'creator_id' => $user->id,
+                'booking_id' => $booking->id,
+            ], [
+                'created_at' => time()
+            ]);
+
+            return 'ok';
+        }
+
+        return [
+            'title' => trans('public.request_failed'),
+            'msg' => trans('public.request_failed'),
             'status' => 'error'
         ];
     }
@@ -419,6 +460,8 @@ class CartManagerController extends Controller
                 $result = $this->storeUserEventTicketCart($user, $data);
             } elseif ($item_name == 'meeting_package_id') {
                 $result = $this->storeUserMeetingPackageCart($user, $data);
+            } elseif ($item_name == 'booking_id') {
+                $result = $this->storeUserBookingCart($user, $data);
             }
 
             if ($result != 'ok') {

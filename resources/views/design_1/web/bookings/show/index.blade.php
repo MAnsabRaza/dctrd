@@ -79,10 +79,18 @@
                         </div>
 
                         <div class="d-flex align-items-center gap-12 flex-wrap mt-16">
-                            <a href="#bookingRequest" class="btn btn-primary btn-lg">
-                                <x-iconsax-lin-calendar-2 class="icons text-white" width="24px" height="24px"/>
-                                <span class="ml-4 text-white">Book now</span>
-                            </a>
+                            <form action="/cart/store" method="post" id="bookingAddToCartForm">
+    {{ csrf_field() }}
+
+    <input type="hidden" name="item_id" value="{{ $booking->id }}">
+    <input type="hidden" name="item_name" value="booking_id">
+    <input type="hidden" name="item_type" value="booking">
+
+    <button type="submit" class="btn btn-primary btn-lg">
+        <x-iconsax-lin-calendar-2 class="icons text-white" width="24px" height="24px"/>
+        <span class="ml-4 text-white">Book Now</span>
+    </button>
+</form>
                         </div>
                     </div>
                 </div>
@@ -287,4 +295,46 @@
     <script src="/assets/default/vendors/swiper/swiper-bundle.min.js"></script>
     <script type="text/javascript" src="/assets/default/vendors/simplebar/simplebar.min.js"></script>
     <script src="{{ getDesign1ScriptPath("swiper_slider") }}"></script>
+    <script>
+        (function ($) {
+            'use strict';
+
+            $('body').on('submit', '#bookingAddToCartForm', function (e) {
+                e.preventDefault();
+
+                var $form = $(this);
+                var $btn = $form.find('button[type="submit"]');
+
+                $btn.addClass('loadingbar').prop('disabled', true);
+
+                $.post($form.attr('action'), $form.serialize(), function (result) {
+                    // show toast if available
+                    if (result && result.title) {
+                        showToast(result.status || 'success', result.title, result.msg || '');
+                    }
+
+                    // open cart drawer if drawer exists
+                    if ($('.js-view-cart-drawer').length) {
+                        $('.js-view-cart-drawer').trigger('click');
+                    } else if ($('.cart-drawer').length) {
+                        $('.cart-drawer').addClass('show');
+                    } else {
+                        // fallback: reload to show cart
+                        setTimeout(function () { window.location.reload(); }, 800);
+                    }
+                }).fail(function (err) {
+                    $btn.removeClass('loadingbar').prop('disabled', false);
+                    var errors = err.responseJSON;
+                    if (errors && errors.toast_alert) {
+                        showToast('error', errors.toast_alert.title, errors.toast_alert.msg)
+                    } else if (errors && errors.msg) {
+                        showToast('error', errors.title, errors.msg);
+                    } else {
+                        showToast('error', 'Error', 'Something went wrong');
+                    }
+                });
+            });
+
+        })(jQuery)
+    </script>
 @endpush

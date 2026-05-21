@@ -54,6 +54,10 @@ class Cart extends Model
         return $this->belongsTo('App\Models\ProductOrder', 'product_order_id', 'id');
     }
 
+    public function booking()
+    {
+        return $this->belongsTo('App\\Models\\Booking', 'booking_id', 'id');
+    }
     public function subscribe()
     {
         return $this->belongsTo('App\Models\Subscribe', 'subscribe_id', 'id');
@@ -111,6 +115,10 @@ class Cart extends Model
             $price += $cart->eventTicket->getPriceWithDiscount() * $cart->quantity;
         } else if (!empty($cart->meeting_package_id) and !empty($cart->meetingPackage)) {
             $price += $cart->meetingPackage->getPrices()['price'];
+        } else if (!empty($cart->booking_id) and !empty($cart->booking)) {
+            $booking = $cart->booking;
+
+            $price += (float) ($booking->discount_price ?: $booking->price);
         } else if (!empty($cart->reserve_meeting_id) and !empty($cart->reserveMeeting)) {
             $price += $cart->reserveMeeting->paid_amount;
         } else if (!empty($cart->product_order_id) and !empty($cart->productOrder) and !empty($cart->productOrder->product)) {
