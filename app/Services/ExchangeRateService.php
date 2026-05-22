@@ -16,7 +16,7 @@ class ExchangeRateService
     public function __construct()
     {
         $this->config = config('exchange');
-        $this->baseCurrency = $this->config['base_currency'];
+        $this->baseCurrency = strtoupper($this->config['base_currency'] ?? 'USD');
     }
 
     /**
@@ -24,25 +24,33 @@ class ExchangeRateService
      */
     public function getRate(string $from, string $to): ?float
     {
+        $from = strtoupper($from);
+        $to = strtoupper($to);
+
         // Same currency returns 1
         if ($from === $to) {
             return 1.0;
         }
 
+        if (!$this->supportsCurrency($from) || !$this->supportsCurrency($to)) {
+            Log::warning("Unsupported currency pair requested: {$from} to {$to}");
+            return null;
+        }
+
         $cacheKey = "exchange_rate_{$from}_{$to}";
         
         return Cache::remember($cacheKey, $this->config['cache_duration'], function () use ($from, $to) {
-            // Try to get from database first
-            $rate = $this->getLatestRateFromDb($from, $to);
+            $rate = $this->getLatestRateFromDb($from, $to, true);
             
             if ($rate) {
                 return $rate;
             }
 
-            // If not in DB, try to fetch fresh rates
-            Log::info("Exchange rate not found in DB for {$from} to {$to}, attempting to fetch");
-            
-            return null; // Return null if not available
+            if ($this->updateRates()) {
+                return $this->getLatestRateFromDb($from, $to);
+            }
+
+            return $this->getLatestRateFromDb($from, $to);
         });
     }
 
@@ -72,15 +80,17 @@ class ExchangeRateService
         }
 
         try {
+            $provider = $this->config['primary_api']['provider'] ?? 'primary';
             $rates = $this->fetchFromPrimaryApi();
             
             if (!$rates && $this->config['fallback_on_failure']) {
                 Log::warning('Primary API failed, trying backup API');
+                $provider = $this->config['backup_api']['provider'] ?? 'backup';
                 $rates = $this->fetchFromBackupApi();
             }
 
             if ($rates) {
-                $this->storeRates($rates, 'primary');
+                $this->storeRates($rates, $provider);
                 $this->clearCache();
                 Log::info('Exchange rates updated successfully', ['count' => count($rates)]);
                 return true;
@@ -107,26 +117,27 @@ class ExchangeRateService
         try {
             $params = [
                 'base' => $this->baseCurrency,
-                'symbols' => implode(',', $this->config['supported_currencies']),
+                'symbols' => implode(',', $this->getSupportedCurrencies()),
             ];
             
-            // Add API key if provided
             if (!empty($config['key'])) {
                 $params['access_key'] = $config['key'];
+                $params['apikey'] = $config['key'];
             }
             
             $response = Http::timeout($this->config['timeout'])
-                ->get($config['url'] . '/latest', $params);
+                ->retry($this->config['retry_attempts'] ?? 1, 250)
+                ->get($this->makePrimaryUrl($config), $params);
 
             if ($response->successful()) {
                 $data = $response->json();
                 
-                if (isset($data['success']) && $data['success'] === false) {
-                    Log::error('Primary API returned error', ['error' => $data['error'] ?? 'Unknown error']);
+                if ($this->hasProviderError($data)) {
+                    Log::error('Primary API returned error', ['error' => $data['error'] ?? $data['result'] ?? 'Unknown error']);
                     return null;
                 }
                 
-                return $data['rates'] ?? null;
+                return $this->normalizeRates($data);
             }
 
             Log::error('Primary API request failed', [
@@ -147,36 +158,31 @@ class ExchangeRateService
     {
         $config = $this->config['backup_api'];
         
-        // Skip if no API key for backup
-        if (empty($config['key'])) {
-            Log::info('Backup API key not configured, skipping');
-            return null;
-        }
-        
         try {
+            $params = [
+                'from' => $this->baseCurrency,
+                'base' => $this->baseCurrency,
+                'symbols' => implode(',', $this->getSupportedCurrencies()),
+            ];
+
+            if (!empty($config['key'])) {
+                $params['access_key'] = $config['key'];
+                $params['apikey'] = $config['key'];
+            }
+
             $response = Http::timeout($this->config['timeout'])
-                ->get($config['url'] . '/latest', [
-                    'access_key' => $config['key'],
-                    'base' => 'EUR', // Free tier only supports EUR
-                    'symbols' => implode(',', $this->config['supported_currencies']),
-                ]);
+                ->retry($this->config['retry_attempts'] ?? 1, 250)
+                ->get($this->makeBackupUrl($config), $params);
 
             if ($response->successful()) {
                 $data = $response->json();
                 
-                if (isset($data['success']) && $data['success'] === false) {
-                    Log::error('Backup API returned error', ['error' => $data['error'] ?? 'Unknown error']);
+                if ($this->hasProviderError($data)) {
+                    Log::error('Backup API returned error', ['error' => $data['error'] ?? $data['result'] ?? 'Unknown error']);
                     return null;
                 }
                 
-                // Convert EUR-based rates to USD-based if needed
-                $rates = $data['rates'] ?? null;
-                if ($rates && $this->baseCurrency !== 'EUR') {
-                    // This would need conversion logic
-                    Log::info('Backup API returned EUR-based rates, conversion needed');
-                }
-                
-                return $rates;
+                return $this->normalizeRates($data);
             }
 
             Log::error('Backup API request failed', [
@@ -198,6 +204,12 @@ class ExchangeRateService
         $now = Carbon::now();
 
         foreach ($rates as $currency => $rate) {
+            $currency = strtoupper($currency);
+
+            if ($currency === $this->baseCurrency || !is_numeric($rate)) {
+                continue;
+            }
+
             try {
                 ExchangeRate::create([
                     'base_currency' => $this->baseCurrency,
@@ -218,10 +230,28 @@ class ExchangeRateService
     /**
      * Get latest rate from database
      */
-    protected function getLatestRateFromDb(string $from, string $to): ?float
+    protected function getLatestRateFromDb(string $from, string $to, bool $freshOnly = false): ?float
     {
         $rate = ExchangeRate::getLatestRate($from, $to);
-        return $rate ? (float) $rate->rate : null;
+
+        if ($rate && (!$freshOnly || $this->isFresh($rate->fetched_at))) {
+            return (float) $rate->rate;
+        }
+
+        $inverseRate = ExchangeRate::getLatestRate($to, $from);
+
+        if ($inverseRate && (!$freshOnly || $this->isFresh($inverseRate->fetched_at)) && (float) $inverseRate->rate > 0) {
+            return round(1 / (float) $inverseRate->rate, 8);
+        }
+
+        $fromBase = $from === $this->baseCurrency ? 1.0 : optional(ExchangeRate::getLatestRate($this->baseCurrency, $from))->rate;
+        $toBase = $to === $this->baseCurrency ? 1.0 : optional(ExchangeRate::getLatestRate($this->baseCurrency, $to))->rate;
+
+        if ($fromBase && $toBase) {
+            return round((float) $toBase / (float) $fromBase, 8);
+        }
+
+        return null;
     }
 
     /**
@@ -271,7 +301,7 @@ class ExchangeRateService
      */
     public function getSupportedCurrencies(): array
     {
-        return $this->config['supported_currencies'];
+        return array_values(array_unique(array_map('strtoupper', $this->config['supported_currencies'] ?? [])));
     }
 
     /**
@@ -280,5 +310,65 @@ class ExchangeRateService
     public function isEnabled(): bool
     {
         return $this->config['enabled'];
+    }
+
+    protected function supportsCurrency(string $currency): bool
+    {
+        return in_array(strtoupper($currency), $this->getSupportedCurrencies(), true);
+    }
+
+    protected function isFresh($fetchedAt): bool
+    {
+        return Carbon::parse($fetchedAt)->gte(now()->subSeconds($this->config['cache_duration']));
+    }
+
+    protected function makePrimaryUrl(array $config): string
+    {
+        $url = rtrim($config['url'], '/');
+
+        if (($config['provider'] ?? null) === 'exchange_rate_api') {
+            return "{$url}/latest/{$this->baseCurrency}";
+        }
+
+        return "{$url}/latest";
+    }
+
+    protected function makeBackupUrl(array $config): string
+    {
+        return rtrim($config['url'], '/') . '/latest';
+    }
+
+    protected function hasProviderError(array $data): bool
+    {
+        return (isset($data['success']) && $data['success'] === false)
+            || (isset($data['result']) && in_array($data['result'], ['error', 'fail'], true));
+    }
+
+    protected function normalizeRates(array $data): ?array
+    {
+        $rates = $data['rates'] ?? null;
+
+        if (empty($rates) || !is_array($rates)) {
+            return null;
+        }
+
+        $providerBase = strtoupper($data['base_code'] ?? $data['base'] ?? $this->baseCurrency);
+
+        if ($providerBase !== $this->baseCurrency) {
+            if (empty($rates[$this->baseCurrency]) || (float) $rates[$this->baseCurrency] <= 0) {
+                Log::warning("Exchange API returned {$providerBase}-based rates without {$this->baseCurrency} cross-rate");
+                return null;
+            }
+
+            $baseRate = (float) $rates[$this->baseCurrency];
+
+            foreach ($rates as $currency => $rate) {
+                $rates[$currency] = (float) $rate / $baseRate;
+            }
+        }
+
+        $rates[$this->baseCurrency] = 1.0;
+
+        return array_intersect_key($rates, array_flip($this->getSupportedCurrencies()));
     }
 }

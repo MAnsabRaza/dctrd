@@ -66,6 +66,49 @@ class UnitConversionService
     }
 
     /**
+     * Convert a stored base-unit value for a user's preference.
+     */
+    public function convertForUser(float $value, string $type, $user = null, ?string $fromUnit = null): float
+    {
+        $fromUnit = $fromUnit ?? $this->getBaseUnit($type);
+        $toUnit = $this->getPreferredUnit($type, $user);
+
+        if (!$fromUnit || !$toUnit) {
+            return $value;
+        }
+
+        return $this->convert($value, $type, $fromUnit, $toUnit);
+    }
+
+    /**
+     * Convert and format a stored base-unit value for checkout/report display.
+     */
+    public function formatForUser(float $value, string $type, $user = null, ?string $fromUnit = null, bool $short = false): string
+    {
+        $unit = $this->getPreferredUnit($type, $user) ?? $fromUnit ?? $this->getBaseUnit($type);
+        $converted = $this->convertForUser($value, $type, $user, $fromUnit);
+
+        return $this->format($converted, $unit, $short);
+    }
+
+    /**
+     * Get the user's preferred unit for a type or fall back to the base unit.
+     */
+    public function getPreferredUnit(string $type, $user = null): ?string
+    {
+        $baseUnit = $this->getBaseUnit($type);
+
+        if (empty($user) && function_exists('auth') && auth()->check()) {
+            $user = auth()->user();
+        }
+
+        $attribute = "preferred_{$type}_unit";
+        $preferredUnit = !empty($user) ? ($user->{$attribute} ?? null) : null;
+
+        return $this->isValidUnit($type, (string) $preferredUnit) ? $preferredUnit : $baseUnit;
+    }
+
+    /**
      * Format value with unit label
      */
     public function format(float $value, string $unit, bool $short = false): string

@@ -723,13 +723,16 @@ function currenciesLists($sing = null)
 
 function currency($user = null)
 {
-    // Authenticated users: use stored user currency (unchanged behavior)
     if (empty($user)) {
         $user = auth()->user();
     }
 
+    if (!empty($user) and !empty($user->preferred_currency)) {
+        return strtoupper($user->preferred_currency);
+    }
+
     if (!empty($user) and !empty($user->currency)) {
-        return $user->currency;
+        return strtoupper($user->currency);
     }
 
     // Guests: cookie wins if present
@@ -2357,6 +2360,21 @@ function convertPriceToUserCurrency($price, $userCurrencyItem = null)
         return $price * $exchangeRate;
     }
 
+    try {
+        $targetCurrency = !empty($userCurrencyItem->currency) ? $userCurrencyItem->currency : currency();
+        $baseCurrency = config('exchange.base_currency', getDefaultCurrency());
+
+        if (strtoupper($targetCurrency) !== strtoupper($baseCurrency)) {
+            $exchangeService = app(\App\Services\ExchangeRateService::class);
+
+            if ($exchangeService->isEnabled()) {
+                return $exchangeService->convert((float) $price, $baseCurrency, $targetCurrency);
+            }
+        }
+    } catch (\Throwable $e) {
+        \Log::warning('Price exchange conversion failed: ' . $e->getMessage());
+    }
+
     return $price + 0;
 }
 
@@ -2370,6 +2388,21 @@ function convertPriceToDefaultCurrency($price, $userCurrencyItem = null)
 
     if ($exchangeRate > 0) {
         return $price / $exchangeRate;
+    }
+
+    try {
+        $sourceCurrency = !empty($userCurrencyItem->currency) ? $userCurrencyItem->currency : currency();
+        $baseCurrency = config('exchange.base_currency', getDefaultCurrency());
+
+        if (strtoupper($sourceCurrency) !== strtoupper($baseCurrency)) {
+            $exchangeService = app(\App\Services\ExchangeRateService::class);
+
+            if ($exchangeService->isEnabled()) {
+                return $exchangeService->convert((float) $price, $sourceCurrency, $baseCurrency);
+            }
+        }
+    } catch (\Throwable $e) {
+        \Log::warning('Price default currency conversion failed: ' . $e->getMessage());
     }
 
     return $price;
@@ -2683,10 +2716,7 @@ function convertCurrency($amount, $fromCurrency = null)
         $fromCurrency = $fromCurrency ?? config('exchange.base_currency', 'USD');
         
         // Get user's preferred currency
-        $toCurrency = $fromCurrency;
-        if (auth()->check() && !empty(auth()->user()->preferred_currency)) {
-            $toCurrency = auth()->user()->preferred_currency;
-        }
+        $toCurrency = currency();
         
         return $exchangeService->convert($amount, $fromCurrency, $toCurrency);
     } catch (\Exception $e) {
@@ -2705,9 +2735,7 @@ function convertCurrency($amount, $fromCurrency = null)
 function formatCurrency($amount, $fromCurrency = null)
 {
     $converted = convertCurrency($amount, $fromCurrency);
-    $currency = auth()->check() && !empty(auth()->user()->preferred_currency) 
-        ? auth()->user()->preferred_currency 
-        : config('exchange.base_currency', 'USD');
+    $currency = currency();
     
     return $currency . ' ' . number_format($converted, 2);
 }
@@ -2728,21 +2756,8 @@ function convertUnit($value, $type, $fromUnit = null)
         if (!$unitService->isEnabled()) {
             return $value;
         }
-        
-        $fromUnit = $fromUnit ?? $unitService->getBaseUnit($type);
-        
-        if (!auth()->check()) {
-            return $value;
-        }
-        
-        $toUnit = match($type) {
-            'length' => auth()->user()->preferred_length_unit ?? 'km',
-            'mass' => auth()->user()->preferred_mass_unit ?? 'kg',
-            'area' => auth()->user()->preferred_area_unit ?? 'sqm',
-            default => $fromUnit,
-        };
-        
-        return $unitService->convert($value, $type, $fromUnit, $toUnit);
+
+        return $unitService->convertForUser((float) $value, $type, auth()->user(), $fromUnit);
     } catch (\Exception $e) {
         \Log::error('Unit conversion error: ' . $e->getMessage());
         return $value;
@@ -2767,20 +2782,8 @@ function formatUnit($value, $type, $fromUnit = null, $short = false)
             $fromUnit = $fromUnit ?? $unitService->getBaseUnit($type);
             return $unitService->format($value, $fromUnit, $short);
         }
-        
-        $converted = convertUnit($value, $type, $fromUnit);
-        
-        $unit = $unitService->getBaseUnit($type);
-        if (auth()->check()) {
-            $unit = match($type) {
-                'length' => auth()->user()->preferred_length_unit ?? $unit,
-                'mass' => auth()->user()->preferred_mass_unit ?? $unit,
-                'area' => auth()->user()->preferred_area_unit ?? $unit,
-                default => $unitService->getBaseUnit($type),
-            };
-        }
-        
-        return $unitService->format($converted, $unit, $short);
+
+        return $unitService->formatForUser((float) $value, $type, auth()->user(), $fromUnit, $short);
     } catch (\Exception $e) {
         \Log::error('Unit formatting error: ' . $e->getMessage());
         return number_format($value, 2);
@@ -2794,10 +2797,7 @@ function formatUnit($value, $type, $fromUnit = null, $short = false)
  */
 function getUserCurrency()
 {
-    if (auth()->check() && !empty(auth()->user()->preferred_currency)) {
-        return auth()->user()->preferred_currency;
-    }
-    return config('exchange.base_currency', 'USD');
+    return currency();
 }
 
 /**
@@ -2809,16 +2809,6 @@ function getUserCurrency()
 function getUserUnit($type)
 {
     $unitService = app(\App\Services\UnitConversionService::class);
-    $baseUnit = $unitService->getBaseUnit($type);
-    
-    if (!auth()->check()) {
-        return $baseUnit;
-    }
-    
-    return match($type) {
-        'length' => auth()->user()->preferred_length_unit ?? $baseUnit,
-        'mass' => auth()->user()->preferred_mass_unit ?? $baseUnit,
-        'area' => auth()->user()->preferred_area_unit ?? $baseUnit,
-        default => $baseUnit,
-    };
+
+    return $unitService->getPreferredUnit($type, auth()->user());
 }

@@ -20,9 +20,9 @@ return [
     | Free tier available, no API key required, supports all base currencies
     */
     'primary_api' => [
-        'provider' => 'exchangerate_host',
-        'url' => 'https://api.exchangerate.host',
-        'key' => null,
+        'provider' => env('EXCHANGE_PRIMARY_PROVIDER', 'exchange_rate_api'),
+        'url' => env('EXCHANGE_PRIMARY_URL', 'https://open.er-api.com/v6'),
+        'key' => env('EXCHANGE_PRIMARY_API_KEY'),
     ],
 
     /*
@@ -32,9 +32,9 @@ return [
     | Note: Free tier only supports EUR as base currency
     */
     'backup_api' => [
-        'provider' => 'exchangeratesapi',
-        'url' => 'https://api.exchangeratesapi.io/v1',
-        'key' => env('EXCHANGE_RATES_API_KEY'),
+        'provider' => env('EXCHANGE_BACKUP_PROVIDER', 'frankfurter'),
+        'url' => env('EXCHANGE_BACKUP_URL', 'https://api.frankfurter.app'),
+        'key' => env('EXCHANGE_BACKUP_API_KEY', env('EXCHANGE_RATES_API_KEY')),
     ],
 
     /*
@@ -71,7 +71,7 @@ return [
     |--------------------------------------------------------------------------
     | How long to cache exchange rates (in seconds)
     */
-    'cache_duration' => 3600, // 1 hour
+    'cache_duration' => env('EXCHANGE_RATE_CACHE_SECONDS', 12 * 60 * 60),
 
     /*
     |--------------------------------------------------------------------------
