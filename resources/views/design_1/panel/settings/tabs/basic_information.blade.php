@@ -150,6 +150,50 @@
                         @enderror
                     </div>
                 @endif
+
+                @if(!empty($unitPreferences))
+                    <div class="form-group mb-0 mt-20">
+                        <label class="form-group-label">Length Unit</label>
+                        <select name="preferred_length_unit" class="form-control select2" data-minimum-results-for-search="Infinity">
+                            @foreach($unitPreferences['length'] as $unit => $label)
+                                <option value="{{ $unit }}" {{ (($user->preferred_length_unit ?? config('units.base_units.length')) == $unit) ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('preferred_length_unit')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group mb-0 mt-20">
+                        <label class="form-group-label">Mass Unit</label>
+                        <select name="preferred_mass_unit" class="form-control select2" data-minimum-results-for-search="Infinity">
+                            @foreach($unitPreferences['mass'] as $unit => $label)
+                                <option value="{{ $unit }}" {{ (($user->preferred_mass_unit ?? config('units.base_units.mass')) == $unit) ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('preferred_mass_unit')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group mb-0 mt-20">
+                        <label class="form-group-label">Area Unit</label>
+                        <select name="preferred_area_unit" class="form-control select2" data-minimum-results-for-search="Infinity">
+                            @foreach($unitPreferences['area'] as $unit => $label)
+                                <option value="{{ $unit }}" {{ (($user->preferred_area_unit ?? config('units.base_units.area')) == $unit) ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('preferred_area_unit')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                        @enderror
+                    </div>
+                @endif
             </div>
 
             <div class="bg-white p-16 rounded-16 border-gray-200 mt-20">

@@ -106,6 +106,50 @@
                 </div>
             @endif
 
+            @if(!empty($unitPreferences))
+                <div class="form-group">
+                    <label class="input-label">Length Unit</label>
+                    <select name="preferred_length_unit" class="form-control select2" data-allow-clear="false">
+                        @foreach($unitPreferences['length'] as $unit => $label)
+                            <option value="{{ $unit }}" {{ (($user->preferred_length_unit ?? config('units.base_units.length')) == $unit) ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('preferred_length_unit')
+                    <div class="invalid-feedback">
+                        {{ $message }}
+                    </div>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label">Mass Unit</label>
+                    <select name="preferred_mass_unit" class="form-control select2" data-allow-clear="false">
+                        @foreach($unitPreferences['mass'] as $unit => $label)
+                            <option value="{{ $unit }}" {{ (($user->preferred_mass_unit ?? config('units.base_units.mass')) == $unit) ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('preferred_mass_unit')
+                    <div class="invalid-feedback">
+                        {{ $message }}
+                    </div>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label">Area Unit</label>
+                    <select name="preferred_area_unit" class="form-control select2" data-allow-clear="false">
+                        @foreach($unitPreferences['area'] as $unit => $label)
+                            <option value="{{ $unit }}" {{ (($user->preferred_area_unit ?? config('units.base_units.area')) == $unit) ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('preferred_area_unit')
+                    <div class="invalid-feedback">
+                        {{ $message }}
+                    </div>
+                    @enderror
+                </div>
+            @endif
+
             <div class="form-group mt-30 d-flex align-items-center justify-content-between">
                 <label class="cursor-pointer input-label" for="newsletterSwitch">{{ trans('auth.join_newsletter') }}</label>
                 <div class="custom-control custom-switch">

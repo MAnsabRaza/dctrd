@@ -2770,12 +2770,12 @@ function formatUnit($value, $type, $fromUnit = null, $short = false)
         
         $converted = convertUnit($value, $type, $fromUnit);
         
-        $unit = 'km';
+        $unit = $unitService->getBaseUnit($type);
         if (auth()->check()) {
             $unit = match($type) {
-                'length' => auth()->user()->preferred_length_unit ?? 'km',
-                'mass' => auth()->user()->preferred_mass_unit ?? 'kg',
-                'area' => auth()->user()->preferred_area_unit ?? 'sqm',
+                'length' => auth()->user()->preferred_length_unit ?? $unit,
+                'mass' => auth()->user()->preferred_mass_unit ?? $unit,
+                'area' => auth()->user()->preferred_area_unit ?? $unit,
                 default => $unitService->getBaseUnit($type),
             };
         }

@@ -22,6 +22,7 @@ use App\Models\UserOccupation;
 use App\Models\UserSelectedBank;
 use App\Models\UserSelectedBankSpecification;
 use App\Models\UserZoomApi;
+use App\Services\UnitConversionService;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -118,9 +119,21 @@ class UserController extends Controller
             'cities' => $cities,
             'districts' => $districts,
             'userBanks' => $userBanks,
+            'unitPreferences' => $this->getUnitPreferencesData(),
             'formFieldsHtml' => $formFieldsHtml,
             'attachments' => $attachments,
             'userLoginHistories' => $userLoginHistories,
+        ];
+    }
+
+    private function getUnitPreferencesData(): array
+    {
+        $unitService = app(UnitConversionService::class);
+
+        return [
+            'length' => $unitService->getAvailableUnits('length'),
+            'mass' => $unitService->getAvailableUnits('mass'),
+            'area' => $unitService->getAvailableUnits('area'),
         ];
     }
 
@@ -149,6 +162,9 @@ class UserController extends Controller
                 'full_name' => 'required|string',
                 'email' => (($registerMethod == 'email') ? 'required' : 'nullable') . '|email|max:255|unique:users,email,' . $user->id,
                 'mobile' => (($registerMethod == 'mobile') ? 'required' : 'nullable') . '|numeric|unique:users,mobile,' . $user->id,
+                'preferred_length_unit' => 'nullable|in:' . implode(',', array_keys(config('units.conversions.length', []))),
+                'preferred_mass_unit' => 'nullable|in:' . implode(',', array_keys(config('units.conversions.mass', []))),
+                'preferred_area_unit' => 'nullable|in:' . implode(',', array_keys(config('units.conversions.area', []))),
             ];
         }
 
@@ -179,6 +195,9 @@ class UserController extends Controller
                     'language' => $data['language'] ?? null,
                     'timezone' => $data['timezone'] ?? null,
                     'currency' => $data['currency'] ?? null,
+                    'preferred_length_unit' => $data['preferred_length_unit'] ?? config('units.base_units.length', 'km'),
+                    'preferred_mass_unit' => $data['preferred_mass_unit'] ?? config('units.base_units.mass', 'kg'),
+                    'preferred_area_unit' => $data['preferred_area_unit'] ?? config('units.base_units.area', 'sqm'),
                     'offline' => (!empty($data['offline']) and $data['offline'] == "on"),
                     'offline_message' => (!empty($data['offline_message'])) ? $data['offline_message'] : null,
                     'newsletter' => $joinNewsletter,
