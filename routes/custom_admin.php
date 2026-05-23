@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\Booking\BookingCommentController;
 use App\Http\Controllers\Admin\Booking\BookingController;
 use App\Http\Controllers\Admin\Booking\BookingFavoriteController;
 use App\Http\Controllers\Admin\Booking\BookingImportController;
+use App\Http\Controllers\Admin\Booking\BookingModuleCrudController;
 use App\Http\Controllers\Admin\Booking\BookingPolicyController;
 use App\Http\Controllers\Admin\Booking\BookingPackageController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
@@ -201,6 +202,14 @@ Route::group(['prefix' => 'booking'], function () {
         Route::post('/{id}/update', [BookingCommentController::class,'update']);
         Route::get('/{id}/delete', [BookingCommentController::class,'delete']);
 
+    });
+
+    Route::group(['prefix' => 'modules/{resource}'], function () {
+        Route::get('/', [BookingModuleCrudController::class, 'index']);
+        Route::post('/store', [BookingModuleCrudController::class, 'store']);
+        Route::get('/{id}/edit', [BookingModuleCrudController::class, 'edit']);
+        Route::post('/{id}/update', [BookingModuleCrudController::class, 'update']);
+        Route::get('/{id}/delete', [BookingModuleCrudController::class, 'delete']);
     });
 
 });

@@ -1,0 +1,191 @@
+<?php
+
+namespace App\Http\Controllers\Admin\Booking;
+
+use App\Http\Controllers\Controller;
+use App\Models\BookingAsset;
+use App\Models\BookingCalendarIntegration;
+use App\Models\BookingCoupon;
+use App\Models\BookingDiscount;
+use App\Models\BookingFeatured;
+use App\Models\BookingFilter;
+use App\Models\BookingReport;
+use App\Models\BookingRule;
+use App\Models\BookingSlot;
+use App\Models\BookingWaitlist;
+use Illuminate\Http\Request;
+
+class BookingModuleCrudController extends Controller
+{
+    private array $resources = [
+        'filters' => [
+            'model' => BookingFilter::class,
+            'permission' => 'admin_booking_filters',
+            'title' => 'Booking Filters',
+            'columns' => ['id', 'category_id', 'title', 'type', 'status', 'order'],
+            'fields' => ['category_id', 'title', 'type', 'options', 'is_required', 'status', 'order'],
+            'json' => ['options'],
+            'booleans' => ['is_required', 'status'],
+        ],
+        'rules' => [
+            'model' => BookingRule::class,
+            'permission' => 'admin_booking_rules',
+            'title' => 'Booking Rules',
+            'columns' => ['id', 'booking_id', 'rule_type', 'starts_at', 'ends_at', 'status'],
+            'fields' => ['booking_id', 'rule_type', 'conditions', 'actions', 'starts_at', 'ends_at', 'status'],
+            'json' => ['conditions', 'actions'],
+            'booleans' => ['status'],
+        ],
+        'slots' => [
+            'model' => BookingSlot::class,
+            'permission' => 'admin_booking_slots',
+            'title' => 'Booking Slots',
+            'columns' => ['id', 'booking_id', 'resource_id', 'day_of_week', 'date', 'start_time', 'end_time', 'capacity', 'status'],
+            'fields' => ['booking_id', 'resource_id', 'day_of_week', 'date', 'start_time', 'end_time', 'capacity', 'buffer_before', 'buffer_after', 'status'],
+            'booleans' => ['status'],
+        ],
+        'discounts' => [
+            'model' => BookingDiscount::class,
+            'permission' => 'admin_booking_discounts',
+            'title' => 'Booking Discounts',
+            'columns' => ['id', 'booking_id', 'bundle_id', 'title', 'discount_type', 'amount', 'status'],
+            'fields' => ['booking_id', 'bundle_id', 'title', 'discount_type', 'amount', 'starts_at', 'expires_at', 'usage_limit', 'status', 'meta'],
+            'json' => ['meta'],
+            'booleans' => ['status'],
+        ],
+        'coupons' => [
+            'model' => BookingCoupon::class,
+            'permission' => 'admin_booking_coupons',
+            'title' => 'Booking Coupons',
+            'columns' => ['id', 'code', 'booking_id', 'bundle_id', 'discount_type', 'amount', 'status'],
+            'fields' => ['code', 'title', 'booking_id', 'bundle_id', 'discount_type', 'amount', 'minimum_order_amount', 'usage_limit', 'starts_at', 'expires_at', 'status', 'meta'],
+            'json' => ['meta'],
+            'booleans' => ['status'],
+        ],
+        'assets' => [
+            'model' => BookingAsset::class,
+            'permission' => 'admin_booking_assets',
+            'title' => 'Booking Assets',
+            'columns' => ['id', 'booking_id', 'type', 'path', 'title', 'status', 'order'],
+            'fields' => ['booking_id', 'type', 'path', 'title', 'alt', 'order', 'status', 'meta'],
+            'json' => ['meta'],
+            'booleans' => ['status'],
+        ],
+        'reports' => [
+            'model' => BookingReport::class,
+            'permission' => 'admin_booking_reports',
+            'title' => 'Booking Reports',
+            'columns' => ['id', 'booking_id', 'order_id', 'user_id', 'reason', 'status', 'reviewed_at'],
+            'fields' => ['booking_id', 'order_id', 'user_id', 'reason', 'message', 'status', 'reviewed_by', 'reviewed_at', 'meta'],
+            'json' => ['meta'],
+        ],
+        'featured' => [
+            'model' => BookingFeatured::class,
+            'permission' => 'admin_booking_featured',
+            'title' => 'Featured Bookings/Categories',
+            'columns' => ['id', 'booking_id', 'category_id', 'placement', 'starts_at', 'expires_at', 'status', 'order'],
+            'fields' => ['booking_id', 'category_id', 'placement', 'starts_at', 'expires_at', 'order', 'status'],
+            'booleans' => ['status'],
+        ],
+        'waitlists' => [
+            'model' => BookingWaitlist::class,
+            'permission' => 'admin_booking_waitlists',
+            'title' => 'Booking Waitlists',
+            'columns' => ['id', 'booking_id', 'resource_id', 'user_id', 'email', 'booking_date', 'start_time', 'status'],
+            'fields' => ['booking_id', 'resource_id', 'user_id', 'name', 'email', 'phone', 'booking_date', 'start_time', 'end_time', 'persons', 'status', 'meta'],
+            'json' => ['meta'],
+        ],
+        'calendar-integrations' => [
+            'model' => BookingCalendarIntegration::class,
+            'permission' => 'admin_booking_calendar_integrations',
+            'title' => 'Booking Calendar Integrations',
+            'columns' => ['id', 'user_id', 'booking_id', 'provider', 'external_calendar_id', 'last_synced_at', 'status'],
+            'fields' => ['user_id', 'booking_id', 'provider', 'external_calendar_id', 'token_expires_at', 'last_synced_at', 'status', 'settings'],
+            'json' => ['settings'],
+            'booleans' => ['status'],
+        ],
+    ];
+
+    public function index(string $resource)
+    {
+        $config = $this->config($resource);
+        $this->authorize($config['permission']);
+
+        return view('admin.booking.module_crud', [
+            'pageTitle' => $config['title'],
+            'resource' => $resource,
+            'config' => $config,
+            'items' => $config['model']::query()->latest('id')->paginate(20),
+        ]);
+    }
+
+    public function store(Request $request, string $resource)
+    {
+        $config = $this->config($resource);
+        $this->authorize($config['permission'] . '_create');
+
+        $config['model']::create($this->payload($request, $config));
+
+        return back()->with('success', $config['title'] . ' created successfully.');
+    }
+
+    public function edit(string $resource, int $id)
+    {
+        $config = $this->config($resource);
+        $this->authorize($config['permission'] . '_edit');
+
+        return view('admin.booking.module_crud', [
+            'pageTitle' => $config['title'],
+            'resource' => $resource,
+            'config' => $config,
+            'items' => $config['model']::query()->latest('id')->paginate(20),
+            'editItem' => $config['model']::findOrFail($id),
+        ]);
+    }
+
+    public function update(Request $request, string $resource, int $id)
+    {
+        $config = $this->config($resource);
+        $this->authorize($config['permission'] . '_edit');
+
+        $config['model']::findOrFail($id)->update($this->payload($request, $config));
+
+        return redirect(getAdminPanelUrl("/booking/modules/{$resource}"))
+            ->with('success', $config['title'] . ' updated successfully.');
+    }
+
+    public function delete(string $resource, int $id)
+    {
+        $config = $this->config($resource);
+        $this->authorize($config['permission'] . '_delete');
+
+        $config['model']::findOrFail($id)->delete();
+
+        return back()->with('success', $config['title'] . ' deleted successfully.');
+    }
+
+    private function config(string $resource): array
+    {
+        abort_unless(isset($this->resources[$resource]), 404);
+
+        return $this->resources[$resource];
+    }
+
+    private function payload(Request $request, array $config): array
+    {
+        $data = $request->only($config['fields']);
+
+        foreach ($config['booleans'] ?? [] as $field) {
+            $data[$field] = $request->boolean($field);
+        }
+
+        foreach ($config['json'] ?? [] as $field) {
+            if (array_key_exists($field, $data) && is_string($data[$field])) {
+                $decoded = json_decode($data[$field], true);
+                $data[$field] = json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+            }
+        }
+
+        return array_filter($data, fn($value) => $value !== '');
+    }
+}

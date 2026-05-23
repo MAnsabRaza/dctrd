@@ -875,6 +875,26 @@ class SectionsTableSeeder extends Seeder
             ]
         );
 
+        $bookingModuleSections = [
+            3360 => ['admin_booking_filters', 'Booking Filters'],
+            3364 => ['admin_booking_rules', 'Booking Rules'],
+            3368 => ['admin_booking_slots', 'Booking Slots'],
+            3372 => ['admin_booking_discounts', 'Booking Discounts'],
+            3376 => ['admin_booking_coupons', 'Booking Coupons'],
+            3380 => ['admin_booking_assets', 'Booking Assets'],
+            3384 => ['admin_booking_reports', 'Booking Reports'],
+            3388 => ['admin_booking_featured', 'Featured Bookings/Categories'],
+            3392 => ['admin_booking_waitlists', 'Booking Waitlists'],
+            3396 => ['admin_booking_calendar_integrations', 'Booking Calendar Integrations'],
+        ];
+
+        foreach ($bookingModuleSections as $id => [$name, $caption]) {
+            Section::updateOrCreate(['id' => $id], ['name' => $name, 'section_group_id' => 3240, 'caption' => $caption]);
+            Section::updateOrCreate(['id' => $id + 1], ['name' => $name . '_create', 'section_group_id' => 3240, 'caption' => $caption . ' Create']);
+            Section::updateOrCreate(['id' => $id + 2], ['name' => $name . '_edit', 'section_group_id' => 3240, 'caption' => $caption . ' Edit']);
+            Section::updateOrCreate(['id' => $id + 3], ['name' => $name . '_delete', 'section_group_id' => 3240, 'caption' => $caption . ' Delete']);
+        }
+
 
 
         /* Run Panel Sections */
