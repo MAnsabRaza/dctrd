@@ -30,6 +30,7 @@ Route::group(['prefix' => 'api_sessions'], function () {
 Route::get('/mobile-app', 'Web\MobileAppController@index')->middleware(['share', 'impersonate'])->name('mobileAppRoute');
 Route::get('/maintenance', 'Web\MaintenanceController@index')->middleware(['share', 'impersonate'])->name('maintenanceRoute');
 Route::get('/restriction', 'Web\RestrictionController@index')->middleware(['share', 'impersonate'])->name('restrictionRoute');
+Route::post('/unit-preferences', 'Web\UnitPreferenceController@update')->middleware(['share', 'impersonate'])->name('unitPreferences.update');
 
 Route::group(['prefix' => 'cookie-security', 'middleware' => ['share', 'impersonate']], function () {
     Route::post('/all', 'Web\CookieSecurityController@setAll');

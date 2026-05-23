@@ -4,11 +4,12 @@ namespace App\Models;
 use App\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Booking extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'bookings';
 
@@ -338,6 +339,46 @@ class Booking extends Model
     public function timeSlots()
     {
         return $this->hasMany(BookingTimeSlot::class, 'booking_id');
+    }
+
+    public function slots()
+    {
+        return $this->hasMany(BookingSlot::class, 'booking_id');
+    }
+
+    public function rules()
+    {
+        return $this->hasMany(BookingRule::class, 'booking_id');
+    }
+
+    public function discounts()
+    {
+        return $this->hasMany(BookingDiscount::class, 'booking_id');
+    }
+
+    public function coupons()
+    {
+        return $this->hasMany(BookingCoupon::class, 'booking_id');
+    }
+
+    public function assets()
+    {
+        return $this->hasMany(BookingAsset::class, 'booking_id');
+    }
+
+    public function reports()
+    {
+        return $this->hasMany(BookingReport::class, 'booking_id');
+    }
+
+    public function waitlists()
+    {
+        return $this->hasMany(BookingWaitlist::class, 'booking_id');
+    }
+
+    public function featuredPlacements()
+    {
+        return $this->hasMany(BookingFeatured::class, 'booking_id');
     }
     // Ek booking ka ek review hoga
     public function review()

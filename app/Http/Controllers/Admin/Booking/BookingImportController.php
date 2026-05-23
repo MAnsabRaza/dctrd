@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\BookingImport;
 use App\Models\BookingOrder;
 use App\Models\BookingOrderItem;
+use App\Jobs\ProcessBookingImportJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -34,8 +35,8 @@ class BookingImportController extends Controller
         $this->authorize('admin_booking_imports_create');
 
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt|max:5120',
-            'type' => 'required|in:bookings,orders',
+            'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240',
+            'type' => 'required|in:bookings,resources,categories,variants,pricing,availability,orders',
         ]);
 
         $file = $request->file('file');
@@ -50,11 +51,10 @@ class BookingImportController extends Controller
             'status' => 'pending',
         ]);
 
-        // Process immediately (or dispatch a job for large files)
-        $this->processImport($import);
+        ProcessBookingImportJob::dispatch($import->id);
 
         return redirect(getAdminPanelUrl('/booking/import'))
-            ->with('success', 'Import completed. Success: ' . $import->success_rows . ', Failed: ' . $import->failed_rows);
+            ->with('success', 'Import queued successfully. You can track progress from the import logs.');
     }
 
     public function show($id)
@@ -94,16 +94,32 @@ class BookingImportController extends Controller
     {
         $this->authorize('admin_booking_imports');
 
-        if (request()->get('type') === 'orders') {
+        $type = request()->get('type', 'bookings');
+
+        if ($type === 'orders') {
             $headers = ['order_number', 'user_id', 'booking_id', 'booking_date', 'start_time', 'end_time', 'quantity', 'persons', 'unit_price', 'currency', 'status', 'payment_status'];
             $rows = [
                 ['ORDER-1001', '2', '1', now()->addDay()->toDateString(), '09:00', '10:00', '1', '1', '100.00', 'USD', 'pending', 'unpaid'],
             ];
+        } elseif ($type === 'resources') {
+            $headers = ['booking_id', 'name', 'type', 'description', 'capacity', 'extra_price', 'status'];
+            $rows = [['1', 'Room 101', 'room', 'King room', '2', '25.00', '1']];
+        } elseif ($type === 'availability') {
+            $headers = ['booking_id', 'resource_id', 'date', 'is_available', 'slots', 'price', 'close_reason'];
+            $rows = [['1', '1', now()->addDay()->toDateString(), '1', '3', '120.00', '']];
+        } elseif ($type === 'pricing') {
+            $headers = ['booking_id', 'name', 'type', 'price', 'price_unit', 'calculation_type', 'conditions', 'priority', 'status'];
+            $rows = [['1', 'Weekend', 'dow', '150.00', 'night', 'fixed', '{"days_of_week":[5,6]}', '10', '1']];
+        } elseif ($type === 'variants') {
+            $headers = ['booking_id', 'title', 'options', 'price_modifier', 'status'];
+            $rows = [['1', 'Language', '["English","Arabic"]', '0', '1']];
+        } elseif ($type === 'categories') {
+            $headers = ['title', 'slug', 'parent_id', 'order', 'status'];
+            $rows = [['Healthcare', 'healthcare', '', '0', '1']];
         } else {
-            $headers = ['title', 'description', 'price', 'capacity', 'status'];
+            $headers = ['title', 'slug', 'creator_id', 'category_id', 'booking_type', 'sub_type', 'description', 'price', 'currency', 'capacity', 'status'];
             $rows = [
-                ['Sample Booking 1', 'Description here', '100.00', '10', '1'],
-                ['Sample Booking 2', 'Description here', '200.00', '5', '1'],
+                ['Sample Booking 1', 'sample-booking-1', '2', '', 'service', 'consulting', 'Description here', '100.00', 'USD', '10', 'published'],
             ];
         }
 

@@ -21,4 +21,7 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin'], function 
     
     Route::get('/exchange-rates/settings', [SettingsController::class, 'getExchangeRateSettings'])
         ->name('admin.exchange_rates.settings');
+
+    Route::post('/exchange-rates/settings', [SettingsController::class, 'updateExchangeRateSettings'])
+        ->name('admin.exchange_rates.settings.update');
 });

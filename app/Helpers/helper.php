@@ -2933,3 +2933,15 @@ function getUserUnit($type)
 
     return $unitService->getPreferredUnit($type, auth()->user());
 }
+if (!function_exists('preferredCurrency')) {
+    function preferredCurrency($user = null): string
+    {
+        if (empty($user) && auth()->check()) {
+            $user = auth()->user();
+        }
+
+        $currency = $user->preferred_currency ?? $user->currency ?? request()->cookie('user_currency') ?? session('preferred_currency');
+
+        return strtoupper($currency ?: config('exchange.base_currency', 'USD'));
+    }
+}

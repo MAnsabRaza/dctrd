@@ -20,8 +20,12 @@ class BookingImport extends Model
         'processed_rows',
         'success_rows',
         'failed_rows',
+        'duplicate_rows',
         'errors',
+        'summary',
         'status',
+        'started_at',
+        'finished_at',
     ];
 
     protected $casts = [
@@ -30,7 +34,16 @@ class BookingImport extends Model
         'processed_rows' => 'integer',
         'success_rows'   => 'integer',
         'failed_rows'    => 'integer',
+        'duplicate_rows' => 'integer',
+        'summary'        => 'array',
+        'started_at'     => 'datetime',
+        'finished_at'    => 'datetime',
     ];
+
+    public function logs()
+    {
+        return $this->hasMany(BookingImportLog::class, 'import_id');
+    }
 
     public function user()
     {

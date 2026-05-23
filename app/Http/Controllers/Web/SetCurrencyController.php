@@ -25,10 +25,12 @@ class SetCurrencyController extends Controller
             if (auth()->check()) {
                 $user = auth()->user();
                 $user->update([
-                    'currency' => $currency
+                    'currency' => $currency,
+                    'preferred_currency' => $currency,
                 ]);
             } else {
                 Cookie::queue('user_currency', $currency, 30 * 24 * 60);
+                session(['preferred_currency' => $currency]);
             }
         }
 

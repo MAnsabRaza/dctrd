@@ -234,29 +234,30 @@
             Area
         </h5>
 
-        <div class="flex flex-wrap gap-4">
+       <div class="d-flex flex-wrap">
 
-            @foreach($unitPreferences['area'] as $unit => $label)
+    @foreach($unitPreferences['length'] as $unit => $label)
 
-                <label class="flex items-center gap-2 cursor-pointer mr-4 mb-2">
+        <label class="d-flex align-items-center mr-4 mb-2 cursor-pointer">
 
-                    <input
-                        type="radio"
-                        name="preferred_area_unit"
-                        value="{{ $unit }}"
-                        class="w-4 h-4"
-                        {{ (($user->preferred_area_unit ?? config('units.base_units.area')) == $unit) ? 'checked' : '' }}
-                    >
+            <input
+                type="radio"
+                name="preferred_length_unit"
+                value="{{ $unit }}"
+                class="mr-2"
+                style="width:18px;height:18px;"
+                {{ (($user->preferred_length_unit ?? config('units.base_units.length')) == $unit) ? 'checked' : '' }}
+            >
 
-                    <span class="text-sm">
-                        {{ config('units.short_labels')[$unit] ?? $unit }}
-                    </span>
+            <span>
+                {{ config('units.short_labels')[$unit] ?? $unit }}
+            </span>
 
-                </label>
+        </label>
 
-            @endforeach
+    @endforeach
 
-        </div>
+</div>
 
     </div>
 

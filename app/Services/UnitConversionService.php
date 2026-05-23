@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class UnitConversionService
 {
@@ -34,11 +35,13 @@ class UnitConversionService
             return $value;
         }
 
-        // Convert to base unit first
-        $baseValue = $value / $conversions[$fromUnit];
+        $cacheKey = 'unit_conversion:' . md5($type . '|' . $value . '|' . $fromUnit . '|' . $toUnit);
 
-        // Convert from base unit to target unit
-        return round($baseValue * $conversions[$toUnit], 2);
+        return Cache::remember($cacheKey, now()->addDay(), function () use ($value, $conversions, $fromUnit, $toUnit) {
+            $baseValue = $value / $conversions[$fromUnit];
+
+            return round($baseValue * $conversions[$toUnit], 2);
+        });
     }
 
     /**
@@ -104,6 +107,7 @@ class UnitConversionService
 
         $attribute = "preferred_{$type}_unit";
         $preferredUnit = !empty($user) ? ($user->{$attribute} ?? null) : null;
+        $preferredUnit = $preferredUnit ?: session($attribute) ?: request()->cookie($attribute);
 
         return $this->isValidUnit($type, (string) $preferredUnit) ? $preferredUnit : $baseUnit;
     }

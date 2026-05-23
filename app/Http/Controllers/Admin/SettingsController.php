@@ -469,6 +469,7 @@ class SettingsController extends Controller
                 'enabled' => $exchangeService->isEnabled(),
                 'last_update' => $exchangeService->getLastUpdateTime(),
                 'supported_currencies' => $exchangeService->getSupportedCurrencies(),
+                'auto_update_enabled' => $exchangeService->isEnabled(),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -476,5 +477,31 @@ class SettingsController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function updateExchangeRateSettings(Request $request)
+    {
+        $this->authorize('admin_settings_financial');
+
+        $data = $request->validate([
+            'auto_update_enabled' => 'required|boolean',
+        ]);
+
+        $setting = Setting::updateOrCreate(
+            ['name' => 'exchange_auto_update_enabled'],
+            ['page' => 'financial', 'updated_at' => time()]
+        );
+
+        SettingTranslation::updateOrCreate(
+            ['setting_id' => $setting->id, 'locale' => mb_strtolower(Setting::$defaultSettingsLocale)],
+            ['value' => json_encode((bool) $data['auto_update_enabled'])]
+        );
+
+        cache()->forget('exchange.auto_update_enabled');
+
+        return response()->json([
+            'success' => true,
+            'auto_update_enabled' => (bool) $data['auto_update_enabled'],
+        ]);
     }
 }

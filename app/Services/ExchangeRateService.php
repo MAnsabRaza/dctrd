@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\ExchangeRate;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class ExchangeRateService
@@ -74,7 +76,7 @@ class ExchangeRateService
      */
     public function updateRates(): bool
     {
-        if (!$this->config['enabled']) {
+        if (!$this->isEnabled()) {
             Log::info('Exchange rate updates are disabled');
             return false;
         }
@@ -309,7 +311,21 @@ class ExchangeRateService
      */
     public function isEnabled(): bool
     {
-        return $this->config['enabled'];
+        $stored = cache()->remember('exchange.auto_update_enabled', 3600, function () {
+            if (!Schema::hasTable('settings')) {
+                return null;
+            }
+
+            $setting = Setting::where('name', 'exchange_auto_update_enabled')->first();
+
+            return $setting ? json_decode($setting->value, true) : null;
+        });
+
+        if ($stored !== null) {
+            return (bool) $stored;
+        }
+
+        return (bool) $this->config['enabled'];
     }
 
     protected function supportsCurrency(string $currency): bool

@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\BookingSlot;
 use App\Models\BookingTimeSlot;
-use App\Models\BookingOrder;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
 class SlotEngine
 {
@@ -22,36 +23,35 @@ class SlotEngine
         Carbon $date,
         ?int $resourceId = null
     ): Collection {
-        if (!$this->isDateOpen($booking, $date, $resourceId)) {
-            return collect();
-        }
+        $cacheKey = 'booking_slots:' . md5($booking->id . '|' . $date->toDateString() . '|' . $resourceId . '|' . optional($booking->updated_at)->timestamp);
 
-        $slots = $this->getTimeSlotsForDate($booking, $date, $resourceId);
-
-        $bookedSlots = $this->getBookedSlots($booking, $date, $resourceId);
-
-        return $slots->filter(function ($slot) use ($bookedSlots, $date, $booking) {
-            // Check lead time
-            $slotStart = Carbon::parse($date->toDateString() . ' ' . $slot['start_time']);
-            $leadHours = (int) $booking->lead_time_hours;
-            if ($slotStart->diffInHours(now(), false) > -$leadHours) {
-                return false;
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($booking, $date, $resourceId) {
+            if (!$this->isDateOpen($booking, $date, $resourceId)) {
+                return collect();
             }
 
-            // Check cutoff
-            $cutoffHours = (int) $booking->cutoff_time_hours;
-            if ($cutoffHours > 0) {
-                $cutoffTime = $slotStart->copy()->subHours($cutoffHours);
-                if (now()->greaterThan($cutoffTime)) {
+            $slots = $this->getTimeSlotsForDate($booking, $date, $resourceId);
+
+            $bookedSlots = $this->getBookedSlots($booking, $date, $resourceId);
+
+            return $slots->filter(function ($slot) use ($bookedSlots, $date, $booking) {
+                $slotStart = Carbon::parse($date->toDateString() . ' ' . $slot['start_time']);
+                $leadHours = (int) $booking->lead_time_hours;
+                if ($slotStart->diffInHours(now(), false) > -$leadHours) {
                     return false;
                 }
-            }
 
-            $key = $slot['start_time'] . '-' . $slot['end_time'];
-            $bookedCount = $bookedSlots[$key] ?? 0;
+                $cutoffHours = (int) $booking->cutoff_time_hours;
+                if ($cutoffHours > 0 && now()->greaterThan($slotStart->copy()->subHours($cutoffHours))) {
+                    return false;
+                }
 
-            return $bookedCount < (int) ($slot['max_bookings'] ?? 1);
-        })->values();
+                $key = $slot['start_time'] . '-' . $slot['end_time'];
+                $bookedCount = $bookedSlots[$key] ?? 0;
+
+                return $bookedCount < (int) ($slot['max_bookings'] ?? $slot['capacity'] ?? 1);
+            })->values();
+        });
     }
 
     /**
@@ -117,6 +117,30 @@ class SlotEngine
         ?int $resourceId
     ): Collection {
         $dayOfWeek = $date->dayOfWeek; // 0 = Sunday
+
+        $explicitSlots = BookingSlot::where('booking_id', $booking->id)
+            ->where('status', true)
+            ->when($resourceId, fn($q) => $q->where('resource_id', $resourceId))
+            ->where(function ($query) use ($date, $dayOfWeek) {
+                $query->where('date', $date->toDateString())
+                    ->orWhere(function ($query) use ($dayOfWeek) {
+                        $query->whereNull('date')->where('day_of_week', $dayOfWeek);
+                    });
+            })
+            ->get()
+            ->map(function ($slot) {
+                return [
+                    'start_time' => Carbon::parse($slot->start_time)->format('H:i'),
+                    'end_time' => Carbon::parse($slot->end_time)->format('H:i'),
+                    'duration_minutes' => Carbon::parse($slot->start_time)->diffInMinutes(Carbon::parse($slot->end_time)),
+                    'buffer_minutes' => (int) $slot->buffer_after,
+                    'max_bookings' => (int) $slot->capacity,
+                ];
+            });
+
+        if ($explicitSlots->isNotEmpty()) {
+            return $explicitSlots;
+        }
 
         $slotTemplates = BookingTimeSlot::where('booking_id', $booking->id)
             ->where('status', true)

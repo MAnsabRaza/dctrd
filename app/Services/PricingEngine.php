@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Booking;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class PricingEngine
 {
@@ -14,27 +15,63 @@ class PricingEngine
         int $adults = 1,
         int $children = 0,
         array $extras = [],
-        float $promoDiscount = 0
+        float $promoDiscount = 0,
+        ?string $couponCode = null
+    ): array {
+        $cacheKey = 'booking_pricing:' . md5(json_encode([
+            $booking->id,
+            $booking->updated_at?->timestamp,
+            $checkIn->toDateString(),
+            $checkOut->toDateString(),
+            $adults,
+            $children,
+            $extras,
+            $promoDiscount,
+            $couponCode,
+        ]));
+
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($booking, $checkIn, $checkOut, $adults, $children, $extras, $promoDiscount, $couponCode) {
+            return $this->calculateFresh($booking, $checkIn, $checkOut, $adults, $children, $extras, $promoDiscount, $couponCode);
+        });
+    }
+
+    private function calculateFresh(
+        Booking $booking,
+        Carbon $checkIn,
+        Carbon $checkOut,
+        int $adults,
+        int $children,
+        array $extras,
+        float $promoDiscount,
+        ?string $couponCode
     ): array {
         $nights = max(1, $checkIn->diffInDays($checkOut));
+        $durationUnits = $this->getDurationUnits($booking, $checkIn, $checkOut);
         $persons = $adults + $children;
         $basePrice = (float) ($booking->discount_price ?: $booking->price);
 
         $nightlyRows = $this->getNightlyRows($booking, $checkIn, $checkOut, $basePrice);
-        $subtotal = collect($nightlyRows)->sum('price');
+        $subtotal = $booking->price_unit === 'hour'
+            ? $basePrice * $durationUnits
+            : collect($nightlyRows)->sum('price');
         $averageNightlyPrice = $nights > 0 ? $subtotal / $nights : $basePrice;
 
         $paxModifier = $this->getPaxModifier($booking, $adults, $children);
         $extrasTotal = collect($extras)->sum(fn($e) => ((float) ($e['price'] ?? 0)) * ((int) ($e['qty'] ?? 1)));
+        $automaticDiscount = $this->getAutomaticDiscount($booking, $subtotal + $paxModifier + $extrasTotal);
+        $couponDiscount = $this->getCouponDiscount($booking, $couponCode, $subtotal + $paxModifier + $extrasTotal);
+        $discountTotal = $promoDiscount + $automaticDiscount + $couponDiscount;
 
-        $afterPromo = max(0, $subtotal + $paxModifier + $extrasTotal - $promoDiscount);
+        $afterPromo = max(0, $subtotal + $paxModifier + $extrasTotal - $discountTotal);
 
         $taxRate = (float) $booking->tax / 100;
         $taxAmount = round($afterPromo * $taxRate, 2);
         $total = round($afterPromo + $taxAmount, 2);
+        $deposit = $this->getDepositAmount($booking, $total);
 
         return [
             'nights' => $nights,
+            'duration_units' => $durationUnits,
             'persons' => $persons,
             'base_price' => round($basePrice, 2),
             'price_per_night' => round($averageNightlyPrice, 2),
@@ -43,8 +80,13 @@ class PricingEngine
             'pax_modifier' => round($paxModifier, 2),
             'extras_total' => round($extrasTotal, 2),
             'promo_discount' => round($promoDiscount, 2),
+            'automatic_discount' => round($automaticDiscount, 2),
+            'coupon_discount' => round($couponDiscount, 2),
+            'discount_total' => round($discountTotal, 2),
             'tax_rate' => $booking->tax,
             'tax_amount' => $taxAmount,
+            'deposit_due' => $deposit,
+            'balance_due' => round(max(0, $total - $deposit), 2),
             'total' => $total,
             'currency' => $booking->currency,
         ];
@@ -148,5 +190,73 @@ class PricingEngine
         $pricePerPerson = (float) ($booking->price_per ?? $booking->price);
 
         return $extraPersons * $pricePerPerson;
+    }
+
+    private function getDurationUnits(Booking $booking, Carbon $checkIn, Carbon $checkOut): float
+    {
+        if ($booking->price_unit !== 'hour') {
+            return max(1, $checkIn->diffInDays($checkOut));
+        }
+
+        return max(1, $checkIn->floatDiffInHours($checkOut));
+    }
+
+    private function getAutomaticDiscount(Booking $booking, float $amount): float
+    {
+        $discount = $booking->discounts()
+            ->where('status', true)
+            ->where(function ($query) {
+                $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+            })
+            ->orderByDesc('amount')
+            ->first();
+
+        return $discount ? $this->discountAmount($amount, $discount->discount_type, (float) $discount->amount) : 0.0;
+    }
+
+    private function getCouponDiscount(Booking $booking, ?string $couponCode, float $amount): float
+    {
+        if (empty($couponCode)) {
+            return 0.0;
+        }
+
+        $coupon = $booking->coupons()
+            ->where('code', strtoupper(trim($couponCode)))
+            ->where('status', true)
+            ->where('minimum_order_amount', '<=', $amount)
+            ->where(function ($query) {
+                $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+            })
+            ->first();
+
+        return $coupon ? $this->discountAmount($amount, $coupon->discount_type, (float) $coupon->amount) : 0.0;
+    }
+
+    private function discountAmount(float $amount, string $type, float $value): float
+    {
+        if ($type === 'fixed') {
+            return min($amount, $value);
+        }
+
+        return min($amount, $amount * ($value / 100));
+    }
+
+    private function getDepositAmount(Booking $booking, float $total): float
+    {
+        if (!$booking->deposit_enabled) {
+            return 0.0;
+        }
+
+        $amount = (float) $booking->deposit_amount;
+
+        return $booking->deposit_type === 'percent'
+            ? round($total * ($amount / 100), 2)
+            : min($total, round($amount, 2));
     }
 }
