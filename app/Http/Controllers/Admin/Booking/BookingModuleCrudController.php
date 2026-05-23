@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\BookingAsset;
+use App\Models\BookingBundle;
 use App\Models\BookingCalendarIntegration;
+use App\Models\BookingCategory;
 use App\Models\BookingCoupon;
 use App\Models\BookingDiscount;
 use App\Models\BookingFeatured;
 use App\Models\BookingFilter;
 use App\Models\BookingReport;
 use App\Models\BookingRule;
-use App\Models\BookingSlot;
 use App\Models\BookingWaitlist;
 use Illuminate\Http\Request;
 
@@ -26,6 +28,16 @@ class BookingModuleCrudController extends Controller
             'fields' => ['category_id', 'title', 'type', 'options', 'is_required', 'status', 'order'],
             'json' => ['options'],
             'booleans' => ['is_required', 'status'],
+            'validation' => [
+                'category_id' => 'required|exists:booking_categories,id',
+                'title' => 'required|string|max:255',
+                'type' => 'required|string|in:checkbox,radio,select,text,number,date',
+                'options' => 'nullable|json',
+                'is_required' => 'nullable|boolean',
+                'status' => 'nullable|boolean',
+                'order' => 'nullable|integer|min:0',
+            ],
+            'help' => 'Filters are used on the booking list/search page. Select a real category first, then define the filter title and input type.',
         ],
         'rules' => [
             'model' => BookingRule::class,
@@ -35,14 +47,16 @@ class BookingModuleCrudController extends Controller
             'fields' => ['booking_id', 'rule_type', 'conditions', 'actions', 'starts_at', 'ends_at', 'status'],
             'json' => ['conditions', 'actions'],
             'booleans' => ['status'],
-        ],
-        'slots' => [
-            'model' => BookingSlot::class,
-            'permission' => 'admin_booking_slots',
-            'title' => 'Booking Slots',
-            'columns' => ['id', 'booking_id', 'resource_id', 'day_of_week', 'date', 'start_time', 'end_time', 'capacity', 'status'],
-            'fields' => ['booking_id', 'resource_id', 'day_of_week', 'date', 'start_time', 'end_time', 'capacity', 'buffer_before', 'buffer_after', 'status'],
-            'booleans' => ['status'],
+            'validation' => [
+                'booking_id' => 'required|exists:bookings,id',
+                'rule_type' => 'required|string|max:255',
+                'conditions' => 'nullable|json',
+                'actions' => 'nullable|json',
+                'starts_at' => 'nullable|date',
+                'ends_at' => 'nullable|date|after_or_equal:starts_at',
+                'status' => 'nullable|boolean',
+            ],
+            'help' => 'Rules control booking behavior for a selected booking, for example date limits, approval requirements, blackout periods, or custom pricing actions stored as JSON.',
         ],
         'discounts' => [
             'model' => BookingDiscount::class,
@@ -52,6 +66,19 @@ class BookingModuleCrudController extends Controller
             'fields' => ['booking_id', 'bundle_id', 'title', 'discount_type', 'amount', 'starts_at', 'expires_at', 'usage_limit', 'status', 'meta'],
             'json' => ['meta'],
             'booleans' => ['status'],
+            'validation' => [
+                'booking_id' => 'nullable|exists:bookings,id|required_without:bundle_id',
+                'bundle_id' => 'nullable|exists:booking_bundles,id|required_without:booking_id',
+                'title' => 'required|string|max:255',
+                'discount_type' => 'required|string|in:percent,fixed',
+                'amount' => 'required|numeric|min:0',
+                'starts_at' => 'nullable|date',
+                'expires_at' => 'nullable|date|after_or_equal:starts_at',
+                'usage_limit' => 'nullable|integer|min:1',
+                'status' => 'nullable|boolean',
+                'meta' => 'nullable|json',
+            ],
+            'help' => 'Discounts apply to either a booking or a booking bundle. Select at least one target from the dropdowns.',
         ],
         'coupons' => [
             'model' => BookingCoupon::class,
@@ -61,6 +88,20 @@ class BookingModuleCrudController extends Controller
             'fields' => ['code', 'title', 'booking_id', 'bundle_id', 'discount_type', 'amount', 'minimum_order_amount', 'usage_limit', 'starts_at', 'expires_at', 'status', 'meta'],
             'json' => ['meta'],
             'booleans' => ['status'],
+            'validation' => [
+                'code' => 'required|string|max:255',
+                'title' => 'nullable|string|max:255',
+                'booking_id' => 'nullable|exists:bookings,id',
+                'bundle_id' => 'nullable|exists:booking_bundles,id',
+                'discount_type' => 'required|string|in:percent,fixed',
+                'amount' => 'required|numeric|min:0',
+                'minimum_order_amount' => 'nullable|numeric|min:0',
+                'usage_limit' => 'nullable|integer|min:1',
+                'starts_at' => 'nullable|date',
+                'expires_at' => 'nullable|date|after_or_equal:starts_at',
+                'status' => 'nullable|boolean',
+                'meta' => 'nullable|json',
+            ],
         ],
         'assets' => [
             'model' => BookingAsset::class,
@@ -116,6 +157,7 @@ class BookingModuleCrudController extends Controller
             'resource' => $resource,
             'config' => $config,
             'items' => $config['model']::query()->latest('id')->paginate(20),
+            'selectOptions' => $this->selectOptions(),
         ]);
     }
 
@@ -140,6 +182,7 @@ class BookingModuleCrudController extends Controller
             'config' => $config,
             'items' => $config['model']::query()->latest('id')->paginate(20),
             'editItem' => $config['model']::findOrFail($id),
+            'selectOptions' => $this->selectOptions(),
         ]);
     }
 
@@ -173,6 +216,10 @@ class BookingModuleCrudController extends Controller
 
     private function payload(Request $request, array $config): array
     {
+        if (!empty($config['validation'])) {
+            $request->validate($config['validation']);
+        }
+
         $data = $request->only($config['fields']);
 
         foreach ($config['booleans'] ?? [] as $field) {
@@ -187,5 +234,44 @@ class BookingModuleCrudController extends Controller
         }
 
         return array_filter($data, fn($value) => $value !== '');
+    }
+
+    private function selectOptions(): array
+    {
+        return [
+            'category_id' => BookingCategory::query()
+                ->orderBy('order')
+                ->orderBy('title')
+                ->get(['id', 'title'])
+                ->map(fn($category) => ['id' => $category->id, 'title' => "#{$category->id} - {$category->title}"]),
+            'booking_id' => Booking::query()
+                ->orderByDesc('id')
+                ->get(['id', 'title'])
+                ->map(fn($booking) => ['id' => $booking->id, 'title' => "#{$booking->id} - {$booking->title}"]),
+            'bundle_id' => BookingBundle::query()
+                ->orderByDesc('id')
+                ->get(['id', 'title'])
+                ->map(fn($bundle) => ['id' => $bundle->id, 'title' => "#{$bundle->id} - {$bundle->title}"]),
+            'type' => collect([
+                ['id' => 'checkbox', 'title' => 'Checkbox'],
+                ['id' => 'radio', 'title' => 'Radio'],
+                ['id' => 'select', 'title' => 'Dropdown'],
+                ['id' => 'text', 'title' => 'Text'],
+                ['id' => 'number', 'title' => 'Number'],
+                ['id' => 'date', 'title' => 'Date'],
+            ]),
+            'rule_type' => collect([
+                ['id' => 'availability', 'title' => 'Availability'],
+                ['id' => 'pricing', 'title' => 'Pricing'],
+                ['id' => 'approval', 'title' => 'Approval'],
+                ['id' => 'blackout', 'title' => 'Blackout'],
+                ['id' => 'capacity', 'title' => 'Capacity'],
+                ['id' => 'custom', 'title' => 'Custom'],
+            ]),
+            'discount_type' => collect([
+                ['id' => 'percent', 'title' => 'Percent'],
+                ['id' => 'fixed', 'title' => 'Fixed Amount'],
+            ]),
+        ];
     }
 }

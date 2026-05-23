@@ -292,7 +292,6 @@
                 $bookingModuleSidebarItems = [
                     'filters' => ['permission' => 'admin_booking_filters', 'title' => 'Booking Filters'],
                     'rules' => ['permission' => 'admin_booking_rules', 'title' => 'Booking Rules'],
-                    'slots' => ['permission' => 'admin_booking_slots', 'title' => 'Booking Slots'],
                     'discounts' => ['permission' => 'admin_booking_discounts', 'title' => 'Booking Discounts'],
                     'coupons' => ['permission' => 'admin_booking_coupons', 'title' => 'Booking Coupons'],
                     'assets' => ['permission' => 'admin_booking_assets', 'title' => 'Booking Assets'],

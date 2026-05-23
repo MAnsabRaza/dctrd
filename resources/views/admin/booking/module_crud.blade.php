@@ -20,6 +20,12 @@
                             <h5>{{ $pageTitle }}</h5>
                         </div>
                         <div class="card-body">
+                            @if(!empty($config['help']))
+                                <div class="alert alert-info">
+                                    {{ $config['help'] }}
+                                </div>
+                            @endif
+
                             <div class="table-responsive">
                                 <table class="table custom-table font-14">
                                     <tr>
@@ -38,6 +44,9 @@
                                                         <span class="badge badge-{{ $value ? 'success' : 'danger' }}">{{ $value ? trans('admin/main.active') : trans('admin/main.inactive') }}</span>
                                                     @elseif(is_array($value))
                                                         <code>{{ json_encode($value) }}</code>
+                                                    @elseif(isset($selectOptions[$column]) && !empty($value))
+                                                        @php($selectedLabel = collect($selectOptions[$column])->firstWhere('id', $value)['title'] ?? null)
+                                                        {{ $selectedLabel ?? $value }}
                                                     @else
                                                         {{ $value ?? '-' }}
                                                     @endif
@@ -80,28 +89,47 @@
 
                                     @foreach($config['fields'] as $field)
                                         @php($value = old($field, !empty($editItem) ? data_get($editItem, $field) : null))
+                                        @php($isRequired = str_contains($config['validation'][$field] ?? '', 'required'))
 
                                         <div class="form-group">
-                                            <label>{{ ucwords(str_replace('_', ' ', $field)) }}</label>
+                                            <label>
+                                                {{ ucwords(str_replace('_', ' ', $field)) }}
+                                                @if($isRequired)
+                                                    <span class="text-danger">*</span>
+                                                @endif
+                                            </label>
 
                                             @if(in_array($field, $config['booleans'] ?? []))
-                                                <select name="{{ $field }}" class="form-control">
+                                                <select name="{{ $field }}" class="form-control @error($field) is-invalid @enderror">
                                                     <option value="1" {{ (string) $value === '1' ? 'selected' : '' }}>{{ trans('admin/main.active') }}</option>
                                                     <option value="0" {{ (string) $value === '0' ? 'selected' : '' }}>{{ trans('admin/main.inactive') }}</option>
                                                 </select>
+                                            @elseif(isset($selectOptions[$field]))
+                                                <select name="{{ $field }}" data-plugin-selectTwo class="form-control @error($field) is-invalid @enderror">
+                                                    <option value="">{{ trans('admin/main.select') ?? 'Select' }}</option>
+                                                    @foreach($selectOptions[$field] as $option)
+                                                        <option value="{{ $option['id'] }}" {{ (string) $value === (string) $option['id'] ? 'selected' : '' }}>
+                                                            {{ $option['title'] }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                             @elseif(in_array($field, $config['json'] ?? []))
-                                                <textarea name="{{ $field }}" rows="3" class="form-control">{{ is_array($value) ? json_encode($value) : $value }}</textarea>
+                                                <textarea name="{{ $field }}" rows="3" class="form-control @error($field) is-invalid @enderror">{{ is_array($value) ? json_encode($value) : $value }}</textarea>
                                             @elseif(str_contains($field, '_at'))
-                                                <input type="datetime-local" name="{{ $field }}" value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d\TH:i') : '' }}" class="form-control">
+                                                <input type="datetime-local" name="{{ $field }}" value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d\TH:i') : '' }}" class="form-control @error($field) is-invalid @enderror">
                                             @elseif(str_contains($field, 'date'))
-                                                <input type="date" name="{{ $field }}" value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : '' }}" class="form-control">
+                                                <input type="date" name="{{ $field }}" value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : '' }}" class="form-control @error($field) is-invalid @enderror">
                                             @elseif(str_contains($field, 'time'))
-                                                <input type="time" name="{{ $field }}" value="{{ $value }}" class="form-control">
+                                                <input type="time" name="{{ $field }}" value="{{ $value }}" class="form-control @error($field) is-invalid @enderror">
                                             @elseif(in_array($field, ['message', 'description']))
-                                                <textarea name="{{ $field }}" rows="3" class="form-control">{{ $value }}</textarea>
+                                                <textarea name="{{ $field }}" rows="3" class="form-control @error($field) is-invalid @enderror">{{ $value }}</textarea>
                                             @else
-                                                <input type="text" name="{{ $field }}" value="{{ $value }}" class="form-control">
+                                                <input type="text" name="{{ $field }}" value="{{ $value }}" class="form-control @error($field) is-invalid @enderror">
                                             @endif
+
+                                            @error($field)
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                     @endforeach
 
