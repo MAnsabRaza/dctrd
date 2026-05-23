@@ -287,6 +287,31 @@
                     </a>
                 </li>
             @endcan
+
+            @php
+                $bookingModuleSidebarItems = [
+                    'filters' => ['permission' => 'admin_booking_filters', 'title' => 'Booking Filters'],
+                    'rules' => ['permission' => 'admin_booking_rules', 'title' => 'Booking Rules'],
+                    'slots' => ['permission' => 'admin_booking_slots', 'title' => 'Booking Slots'],
+                    'discounts' => ['permission' => 'admin_booking_discounts', 'title' => 'Booking Discounts'],
+                    'coupons' => ['permission' => 'admin_booking_coupons', 'title' => 'Booking Coupons'],
+                    'assets' => ['permission' => 'admin_booking_assets', 'title' => 'Booking Assets'],
+                    'reports' => ['permission' => 'admin_booking_reports', 'title' => 'Booking Reports'],
+                    'featured' => ['permission' => 'admin_booking_featured', 'title' => 'Featured Bookings'],
+                    'waitlists' => ['permission' => 'admin_booking_waitlists', 'title' => 'Booking Waitlists'],
+                    'calendar-integrations' => ['permission' => 'admin_booking_calendar_integrations', 'title' => 'Calendar Integrations'],
+                ];
+            @endphp
+
+            @foreach($bookingModuleSidebarItems as $moduleKey => $moduleItem)
+                @can($moduleItem['permission'])
+                    <li class="{{ request()->is(getAdminPanelUrl('/booking/modules/' . $moduleKey . '*', false)) ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/modules/{{ $moduleKey }}">
+                            {{ $moduleItem['title'] }}
+                        </a>
+                    </li>
+                @endcan
+            @endforeach
         </ul>
     </li>
 @endcan
