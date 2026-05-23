@@ -170,7 +170,7 @@
 
             @foreach($unitPreferences['length'] as $unit => $label)
 
-                <div class="custom-control custom-radio mr-25 mb-10">
+                <div class="custom-control mr-4 mb-3 d-inline-block">
 
                     <input
                         type="radio"
@@ -182,7 +182,7 @@
                     >
 
                     <label
-                        class="custom-control-label"
+                        class="custom-control-label font-14 cursor-pointer"
                         for="length_{{ $unit }}"
                     >
                         {{ config('units.short_labels')[$unit] ?? $unit }}
@@ -207,7 +207,7 @@
 
             @foreach($unitPreferences['mass'] as $unit => $label)
 
-                <div class="custom-control custom-radio mr-25 mb-10">
+                <div class="custom-control mr-4 mb-3 d-inline-block">
 
                     <input
                         type="radio"
@@ -219,7 +219,7 @@
                     >
 
                     <label
-                        class="custom-control-label"
+                        class="custom-control-label font-14 cursor-pointer"
                         for="mass_{{ $unit }}"
                     >
                         {{ config('units.short_labels')[$unit] ?? $unit }}
@@ -244,7 +244,7 @@
 
             @foreach($unitPreferences['area'] as $unit => $label)
 
-                <div class="custom-control custom-radio mr-25 mb-10">
+                <div class="custom-control mr-4 mb-3 d-inline-block">
 
                     <input
                         type="radio"
@@ -256,7 +256,7 @@
                     >
 
                     <label
-                        class="custom-control-label"
+                        class="custom-control-label font-14 cursor-pointer"
                         for="area_{{ $unit }}"
                     >
                         {{ config('units.short_labels')[$unit] ?? $unit }}
