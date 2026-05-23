@@ -151,49 +151,128 @@
                     </div>
                 @endif
 
-                @if(!empty($unitPreferences))
-                    <div class="form-group mb-0 mt-20">
-                        <label class="form-group-label">Length Unit</label>
-                        <select name="preferred_length_unit" class="form-control select2" data-minimum-results-for-search="Infinity">
-                            @foreach($unitPreferences['length'] as $unit => $label)
-                                <option value="{{ $unit }}" {{ (($user->preferred_length_unit ?? config('units.base_units.length')) == $unit) ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        @error('preferred_length_unit')
-                        <div class="invalid-feedback">
-                            {{ $message }}
-                        </div>
-                        @enderror
-                    </div>
+              @if(!empty($unitPreferences))
 
-                    <div class="form-group mb-0 mt-20">
-                        <label class="form-group-label">Mass Unit</label>
-                        <select name="preferred_mass_unit" class="form-control select2" data-minimum-results-for-search="Infinity">
-                            @foreach($unitPreferences['mass'] as $unit => $label)
-                                <option value="{{ $unit }}" {{ (($user->preferred_mass_unit ?? config('units.base_units.mass')) == $unit) ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        @error('preferred_mass_unit')
-                        <div class="invalid-feedback">
-                            {{ $message }}
-                        </div>
-                        @enderror
-                    </div>
+<div class="bg-white p-16 rounded-16 border-gray-200 mt-20">
 
-                    <div class="form-group mb-0 mt-20">
-                        <label class="form-group-label">Area Unit</label>
-                        <select name="preferred_area_unit" class="form-control select2" data-minimum-results-for-search="Infinity">
-                            @foreach($unitPreferences['area'] as $unit => $label)
-                                <option value="{{ $unit }}" {{ (($user->preferred_area_unit ?? config('units.base_units.area')) == $unit) ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        @error('preferred_area_unit')
-                        <div class="invalid-feedback">
-                            {{ $message }}
-                        </div>
-                        @enderror
-                    </div>
-                @endif
+    <h3 class="font-16 font-weight-bold mb-25">
+        Common Units & Conversions
+    </h3>
+
+    {{-- LENGTH --}}
+    <div class="mb-30">
+
+        <h5 class="font-14 font-weight-bold mb-15">
+            Length
+        </h5>
+
+        <div class="d-flex flex-wrap">
+
+            @foreach($unitPreferences['length'] as $unit => $label)
+
+                <div class="custom-control custom-radio mr-25 mb-10">
+
+                    <input
+                        type="radio"
+                        id="length_{{ $unit }}"
+                        name="preferred_length_unit"
+                        class="custom-control-input"
+                        value="{{ $unit }}"
+                        {{ (($user->preferred_length_unit ?? config('units.base_units.length')) == $unit) ? 'checked' : '' }}
+                    >
+
+                    <label
+                        class="custom-control-label"
+                        for="length_{{ $unit }}"
+                    >
+                        {{ config('units.short_labels')[$unit] ?? $unit }}
+                    </label>
+
+                </div>
+
+            @endforeach
+
+        </div>
+
+    </div>
+
+    {{-- MASS --}}
+    <div class="mb-30">
+
+        <h5 class="font-14 font-weight-bold mb-15">
+            Mass
+        </h5>
+
+        <div class="d-flex flex-wrap">
+
+            @foreach($unitPreferences['mass'] as $unit => $label)
+
+                <div class="custom-control custom-radio mr-25 mb-10">
+
+                    <input
+                        type="radio"
+                        id="mass_{{ $unit }}"
+                        name="preferred_mass_unit"
+                        class="custom-control-input"
+                        value="{{ $unit }}"
+                        {{ (($user->preferred_mass_unit ?? config('units.base_units.mass')) == $unit) ? 'checked' : '' }}
+                    >
+
+                    <label
+                        class="custom-control-label"
+                        for="mass_{{ $unit }}"
+                    >
+                        {{ config('units.short_labels')[$unit] ?? $unit }}
+                    </label>
+
+                </div>
+
+            @endforeach
+
+        </div>
+
+    </div>
+
+    {{-- AREA --}}
+    <div class="mb-10">
+
+        <h5 class="font-14 font-weight-bold mb-15">
+            Area
+        </h5>
+
+        <div class="d-flex flex-wrap">
+
+            @foreach($unitPreferences['area'] as $unit => $label)
+
+                <div class="custom-control custom-radio mr-25 mb-10">
+
+                    <input
+                        type="radio"
+                        id="area_{{ $unit }}"
+                        name="preferred_area_unit"
+                        class="custom-control-input"
+                        value="{{ $unit }}"
+                        {{ (($user->preferred_area_unit ?? config('units.base_units.area')) == $unit) ? 'checked' : '' }}
+                    >
+
+                    <label
+                        class="custom-control-label"
+                        for="area_{{ $unit }}"
+                    >
+                        {{ config('units.short_labels')[$unit] ?? $unit }}
+                    </label>
+
+                </div>
+
+            @endforeach
+
+        </div>
+
+    </div>
+
+</div>
+
+@endif
             </div>
 
             <div class="bg-white p-16 rounded-16 border-gray-200 mt-20">
