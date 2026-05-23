@@ -25,7 +25,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('exchange:update')
-            ->everyTwelveHours()
+            ->twiceDaily(0, 12)
             ->withoutOverlapping();
     }
 
