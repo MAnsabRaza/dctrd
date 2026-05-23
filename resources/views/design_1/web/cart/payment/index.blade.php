@@ -9,6 +9,17 @@
     $isMultiCurrency = !empty(getFinancialCurrencySettings('multi_currency'));
     $userCurrency = currency();
     $invalidChannels = [];
+    $checkoutWeight = 0;
+    $checkoutDistance = data_get($order, 'distance_km', data_get($order, 'delivery_distance'));
+
+    foreach ($carts as $cart) {
+        $product = data_get($cart, 'productOrder.product');
+        $weight = data_get($product, 'weight_kg', data_get($product, 'weight', data_get($product, 'package_weight')));
+
+        if (is_numeric($weight)) {
+            $checkoutWeight += ((float) $weight * (int) data_get($cart, 'productOrder.quantity', 1));
+        }
+    }
 @endphp
 
 @section("content")
@@ -29,6 +40,25 @@
                     {{-- CashBack --}}
                     @if(!empty($totalCashbackAmount))
                         @include('design_1.web.cart.overview.includes.cashback_alert')
+                    @endif
+
+                    @if($checkoutWeight > 0 or is_numeric($checkoutDistance))
+                        <div class="d-flex align-items-center justify-content-between p-16 rounded-16 bg-white border-gray-200 mb-16">
+                            <div>
+                                <h3 class="font-14">{{ trans('home.order_summary') }}</h3>
+                                <p class="font-12 text-gray-500 mt-4">{{ getUserCurrency() }} / {{ getUserUnit('mass') }} / {{ getUserUnit('length') }}</p>
+                            </div>
+
+                            <div class="text-right">
+                                @if($checkoutWeight > 0)
+                                    <div class="font-14">{{ trans('update.weight') }}: {{ formatUnitForUser($checkoutWeight, 'mass', 'kg', auth()->user(), true) }}</div>
+                                @endif
+
+                                @if(is_numeric($checkoutDistance))
+                                    <div class="font-14">{{ trans('update.distance') }}: {{ formatUnitForUser($checkoutDistance, 'length', 'km', auth()->user(), true) }}</div>
+                                @endif
+                            </div>
+                        </div>
                     @endif
 
                     <div class="card-with-mask position-relative">

@@ -45,7 +45,8 @@ class SaleController extends Controller
                 'webinar',
                 'meeting',
                 'subscribe',
-                'promotion'
+                'promotion',
+                'productOrder.product.creator',
             ])
             ->paginate(10);
 
@@ -111,6 +112,13 @@ class SaleController extends Controller
             $sale->seller_id = ($event and $event->creator) ? $event->creator->id : '';
         } else if (!empty($sale->meeting_package_id)) {
             $item = $sale->meetingPackage;
+
+            $sale->item_title = $item ? $item->title : trans('update.deleted_item');
+            $sale->item_id = $item ? $item->id : '';
+            $sale->item_seller = ($item and $item->creator) ? $item->creator->full_name : trans('update.deleted_user');
+            $sale->seller_id = ($item and $item->creator) ? $item->creator->id : '';
+        } elseif (!empty($sale->product_order_id) and !empty($sale->productOrder)) {
+            $item = $sale->productOrder->product;
 
             $sale->item_title = $item ? $item->title : trans('update.deleted_item');
             $sale->item_id = $item ? $item->id : '';
@@ -318,7 +326,8 @@ class SaleController extends Controller
                 'webinar',
                 'meeting',
                 'subscribe',
-                'promotion'
+                'promotion',
+                'productOrder.product.creator',
             ])
             ->get();
 

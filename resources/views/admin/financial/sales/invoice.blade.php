@@ -42,6 +42,7 @@
                                                         <div class="invoice-title">
                                                             <h2>{{ $generalSettings['site_name'] }}</h2>
                                                             <div class="invoice-number">{{ trans('public.item_id') }}: #{{ $webinar->id }}</div>
+                                                            <div class="text-small text-muted">{{ trans('update.display_currency') }}: {{ getUserCurrency() }}</div>
                                                         </div>
                                                         <hr>
                                                         <div class="row">

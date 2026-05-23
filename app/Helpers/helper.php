@@ -2726,6 +2726,31 @@ function convertCurrency($amount, $fromCurrency = null)
 }
 
 /**
+ * Convert currency for a specific user's preferred currency.
+ *
+ * Reports and exports should pass the buyer/customer user here so historical
+ * rows are displayed in the same preference context as invoices and checkout.
+ */
+function convertCurrencyForUser($amount, $user = null, $fromCurrency = null)
+{
+    try {
+        $exchangeService = app(\App\Services\ExchangeRateService::class);
+
+        if (!$exchangeService->isEnabled()) {
+            return $amount;
+        }
+
+        $fromCurrency = $fromCurrency ?? config('exchange.base_currency', getDefaultCurrency());
+        $toCurrency = currency($user);
+
+        return $exchangeService->convert((float) $amount, $fromCurrency, $toCurrency);
+    } catch (\Exception $e) {
+        \Log::error('User currency conversion error: ' . $e->getMessage());
+        return $amount;
+    }
+}
+
+/**
  * Format currency with user's preferred currency
  * 
  * @param float $amount
@@ -2738,6 +2763,19 @@ function formatCurrency($amount, $fromCurrency = null)
     $currency = currency();
     
     return $currency . ' ' . number_format($converted, 2);
+}
+
+/**
+ * Format currency for a specific user using the platform's existing money style.
+ */
+function formatCurrencyForUser($amount, $user = null, $fromCurrency = null)
+{
+    if (strtoupper($fromCurrency ?? config('exchange.base_currency', getDefaultCurrency())) === strtoupper(config('exchange.base_currency', getDefaultCurrency()))) {
+        return handlePrice($amount, true, true, false, $user);
+    }
+
+    $converted = convertCurrencyForUser($amount, $user, $fromCurrency);
+    return addCurrencyToPrice(number_format($converted, 2), getUserCurrencyItem($user));
 }
 
 /**
@@ -2760,6 +2798,25 @@ function convertUnit($value, $type, $fromUnit = null)
         return $unitService->convertForUser((float) $value, $type, auth()->user(), $fromUnit);
     } catch (\Exception $e) {
         \Log::error('Unit conversion error: ' . $e->getMessage());
+        return $value;
+    }
+}
+
+/**
+ * Convert a unit value for a specific user's preferred unit.
+ */
+function convertUnitForUser($value, $type, $fromUnit = null, $user = null)
+{
+    try {
+        $unitService = app(\App\Services\UnitConversionService::class);
+
+        if (!$unitService->isEnabled()) {
+            return $value;
+        }
+
+        return $unitService->convertForUser((float) $value, $type, $user, $fromUnit);
+    } catch (\Exception $e) {
+        \Log::error('User unit conversion error: ' . $e->getMessage());
         return $value;
     }
 }
@@ -2788,6 +2845,70 @@ function formatUnit($value, $type, $fromUnit = null, $short = false)
         \Log::error('Unit formatting error: ' . $e->getMessage());
         return number_format($value, 2);
     }
+}
+
+/**
+ * Format a unit value for a specific user's preferred unit.
+ */
+function formatUnitForUser($value, $type, $fromUnit = null, $user = null, $short = false)
+{
+    try {
+        $unitService = app(\App\Services\UnitConversionService::class);
+
+        if (!$unitService->isEnabled()) {
+            $fromUnit = $fromUnit ?? $unitService->getBaseUnit($type);
+            return $unitService->format((float) $value, $fromUnit, $short);
+        }
+
+        return $unitService->formatForUser((float) $value, $type, $user, $fromUnit, $short);
+    } catch (\Exception $e) {
+        \Log::error('User unit formatting error: ' . $e->getMessage());
+        return number_format($value, 2);
+    }
+}
+
+function formatProductWeight($product, $user = null, $short = true)
+{
+    $weight = data_get($product, 'weight_kg', data_get($product, 'weight', data_get($product, 'package_weight')));
+
+    if ($weight === null || $weight === '') {
+        return null;
+    }
+
+    return formatUnitForUser((float) $weight, 'mass', 'kg', $user, $short);
+}
+
+function formatPropertyArea($property, $user = null, $short = true)
+{
+    $area = data_get($property, 'area_sqm', data_get($property, 'area', data_get($property, 'property_area')));
+
+    if ($area === null || $area === '') {
+        return null;
+    }
+
+    return formatUnitForUser((float) $area, 'area', 'sqm', $user, $short);
+}
+
+function formatOrderDistance($order, $user = null, $short = true)
+{
+    $distance = data_get($order, 'distance_km', data_get($order, 'distance', data_get($order, 'delivery_distance')));
+
+    if ($distance === null || $distance === '') {
+        return null;
+    }
+
+    return formatUnitForUser((float) $distance, 'length', 'km', $user, $short);
+}
+
+function getReportUnitMetrics($model, $user = null): array
+{
+    $product = data_get($model, 'product', data_get($model, 'productOrder.product'));
+
+    return array_filter([
+        'product_weight' => $product ? formatProductWeight($product, $user) : null,
+        'property_area' => formatPropertyArea($model, $user),
+        'order_distance' => formatOrderDistance($model, $user),
+    ]);
 }
 
 /**

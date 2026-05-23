@@ -29,7 +29,37 @@
             $isMultiCurrency = !empty(getFinancialCurrencySettings('multi_currency'));
             $userCurrency = currency();
             $invalidChannels = [];
+            $checkoutWeight = 0;
+            $checkoutDistance = data_get($order, 'distance_km', data_get($order, 'delivery_distance'));
+
+            foreach ($carts as $cart) {
+                $product = data_get($cart, 'productOrder.product');
+                $weight = data_get($product, 'weight_kg', data_get($product, 'weight', data_get($product, 'package_weight')));
+
+                if (is_numeric($weight)) {
+                    $checkoutWeight += ((float) $weight * (int) data_get($cart, 'productOrder.quantity', 1));
+                }
+            }
         @endphp
+
+        @if($checkoutWeight > 0 or is_numeric($checkoutDistance))
+            <div class="d-flex align-items-center justify-content-between mb-25 p-15 rounded-lg border bg-white">
+                <div>
+                    <div class="font-14 font-weight-bold">{{ trans('home.order_summary') }}</div>
+                    <div class="font-12 text-gray">{{ getUserCurrency() }} / {{ getUserUnit('mass') }} / {{ getUserUnit('length') }}</div>
+                </div>
+
+                <div class="text-right">
+                    @if($checkoutWeight > 0)
+                        <div class="font-14">{{ trans('update.weight') }}: {{ formatUnitForUser($checkoutWeight, 'mass', 'kg', auth()->user(), true) }}</div>
+                    @endif
+
+                    @if(is_numeric($checkoutDistance))
+                        <div class="font-14">{{ trans('update.distance') }}: {{ formatUnitForUser($checkoutDistance, 'length', 'km', auth()->user(), true) }}</div>
+                    @endif
+                </div>
+            </div>
+        @endif
 
         <h2 class="section-title">{{ trans('financial.select_a_payment_gateway') }}</h2>
 

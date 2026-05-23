@@ -4828,5 +4828,12 @@ return [
 'meeting_packages_grid_component_title' => 'Meeting Packages Grid Cards',
 'meeting_packages_grid_component_hint' => 'Display meeting package cards in grid style',
 'secs' => 'Secs',
+'weight' => 'Weight',
+'distance' => 'Distance',
+'unit_metrics' => 'Unit Metrics',
+'product_weight' => 'Product Weight',
+'property_area' => 'Property Area',
+'order_distance' => 'Order Distance',
+'display_currency' => 'Display Currency',
 
 ];

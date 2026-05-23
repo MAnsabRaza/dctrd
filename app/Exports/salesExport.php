@@ -36,6 +36,10 @@ class salesExport implements FromCollection, WithHeadings, WithMapping
             trans('admin/main.instructor'),
             trans('admin/main.instructor') . ' ' . trans('admin/main.id'),
             trans('admin/main.paid_amount'),
+            trans('update.display_currency'),
+            trans('update.product_weight'),
+            trans('update.property_area'),
+            trans('update.order_distance'),
             trans('admin/main.item'),
             trans('admin/main.item') . ' ' . trans('admin/main.id'),
             trans('admin/main.sale_type'),
@@ -61,6 +65,7 @@ class salesExport implements FromCollection, WithHeadings, WithMapping
         }
 
         $status = (!empty($sale->refund_at)) ? trans('admin/main.refund') : trans('admin/main.success');
+        $metrics = getReportUnitMetrics($sale, auth()->user());
 
         return [
             $sale->id,
@@ -69,6 +74,10 @@ class salesExport implements FromCollection, WithHeadings, WithMapping
             $sale->item_seller,
             $sale->seller_id,
             $paidAmount,
+            getUserCurrency(),
+            data_get($metrics, 'product_weight', '-'),
+            data_get($metrics, 'property_area', '-'),
+            data_get($metrics, 'order_distance', '-'),
             $sale->item_title,
             $sale->item_id,
             trans('admin/main.' . $sale->type),

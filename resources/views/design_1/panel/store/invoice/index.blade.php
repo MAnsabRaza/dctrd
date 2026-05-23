@@ -154,6 +154,13 @@
                                                                     <div class="invoice-detail-value">{{ $order->quantity }} {{ trans('cart.item') }}</div>
                                                                 </div>
 
+                                                                @if(!empty($product) and !empty(formatProductWeight($product, $buyer)))
+                                                                    <div class="invoice-detail-item">
+                                                                        <div class="invoice-detail-name">{{ trans('update.product_weight') }}</div>
+                                                                        <div class="invoice-detail-value">{{ formatProductWeight($product, $buyer) }}</div>
+                                                                    </div>
+                                                                @endif
+
                                                                 @if(!empty($order->specifications))
                                                                     <div class="invoice-detail-item">
                                                                         <div class="invoice-detail-name">{{ trans('update.specifications') }}</div>

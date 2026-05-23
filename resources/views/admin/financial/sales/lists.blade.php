@@ -211,6 +211,8 @@
                                         <th class="text-left">{{ trans('admin/main.student') }}</th>
                                         <th class="text-left">{{ trans('admin/main.instructor') }}</th>
                                         <th>{{ trans('admin/main.paid_amount') }}</th>
+                                        <th>{{ trans('update.display_currency') }}</th>
+                                        <th>{{ trans('update.unit_metrics') }}</th>
                                         <th>{{ trans('admin/main.discount') }}</th>
                                         <th>{{ trans('admin/main.tax') }}</th>
                                         <th class="text-left">{{ trans('admin/main.item') }}</th>
@@ -244,6 +246,18 @@
                                                         <span class="">{{ trans('public.free') }}</span>
                                                     @endif
                                                 @endif
+                                            </td>
+                                            <td>{{ getUserCurrency() }}</td>
+                                            <td class="text-left">
+                                                @php
+                                                    $metrics = getReportUnitMetrics($sale, auth()->user());
+                                                @endphp
+
+                                                @forelse($metrics as $metric)
+                                                    <div class="text-small">{{ $metric }}</div>
+                                                @empty
+                                                    <span>-</span>
+                                                @endforelse
                                             </td>
                                             <td>
                                                 <span class="">{{ handlePrice($sale->discount ?? 0) }}</span>
@@ -338,4 +352,3 @@
         </div>
     </section>
 @endsection
-
