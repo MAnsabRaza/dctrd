@@ -61,6 +61,19 @@
     color: #999;
     font-weight: 400;
 }
+.booking-map-preview {
+    width: 100%;
+    height: 260px;
+    border: 1px solid #e1e5eb;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f7f8fa;
+}
+.booking-map-preview iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
 </style>
 
 <div class="row">
@@ -82,6 +95,7 @@
 
     @php
         $isEditing = isset($booking) && !is_null($booking);
+        $bookingDefaults = $bookingDefaults ?? [];
     @endphp
 
     {{-- ── Title & Slug ──────────────────────────────────────────────── --}}
@@ -186,7 +200,7 @@
             <select name="currency" class="form-control">
                 @foreach(['USD','EUR','GBP','PKR','AED','SAR','INR'] as $cur)
                     <option value="{{ $cur }}"
-                        {{ old('currency', $isEditing ? $booking->currency : 'USD') === $cur ? 'selected' : '' }}>
+                        {{ old('currency', $isEditing ? $booking->currency : ($bookingDefaults['currency'] ?? 'USD')) === $cur ? 'selected' : '' }}>
                         {{ $cur }}
                     </option>
                 @endforeach
@@ -210,7 +224,7 @@
         <div class="form-group">
             <label>{{ trans('panel.price_unit_label') }}</label>
             <input name="price_unit" type="text" class="form-control"
-                   value="{{ old('price_unit', $isEditing ? $booking->price_unit : '') }}"
+                   value="{{ old('price_unit', $isEditing ? $booking->price_unit : ($bookingDefaults['price_unit'] ?? 'booking')) }}"
                    placeholder="e.g. per night, per adult">
         </div>
     </div>
@@ -263,7 +277,7 @@
 
     {{-- ── Location Toggle ──────────────────────────────────────────── --}}
     @php
-        $locationEnabled = old('location_enabled', $isEditing && !empty($booking->location_enabled) ? 1 : 0);
+        $locationEnabled = old('location_enabled', $isEditing ? !empty($booking->location_enabled) : !empty($bookingDefaults['location_enabled']));
     @endphp
 
     <div class="col-12 mb-15">
@@ -333,7 +347,7 @@
             <div class="col-12 col-md-6">
                 <div class="form-group">
                     <label>Latitude</label>
-                    <input name="lat" type="number" step="0.000001" class="form-control"
+                    <input id="bookingLat" name="lat" type="number" step="0.000001" class="form-control"
                            value="{{ old('lat', $isEditing ? $booking->lat : '') }}"
                            placeholder="e.g. 31.5204">
                 </div>
@@ -342,9 +356,15 @@
             <div class="col-12 col-md-6">
                 <div class="form-group">
                     <label>Longitude</label>
-                    <input name="lng" type="number" step="0.000001" class="form-control"
+                    <input id="bookingLng" name="lng" type="number" step="0.000001" class="form-control"
                            value="{{ old('lng', $isEditing ? $booking->lng : '') }}"
                            placeholder="e.g. 74.3587">
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="booking-map-preview">
+                    <iframe id="bookingMapFrame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="about:blank"></iframe>
                 </div>
             </div>
 
@@ -359,7 +379,7 @@
                        id="bookingStatus"
                        name="status"
                        value="1"
-                       {{ old('status', $isEditing && $booking->status === 'published' ? 1 : 0) ? 'checked' : '' }}>
+                       {{ old('status', $isEditing ? ($booking->status === 'published') : (($bookingDefaults['status'] ?? 'draft') === 'published')) ? 'checked' : '' }}>
                 <span class="booking-switch-slider"></span>
             </label>
             <label class="booking-switch-label" for="bookingStatus">
@@ -412,5 +432,46 @@
 <script>
     function toggleLocationFields(show) {
         document.getElementById('locationFields').style.display = show ? 'block' : 'none';
+        if (show) {
+            updateBookingMap();
+        }
     }
+
+    function updateBookingMap() {
+        var latInput = document.getElementById('bookingLat');
+        var lngInput = document.getElementById('bookingLng');
+        var frame = document.getElementById('bookingMapFrame');
+
+        if (!latInput || !lngInput || !frame || !latInput.value || !lngInput.value) {
+            return;
+        }
+
+        var latitude = parseFloat(latInput.value);
+        var longitude = parseFloat(lngInput.value);
+
+        if (isNaN(latitude) || isNaN(longitude)) {
+            return;
+        }
+
+        var delta = 0.01;
+        var bbox = [
+            longitude - delta,
+            latitude - delta,
+            longitude + delta,
+            latitude + delta
+        ].join(',');
+
+        frame.src = 'https://www.openstreetmap.org/export/embed.html?bbox=' + bbox + '&layer=mapnik&marker=' + latitude + ',' + longitude;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var latInput = document.getElementById('bookingLat');
+        var lngInput = document.getElementById('bookingLng');
+
+        if (latInput && lngInput) {
+            latInput.addEventListener('input', updateBookingMap);
+            lngInput.addEventListener('input', updateBookingMap);
+            updateBookingMap();
+        }
+    });
 </script>

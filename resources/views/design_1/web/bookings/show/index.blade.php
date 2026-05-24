@@ -209,6 +209,32 @@
                                 @endif
                             @endforeach
                         </div>
+
+                        @if($booking->location_enabled and !empty($booking->lat) and !empty($booking->lng))
+                            @php
+                                $mapLat = (float) $booking->lat;
+                                $mapLng = (float) $booking->lng;
+                                $mapDelta = 0.01;
+                                $mapBbox = implode(',', [
+                                    $mapLng - $mapDelta,
+                                    $mapLat - $mapDelta,
+                                    $mapLng + $mapDelta,
+                                    $mapLat + $mapDelta,
+                                ]);
+                            @endphp
+
+                            <div class="mt-16 rounded-16 overflow-hidden border-gray-200" style="height: 320px;">
+                                <iframe
+                                    title="{{ $booking->title }} map"
+                                    width="100%"
+                                    height="100%"
+                                    frameborder="0"
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                    src="https://www.openstreetmap.org/export/embed.html?bbox={{ $mapBbox }}&layer=mapnik&marker={{ $mapLat }},{{ $mapLng }}">
+                                </iframe>
+                            </div>
+                        @endif
                     </div>
                 </div>
 

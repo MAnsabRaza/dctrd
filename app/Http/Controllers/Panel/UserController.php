@@ -166,6 +166,10 @@ class UserController extends Controller
                 'preferred_length_unit' => 'nullable|in:' . implode(',', array_keys(config('units.conversions.length', []))),
                 'preferred_mass_unit' => 'nullable|in:' . implode(',', array_keys(config('units.conversions.mass', []))),
                 'preferred_area_unit' => 'nullable|in:' . implode(',', array_keys(config('units.conversions.area', []))),
+                'booking_default_currency' => 'nullable|string|max:3',
+                'booking_default_price_unit' => 'nullable|string|max:64',
+                'booking_auto_publish' => 'nullable|in:on,1,true',
+                'booking_location_enabled' => 'nullable|in:on,1,true',
             ];
         }
 
@@ -206,6 +210,13 @@ class UserController extends Controller
                     'public_message' => (!empty($data['public_message']) and $data['public_message'] == 'on'),
                     'enable_profile_statistics' => (!empty($data['enable_profile_statistics']) and $data['enable_profile_statistics'] == 'on'),
                     'auto_renew_subscription' => (!empty($data['auto_renew_subscription']) and $data['auto_renew_subscription'] == 'on'),
+                ];
+
+                $updateUserMeta = [
+                    'booking_default_currency' => !empty($data['booking_default_currency']) ? strtoupper($data['booking_default_currency']) : null,
+                    'booking_default_price_unit' => $data['booking_default_price_unit'] ?? null,
+                    'booking_auto_publish' => (!empty($data['booking_auto_publish']) and in_array($data['booking_auto_publish'], ['on', '1', 'true'], true)) ? '1' : '0',
+                    'booking_location_enabled' => (!empty($data['booking_location_enabled']) and in_array($data['booking_location_enabled'], ['on', '1', 'true'], true)) ? '1' : '0',
                 ];
 
                 $this->handleNewsletter($data['email'], $user->id, $joinNewsletter);

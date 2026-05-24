@@ -100,7 +100,8 @@ class RouteServiceProvider extends ServiceProvider
             ->group(base_path('routes/admin.php'));
 
         // Load custom admin routes
-        Route::middleware('web', 'admin')
+        Route::prefix(getAdminPanelUrlPrefix())
+            ->middleware('web', 'admin')
             ->namespace($this->namespace . '\Admin')
             ->group(base_path('routes/custom_admin.php'));
     }
@@ -119,7 +120,8 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function mapExchangeUnitsRoutes()
     {
-        Route::middleware('web')
+        Route::prefix(getAdminPanelUrlPrefix())
+            ->middleware('web', 'admin')
             ->namespace($this->namespace)
             ->group(base_path('routes/exchange_units.php'));
     }

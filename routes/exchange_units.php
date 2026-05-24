@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\SettingsController;
 
 // Admin Routes (require authentication and admin permissions)
-Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin'], function () {
+Route::group([], function () {
     
     // Exchange Rate Management
     Route::post('/exchange-rates/update', [SettingsController::class, 'updateExchangeRates'])

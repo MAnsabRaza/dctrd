@@ -207,6 +207,58 @@
                         @endforeach
                     </div>
                 @endif
+
+                <div class="mt-20 pt-20 border-top">
+                    <div class="d-flex align-items-center justify-content-between mb-16">
+                        <div>
+                            <h3 class="font-14 font-weight-bold mb-4">Booking Defaults</h3>
+                            <p class="font-12 text-gray-500 mb-0">Used when you create new bookings from the panel.</p>
+                        </div>
+                        <div class="d-flex-center size-40 rounded-12 bg-primary-20">
+                            <i class="fas fa-calendar-check text-primary"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-group-label">Default Booking Currency</label>
+                        <select name="booking_default_currency" class="form-control select2" data-allow-clear="false">
+                            @foreach(['USD','EUR','GBP','PKR','AED','SAR','INR'] as $cur)
+                                <option value="{{ $cur }}" {{ old('booking_default_currency', $user->booking_default_currency ?? ($user->currency ?? 'USD')) == $cur ? 'selected' : '' }}>
+                                    {{ $cur }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group mt-20">
+                        <label class="form-group-label">Default Price Unit</label>
+                        <select name="booking_default_price_unit" class="form-control select2" data-allow-clear="false">
+                            @foreach(['night' => 'Per night', 'hour' => 'Per hour', 'person' => 'Per person', 'booking' => 'Per booking'] as $unit => $label)
+                                <option value="{{ $unit }}" {{ old('booking_default_price_unit', $user->booking_default_price_unit ?? 'booking') == $unit ? 'selected' : '' }}>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group d-flex align-items-center mt-20">
+                        <div class="custom-switch mr-8">
+                            <input id="bookingAutoPublishSwitch" type="checkbox" name="booking_auto_publish" class="custom-control-input" {{ !empty($user->booking_auto_publish) ? 'checked' : '' }}>
+                            <label class="custom-control-label cursor-pointer" for="bookingAutoPublishSwitch"></label>
+                        </div>
+
+                        <label class="cursor-pointer mb-0" for="bookingAutoPublishSwitch">Publish new bookings by default</label>
+                    </div>
+
+                    <div class="form-group d-flex align-items-center mb-0">
+                        <div class="custom-switch mr-8">
+                            <input id="bookingLocationSwitch" type="checkbox" name="booking_location_enabled" class="custom-control-input" {{ !empty($user->booking_location_enabled) ? 'checked' : '' }}>
+                            <label class="custom-control-label cursor-pointer" for="bookingLocationSwitch"></label>
+                        </div>
+
+                        <label class="cursor-pointer mb-0" for="bookingLocationSwitch">Enable location fields by default</label>
+                    </div>
+                </div>
             </div>
 
             <div class="bg-white p-16 rounded-16 border-gray-200 mt-20">

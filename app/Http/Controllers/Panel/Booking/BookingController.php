@@ -74,6 +74,13 @@ class BookingController extends Controller
 
     public function create()
     {
+        $user = auth()->user();
+        $user->loadMissing('userMetas');
+
+        foreach ($user->userMetas as $meta) {
+            $user->{$meta->name} = $meta->value;
+        }
+
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title')
             ->orderBy('title')
@@ -86,6 +93,13 @@ class BookingController extends Controller
             'allCategoryLists' => $allCategoryLists,
 
             'booking' => null,
+
+            'bookingDefaults' => [
+                'currency' => $user->booking_default_currency ?? $user->currency ?? 'USD',
+                'price_unit' => $user->booking_default_price_unit ?? 'booking',
+                'status' => !empty($user->booking_auto_publish) ? 'published' : 'draft',
+                'location_enabled' => !empty($user->booking_location_enabled),
+            ],
         ]);
     }
 
@@ -323,7 +337,7 @@ class BookingController extends Controller
 
     protected function validateBooking(Request $request, $bookingId = null)
     {
-        return $request->validate([
+        $data = $request->validate([
 
             'title' => 'required|string|max:255',
 
@@ -337,9 +351,17 @@ class BookingController extends Controller
 
             'booking_type' => 'required|string',
 
+            'sub_type' => 'nullable|string|max:255',
+
             'description' => 'nullable|string',
 
+            'requirements' => 'nullable|string',
+
             'price' => 'nullable|numeric|min:0',
+
+            'price_per' => 'nullable|numeric|min:0',
+
+            'price_unit' => 'nullable|string|max:64',
 
             'discount_price' => 'nullable|numeric|min:0',
 
@@ -366,7 +388,23 @@ class BookingController extends Controller
             'lat' => 'nullable|numeric',
 
             'lng' => 'nullable|numeric',
+
+            'meta' => 'nullable|json',
         ]);
+
+        $data['status'] = $request->boolean('status') ? 'published' : 'draft';
+        $data['featured'] = $request->boolean('featured');
+        $data['location_enabled'] = $request->boolean('location_enabled');
+
+        if (!empty($data['currency'])) {
+            $data['currency'] = strtoupper($data['currency']);
+        }
+
+        if (!empty($data['meta'])) {
+            $data['meta'] = json_decode($data['meta'], true);
+        }
+
+        return $data;
     }
 
     private function findOwnBooking($id): Booking

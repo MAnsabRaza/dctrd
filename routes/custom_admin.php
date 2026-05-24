@@ -29,9 +29,6 @@ use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
 use App\Http\Controllers\Admin\Booking\BookingOrderController;
 use Illuminate\Support\Facades\Route;
 
-// Get the admin panel prefix from the main application
-$prefix = getAdminPanelUrlPrefix();
-
 /**
  * Define your custom admin panel routes here
  * They will be automatically loaded alongside the main admin routes
