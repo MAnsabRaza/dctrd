@@ -227,39 +227,39 @@
     </div>
 
 
-    {{-- AREA --}}
-    <div class="mb-2">
+   {{-- AREA --}}
+<div class="mb-2">
 
-        <h5 class="font-14 font-weight-bold mb-3">
-            Area
-        </h5>
+    <h5 class="font-14 font-weight-bold mb-3">
+        Area
+    </h5>
 
-       <div class="d-flex flex-wrap">
+    <div class="d-flex flex-wrap">
 
-    @foreach($unitPreferences['length'] as $unit => $label)
+        @foreach($unitPreferences['area'] as $unit => $label)
 
-        <label class="d-flex align-items-center mr-4 mb-2 cursor-pointer">
+            <label class="d-flex align-items-center mr-4 mb-2 cursor-pointer">
 
-            <input
-                type="radio"
-                name="preferred_length_unit"
-                value="{{ $unit }}"
-                class="mr-2"
-                style="width:18px;height:18px;"
-                {{ (($user->preferred_length_unit ?? config('units.base_units.length')) == $unit) ? 'checked' : '' }}
-            >
+                <input
+                    type="radio"
+                    name="preferred_area_unit"
+                    value="{{ $unit }}"
+                    class="mr-2"
+                    style="width:18px;height:18px;"
+                    {{ (($user->preferred_area_unit ?? config('units.base_units.area')) == $unit) ? 'checked' : '' }}
+                >
 
-            <span>
-                {{ config('units.short_labels')[$unit] ?? $unit }}
-            </span>
+                <span>
+                    {{ config('units.short_labels')[$unit] ?? $unit }}
+                </span>
 
-        </label>
+            </label>
 
-    @endforeach
-
-</div>
+        @endforeach
 
     </div>
+
+</div>
 
 </div>
 
