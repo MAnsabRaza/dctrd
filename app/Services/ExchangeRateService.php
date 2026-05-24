@@ -246,8 +246,21 @@ class ExchangeRateService
             return round(1 / (float) $inverseRate->rate, 8);
         }
 
-        $fromBase = $from === $this->baseCurrency ? 1.0 : optional(ExchangeRate::getLatestRate($this->baseCurrency, $from))->rate;
-        $toBase = $to === $this->baseCurrency ? 1.0 : optional(ExchangeRate::getLatestRate($this->baseCurrency, $to))->rate;
+        $fromBaseRate = $from === $this->baseCurrency ? null : ExchangeRate::getLatestRate($this->baseCurrency, $from);
+        $toBaseRate = $to === $this->baseCurrency ? null : ExchangeRate::getLatestRate($this->baseCurrency, $to);
+
+        if ($freshOnly) {
+            if ($fromBaseRate && !$this->isFresh($fromBaseRate->fetched_at)) {
+                $fromBaseRate = null;
+            }
+
+            if ($toBaseRate && !$this->isFresh($toBaseRate->fetched_at)) {
+                $toBaseRate = null;
+            }
+        }
+
+        $fromBase = $from === $this->baseCurrency ? 1.0 : optional($fromBaseRate)->rate;
+        $toBase = $to === $this->baseCurrency ? 1.0 : optional($toBaseRate)->rate;
 
         if ($fromBase && $toBase) {
             return round((float) $toBase / (float) $fromBase, 8);

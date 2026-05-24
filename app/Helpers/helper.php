@@ -2750,6 +2750,25 @@ function convertCurrencyForUser($amount, $user = null, $fromCurrency = null)
     }
 }
 
+function convertCurrencyToDefault($amount, $fromCurrency = null)
+{
+    try {
+        $exchangeService = app(\App\Services\ExchangeRateService::class);
+
+        if (!$exchangeService->isEnabled()) {
+            return $amount;
+        }
+
+        $fromCurrency = strtoupper($fromCurrency ?? config('exchange.base_currency', getDefaultCurrency()));
+        $toCurrency = strtoupper(config('exchange.base_currency', getDefaultCurrency()));
+
+        return $exchangeService->convert((float) $amount, $fromCurrency, $toCurrency);
+    } catch (\Exception $e) {
+        \Log::error('Default currency conversion error: ' . $e->getMessage());
+        return $amount;
+    }
+}
+
 /**
  * Format currency with user's preferred currency
  * 

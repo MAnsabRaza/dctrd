@@ -117,8 +117,9 @@ class Cart extends Model
             $price += $cart->meetingPackage->getPrices()['price'];
         } else if (!empty($cart->booking_id) and !empty($cart->booking)) {
             $booking = $cart->booking;
+            $amount = (float) ($booking->discount_price ?: $booking->price);
 
-            $price += (float) ($booking->discount_price ?: $booking->price);
+            $price += convertCurrencyToDefault($amount, $booking->currency ?: getDefaultCurrency());
         } else if (!empty($cart->reserve_meeting_id) and !empty($cart->reserveMeeting)) {
             $price += $cart->reserveMeeting->paid_amount;
         } else if (!empty($cart->product_order_id) and !empty($cart->productOrder) and !empty($cart->productOrder->product)) {

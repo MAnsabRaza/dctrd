@@ -142,15 +142,17 @@ class CartItemInfo
             return $info;
         }
 
-        $info['imgPath'] = $booking->thumbnail;
+        $info['imgPath'] = $booking->thumbnail_url;
         $info['itemUrl'] = $booking->getUrl();
         $info['title'] = $booking->title;
         $info['profileUrl'] = !empty($booking->creator) ? $booking->creator->getProfileUrl() : null;
         $info['teacherName'] = !empty($booking->creator) ? $booking->creator->full_name : null;
         $info['rate'] = $booking->getRate();
         $info['rateCount'] = $booking->reviews()->pluck('creator_id')->count();
-        $info['price'] = $booking->price;
-        $info['discountPrice'] = null;
+        $info['price'] = convertCurrencyToDefault((float) $booking->price, $booking->currency ?: getDefaultCurrency());
+        $info['discountPrice'] = !empty($booking->discount_price)
+            ? convertCurrencyToDefault((float) $booking->discount_price, $booking->currency ?: getDefaultCurrency())
+            : null;
 
         return $info;
     }

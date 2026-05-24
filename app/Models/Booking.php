@@ -227,10 +227,7 @@ class Booking extends Model
             return trans('public.free');
         }
 
-        $price = number_format((float) $this->effective_price, 2);
-        $currency = $this->currency ?: getDefaultCurrency();
-
-        return "{$currency} {$price}";
+        return formatCurrencyForUser((float) $this->effective_price, auth()->user(), $this->currency ?: getDefaultCurrency());
     }
 
     public function getRate(): float
