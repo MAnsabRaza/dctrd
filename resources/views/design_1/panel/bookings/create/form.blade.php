@@ -98,6 +98,19 @@
         $bookingDefaults = $bookingDefaults ?? [];
     @endphp
 
+    <div class="col-12 col-md-6">
+        <div class="form-group">
+            <label>{{ trans('auth.language') }}</label>
+            <select name="language" class="form-control">
+                @foreach($userLanguages ?? [app()->getLocale() => ucfirst(app()->getLocale())] as $lang => $language)
+                    <option value="{{ $lang }}" {{ old('language', $isEditing ? $booking->language : app()->getLocale()) == $lang ? 'selected' : '' }}>
+                        {{ $language }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+
     {{-- ── Title & Slug ──────────────────────────────────────────────── --}}
     <div class="col-12 col-md-6">
         <div class="form-group">
@@ -420,9 +433,11 @@
     {{-- ── Submit ────────────────────────────────────────────────────── --}}
     <div class="col-12 mt-10">
         <button type="submit" class="btn btn-primary">
+            <i class="fa fa-save mr-1"></i>
             {{ $isEditing ? trans('public.update') : trans('public.save') }}
         </button>
         <a href="{{ route('panel.bookings.index') }}" class="btn btn-outline-secondary ml-2">
+            <i class="fa fa-times mr-1"></i>
             {{ trans('public.cancel') }}
         </a>
     </div>

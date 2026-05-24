@@ -12,6 +12,9 @@ use App\Http\Controllers\Web\traits\UserFormFieldsTrait;
 use App\Mixins\Geo\Geo;
 use App\Models\Badge;
 use App\Models\BecomeInstructor;
+use App\Models\Booking;
+use App\Models\BookingBundle;
+use App\Models\BookingOrder;
 use App\Models\Category;
 use App\Models\ForumTopic;
 use App\Models\Group;
@@ -684,6 +687,9 @@ class UserController extends Controller
         // Purchased Product Data
         $data = array_merge($data, $this->getPurchasedProductsData($user));
 
+        // Purchased Booking Data
+        $data = array_merge($data, $this->getPurchasedBookingsData($user));
+
         if (auth()->user()->can('admin_forum_topics_lists')) {
             $data['topics'] = ForumTopic::where('creator_id', $user->id)
                 ->with([
@@ -698,6 +704,60 @@ class UserController extends Controller
         }
 
         return view('admin.users.edit', $data);
+    }
+
+    public function storeManualBookingOrder(Request $request, $id)
+    {
+        $this->authorize('admin_users_edit');
+
+        $user = User::findOrFail($id);
+
+        $data = $request->validate([
+            'item_type' => 'required|in:booking,bundle',
+            'booking_id' => 'required_if:item_type,booking|nullable|exists:bookings,id',
+            'bundle_id' => 'required_if:item_type,bundle|nullable|exists:booking_bundles,id',
+            'booking_date' => 'nullable|date',
+            'persons' => 'nullable|integer|min:1',
+            'quantity' => 'nullable|integer|min:1',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $item = $data['item_type'] === 'bundle'
+            ? BookingBundle::findOrFail($data['bundle_id'])
+            : Booking::findOrFail($data['booking_id']);
+
+        $unitPrice = (float) ($item->discount_price ?: $item->price ?: 0);
+        $quantity = (int) ($data['quantity'] ?? 1);
+        $total = $unitPrice * $quantity;
+
+        $order = BookingOrder::create([
+            'order_number' => 'MAN-BOOK-' . strtoupper(uniqid()),
+            'user_id' => $user->id,
+            'subtotal' => $total,
+            'discount_amount' => 0,
+            'tax_amount' => 0,
+            'total' => $total,
+            'currency' => $item->currency ?: getDefaultCurrency(),
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+            'notes' => $data['notes'] ?? 'Manually added by admin.',
+        ]);
+
+        $order->items()->create([
+            'item_type' => $data['item_type'],
+            'booking_id' => $data['item_type'] === 'booking' ? $item->id : null,
+            'bundle_id' => $data['item_type'] === 'bundle' ? $item->id : null,
+            'booking_date' => $data['booking_date'] ?? null,
+            'quantity' => $quantity,
+            'persons' => (int) ($data['persons'] ?? 1),
+            'unit_price' => $unitPrice,
+            'total_price' => $total,
+            'status' => 'confirmed',
+        ]);
+
+        $order->sendBookingNotifications('confirmed');
+
+        return back()->with('msg', trans('admin/main.created_successfully'));
     }
 
    /* private function getBecomeInstructorFormFieldValues($becomeInstructor)
@@ -855,6 +915,42 @@ class UserController extends Controller
             'manualAddedProducts' => $manualAddedProducts,
             'purchasedProducts' => $purchasedProducts,
             'manualDisabledProducts' => $manualDisabledProducts,
+        ];
+    }
+
+    private function getPurchasedBookingsData($user): array
+    {
+        $bookingOrders = BookingOrder::query()
+            ->where('user_id', $user->id)
+            ->with(['items.booking.creator', 'items.bundle.creator'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $purchasedBookingItems = $bookingOrders
+            ->flatMap(fn($order) => $order->items->map(function ($item) use ($order) {
+                $item->setRelation('order', $order);
+                return $item;
+            }))
+            ->where('item_type', 'booking');
+
+        $purchasedBookingBundleItems = $bookingOrders
+            ->flatMap(fn($order) => $order->items->map(function ($item) use ($order) {
+                $item->setRelation('order', $order);
+                return $item;
+            }))
+            ->where('item_type', 'bundle');
+
+        return [
+            'availableBookings' => Booking::query()
+                ->where('status', 'published')
+                ->orderBy('title')
+                ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']),
+            'availableBookingBundles' => BookingBundle::query()
+                ->where('status', 'published')
+                ->orderBy('title')
+                ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']),
+            'purchasedBookingItems' => $purchasedBookingItems,
+            'purchasedBookingBundleItems' => $purchasedBookingBundleItems,
         ];
     }
 

@@ -94,6 +94,8 @@ class BookingController extends Controller
 
             'booking' => null,
 
+            'userLanguages' => $this->getUserLanguages(),
+
             'bookingDefaults' => [
                 'currency' => $user->booking_default_currency ?? $user->currency ?? 'USD',
                 'price_unit' => $user->booking_default_price_unit ?? 'booking',
@@ -146,6 +148,8 @@ class BookingController extends Controller
             'booking' => $booking,
 
             'allCategoryLists' => $allCategoryLists,
+
+            'userLanguages' => $this->getUserLanguages(),
         ]);
     }
 
@@ -349,6 +353,8 @@ class BookingController extends Controller
 
             'category_id' => 'nullable|exists:booking_categories,id',
 
+            'language' => 'nullable|string|max:10',
+
             'booking_type' => 'required|string',
 
             'sub_type' => 'nullable|string|max:255',
@@ -400,11 +406,24 @@ class BookingController extends Controller
             $data['currency'] = strtoupper($data['currency']);
         }
 
+        $data['language'] = $data['language'] ?? app()->getLocale();
+
         if (!empty($data['meta'])) {
             $data['meta'] = json_decode($data['meta'], true);
         }
 
         return $data;
+    }
+
+    private function getUserLanguages(): array
+    {
+        $userLanguages = getGeneralSettings('user_languages');
+
+        if (!empty($userLanguages) and is_array($userLanguages)) {
+            return getLanguages($userLanguages);
+        }
+
+        return [app()->getLocale() => ucfirst(app()->getLocale())];
     }
 
     private function findOwnBooking($id): Booking

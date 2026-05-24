@@ -263,6 +263,14 @@
                                         </li>
 
                                         <li class="nav-item">
+                                            <a class="nav-link" id="purchased_bookings-tab" data-toggle="tab" href="#purchased_bookings" role="tab" aria-controls="purchased_bookings" aria-selected="true">Purchased Bookings</a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="purchased_booking_bundles-tab" data-toggle="tab" href="#purchased_booking_bundles" role="tab" aria-controls="purchased_booking_bundles" aria-selected="true">Purchased BOOKING Bundles</a>
+                                        </li>
+
+                                        <li class="nav-item">
                                             <a class="nav-link" id="topics-tab" data-toggle="tab" href="#topics" role="tab" aria-controls="topics" aria-selected="true">{{ trans('update.forum_topics') }}</a>
                                         </li>
 
@@ -313,6 +321,10 @@
                                         @include('admin.users.editTabs.purchased_bundles')
 
                                         @include('admin.users.editTabs.purchased_products')
+
+                                        @include('admin.users.editTabs.purchased_bookings')
+
+                                        @include('admin.users.editTabs.purchased_booking_bundles')
 
                                         @include('admin.users.editTabs.topics')
 

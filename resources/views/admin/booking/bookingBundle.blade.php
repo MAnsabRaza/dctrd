@@ -171,6 +171,21 @@
                                                   method="post">
                                                 {{ csrf_field() }}
 
+                                                {{-- Language --}}
+                                                <div class="form-group">
+                                                    <label>{{ trans('auth.language') }}</label>
+                                                    <select name="language" data-plugin-selectTwo
+                                                            class="form-control @error('language') is-invalid @enderror">
+                                                        @foreach($userLanguages ?? [app()->getLocale() => ucfirst(app()->getLocale())] as $lang => $language)
+                                                            <option value="{{ $lang }}"
+                                                                {{ old('language', !empty($editBundle) ? $editBundle->language : app()->getLocale()) == $lang ? 'selected' : '' }}>
+                                                                {{ $language }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('language')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                </div>
+
                                                 {{-- Title --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.title') }} <span class="text-danger">*</span></label>
@@ -413,6 +428,7 @@
                                                         </a>
                                                     @endif
                                                     <button type="submit" class="btn btn-primary">
+                                                        <i class="fa fa-save mr-1"></i>
                                                         {{ trans('admin/main.save_change') }}
                                                     </button>
                                                 </div>

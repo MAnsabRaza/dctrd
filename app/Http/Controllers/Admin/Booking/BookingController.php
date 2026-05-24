@@ -32,12 +32,14 @@ class BookingController extends Controller
         $bookings      = $query->orderBy('created_at', 'desc')->paginate(15);
         $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
         $allCategories = BookingCategory::orderBy('order')->get();
+        $userLanguages = $this->getUserLanguages();
 
         return view('admin.booking.booking', [
             'pageTitle'     => trans('admin/main.booking'),
             'bookings'      => $bookings,
             'categories'    => $categories,
             'allCategories' => $allCategories,
+            'userLanguages' => $userLanguages,
         ]);
     }
 
@@ -48,6 +50,7 @@ class BookingController extends Controller
         $this->validate($request, [
             'title'        => 'required|string|max:255',
             'category_id'  => 'nullable|exists:booking_categories,id',
+            'language'     => 'nullable|string|max:10',
             'booking_type' => 'required|string|max:255',
             'price'        => 'required|numeric|min:0',
             // price_per — migration mein decimal hai, isliye numeric validate karo
@@ -59,6 +62,7 @@ class BookingController extends Controller
             'creator_id'       => auth()->id(),
             'category_id'      => $request->category_id,
             'title'            => $request->title,
+            'language'         => $request->language ?? app()->getLocale(),
             'slug'             => $request->slug
                                     ? Str::slug($request->slug)
                                     : Str::slug($request->title) . '-' . uniqid(),
@@ -112,6 +116,7 @@ class BookingController extends Controller
         $bookings      = Booking::orderBy('created_at', 'desc')->paginate(15);
         $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
         $allCategories = BookingCategory::orderBy('order')->get();
+        $userLanguages = $this->getUserLanguages();
 
         return view('admin.booking.booking', [
             'pageTitle'     => trans('admin/main.edit_booking'),
@@ -119,6 +124,7 @@ class BookingController extends Controller
             'editBooking'   => $editBooking,
             'categories'    => $categories,
             'allCategories' => $allCategories,
+            'userLanguages' => $userLanguages,
         ]);
     }
 
@@ -131,6 +137,7 @@ class BookingController extends Controller
         $this->validate($request, [
             'title'          => 'required|string|max:255',
             'category_id'    => 'nullable|exists:booking_categories,id',
+            'language'       => 'nullable|string|max:10',
             'booking_type'   => 'required|string|max:255',
             'price'          => 'required|numeric|min:0',
             'price_per'      => 'nullable|numeric|min:0',
@@ -140,6 +147,7 @@ class BookingController extends Controller
         $booking->update([
             'category_id'      => $request->category_id,
             'title'            => $request->title,
+            'language'         => $request->language ?? $booking->language,
             'slug'             => $request->slug
                                     ? Str::slug($request->slug)
                                     : Str::slug($request->title) . '-' . uniqid(),
@@ -207,5 +215,16 @@ class BookingController extends Controller
         if (!empty($booking->creator_id) && $booking->creator_id !== auth()->id()) {
             sendNotification($template, $notifyOptions, $booking->creator_id);
         }
+    }
+
+    private function getUserLanguages(): array
+    {
+        $userLanguages = getGeneralSettings('user_languages');
+
+        if (!empty($userLanguages) and is_array($userLanguages)) {
+            return getLanguages($userLanguages);
+        }
+
+        return [app()->getLocale() => ucfirst(app()->getLocale())];
     }
 }

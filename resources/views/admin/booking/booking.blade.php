@@ -239,6 +239,23 @@
                                         <div class="row">
                                             <div class="col-12 col-md-6">
 
+                                                {{-- Language --}}
+                                                <div class="form-group">
+                                                    <label class="input-label">{{ trans('auth.language') }}</label>
+                                                    <select name="language" data-plugin-selectTwo
+                                                            class="form-control @error('language') is-invalid @enderror">
+                                                        @foreach($userLanguages ?? [app()->getLocale() => ucfirst(app()->getLocale())] as $lang => $language)
+                                                            <option value="{{ $lang }}"
+                                                                {{ old('language', !empty($editBooking) ? $editBooking->language : app()->getLocale()) == $lang ? 'selected' : '' }}>
+                                                                {{ $language }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('language')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+
                                                 {{-- Title --}}
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.title') }} <span class="text-danger">*</span></label>

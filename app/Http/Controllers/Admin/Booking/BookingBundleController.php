@@ -10,6 +10,17 @@ use Illuminate\Support\Str;
 
 class BookingBundleController extends Controller
 {
+    private function getUserLanguages(): array
+    {
+        $userLanguages = getUserLanguagesLists();
+
+        if (empty($userLanguages)) {
+            return [app()->getLocale() => ucfirst(app()->getLocale())];
+        }
+
+        return $userLanguages;
+    }
+
     public function index()
     {
         $this->authorize('admin_booking_bundle');
@@ -27,6 +38,7 @@ class BookingBundleController extends Controller
             'bundles'    => $bundles,
             'bookings'   => $bookings,
             'editBundle' => null,
+            'userLanguages' => $this->getUserLanguages(),
         ]);
     }
 
@@ -102,6 +114,7 @@ class BookingBundleController extends Controller
             'bundles'    => $bundles,
             'bookings'   => $bookings,
             'editBundle' => $editBundle,
+            'userLanguages' => $this->getUserLanguages(),
         ]);
     }
 

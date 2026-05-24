@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\Booking\BookingSpecificationValueController;
 use App\Http\Controllers\Admin\Booking\BookingVariantController;
 use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
 use App\Http\Controllers\Admin\Booking\BookingOrderController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -210,6 +211,9 @@ Route::group(['prefix' => 'booking'], function () {
     });
 
 });
+
+Route::post('/users/{id}/booking-orders/store', [UserController::class, 'storeManualBookingOrder'])
+    ->name('admin.users.booking_orders.store');
 
 /**
  * To use these routes, you must have your controller in App\Http\Controllers\Admin namespace
