@@ -275,6 +275,37 @@
         }
     });
 
+    $('body').on('click', '.js-currency-select .top-nav-icon-dropdown, .js-unit-select .top-nav-icon-dropdown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const parent = $(this).closest('.js-currency-select, .js-unit-select');
+
+        $('.js-currency-select.is-open, .js-unit-select.is-open').not(parent).removeClass('is-open');
+        parent.toggleClass('is-open');
+    });
+
+    $('body').on('click', function () {
+        $('.js-currency-select.is-open, .js-unit-select.is-open').removeClass('is-open');
+    });
+
+    $('body').on('click', '.js-currency-select .custom-dropdown-body, .js-unit-select .custom-dropdown-body', function (e) {
+        e.stopPropagation();
+    });
+
+    $('body').on('click', '.js-unit-dropdown-item', function () {
+        const $this = $(this);
+        const value = $this.attr('data-value');
+        const name = $this.attr('data-name');
+        const parent = $this.closest('.js-unit-select');
+
+        parent.find(`input[name="${name}"]`).val(value);
+
+        if (!parent.hasClass('js-dont-submit')) {
+            parent.find('form').trigger('submit')
+        }
+    });
+
     window.lockBodyScroll = function (lock) {
         const root = document.getElementsByTagName('html')[0];
 
@@ -321,4 +352,3 @@
     feather.replace();
 
 })(jQuery);
-

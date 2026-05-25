@@ -3,7 +3,7 @@
         $userCurrency = currency();
     @endphp
 
-    <div class="js-currency-select custom-dropdown position-relative">
+    <div class="js-currency-select custom-dropdown position-relative mr-10">
         <form action="/set-currency" method="post">
             {{ csrf_field() }}
             <input type="hidden" name="currency" value="{{ $userCurrency }}">
@@ -11,16 +11,10 @@
                 <input type="hidden" name="previous_url" value="{{ $previousUrl }}">
             @endif
 
-            @foreach($currencies as $currencyItem)
-                @if($userCurrency == $currencyItem->currency)
-                    <div class="custom-dropdown-toggle d-flex align-items-center cursor-pointer">
-                        <div class="mr-5 text-secondary">
-                            <span class="js-lang-title font-14">{{ $currencyItem->currency }} ({{ currencySign($currencyItem->currency) }})</span>
-                        </div>
-                        <i data-feather="chevron-down" class="icons" width="14px" height="14px"></i>
-                    </div>
-                @endif
-            @endforeach
+            <div class="custom-dropdown-toggle top-nav-icon-dropdown d-flex align-items-center justify-content-center cursor-pointer" title="{{ trans('update.currency') }}">
+                <span class="js-lang-title d-none">{{ $userCurrency }}</span>
+                <span class="font-16 font-weight-bold">{{ currencySign($userCurrency) }}</span>
+            </div>
         </form>
 
         <div class="custom-dropdown-body py-10">
