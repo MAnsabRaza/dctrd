@@ -18,7 +18,7 @@ class SetCurrencyController extends Controller
         $currency = $request->get('currency');
 
         $multiCurrency = new MultiCurrency();
-        $currencies = $multiCurrency->getCurrencies();
+        $currencies = $multiCurrency->getAllCurrencyOptions();
         $signs = $currencies->pluck('currency')->toArray();
 
         if (in_array($currency, $signs)) {

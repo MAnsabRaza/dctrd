@@ -2197,14 +2197,14 @@ function getAgoraResolutions(): array
 function getUserCurrencyItem($user = null, $userCurrency = null)
 {
     $multiCurrency = new MultiCurrency();
-    $currencies = $multiCurrency->getCurrencies();
+    $currencies = $multiCurrency->getAllCurrencyOptions();
 
     if (empty($userCurrency)) {
         $userCurrency = currency($user);
     }
 
     foreach ($currencies as $currencyItem) {
-        if ($currencyItem->currency == $userCurrency) {
+        if (strtoupper($currencyItem->currency) == strtoupper($userCurrency)) {
             return $currencyItem;
         }
     }
@@ -2215,10 +2215,10 @@ function getUserCurrencyItem($user = null, $userCurrency = null)
 function getCurrencyItemByCurrency($currency) // $currency = USD
 {
     $multiCurrency = new \App\Mixins\Financial\MultiCurrency();
-    $currencies = $multiCurrency->getCurrencies();
+    $currencies = $multiCurrency->getAllCurrencyOptions();
 
     foreach ($currencies as $currencyItem) {
-        if ($currencyItem->currency == $currency) {
+        if (strtoupper($currencyItem->currency) == strtoupper($currency)) {
             return $currencyItem;
         }
     }

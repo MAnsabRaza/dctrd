@@ -1,3 +1,7 @@
+@php
+    $currencyItems = (new \App\Mixins\Financial\MultiCurrency())->getAllCurrencyOptions();
+@endphp
+
 <div class="js-currency-select">
     <form action="/set-currency" method="post">
         {{ csrf_field() }}
@@ -17,9 +21,9 @@
                 </div>
             </div>
 
-            @foreach($currencies as $currencyItem)
+            @foreach($currencyItems as $currencyItem)
                 <div class="js-currency-dropdown-item d-flex align-items-center justify-content-between w-100 px-16 py-8 cursor-pointer {{ ($userCurrency == $currencyItem->currency) ? 'bg-gray-100 font-weight-bold' : '' }}" data-value="{{ $currencyItem->currency }}" data-title="{{ $currencyItem->currency }}">
-                    <span class="text-gray-500 text-dark">{{ currenciesLists($currencyItem->currency) }}</span>
+                    <span class="text-gray-500 text-dark">{{ currenciesLists()[$currencyItem->currency] ?? $currencyItem->currency }}</span>
 
                     <div class="position-relative d-flex-center p-8 bg-gray-200 rounded-8 text-gray-500">
                         {{ currencySign($currencyItem->currency) }}

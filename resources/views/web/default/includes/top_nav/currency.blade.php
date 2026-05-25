@@ -1,10 +1,6 @@
 @php
     $userCurrency = currency();
-    $currencyItems = !empty($currencies) ? collect($currencies) : collect();
-
-    if ($currencyItems->isEmpty()) {
-        $currencyItems = (new \App\Mixins\Financial\MultiCurrency())->getCurrencies();
-    }
+    $currencyItems = (new \App\Mixins\Financial\MultiCurrency())->getAllCurrencyOptions();
 
     if ($currencyItems->isEmpty()) {
         $fallbackCurrency = new \stdClass();
@@ -33,7 +29,7 @@
                 $currencyName = currenciesLists()[$currencyItem->currency] ?? $currencyItem->currency;
             @endphp
 
-            <div class="js-currency-dropdown-item custom-dropdown-body__item cursor-pointer {{ ($userCurrency == $currencyItem->currency) ? 'active' : '' }}" data-value="{{ $currencyItem->currency }}" data-title="{{ $currencyItem->currency }} ({{ currencySign($currencyItem->currency) }})">
+            <div class="js-currency-dropdown-item custom-dropdown-body__item cursor-pointer {{ (strtoupper($userCurrency) == strtoupper($currencyItem->currency)) ? 'active' : '' }}" data-value="{{ $currencyItem->currency }}" data-title="{{ $currencyItem->currency }} ({{ currencySign($currencyItem->currency) }})">
                 <div class="d-flex align-items-center w-100 px-15 py-5 text-gray bg-transparent">
                     <div class="size-32 position-relative d-flex-center bg-gray100 rounded-sm">
                         {{ currencySign($currencyItem->currency) }}

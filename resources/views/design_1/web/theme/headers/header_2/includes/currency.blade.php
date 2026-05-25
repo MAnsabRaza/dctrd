@@ -1,10 +1,6 @@
 @php
     $userCurrency = currency();
-    $currencyItems = !empty($currencies) ? collect($currencies) : collect();
-
-    if ($currencyItems->isEmpty()) {
-        $currencyItems = (new \App\Mixins\Financial\MultiCurrency())->getCurrencies();
-    }
+    $currencyItems = (new \App\Mixins\Financial\MultiCurrency())->getAllCurrencyOptions();
 
     if ($currencyItems->isEmpty()) {
         $fallbackCurrency = new \stdClass();
