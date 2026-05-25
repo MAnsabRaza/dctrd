@@ -381,6 +381,19 @@
         }
     });
 
+    $('body').on('click', '.js-unit-dropdown-item', function () {
+        const $this = $(this);
+        const value = $this.attr('data-value');
+        const name = $this.attr('data-name');
+        const parent = $this.closest('.js-unit-select');
+
+        parent.find(`input[name="${name}"]`).val(value);
+
+        if (!parent.hasClass('js-dont-submit')) {
+            parent.find('form').trigger('submit')
+        }
+    });
+
 
     function handleAccordionArrow($accordion, show, target) {
         const $arrow = $accordion.find('.collapse-arrow-icon[href="' + target + '"]')

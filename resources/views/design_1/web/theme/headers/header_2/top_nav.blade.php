@@ -51,6 +51,9 @@
                     {{-- Currency --}}
                     @include('design_1.web.theme.headers.header_2.includes.currency')
 
+                    {{-- Unit Preferences --}}
+                    @include('design_1.web.theme.headers.header_2.includes.units')
+
                     {{-- Cart --}}
                     @if(!isFreeModeEnabled() || isFreeModeShowCartEnabled())
                         <div class="js-view-cart-drawer position-relative d-flex-center size-32 bg-gray-100 rounded-8 cursor-pointer">
