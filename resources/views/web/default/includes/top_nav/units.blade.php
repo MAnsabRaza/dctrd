@@ -2,10 +2,8 @@
     $unitService = app(\App\Services\UnitConversionService::class);
     $unitPreferences = [];
 
-    if ($unitService->isEnabled()) {
-        foreach (['length', 'mass', 'area'] as $unitType) {
-            $unitPreferences[$unitType] = $unitService->getAvailableUnits($unitType);
-        }
+    foreach (['length', 'mass', 'area'] as $unitType) {
+        $unitPreferences[$unitType] = $unitService->getAvailableUnits($unitType);
     }
 
     $authUser = auth()->check() ? auth()->user() : null;
