@@ -41,7 +41,9 @@
                                                 <td>
                                                     @php($value = data_get($item, $column))
                                                     @if(is_bool($value))
-                                                        <span class="badge badge-{{ $value ? 'success' : 'danger' }}">{{ $value ? trans('admin/main.active') : trans('admin/main.inactive') }}</span>
+                                                        <span class="badge badge-{{ $value ? 'success' : 'danger' }}">
+                                                            {{ $value ? trans('admin/main.active') : trans('admin/main.inactive') }}
+                                                        </span>
                                                     @elseif(is_array($value))
                                                         <code>{{ json_encode($value) }}</code>
                                                     @elseif(isset($selectOptions[$column]) && !empty($value))
@@ -54,14 +56,17 @@
                                             @endforeach
                                             <td width="120">
                                                 @can($config['permission'] . '_edit')
-                                                    <a href="{{ getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/edit") }}" class="btn btn-sm btn-primary">{{ trans('admin/main.edit') }}</a>
+                                                    <a href="{{ getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/edit") }}"
+                                                       class="btn btn-sm btn-primary">
+                                                        {{ trans('admin/main.edit') }}
+                                                    </a>
                                                 @endcan
 
                                                 @can($config['permission'] . '_delete')
                                                     @include('admin.includes.delete_button', [
-                                                        'url' => getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/delete"),
+                                                        'url'      => getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/delete"),
                                                         'btnClass' => 'btn btn-sm btn-danger',
-                                                        'btnText' => trans('admin/main.delete'),
+                                                        'btnText'  => trans('admin/main.delete'),
                                                     ])
                                                 @endcan
                                             </td>
@@ -84,7 +89,10 @@
                                 <h5>{{ !empty($editItem) ? trans('admin/main.edit') : trans('admin/main.create') }}</h5>
                             </div>
                             <div class="card-body">
-                                <form method="post" action="{{ !empty($editItem) ? getAdminPanelUrl("/booking/modules/{$resource}/{$editItem->id}/update") : getAdminPanelUrl("/booking/modules/{$resource}/store") }}">
+                                <form method="post"
+                                      action="{{ !empty($editItem)
+                                          ? getAdminPanelUrl("/booking/modules/{$resource}/{$editItem->id}/update")
+                                          : getAdminPanelUrl("/booking/modules/{$resource}/store") }}">
                                     {{ csrf_field() }}
 
                                     @foreach($config['fields'] as $field)
@@ -99,32 +107,138 @@
                                                 @endif
                                             </label>
 
-                                            @if(in_array($field, $config['booleans'] ?? []))
-                                                <select name="{{ $field }}" class="form-control @error($field) is-invalid @enderror">
-                                                    <option value="1" {{ (string) $value === '1' ? 'selected' : '' }}>{{ trans('admin/main.active') }}</option>
-                                                    <option value="0" {{ (string) $value === '0' ? 'selected' : '' }}>{{ trans('admin/main.inactive') }}</option>
+                                            {{-- ============================================================
+                                                 OPTIONS FIELD — Key/Value rows (same as resource attributes)
+                                                 Save hote waqt JSON ban jata hai: {"min":1000,"max":100000}
+                                            ============================================================ --}}
+                                            @if($field === 'options')
+
+                                                @php
+                                                    $optionRows    = [];
+                                                    $oldOptionKeys = old('option_keys');
+
+                                                    if (is_array($oldOptionKeys)) {
+                                                        // Validation fail hone ke baad old values restore karo
+                                                        $oldOptionValues = old('option_values', []);
+                                                        foreach ($oldOptionKeys as $idx => $k) {
+                                                            $optionRows[] = [
+                                                                'key'   => $k,
+                                                                'value' => $oldOptionValues[$idx] ?? '',
+                                                            ];
+                                                        }
+                                                    } elseif (!empty($editItem)) {
+                                                        // Edit mode — existing options parse karo
+                                                        $existingOptions = data_get($editItem, 'options');
+                                                        if (is_string($existingOptions)) {
+                                                            $existingOptions = json_decode($existingOptions, true) ?: [];
+                                                        }
+                                                        if (is_array($existingOptions)) {
+                                                            foreach ($existingOptions as $k => $v) {
+                                                                $optionRows[] = [
+                                                                    'key'   => $k,
+                                                                    'value' => is_array($v) || is_bool($v) ? json_encode($v) : $v,
+                                                                ];
+                                                            }
+                                                        }
+                                                    }
+
+                                                    // Kam az kam ek empty row zaroor ho
+                                                    if (empty($optionRows)) {
+                                                        $optionRows[] = ['key' => '', 'value' => ''];
+                                                    }
+                                                @endphp
+
+                                                <div id="optionAttributesWrapper">
+                                                    @foreach($optionRows as $optRow)
+                                                        <div class="row align-items-center mb-2 js-option-row">
+                                                            <div class="col-5">
+                                                                <input type="text"
+                                                                       name="option_keys[]"
+                                                                       class="form-control"
+                                                                       value="{{ $optRow['key'] }}"
+                                                                       placeholder="Key (e.g. min)"/>
+                                                            </div>
+                                                            <div class="col-5">
+                                                                <input type="text"
+                                                                       name="option_values[]"
+                                                                       class="form-control"
+                                                                       value="{{ $optRow['value'] }}"
+                                                                       placeholder="Value (e.g. 1000)"/>
+                                                            </div>
+                                                            <div class="col-2 text-right">
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-danger js-remove-option-row">
+                                                                    &times;
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+
+                                                <button type="button"
+                                                        class="btn btn-sm btn-primary mt-2 js-add-option-row">
+                                                    + {{ trans('admin/main.add') }}
+                                                </button>
+
+                                            {{-- Boolean fields — Active/Inactive dropdown --}}
+                                            @elseif(in_array($field, $config['booleans'] ?? []))
+                                                <select name="{{ $field }}"
+                                                        class="form-control @error($field) is-invalid @enderror">
+                                                    <option value="1" {{ (string) $value === '1' ? 'selected' : '' }}>
+                                                        {{ trans('admin/main.active') }}
+                                                    </option>
+                                                    <option value="0" {{ (string) $value === '0' ? 'selected' : '' }}>
+                                                        {{ trans('admin/main.inactive') }}
+                                                    </option>
                                                 </select>
+
+                                            {{-- Select fields — selectOptions se populate --}}
                                             @elseif(isset($selectOptions[$field]))
-                                                <select name="{{ $field }}" data-plugin-selectTwo class="form-control @error($field) is-invalid @enderror">
-                                                    <option value="">{{ trans('admin/main.select') ?? 'Select' }}</option>
+                                                <select name="{{ $field }}"
+                                                        data-plugin-selectTwo
+                                                        class="form-control @error($field) is-invalid @enderror">
+                                                    <option value="">{{ trans('admin/main.select') }}</option>
                                                     @foreach($selectOptions[$field] as $option)
-                                                        <option value="{{ $option['id'] }}" {{ (string) $value === (string) $option['id'] ? 'selected' : '' }}>
+                                                        <option value="{{ $option['id'] }}"
+                                                            {{ (string) $value === (string) $option['id'] ? 'selected' : '' }}>
                                                             {{ $option['title'] }}
                                                         </option>
                                                     @endforeach
                                                 </select>
+
+                                            {{-- JSON fields — raw textarea --}}
                                             @elseif(in_array($field, $config['json'] ?? []))
-                                                <textarea name="{{ $field }}" rows="3" class="form-control @error($field) is-invalid @enderror">{{ is_array($value) ? json_encode($value) : $value }}</textarea>
+                                                <textarea name="{{ $field }}" rows="3"
+                                                          class="form-control @error($field) is-invalid @enderror">{{ is_array($value) ? json_encode($value) : $value }}</textarea>
+
+                                            {{-- Datetime fields --}}
                                             @elseif(str_contains($field, '_at'))
-                                                <input type="datetime-local" name="{{ $field }}" value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d\TH:i') : '' }}" class="form-control @error($field) is-invalid @enderror">
+                                                <input type="datetime-local" name="{{ $field }}"
+                                                       value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d\TH:i') : '' }}"
+                                                       class="form-control @error($field) is-invalid @enderror">
+
+                                            {{-- Date fields --}}
                                             @elseif(str_contains($field, 'date'))
-                                                <input type="date" name="{{ $field }}" value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : '' }}" class="form-control @error($field) is-invalid @enderror">
+                                                <input type="date" name="{{ $field }}"
+                                                       value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : '' }}"
+                                                       class="form-control @error($field) is-invalid @enderror">
+
+                                            {{-- Time fields --}}
                                             @elseif(str_contains($field, 'time'))
-                                                <input type="time" name="{{ $field }}" value="{{ $value }}" class="form-control @error($field) is-invalid @enderror">
+                                                <input type="time" name="{{ $field }}"
+                                                       value="{{ $value }}"
+                                                       class="form-control @error($field) is-invalid @enderror">
+
+                                            {{-- Textarea fields --}}
                                             @elseif(in_array($field, ['message', 'description']))
-                                                <textarea name="{{ $field }}" rows="3" class="form-control @error($field) is-invalid @enderror">{{ $value }}</textarea>
+                                                <textarea name="{{ $field }}" rows="3"
+                                                          class="form-control @error($field) is-invalid @enderror">{{ $value }}</textarea>
+
+                                            {{-- Default text input --}}
                                             @else
-                                                <input type="text" name="{{ $field }}" value="{{ $value }}" class="form-control @error($field) is-invalid @enderror">
+                                                <input type="text" name="{{ $field }}"
+                                                       value="{{ $value }}"
+                                                       class="form-control @error($field) is-invalid @enderror">
                                             @endif
 
                                             @error($field)
@@ -133,13 +247,69 @@
                                         </div>
                                     @endforeach
 
-                                    <button type="submit" class="btn btn-primary">{{ trans('admin/main.save') }}</button>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        @if(!empty($editItem))
+                                            <a href="{{ getAdminPanelUrl("/booking/modules/{$resource}") }}"
+                                               class="btn btn-secondary">
+                                                {{ trans('admin/main.cancel') }}
+                                            </a>
+                                        @else
+                                            <div></div>
+                                        @endif
+
+                                        <button type="submit" class="btn btn-primary">
+                                            {{ trans('admin/main.save') }}
+                                        </button>
+                                    </div>
                                 </form>
                             </div>
                         </div>
                     </div>
                 @endcan
+
             </div>
         </div>
     </section>
 @endsection
+
+@push('scripts_bottom')
+<script>
+(function () {
+    var wrapper = document.getElementById('optionAttributesWrapper');
+
+    if (!wrapper) {
+        return;
+    }
+
+    document.addEventListener('click', function (e) {
+
+        // ── Row add karo ──────────────────────────────────────────
+        if (e.target.closest('.js-add-option-row')) {
+            var firstRow = wrapper.querySelector('.js-option-row');
+            var clone    = firstRow.cloneNode(true);
+
+            clone.querySelectorAll('input').forEach(function (input) {
+                input.value = '';
+            });
+
+            wrapper.appendChild(clone);
+        }
+
+        // ── Row remove karo ───────────────────────────────────────
+        if (e.target.closest('.js-remove-option-row')) {
+            var allRows  = wrapper.querySelectorAll('.js-option-row');
+            var thisRow  = e.target.closest('.js-option-row');
+
+            if (allRows.length > 1) {
+                thisRow.remove();
+            } else {
+                // Last row hai to sirf clear karo, remove mat karo
+                thisRow.querySelectorAll('input').forEach(function (input) {
+                    input.value = '';
+                });
+            }
+        }
+    });
+})();
+</script>
+@endpush

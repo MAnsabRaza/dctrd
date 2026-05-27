@@ -25,16 +25,14 @@ class BookingModuleCrudController extends Controller
             'permission' => 'admin_booking_filters',
             'title'      => 'Booking Filters',
             'columns'    => ['id', 'category_id', 'title', 'type', 'status', 'order'],
-            // ↓ 'order' fields array se hata diya — form mein nahi dikhega
             'fields'     => ['category_id', 'title', 'type', 'options', 'is_required', 'status'],
             'json'       => ['options'],
             'booleans'   => ['is_required', 'status'],
-            'auto_order' => true, // ← yeh flag store() ko batata hai auto-increment karo
+            'auto_order' => true,
             'validation' => [
                 'category_id' => 'required|exists:booking_categories,id',
                 'title'       => 'required|string|max:255',
                 'type'        => 'required|string|in:checkbox,radio,select,text,number,date',
-                'options'     => 'nullable|json',
                 'is_required' => 'nullable|boolean',
                 'status'      => 'nullable|boolean',
             ],
@@ -169,13 +167,10 @@ class BookingModuleCrudController extends Controller
 
         $data = $this->payload($request, $config);
 
-        // ── Auto Order ──────────────────────────────────────────────
-        // Agar config mein auto_order = true hai to max(order) + 1 assign karo
         if (!empty($config['auto_order'])) {
-            $maxOrder    = $config['model']::max('order') ?? 0;
+            $maxOrder      = $config['model']::max('order') ?? 0;
             $data['order'] = $maxOrder + 1;
         }
-        // ────────────────────────────────────────────────────────────
 
         $config['model']::create($data);
 
@@ -202,7 +197,6 @@ class BookingModuleCrudController extends Controller
         $config = $this->config($resource);
         $this->authorize($config['permission'] . '_edit');
 
-        // Edit mein order change nahi hoga — sirf fields jo form mein hain
         $config['model']::findOrFail($id)->update($this->payload($request, $config));
 
         return redirect(getAdminPanelUrl("/booking/modules/{$resource}"))
@@ -228,19 +222,49 @@ class BookingModuleCrudController extends Controller
 
     private function payload(Request $request, array $config): array
     {
+        // Validation — options field ko alag handle karte hain isliye rules se hata do
         if (!empty($config['validation'])) {
-            $request->validate($config['validation']);
+            $rules = $config['validation'];
+            unset($rules['options']); // key-value pairs se build hoga, raw string nahi
+            $request->validate($rules);
         }
 
         $data = $request->only($config['fields']);
 
+        // Boolean fields
         foreach ($config['booleans'] ?? [] as $field) {
             $data[$field] = $request->boolean($field);
         }
 
+        // Options field — key-value pairs se JSON object build karo
+        if (in_array('options', $config['fields'] ?? [])) {
+            $keys   = $request->input('option_keys', []);
+            $values = $request->input('option_values', []);
+            $built  = [];
+
+            foreach ($keys as $i => $key) {
+                $key = trim((string) $key);
+                if ($key === '') {
+                    continue;
+                }
+                $val = $values[$i] ?? null;
+                // Numeric string ko number mein convert karo
+                if (is_numeric($val)) {
+                    $val = $val + 0;
+                }
+                $built[$key] = $val;
+            }
+
+            $data['options'] = !empty($built) ? $built : null;
+        }
+
+        // Baaki JSON fields
         foreach ($config['json'] ?? [] as $field) {
+            if ($field === 'options') {
+                continue; // upar handle ho gaya
+            }
             if (array_key_exists($field, $data) && is_string($data[$field])) {
-                $decoded    = json_decode($data[$field], true);
+                $decoded      = json_decode($data[$field], true);
                 $data[$field] = json_last_error() === JSON_ERROR_NONE ? $decoded : null;
             }
         }
