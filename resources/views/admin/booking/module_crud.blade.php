@@ -94,30 +94,58 @@
 
                                         @endforeach
 
-                                        <td width="140">
+                                       <td width="80px">
 
-                                            @can($config['permission'] . '_edit')
+    <div class="btn-group dropdown table-actions position-relative">
 
-                                                <a href="{{ getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/edit") }}"
-                                                   class="btn btn-sm btn-primary">
+        <button type="button"
+                class="btn-transparent dropdown-toggle"
+                data-toggle="dropdown">
 
-                                                    {{ trans('admin/main.edit') }}
+            <x-iconsax-lin-more
+                class="icons text-gray-500"
+                width="20px"
+                height="20px"/>
+        </button>
 
-                                                </a>
+        <div class="dropdown-menu dropdown-menu-right">
 
-                                            @endcan
+            @can($config['permission'] . '_edit')
 
-                                            @can($config['permission'] . '_delete')
+                <a href="{{ getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/edit") }}"
+                   class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
 
-                                                @include('admin.includes.delete_button', [
-                                                    'url'      => getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/delete"),
-                                                    'btnClass' => 'btn btn-sm btn-danger',
-                                                    'btnText'  => trans('admin/main.delete'),
-                                                ])
+                    <x-iconsax-lin-edit-2
+                        class="icons text-gray-500 mr-2"
+                        width="18px"
+                        height="18px"/>
 
-                                            @endcan
+                    <span class="text-gray-500 font-14">
+                        {{ trans('admin/main.edit') }}
+                    </span>
 
-                                        </td>
+                </a>
+
+            @endcan
+
+            @can($config['permission'] . '_delete')
+
+                @include('admin.includes.delete_button', [
+                    'url'       => getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/delete"),
+                    'btnClass'  => 'dropdown-item text-danger mb-0 py-3 px-0 font-14',
+                    'btnText'   => trans('admin/main.delete'),
+                    'btnIcon'   => 'trash',
+                    'iconType'  => 'lin',
+                    'iconClass' => 'text-danger mr-2'
+                ])
+
+            @endcan
+
+        </div>
+
+    </div>
+
+</td>
 
                                     </tr>
                                 @endforeach
