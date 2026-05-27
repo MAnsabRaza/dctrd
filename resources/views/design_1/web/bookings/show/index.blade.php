@@ -93,7 +93,8 @@
                             </form>
 
                             <button id="bookingFavoriteBtn" type="button" class="btn btn-outline-secondary btn-lg ml-2 d-flex align-items-center" data-slug="{{ $booking->slug }}">
-                                <i class="fa fa-heart mr-2 {{ (!empty($isFavorited) && $isFavorited) ? 'text-danger' : '' }}" aria-hidden="true"></i>
+                                <x-iconsax-lin-heart class="js-empty-fav icons text-gray-500 mr-2 {{ (!empty($isFavorited) && $isFavorited) ? 'd-none' : '' }}" width="20px" height="20px"/>
+                                <x-iconsax-bol-heart class="js-full-fav icons text-danger mr-2 {{ (!empty($isFavorited) && $isFavorited) ? '' : 'd-none' }}" width="20px" height="20px"/>
                                 <span class="font-14">{{ $isFavorited ? 'Favorited' : 'Add to favorites' }}</span>
                             </button>
                         </div>
@@ -372,7 +373,8 @@
 
                 var $btn = $(this);
                 var slug = $btn.data('slug');
-                var $icon = $btn.find('i.fa-heart');
+                var $emptyIcon = $btn.find('.js-empty-fav');
+                var $fullIcon = $btn.find('.js-full-fav');
 
                 if (!slug) {
                     return;
@@ -381,10 +383,12 @@
                 $.get('/bookings/' + slug + '/favorite-toggle')
                     .done(function (res) {
                         if (res && res.status === 'added') {
-                            $icon.addClass('favorited');
+                            $emptyIcon.addClass('d-none');
+                            $fullIcon.removeClass('d-none');
                             $btn.find('span').text('Favorited');
                         } else {
-                            $icon.removeClass('favorited');
+                            $emptyIcon.removeClass('d-none');
+                            $fullIcon.addClass('d-none');
                             $btn.find('span').text('Add to favorites');
                         }
                     })
