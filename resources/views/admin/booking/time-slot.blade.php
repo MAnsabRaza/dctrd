@@ -340,106 +340,101 @@
                                                 {{ csrf_field() }}
 
                                                 {{-- BOOKING --}}
-                                                <div class="form-group">
+                                                {{-- BOOKING --}}
+<div class="form-group">
 
-                                                    <label>
+    <label>
+        {{ trans('admin/main.booking') }}
+        <span class="text-danger">*</span>
+    </label>
 
-                                                        {{ trans('admin/main.booking') }}
+    @php
+        $selectedBooking = !empty($editSlot)
+            ? (string) $editSlot->booking_id
+            : (string) old('booking_id');
+    @endphp
 
-                                                        <span class="text-danger">*</span>
+    <select name="booking_id"
+            id="booking_id"
+            class="form-control @error('booking_id') is-invalid @enderror"
+            required>
 
-                                                    </label>
-
-                                                    @php
-                                                        $selectedBooking = !empty($editSlot)
-                                                            ? (string) $editSlot->booking_id
-                                                            : (string) old('booking_id');
-                                                    @endphp
-
-                                                    <select name="booking_id"
-                                                            id="booking_id"
-                                                            class="form-control @error('booking_id') is-invalid @enderror">
-
-                                                        <option value="">
-                                                            {{ trans('admin/main.select') }}
-                                                        </option>
-
-                                                        @foreach($bookings as $booking)
-
-                                                            <option value="{{ $booking->id }}"
-                                                                {{ $selectedBooking === (string) $booking->id ? 'selected' : '' }}>
-
-                                                                #{{ $booking->id }}
-                                                                -
-                                                                {{ $booking->title }}
-
-                                                            </option>
-
-                                                        @endforeach
-
-                                                    </select>
-
-                                                    @error('booking_id')
-
-                                                        <div class="invalid-feedback">
-                                                            {{ $message }}
-                                                        </div>
-
-                                                    @enderror
-
-                                                </div>
-
-                                                {{-- RESOURCE --}}
-                                                <div class="form-group">
-
-                                                    <label>
-                                                        {{ trans('admin/main.resource') }}
-                                                    </label>
-
-                                                    @php
-                                                        $selectedResource = !empty($editSlot)
-                                                            ? (string) $editSlot->resource_id
-                                                            : (string) old('resource_id');
-                                                    @endphp
-
-                                                   <select name="resource_id"
-        id="resource_id"
-        class="form-control @error('resource_id') is-invalid @enderror">
-
-    <option value="">
-        — Select Resource (Optional) —
-    </option>
-
-    @foreach($resources as $resource)
-
-        <option
-            value="{{ $resource->id }}"
-            data-booking-id="{{ $resource->booking_id }}"
-            {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}>
-
-            #{{ $resource->id }} - {{ $resource->name }}
-
+        <option value="">
+            Select Booking
         </option>
 
-    @endforeach
+        @foreach($bookings as $booking)
 
-</select>
-                                                    <small class="text-muted d-block mt-1"
-                                                           id="resourceHint">
+            <option value="{{ $booking->id }}"
+                {{ $selectedBooking === (string) $booking->id ? 'selected' : '' }}>
 
-                                                        Select booking first to filter resources.
+                #{{ $booking->id }} - {{ $booking->title }}
 
-                                                    </small>
+            </option>
 
-                                                    @error('resource_id')
+        @endforeach
 
-                                                        <div class="invalid-feedback d-block">
-                                                            {{ $message }}
-                                                        </div>
+    </select>
 
-                                                    @enderror
+    @error('booking_id')
 
-                                                </div>
+        <div class="invalid-feedback">
+            {{ $message }}
+        </div>
+
+    @enderror
+
+</div>
+
+                                                {{-- RESOURCE --}}
+                                               {{-- RESOURCE --}}
+<div class="form-group">
+
+    <label>
+        {{ trans('admin/main.resource') }}
+        <span class="text-danger">*</span>
+    </label>
+
+    @php
+        $selectedResource = !empty($editSlot)
+            ? (string) $editSlot->resource_id
+            : (string) old('resource_id');
+    @endphp
+
+    <select name="resource_id"
+            id="resource_id"
+            class="form-control @error('resource_id') is-invalid @enderror"
+            required
+            disabled>
+
+        <option value="">
+            Select Resource
+        </option>
+
+        @foreach($resources as $resource)
+
+            <option
+                value="{{ $resource->id }}"
+                data-booking-id="{{ $resource->booking_id }}"
+                {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}>
+
+                #{{ $resource->id }} - {{ $resource->name }}
+
+            </option>
+
+        @endforeach
+
+    </select>
+
+    @error('resource_id')
+
+        <div class="invalid-feedback d-block">
+            {{ $message }}
+        </div>
+
+    @enderror
+
+</div>
 
                                                 {{-- DAYS --}}
                                                 <div class="form-group">
@@ -620,9 +615,7 @@
 
 @push('scripts')
 <script>
-(function () {
-
-    'use strict';
+document.addEventListener('DOMContentLoaded', function () {
 
     const bookingSelect = document.getElementById('booking_id');
     const resourceSelect = document.getElementById('resource_id');
@@ -632,25 +625,25 @@
     }
 
     // Save all original resource options
-    const allOptions = Array.from(
+    const allResourceOptions = Array.from(
         resourceSelect.querySelectorAll('option[data-booking-id]')
-    ).map(option => option.cloneNode(true));
+    );
 
-    // Current selected resource
+    // Selected resource for edit mode
     let selectedResourceId = "{{ !empty($editSlot) ? $editSlot->resource_id : old('resource_id') }}";
 
-    function renderResources() {
+    function filterResources() {
 
         const bookingId = bookingSelect.value;
 
-        // Clear dropdown completely
+        // Reset dropdown
         resourceSelect.innerHTML = '';
 
         // Default option
         const defaultOption = document.createElement('option');
 
         defaultOption.value = '';
-        defaultOption.textContent = '— Select Resource (Optional) —';
+        defaultOption.textContent = 'Select Resource';
 
         resourceSelect.appendChild(defaultOption);
 
@@ -662,24 +655,24 @@
             return;
         }
 
-        // Filter matching resources
-        const matchedResources = allOptions.filter(option => {
+        // Enable dropdown
+        resourceSelect.disabled = false;
 
-            return String(option.dataset.bookingId) === String(bookingId);
+        // Filter matching resources
+        const matchedResources = allResourceOptions.filter(function (option) {
+
+            return option.dataset.bookingId == bookingId;
 
         });
 
-        // Append matched resources
-        matchedResources.forEach(option => {
+        // Append ONLY matching resources
+        matchedResources.forEach(function (option) {
 
             resourceSelect.appendChild(option.cloneNode(true));
 
         });
 
-        // Enable dropdown
-        resourceSelect.disabled = false;
-
-        // Restore selected value
+        // Restore selected resource in edit mode
         if (selectedResourceId) {
 
             resourceSelect.value = selectedResourceId;
@@ -687,18 +680,18 @@
         }
     }
 
-    // On booking change
+    // Booking change event
     bookingSelect.addEventListener('change', function () {
 
         selectedResourceId = '';
 
-        renderResources();
+        filterResources();
 
     });
 
     // Initial page load
-    renderResources();
+    filterResources();
 
-})();
+});
 </script>
 @endpush
