@@ -169,21 +169,26 @@
                                                 {{ csrf_field() }}
 
                                                 @if(!empty($editReview))
-                                                    {{-- Edit mode: show locked booking + order info --}}
+                                                    {{-- ===== EDIT MODE ===== --}}
+
+                                                    {{-- Booking (locked, display only) --}}
                                                     <div class="form-group">
                                                         <label>{{ trans('admin/main.booking') }}</label>
                                                         <input type="text" class="form-control"
                                                                value="#{{ $editReview->booking->id ?? '' }} - {{ $editReview->booking->title ?? '-' }}"
                                                                disabled/>
                                                     </div>
+
+                                                    {{-- Order (locked, display only) --}}
                                                     <div class="form-group">
                                                         <label>{{ trans('admin/main.order') }}</label>
                                                         <input type="text" class="form-control"
                                                                value="{{ $editReview->order->order_number ?? '-' }}"
                                                                disabled/>
                                                     </div>
+
                                                 @else
-                                                    {{-- Create mode: booking → order cascade selection --}}
+                                                    {{-- ===== CREATE MODE: booking → order cascade ===== --}}
 
                                                     {{-- Step 1: Select Booking --}}
                                                     <div class="form-group">
@@ -210,7 +215,6 @@
                                                             <option value="">— Select Booking First —</option>
                                                             @foreach($orders as $order)
                                                                 @php
-                                                                    // Collect booking IDs linked to this order's items
                                                                     $orderBookingIds = $order->items->pluck('booking_id')->filter()->unique()->implode(',');
                                                                 @endphp
                                                                 <option value="{{ $order->id }}"
@@ -226,7 +230,7 @@
                                                     </div>
                                                 @endif
 
-                                                {{-- Rating --}}
+                                                {{-- ===== RATING ===== --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.rating') }} (1-5) <span class="text-danger">*</span></label>
                                                     <input type="number" name="rating" min="1" max="5"
@@ -235,7 +239,7 @@
                                                     @error('rating') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                                 </div>
 
-                                                {{-- Comment --}}
+                                                {{-- ===== COMMENT ===== --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.comment') }} <span class="text-danger">*</span></label>
                                                     <textarea name="comment" rows="3"
@@ -244,8 +248,8 @@
                                                     @error('comment') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                                 </div>
 
+                                                {{-- ===== SUB-RATINGS ===== --}}
                                                 <div class="row">
-                                                    {{-- Value Rating --}}
                                                     <div class="col-12 col-md-4">
                                                         <div class="form-group">
                                                             <label>{{ trans('admin/main.value_rating') }} <small class="text-muted">(opt)</small></label>
@@ -255,7 +259,6 @@
                                                             @error('value_rating') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                                         </div>
                                                     </div>
-                                                    {{-- Delivery Rating --}}
                                                     <div class="col-12 col-md-4">
                                                         <div class="form-group">
                                                             <label>{{ trans('admin/main.delivery_rating') }} <small class="text-muted">(opt)</small></label>
@@ -265,7 +268,6 @@
                                                             @error('delivery_rating') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                                         </div>
                                                     </div>
-                                                    {{-- Seller Rating --}}
                                                     <div class="col-12 col-md-4">
                                                         <div class="form-group">
                                                             <label>{{ trans('admin/main.seller_rating') }} <small class="text-muted">(opt)</small></label>
@@ -277,7 +279,7 @@
                                                     </div>
                                                 </div>
 
-                                                {{-- Status --}}
+                                                {{-- ===== STATUS ===== --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.status') }} <span class="text-danger">*</span></label>
                                                     @php $selectedStatus = !empty($editReview) ? $editReview->status : old('status', 'pending'); @endphp
@@ -289,7 +291,7 @@
                                                     @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                                 </div>
 
-                                                {{-- Admin Reply --}}
+                                                {{-- ===== ADMIN REPLY ===== --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.reply') }} <small class="text-muted">({{ trans('admin/main.optional') }})</small></label>
                                                     <textarea name="reply" rows="3"
@@ -321,7 +323,7 @@
                                 </div>
                             @endcan
 
-                        </div>
+                        </div>{{-- end .tab-content --}}
                     </div>
                 </div>
             </div>
@@ -340,7 +342,6 @@
 
     if (!bookingSelect || !orderSelect) return; // edit mode — selects not present
 
-    // All <option> elements inside order select (except placeholder)
     var allOrderOptions = Array.prototype.slice.call(
         orderSelect.querySelectorAll('option[data-bookings]')
     );
@@ -348,7 +349,6 @@
     bookingSelect.addEventListener('change', function () {
         var selectedBookingId = this.value;
 
-        // Reset order dropdown
         orderSelect.innerHTML = '';
         orderSelect.disabled  = true;
         orderHint.textContent = 'No orders found for this booking.';
@@ -359,7 +359,6 @@
             return;
         }
 
-        // Filter options whose data-bookings includes the selected booking id
         var matched = allOrderOptions.filter(function (opt) {
             var ids = opt.getAttribute('data-bookings').split(',');
             return ids.indexOf(selectedBookingId) !== -1;
@@ -371,7 +370,6 @@
             return;
         }
 
-        // Prepend placeholder
         var placeholder = document.createElement('option');
         placeholder.value       = '';
         placeholder.textContent = '— Select Order —';
@@ -387,11 +385,9 @@
         orderHint.textContent = matched.length + ' order(s) found.';
     });
 
-    // On page load: if booking_id already selected (old input after validation error), trigger change
     if (bookingSelect.value) {
         bookingSelect.dispatchEvent(new Event('change'));
 
-        // Re-select old order_id after re-render
         var oldOrderId = '{{ old("order_id") }}';
         if (oldOrderId) {
             var opts = orderSelect.querySelectorAll('option');

@@ -23,16 +23,16 @@ class BookingReviewController extends Controller
 
         $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
 
-        // All orders for the dropdown (we load all; JS will filter by booking)
         $orders = BookingOrder::with('items.booking')
                         ->orderBy('id', 'desc')
                         ->get(['id', 'order_number', 'user_id', 'status']);
 
         return view('admin.booking.review', [
-            'pageTitle' => trans('admin/main.admin_booking_review'),
-            'reviews'   => $reviews,
-            'bookings'  => $bookings,
-            'orders'    => $orders,
+            'pageTitle'  => trans('admin/main.admin_booking_review'),
+            'reviews'    => $reviews,
+            'bookings'   => $bookings,
+            'orders'     => $orders,
+            'editReview' => null,
         ]);
     }
 
@@ -117,19 +117,31 @@ class BookingReviewController extends Controller
         $review    = BookingReview::findOrFail($id);
         $wasActive = $review->status === 'active';
 
-        // Edit only allows changing status + reply (booking/order/customer locked)
+        // ✅ All fields are now editable
         $this->validate($request, [
-            'status' => 'required|in:pending,active,rejected',
-            'reply'  => 'nullable|string|max:2000',
+            'rating'          => 'required|integer|min:1|max:5',
+            'comment'         => 'required|string|max:2000',
+            'value_rating'    => 'nullable|integer|min:1|max:5',
+            'delivery_rating' => 'nullable|integer|min:1|max:5',
+            'seller_rating'   => 'nullable|integer|min:1|max:5',
+            'status'          => 'required|in:pending,active,rejected',
+            'reply'           => 'nullable|string|max:2000',
         ]);
+
+        $replyChanged = $request->filled('reply') && $request->reply !== $review->reply;
 
         $review->update([
-            'status'     => $request->status,
-            'reply'      => $request->reply,
-            'replied_at' => $request->filled('reply') ? now() : $review->replied_at,
+            'rating'          => $request->rating,
+            'comment'         => $request->comment,
+            'value_rating'    => $request->value_rating,
+            'delivery_rating' => $request->delivery_rating,
+            'seller_rating'   => $request->seller_rating,
+            'status'          => $request->status,
+            'reply'           => $request->reply,
+            'replied_at'      => $replyChanged ? now() : $review->replied_at,
         ]);
 
-        if (!$wasActive && $review->status === 'active') {
+        if (!$wasActive && $review->fresh()->status === 'active') {
             $this->sendReviewNotification($review);
         }
 

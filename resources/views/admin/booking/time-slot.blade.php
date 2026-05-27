@@ -149,7 +149,7 @@
                                             <form action="{{ getAdminPanelUrl() }}/booking/time-slot/{{ !empty($editSlot) ? $editSlot->id . '/update' : 'store' }}" method="post">
                                                 {{ csrf_field() }}
 
-                                                {{-- Booking --}}
+                                                {{-- Step 1: Booking --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.booking') }} <span class="text-danger">*</span></label>
                                                     @php $selectedBooking = !empty($editSlot) ? (string) $editSlot->booking_id : (string) old('booking_id'); @endphp
@@ -167,27 +167,32 @@
                                                 </div>
 
                                                 {{--
-                                                    Resource wrapper — hidden by default.
-                                                    JS shows it only when:
-                                                      1. A booking is selected AND
-                                                      2. That booking has at least one resource
+                                                    Step 2: Resource
+                                                    - Always visible (same as order dropdown in review)
+                                                    - Disabled by default until a booking is selected
+                                                    - Filters to only show resources of the selected booking
+                                                    - Shows hint text below like review's order dropdown
                                                 --}}
-                                                <div class="form-group" id="resource_wrapper" style="display:none;">
+                                                <div class="form-group">
                                                     <label>{{ trans('admin/main.resource') }}</label>
                                                     @php $selectedResource = !empty($editSlot) ? (string) $editSlot->resource_id : (string) old('resource_id'); @endphp
-                                                    <select name="resource_id" id="resource_id" class="form-control @error('resource_id') is-invalid @enderror">
-                                                        <option value="">{{ trans('admin/main.select') }}</option>
+                                                    <select name="resource_id" id="resource_id"
+                                                            class="form-control @error('resource_id') is-invalid @enderror"
+                                                            disabled>
+                                                        <option value="">— Select Booking First —</option>
                                                         @foreach($resources as $resource)
                                                             <option
                                                                 value="{{ $resource->id }}"
                                                                 data-booking="{{ $resource->booking_id }}"
-                                                                {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}>
+                                                                {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}
+                                                                style="display:none">
                                                                 #{{ $resource->id }} - {{ $resource->name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
+                                                    <small class="text-muted" id="resourceHint">Please select a booking first.</small>
                                                     @error('resource_id')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                        <div class="invalid-feedback d-block">{{ $message }}</div>
                                                     @enderror
                                                 </div>
 
@@ -287,69 +292,84 @@
 (function () {
     'use strict';
 
-    var bookingSelect   = document.getElementById('booking_id');
-    var resourceSelect  = document.getElementById('resource_id');
-    var resourceWrapper = document.getElementById('resource_wrapper');
+    var bookingSelect  = document.getElementById('booking_id');
+    var resourceSelect = document.getElementById('resource_id');
+    var resourceHint   = document.getElementById('resourceHint');
 
-    if (!bookingSelect || !resourceSelect || !resourceWrapper) return;
+    if (!bookingSelect || !resourceSelect) return;
 
-    /*
-     * Detach ALL data-booking options from the DOM right away.
-     * They live only in this array until filterResources() re-inserts
-     * the relevant subset.
-     */
-    var allOptions = Array.from(resourceSelect.querySelectorAll('option[data-booking]'));
-    allOptions.forEach(function (opt) { opt.remove(); });
+    // Cache all resource options that carry a data-booking attribute
+    var allResourceOptions = Array.prototype.slice.call(
+        resourceSelect.querySelectorAll('option[data-booking]')
+    );
 
     function filterResources() {
-        var bookingId = String(bookingSelect.value).trim();
-        var prevValue = String(resourceSelect.value).trim();
+        var selectedBookingId = String(bookingSelect.value).trim();
+        var prevValue         = String(resourceSelect.value).trim();
 
-        /* Remove any options currently inside the select */
-        Array.from(resourceSelect.querySelectorAll('option[data-booking]'))
-             .forEach(function (opt) { opt.remove(); });
+        // Clear current options (keep placeholder)
+        resourceSelect.innerHTML = '';
+        resourceSelect.disabled  = true;
+        resourceHint.textContent = 'No resources found for this booking.';
 
-        /* No booking chosen → hide wrapper, done */
-        if (!bookingId) {
-            resourceWrapper.style.display = 'none';
-            resourceSelect.value = '';
+        // No booking chosen yet
+        if (!selectedBookingId) {
+            resourceSelect.innerHTML = '<option value="">— Select Booking First —</option>';
+            resourceHint.textContent = 'Please select a booking first.';
             return;
         }
 
-        /* Find options that belong to this booking */
-        var matched = allOptions.filter(function (opt) {
-            return String(opt.getAttribute('data-booking')).trim() === bookingId;
+        // Filter options belonging to the selected booking
+        var matched = allResourceOptions.filter(function (opt) {
+            return String(opt.getAttribute('data-booking')).trim() === selectedBookingId;
         });
 
-        /* Booking has no resources → hide wrapper, done */
+        // Booking has no resources
         if (matched.length === 0) {
-            resourceWrapper.style.display = 'none';
-            resourceSelect.value = '';
+            resourceSelect.innerHTML = '<option value="">— No resources for this booking —</option>';
+            resourceHint.textContent = 'No resources found for this booking.';
             return;
         }
 
-        /* Insert matching options and reveal the wrapper */
-        matched.forEach(function (opt) {
-            resourceSelect.appendChild(opt);
-        });
-        resourceWrapper.style.display = 'block';
+        // Add placeholder then matching options
+        var placeholder = document.createElement('option');
+        placeholder.value       = '';
+        placeholder.textContent = '— Select Resource (Optional) —';
+        resourceSelect.appendChild(placeholder);
 
-        /* Restore previous selection only if it is still in the filtered list */
+        matched.forEach(function (opt) {
+            var clone = opt.cloneNode(true);
+            clone.style.display = '';
+            resourceSelect.appendChild(clone);
+        });
+
+        resourceSelect.disabled  = false;
+        resourceHint.textContent = matched.length + ' resource(s) found.';
+
+        // Restore previously selected value if still valid
         var stillValid = matched.some(function (opt) {
             return String(opt.value).trim() === prevValue;
         });
         resourceSelect.value = stillValid ? prevValue : '';
     }
 
-    /* React to booking changes */
+    // Fire on booking change
     bookingSelect.addEventListener('change', filterResources);
 
-    /*
-     * Run once on page load.
-     * Covers: edit mode (booking pre-selected) and
-     * validation-failed repopulation (old() values restored by Blade).
-     */
-    filterResources();
+    // Fire on page load — handles edit mode & validation-failed repopulation
+    if (bookingSelect.value) {
+        filterResources();
+
+        // Restore old resource_id after validation failure
+        var oldResourceId = '{{ old("resource_id") }}';
+        if (oldResourceId) {
+            var opts = resourceSelect.querySelectorAll('option');
+            opts.forEach(function (o) {
+                if (o.value === oldResourceId) o.selected = true;
+            });
+        }
+    }
+
 })();
 </script>
 @endpush
