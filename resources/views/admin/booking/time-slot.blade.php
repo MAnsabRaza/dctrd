@@ -402,31 +402,28 @@
                                                             : (string) old('resource_id');
                                                     @endphp
 
-                                                    <select name="resource_id"
-                                                            id="resource_id"
-                                                            class="form-control @error('resource_id') is-invalid @enderror">
+                                                   <select name="resource_id"
+        id="resource_id"
+        class="form-control @error('resource_id') is-invalid @enderror">
 
-                                                        <option value="">
-                                                            — Select Resource (Optional) —
-                                                        </option>
+    <option value="">
+        — Select Resource (Optional) —
+    </option>
 
-                                                        @foreach($resources as $resource)
+    @foreach($resources as $resource)
 
-                                                            <option
-                                                                value="{{ $resource->id }}"
-                                                                data-booking-id="{{ $resource->booking_id }}"
-                                                                {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}>
+        <option
+            value="{{ $resource->id }}"
+            data-booking-id="{{ $resource->booking_id }}"
+            {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}>
 
-                                                                #{{ $resource->id }}
-                                                                -
-                                                                {{ $resource->name }}
+            #{{ $resource->id }} - {{ $resource->name }}
 
-                                                            </option>
+        </option>
 
-                                                        @endforeach
+    @endforeach
 
-                                                    </select>
-
+</select>
                                                     <small class="text-muted d-block mt-1"
                                                            id="resourceHint">
 
@@ -627,102 +624,80 @@
 
     'use strict';
 
-    var bookingSelect  = document.getElementById('booking_id');
-    var resourceSelect = document.getElementById('resource_id');
-    var resourceHint   = document.getElementById('resourceHint');
+    const bookingSelect = document.getElementById('booking_id');
+    const resourceSelect = document.getElementById('resource_id');
 
     if (!bookingSelect || !resourceSelect) {
         return;
     }
 
-    // Save original resource options
-    var originalOptions = Array.from(
+    // Save all original resource options
+    const allOptions = Array.from(
         resourceSelect.querySelectorAll('option[data-booking-id]')
-    );
+    ).map(option => option.cloneNode(true));
 
     // Current selected resource
-    var currentResourceId = "{{ !empty($editSlot) ? $editSlot->resource_id : old('resource_id') }}";
+    let selectedResourceId = "{{ !empty($editSlot) ? $editSlot->resource_id : old('resource_id') }}";
 
-    function filterResources() {
+    function renderResources() {
 
-        var bookingId = String(
-            bookingSelect.value || ''
-        ).trim();
+        const bookingId = bookingSelect.value;
 
-        // Reset
+        // Clear dropdown completely
         resourceSelect.innerHTML = '';
 
-        // Placeholder
-        var placeholder = document.createElement('option');
+        // Default option
+        const defaultOption = document.createElement('option');
 
-        placeholder.value = '';
-        placeholder.textContent = '— Select Resource (Optional) —';
+        defaultOption.value = '';
+        defaultOption.textContent = '— Select Resource (Optional) —';
 
-        resourceSelect.appendChild(placeholder);
+        resourceSelect.appendChild(defaultOption);
 
-        // No booking
+        // No booking selected
         if (!bookingId) {
 
             resourceSelect.disabled = true;
 
-            resourceHint.textContent =
-                'Please select a booking first.';
-
             return;
         }
 
-        // Match resources
-        var matchedResources = originalOptions.filter(function (option) {
+        // Filter matching resources
+        const matchedResources = allOptions.filter(option => {
 
-            return String(
-                option.getAttribute('data-booking-id')
-            ).trim() === bookingId;
+            return String(option.dataset.bookingId) === String(bookingId);
 
         });
 
-        // No resources
-        if (matchedResources.length === 0) {
+        // Append matched resources
+        matchedResources.forEach(option => {
 
-            resourceSelect.disabled = true;
-
-            resourceHint.textContent =
-                'No resources available for selected booking.';
-
-            return;
-        }
-
-        // Add matched resources
-        matchedResources.forEach(function (option) {
-
-            var clone = option.cloneNode(true);
-
-            resourceSelect.appendChild(clone);
+            resourceSelect.appendChild(option.cloneNode(true));
 
         });
 
+        // Enable dropdown
         resourceSelect.disabled = false;
 
-        resourceHint.textContent =
-            matchedResources.length + ' resource(s) found.';
+        // Restore selected value
+        if (selectedResourceId) {
 
-        // Restore selected resource
-        if (currentResourceId) {
+            resourceSelect.value = selectedResourceId;
 
-            resourceSelect.value = currentResourceId;
         }
     }
 
-    // Booking change
+    // On booking change
     bookingSelect.addEventListener('change', function () {
 
-        currentResourceId = '';
+        selectedResourceId = '';
 
-        filterResources();
+        renderResources();
 
     });
 
-    // Initial load
-    filterResources();
+    // Initial page load
+    renderResources();
 
 })();
 </script>
