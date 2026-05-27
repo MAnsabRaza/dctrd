@@ -386,8 +386,7 @@
 
 </div>
 
-                                                {{-- RESOURCE --}}
-                                               {{-- RESOURCE --}}
+   {{-- RESOURCE --}}
 <div class="form-group">
 
     <label>
@@ -404,8 +403,7 @@
     <select name="resource_id"
             id="resource_id"
             class="form-control @error('resource_id') is-invalid @enderror"
-            required
-            disabled>
+            required>
 
         <option value="">
             Select Resource
@@ -415,8 +413,8 @@
 
             <option
                 value="{{ $resource->id }}"
-                data-booking-id="{{ $resource->booking_id }}"
-                {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}>
+                data-booking="{{ $resource->booking_id }}"
+                {{ $selectedResource == $resource->id ? 'selected' : '' }}>
 
                 #{{ $resource->id }} - {{ $resource->name }}
 
@@ -615,81 +613,58 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+$(document).ready(function () {
 
-    const bookingSelect = document.getElementById('booking_id');
-    const resourceSelect = document.getElementById('resource_id');
-
-    if (!bookingSelect || !resourceSelect) {
-        return;
-    }
-
-    // Save all original resource options
-    const allResourceOptions = Array.from(
-        resourceSelect.querySelectorAll('option[data-booking-id]')
-    );
-
-    // Selected resource for edit mode
-    let selectedResourceId = "{{ !empty($editSlot) ? $editSlot->resource_id : old('resource_id') }}";
+    const bookingSelect = $('#booking_id');
+    const resourceSelect = $('#resource_id');
 
     function filterResources() {
 
-        const bookingId = bookingSelect.value;
+        let bookingId = bookingSelect.val();
 
-        // Reset dropdown
-        resourceSelect.innerHTML = '';
+        // Reset resource
+        resourceSelect.val('');
 
-        // Default option
-        const defaultOption = document.createElement('option');
+        // Hide all resources first
+        resourceSelect.find('option').hide();
 
-        defaultOption.value = '';
-        defaultOption.textContent = 'Select Resource';
-
-        resourceSelect.appendChild(defaultOption);
+        // Always show default option
+        resourceSelect.find('option[value=""]').show();
 
         // No booking selected
         if (!bookingId) {
 
-            resourceSelect.disabled = true;
+            resourceSelect.prop('disabled', true);
 
             return;
         }
 
-        // Enable dropdown
-        resourceSelect.disabled = false;
+        // Enable resource dropdown
+        resourceSelect.prop('disabled', false);
 
-        // Filter matching resources
-        const matchedResources = allResourceOptions.filter(function (option) {
+        // Show ONLY matching booking resources
+        resourceSelect.find('option').each(function () {
 
-            return option.dataset.bookingId == bookingId;
+            let optionBookingId = $(this).data('booking');
+
+            if (String(optionBookingId) === String(bookingId)) {
+
+                $(this).show();
+
+            }
 
         });
 
-        // Append ONLY matching resources
-        matchedResources.forEach(function (option) {
-
-            resourceSelect.appendChild(option.cloneNode(true));
-
-        });
-
-        // Restore selected resource in edit mode
-        if (selectedResourceId) {
-
-            resourceSelect.value = selectedResourceId;
-
-        }
     }
 
-    // Booking change event
-    bookingSelect.addEventListener('change', function () {
-
-        selectedResourceId = '';
+    // Booking change
+    bookingSelect.on('change', function () {
 
         filterResources();
 
     });
 
-    // Initial page load
+    // Initial load
     filterResources();
 
 });
