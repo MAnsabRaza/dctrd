@@ -53,6 +53,7 @@
                                 </tr>
 
                                 @foreach($items as $item)
+
                                     <tr>
 
                                         @foreach($config['columns'] as $column)
@@ -94,60 +95,62 @@
 
                                         @endforeach
 
-                                       <td width="80px">
+                                        {{-- ACTIONS --}}
+                                        <td width="80px">
 
-    <div class="btn-group dropdown table-actions position-relative">
+                                            <div class="btn-group dropdown table-actions position-relative">
 
-        <button type="button"
-                class="btn-transparent dropdown-toggle"
-                data-toggle="dropdown">
+                                                <button type="button"
+                                                        class="btn-transparent dropdown-toggle"
+                                                        data-toggle="dropdown">
 
-            <x-iconsax-lin-more
-                class="icons text-gray-500"
-                width="20px"
-                height="20px"/>
-        </button>
+                                                    <x-iconsax-lin-more
+                                                        class="icons text-gray-500"
+                                                        width="20px"
+                                                        height="20px"/>
+                                                </button>
 
-        <div class="dropdown-menu dropdown-menu-right">
+                                                <div class="dropdown-menu dropdown-menu-right">
 
-            @can($config['permission'] . '_edit')
+                                                    @can($config['permission'] . '_edit')
 
-                <a href="{{ getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/edit") }}"
-                   class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
+                                                        <a href="{{ getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/edit") }}"
+                                                           class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
 
-                    <x-iconsax-lin-edit-2
-                        class="icons text-gray-500 mr-2"
-                        width="18px"
-                        height="18px"/>
+                                                            <x-iconsax-lin-edit-2
+                                                                class="icons text-gray-500 mr-2"
+                                                                width="18px"
+                                                                height="18px"/>
 
-                    <span class="text-gray-500 font-14">
-                        {{ trans('admin/main.edit') }}
-                    </span>
+                                                            <span class="text-gray-500 font-14">
+                                                                {{ trans('admin/main.edit') }}
+                                                            </span>
 
-                </a>
+                                                        </a>
 
-            @endcan
+                                                    @endcan
 
-            @can($config['permission'] . '_delete')
+                                                    @can($config['permission'] . '_delete')
 
-                @include('admin.includes.delete_button', [
-                    'url'       => getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/delete"),
-                    'btnClass'  => 'dropdown-item text-danger mb-0 py-3 px-0 font-14',
-                    'btnText'   => trans('admin/main.delete'),
-                    'btnIcon'   => 'trash',
-                    'iconType'  => 'lin',
-                    'iconClass' => 'text-danger mr-2'
-                ])
+                                                        @include('admin.includes.delete_button', [
+                                                            'url'       => getAdminPanelUrl("/booking/modules/{$resource}/{$item->id}/delete"),
+                                                            'btnClass'  => 'dropdown-item text-danger mb-0 py-3 px-0 font-14',
+                                                            'btnText'   => trans('admin/main.delete'),
+                                                            'btnIcon'   => 'trash',
+                                                            'iconType'  => 'lin',
+                                                            'iconClass' => 'text-danger mr-2'
+                                                        ])
 
-            @endcan
+                                                    @endcan
 
-        </div>
+                                                </div>
 
-    </div>
+                                            </div>
 
-</td>
+                                        </td>
 
                                     </tr>
+
                                 @endforeach
 
                             </table>
@@ -174,7 +177,9 @@
 
                         <div class="card-header">
                             <h5>
-                                {{ !empty($editItem) ? trans('admin/main.edit') : trans('admin/main.create') }}
+                                {{ !empty($editItem)
+                                    ? trans('admin/main.edit')
+                                    : trans('admin/main.create') }}
                             </h5>
                         </div>
 
@@ -214,8 +219,111 @@
 
                                         </label>
 
-                                        {{-- OPTIONS FIELD --}}
-                                        @if($field === 'options')
+                                        {{-- CONDITIONS & ACTIONS --}}
+                                        @if(in_array($field, ['conditions', 'actions']))
+
+                                            @php
+
+                                                $rows = [];
+
+                                                $oldKeys = old($field . '_keys');
+
+                                                if (is_array($oldKeys)) {
+
+                                                    $oldValues = old($field . '_values', []);
+
+                                                    foreach ($oldKeys as $idx => $k) {
+
+                                                        $rows[] = [
+                                                            'key'   => $k,
+                                                            'value' => $oldValues[$idx] ?? '',
+                                                        ];
+                                                    }
+
+                                                } elseif (!empty($editItem)) {
+
+                                                    $existingData = data_get($editItem, $field);
+
+                                                    if (is_string($existingData)) {
+                                                        $existingData = json_decode($existingData, true) ?: [];
+                                                    }
+
+                                                    if (is_array($existingData)) {
+
+                                                        foreach ($existingData as $k => $v) {
+
+                                                            $rows[] = [
+                                                                'key'   => $k,
+                                                                'value' => is_array($v) || is_bool($v)
+                                                                    ? json_encode($v)
+                                                                    : $v,
+                                                            ];
+                                                        }
+                                                    }
+                                                }
+
+                                                if (empty($rows)) {
+
+                                                    $rows[] = [
+                                                        'key'   => '',
+                                                        'value' => '',
+                                                    ];
+                                                }
+
+                                            @endphp
+
+                                            <div id="{{ $field }}Wrapper">
+
+                                                @foreach($rows as $row)
+
+                                                    <div class="row align-items-center mb-2 js-{{ $field }}-row">
+
+                                                        <div class="col-5">
+
+                                                            <input type="text"
+                                                                   name="{{ $field }}_keys[]"
+                                                                   class="form-control"
+                                                                   value="{{ $row['key'] }}"
+                                                                   placeholder="Key">
+
+                                                        </div>
+
+                                                        <div class="col-5">
+
+                                                            <input type="text"
+                                                                   name="{{ $field }}_values[]"
+                                                                   class="form-control"
+                                                                   value="{{ $row['value'] }}"
+                                                                   placeholder="Value">
+
+                                                        </div>
+
+                                                        <div class="col-2 text-right">
+
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-danger js-remove-{{ $field }}-row">
+
+                                                                &times;
+
+                                                            </button>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                @endforeach
+
+                                            </div>
+
+                                            <button type="button"
+                                                    class="btn btn-sm btn-primary mt-2 js-add-{{ $field }}-row">
+
+                                                + {{ trans('admin/main.add') }}
+
+                                            </button>
+
+                                        {{-- OPTIONS --}}
+                                        @elseif($field === 'options')
 
                                             @php
                                                 $optionRows = [];
@@ -272,19 +380,23 @@
                                                     <div class="row align-items-center mb-2 js-option-row">
 
                                                         <div class="col-5">
+
                                                             <input type="text"
                                                                    name="option_keys[]"
                                                                    class="form-control"
                                                                    value="{{ $optRow['key'] }}"
-                                                                   placeholder="Key (e.g. min)">
+                                                                   placeholder="Key">
+
                                                         </div>
 
                                                         <div class="col-5">
+
                                                             <input type="text"
                                                                    name="option_values[]"
                                                                    class="form-control"
                                                                    value="{{ $optRow['value'] }}"
-                                                                   placeholder="Value (e.g. 1000)">
+                                                                   placeholder="Value">
+
                                                         </div>
 
                                                         <div class="col-2 text-right">
@@ -311,7 +423,7 @@
 
                                             </button>
 
-                                        {{-- BOOLEAN FIELD --}}
+                                        {{-- BOOLEAN --}}
                                         @elseif(in_array($field, $config['booleans'] ?? []))
 
                                             <select name="{{ $field }}"
@@ -333,7 +445,7 @@
 
                                             </select>
 
-                                        {{-- SELECT FIELD --}}
+                                        {{-- SELECT --}}
                                         @elseif(isset($selectOptions[$field]))
 
                                             <select name="{{ $field }}"
@@ -357,7 +469,7 @@
 
                                             </select>
 
-                                        {{-- JSON FIELD --}}
+                                        {{-- JSON --}}
                                         @elseif(in_array($field, $config['json'] ?? []))
 
                                             <textarea name="{{ $field }}"
@@ -395,7 +507,7 @@
                                                       rows="3"
                                                       class="form-control @error($field) is-invalid @enderror">{{ $value }}</textarea>
 
-                                        {{-- DEFAULT INPUT --}}
+                                        {{-- DEFAULT --}}
                                         @else
 
                                             <input type="text"
@@ -434,8 +546,11 @@
 
                                     @endif
 
-                                    <button type="submit" class="btn btn-primary">
+                                    <button type="submit"
+                                            class="btn btn-primary">
+
                                         {{ trans('admin/main.save') }}
+
                                     </button>
 
                                 </div>
@@ -454,18 +569,15 @@
 @endsection
 
 @push('scripts_bottom')
+
 <script>
 (function () {
 
+    // OPTIONS
     var wrapper = document.getElementById('optionAttributesWrapper');
-
-    if (!wrapper) {
-        return;
-    }
 
     document.addEventListener('click', function (e) {
 
-        // ADD ROW
         if (e.target.closest('.js-add-option-row')) {
 
             var firstRow = wrapper.querySelector('.js-option-row');
@@ -479,7 +591,6 @@
             wrapper.appendChild(clone);
         }
 
-        // REMOVE ROW
         if (e.target.closest('.js-remove-option-row')) {
 
             var allRows = wrapper.querySelectorAll('.js-option-row');
@@ -499,6 +610,51 @@
         }
     });
 
+    // CONDITIONS & ACTIONS
+    ['conditions', 'actions'].forEach(function(field) {
+
+        document.addEventListener('click', function (e) {
+
+            if (e.target.closest('.js-add-' + field + '-row')) {
+
+                var wrapper = document.getElementById(field + 'Wrapper');
+
+                var firstRow = wrapper.querySelector('.js-' + field + '-row');
+
+                var clone = firstRow.cloneNode(true);
+
+                clone.querySelectorAll('input').forEach(function(input) {
+                    input.value = '';
+                });
+
+                wrapper.appendChild(clone);
+            }
+
+            if (e.target.closest('.js-remove-' + field + '-row')) {
+
+                var wrapper = document.getElementById(field + 'Wrapper');
+
+                var rows = wrapper.querySelectorAll('.js-' + field + '-row');
+
+                var row = e.target.closest('.js-' + field + '-row');
+
+                if (rows.length > 1) {
+
+                    row.remove();
+
+                } else {
+
+                    row.querySelectorAll('input').forEach(function(input) {
+                        input.value = '';
+                    });
+                }
+            }
+
+        });
+
+    });
+
 })();
 </script>
+
 @endpush
