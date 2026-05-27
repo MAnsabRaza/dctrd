@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\BookingOrder;
 use App\Models\BookingReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,19 +17,23 @@ class BookingReviewController extends Controller
 
         removeContentLocale();
 
-        $reviews  = BookingReview::with(['booking', 'customer'])
+        $reviews  = BookingReview::with(['booking', 'customer', 'order'])
                         ->orderBy('id', 'desc')
                         ->paginate(20);
 
         $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
 
-        $data = [
+        // All orders for the dropdown (we load all; JS will filter by booking)
+        $orders = BookingOrder::with('items.booking')
+                        ->orderBy('id', 'desc')
+                        ->get(['id', 'order_number', 'user_id', 'status']);
+
+        return view('admin.booking.review', [
             'pageTitle' => trans('admin/main.admin_booking_review'),
             'reviews'   => $reviews,
             'bookings'  => $bookings,
-        ];
-
-        return view('admin.booking.review', $data);
+            'orders'    => $orders,
+        ]);
     }
 
     public function store(Request $request)
@@ -37,6 +42,7 @@ class BookingReviewController extends Controller
 
         $this->validate($request, [
             'booking_id'      => 'required|exists:bookings,id',
+            'order_id'        => 'required|exists:booking_orders,id',
             'rating'          => 'required|integer|min:1|max:5',
             'comment'         => 'required|string|max:2000',
             'value_rating'    => 'nullable|integer|min:1|max:5',
@@ -46,10 +52,21 @@ class BookingReviewController extends Controller
             'reply'           => 'nullable|string|max:2000',
         ]);
 
+        // Unique check: one review per customer per order
+        $alreadyExists = BookingReview::where('order_id', $request->order_id)
+                                      ->where('customer_id', Auth::id())
+                                      ->exists();
+
+        if ($alreadyExists) {
+            return back()->withInput()->withErrors([
+                'order_id' => 'A review for this order already exists.',
+            ]);
+        }
+
         $review = BookingReview::create([
             'booking_id'      => $request->booking_id,
-            'order_id'        => $request->order_id ?? 0,
-            'customer_id'     => Auth::id(),   // ← current logged-in user
+            'order_id'        => $request->order_id,
+            'customer_id'     => Auth::id(),
             'rating'          => $request->rating,
             'comment'         => $request->comment,
             'value_rating'    => $request->value_rating,
@@ -57,7 +74,7 @@ class BookingReviewController extends Controller
             'seller_rating'   => $request->seller_rating,
             'status'          => $request->status,
             'reply'           => $request->reply,
-            'replied_at'      => $request->reply ? now() : null,
+            'replied_at'      => $request->filled('reply') ? now() : null,
         ]);
 
         if ($review->status === 'active') {
@@ -72,29 +89,35 @@ class BookingReviewController extends Controller
     {
         $this->authorize('admin_booking_review_edit');
 
-        $editReview = BookingReview::with(['booking', 'customer'])->findOrFail($id);
-        $reviews    = BookingReview::with(['booking', 'customer'])
+        $editReview = BookingReview::with(['booking', 'customer', 'order'])->findOrFail($id);
+
+        $reviews  = BookingReview::with(['booking', 'customer', 'order'])
                         ->orderBy('id', 'desc')
                         ->paginate(20);
-        $bookings   = Booking::orderBy('id', 'desc')->get(['id', 'title']);
 
-        $data = [
+        $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
+
+        $orders = BookingOrder::with('items.booking')
+                        ->orderBy('id', 'desc')
+                        ->get(['id', 'order_number', 'user_id', 'status']);
+
+        return view('admin.booking.review', [
             'pageTitle'  => trans('admin/main.admin_booking_review'),
             'reviews'    => $reviews,
             'editReview' => $editReview,
             'bookings'   => $bookings,
-        ];
-
-        return view('admin.booking.review', $data);
+            'orders'     => $orders,
+        ]);
     }
 
     public function update(Request $request, $id)
     {
         $this->authorize('admin_booking_review_edit');
 
-        $review = BookingReview::findOrFail($id);
+        $review    = BookingReview::findOrFail($id);
         $wasActive = $review->status === 'active';
 
+        // Edit only allows changing status + reply (booking/order/customer locked)
         $this->validate($request, [
             'status' => 'required|in:pending,active,rejected',
             'reply'  => 'nullable|string|max:2000',
@@ -103,7 +126,7 @@ class BookingReviewController extends Controller
         $review->update([
             'status'     => $request->status,
             'reply'      => $request->reply,
-            'replied_at' => $request->reply ? now() : $review->replied_at,
+            'replied_at' => $request->filled('reply') ? now() : $review->replied_at,
         ]);
 
         if (!$wasActive && $review->status === 'active') {
@@ -118,8 +141,7 @@ class BookingReviewController extends Controller
     {
         $this->authorize('admin_booking_review_delete');
 
-        $review = BookingReview::findOrFail($id);
-        $review->delete();
+        BookingReview::findOrFail($id)->delete();
 
         return redirect(getAdminPanelUrl('/booking/review'))
             ->with('success', trans('admin/main.booking_review_deleted_successfully'));
@@ -134,9 +156,9 @@ class BookingReviewController extends Controller
         }
 
         $notifyOptions = [
-            '[c.title]' => $review->booking->title,
+            '[c.title]'    => $review->booking->title,
             '[item_title]' => $review->booking->title,
-            '[u.name]' => optional($review->customer)->full_name,
+            '[u.name]'     => optional($review->customer)->full_name,
             '[rate.count]' => $review->rating,
         ];
 

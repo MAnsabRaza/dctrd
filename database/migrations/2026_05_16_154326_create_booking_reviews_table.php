@@ -27,8 +27,8 @@ return new class extends Migration
             $table->text('reply')->nullable();
             $table->timestamp('replied_at')->nullable();
             $table->timestamps();
-
             $table->unique(['order_id', 'customer_id']);
+            $table->foreign('order_id')->references('id')->on('booking_orders')->onDelete('cascade');
             $table->foreign('booking_id')->references('id')->on('bookings')->onDelete('cascade');
             $table->foreign('customer_id')->references('id')->on('users')->onDelete('cascade');
         });

@@ -27,7 +27,6 @@
                         @endphp
 
                         <ul class="nav nav-pills" id="reviewTab" role="tablist">
-
                             @can('admin_booking_review')
                                 <li class="nav-item">
                                     <a class="nav-link {{ $createActive ? '' : 'active' }}"
@@ -36,7 +35,6 @@
                                     </a>
                                 </li>
                             @endcan
-
                             @can('admin_booking_review_create')
                                 <li class="nav-item">
                                     <a class="nav-link {{ $createActive ? 'active' : '' }}"
@@ -45,12 +43,11 @@
                                     </a>
                                 </li>
                             @endcan
-
                         </ul>
 
                         <div class="tab-content mt-3">
 
-                            {{-- LIST TAB --}}
+                            {{-- =================== LIST TAB =================== --}}
                             @can('admin_booking_review')
                                 <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}"
                                      id="listTab" role="tabpanel">
@@ -61,6 +58,7 @@
                                                 <thead>
                                                     <tr>
                                                         <th>#</th>
+                                                        <th>{{ trans('admin/main.order') }}</th>
                                                         <th>{{ trans('admin/main.booking') }}</th>
                                                         <th>{{ trans('admin/main.customer') }}</th>
                                                         <th class="text-center">{{ trans('admin/main.rating') }}</th>
@@ -75,8 +73,15 @@
                                                         <tr>
                                                             <td>{{ $review->id }}</td>
                                                             <td>
+                                                                @if($review->order)
+                                                                    <span class="badge badge-light">{{ $review->order->order_number }}</span>
+                                                                @else
+                                                                    <span class="text-muted">-</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>
                                                                 @if($review->booking)
-                                                                    #{{ $review->booking->id }} - {{ $review->booking->title }}
+                                                                    #{{ $review->booking->id }} - {{ Str::limit($review->booking->title, 30) }}
                                                                 @else
                                                                     <span class="text-muted">-</span>
                                                                 @endif
@@ -125,7 +130,6 @@
                                                                                 <span class="text-gray-500 font-14">{{ trans('admin/main.edit') }}</span>
                                                                             </a>
                                                                         @endcan
-
                                                                         @can('admin_booking_review_delete')
                                                                             @include('admin.includes.delete_button', [
                                                                                 'url'       => getAdminPanelUrl() . '/booking/review/' . $review->id . '/delete',
@@ -133,7 +137,7 @@
                                                                                 'btnText'   => trans('admin/main.delete'),
                                                                                 'btnIcon'   => 'trash',
                                                                                 'iconType'  => 'lin',
-                                                                                'iconClass' => 'text-danger mr-2'
+                                                                                'iconClass' => 'text-danger mr-2',
                                                                             ])
                                                                         @endcan
                                                                     </div>
@@ -144,9 +148,7 @@
                                                 </tbody>
                                             </table>
                                         </div>
-
                                         {{ $reviews->links() }}
-
                                     @else
                                         <div class="text-center text-gray-500 mt-30">
                                             {{ trans('admin/main.no_result') }}
@@ -155,33 +157,75 @@
                                 </div>
                             @endcan
 
-                            {{-- CREATE / EDIT TAB --}}
+                            {{-- =================== CREATE / EDIT TAB =================== --}}
                             @can('admin_booking_review_create')
                                 <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}"
                                      id="createTab" role="tabpanel">
                                     <div class="row">
                                         <div class="col-12 col-md-6">
+
                                             <form action="{{ getAdminPanelUrl() }}/booking/review/{{ !empty($editReview) ? $editReview->id . '/update' : 'store' }}"
                                                   method="post">
                                                 {{ csrf_field() }}
 
-                                                {{-- Booking --}}
-                                                <div class="form-group">
-                                                    <label>{{ trans('admin/main.booking') }} <span class="text-danger">*</span></label>
-                                                    @php $selectedBooking = !empty($editReview) ? $editReview->booking_id : old('booking_id'); @endphp
-                                                    <select name="booking_id" class="form-control @error('booking_id') is-invalid @enderror">
-                                                        <option value="">{{ trans('admin/main.select') }}</option>
-                                                        @foreach($bookings as $booking)
-                                                            <option value="{{ $booking->id }}"
-                                                                {{ (string)$selectedBooking === (string)$booking->id ? 'selected' : '' }}>
-                                                                #{{ $booking->id }} - {{ $booking->title }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('booking_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                                </div>
+                                                @if(!empty($editReview))
+                                                    {{-- Edit mode: show locked booking + order info --}}
+                                                    <div class="form-group">
+                                                        <label>{{ trans('admin/main.booking') }}</label>
+                                                        <input type="text" class="form-control"
+                                                               value="#{{ $editReview->booking->id ?? '' }} - {{ $editReview->booking->title ?? '-' }}"
+                                                               disabled/>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>{{ trans('admin/main.order') }}</label>
+                                                        <input type="text" class="form-control"
+                                                               value="{{ $editReview->order->order_number ?? '-' }}"
+                                                               disabled/>
+                                                    </div>
+                                                @else
+                                                    {{-- Create mode: booking → order cascade selection --}}
 
-                                               
+                                                    {{-- Step 1: Select Booking --}}
+                                                    <div class="form-group">
+                                                        <label>{{ trans('admin/main.booking') }} <span class="text-danger">*</span></label>
+                                                        <select name="booking_id" id="selectBooking"
+                                                                class="form-control @error('booking_id') is-invalid @enderror">
+                                                            <option value="">— Select Booking —</option>
+                                                            @foreach($bookings as $booking)
+                                                                <option value="{{ $booking->id }}"
+                                                                    {{ old('booking_id') == $booking->id ? 'selected' : '' }}>
+                                                                    #{{ $booking->id }} - {{ $booking->title }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                        @error('booking_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                                    </div>
+
+                                                    {{-- Step 2: Select Order (filtered by booking via JS) --}}
+                                                    <div class="form-group" id="orderWrapper">
+                                                        <label>{{ trans('admin/main.order') }} <span class="text-danger">*</span></label>
+                                                        <select name="order_id" id="selectOrder"
+                                                                class="form-control @error('order_id') is-invalid @enderror"
+                                                                disabled>
+                                                            <option value="">— Select Booking First —</option>
+                                                            @foreach($orders as $order)
+                                                                @php
+                                                                    // Collect booking IDs linked to this order's items
+                                                                    $orderBookingIds = $order->items->pluck('booking_id')->filter()->unique()->implode(',');
+                                                                @endphp
+                                                                <option value="{{ $order->id }}"
+                                                                        data-bookings="{{ $orderBookingIds }}"
+                                                                        {{ old('order_id') == $order->id ? 'selected' : '' }}
+                                                                        style="display:none">
+                                                                    {{ $order->order_number }} ({{ ucfirst($order->status) }})
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                        <small class="text-muted" id="orderHint">Please select a booking first.</small>
+                                                        @error('order_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                                    </div>
+                                                @endif
+
                                                 {{-- Rating --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.rating') }} (1-5) <span class="text-danger">*</span></label>
@@ -200,37 +244,37 @@
                                                     @error('comment') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                                 </div>
 
-                                                {{-- Value Rating --}}
-                                                <div class="form-group">
-                                                    <label>{{ trans('admin/main.value_rating') }} (1-5)
-                                                        <small class="text-muted">{{ trans('admin/main.optional') }}</small>
-                                                    </label>
-                                                    <input type="number" name="value_rating" min="1" max="5"
-                                                           class="form-control @error('value_rating') is-invalid @enderror"
-                                                           value="{{ !empty($editReview) ? $editReview->value_rating : old('value_rating') }}"/>
-                                                    @error('value_rating') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                                </div>
-
-                                                {{-- Delivery Rating --}}
-                                                <div class="form-group">
-                                                    <label>{{ trans('admin/main.delivery_rating') }} (1-5)
-                                                        <small class="text-muted">{{ trans('admin/main.optional') }}</small>
-                                                    </label>
-                                                    <input type="number" name="delivery_rating" min="1" max="5"
-                                                           class="form-control @error('delivery_rating') is-invalid @enderror"
-                                                           value="{{ !empty($editReview) ? $editReview->delivery_rating : old('delivery_rating') }}"/>
-                                                    @error('delivery_rating') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                                </div>
-
-                                                {{-- Seller Rating --}}
-                                                <div class="form-group">
-                                                    <label>{{ trans('admin/main.seller_rating') }} (1-5)
-                                                        <small class="text-muted">{{ trans('admin/main.optional') }}</small>
-                                                    </label>
-                                                    <input type="number" name="seller_rating" min="1" max="5"
-                                                           class="form-control @error('seller_rating') is-invalid @enderror"
-                                                           value="{{ !empty($editReview) ? $editReview->seller_rating : old('seller_rating') }}"/>
-                                                    @error('seller_rating') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                                <div class="row">
+                                                    {{-- Value Rating --}}
+                                                    <div class="col-12 col-md-4">
+                                                        <div class="form-group">
+                                                            <label>{{ trans('admin/main.value_rating') }} <small class="text-muted">(opt)</small></label>
+                                                            <input type="number" name="value_rating" min="1" max="5"
+                                                                   class="form-control @error('value_rating') is-invalid @enderror"
+                                                                   value="{{ !empty($editReview) ? $editReview->value_rating : old('value_rating') }}"/>
+                                                            @error('value_rating') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                                        </div>
+                                                    </div>
+                                                    {{-- Delivery Rating --}}
+                                                    <div class="col-12 col-md-4">
+                                                        <div class="form-group">
+                                                            <label>{{ trans('admin/main.delivery_rating') }} <small class="text-muted">(opt)</small></label>
+                                                            <input type="number" name="delivery_rating" min="1" max="5"
+                                                                   class="form-control @error('delivery_rating') is-invalid @enderror"
+                                                                   value="{{ !empty($editReview) ? $editReview->delivery_rating : old('delivery_rating') }}"/>
+                                                            @error('delivery_rating') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                                        </div>
+                                                    </div>
+                                                    {{-- Seller Rating --}}
+                                                    <div class="col-12 col-md-4">
+                                                        <div class="form-group">
+                                                            <label>{{ trans('admin/main.seller_rating') }} <small class="text-muted">(opt)</small></label>
+                                                            <input type="number" name="seller_rating" min="1" max="5"
+                                                                   class="form-control @error('seller_rating') is-invalid @enderror"
+                                                                   value="{{ !empty($editReview) ? $editReview->seller_rating : old('seller_rating') }}"/>
+                                                            @error('seller_rating') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 {{-- Status --}}
@@ -247,9 +291,7 @@
 
                                                 {{-- Admin Reply --}}
                                                 <div class="form-group">
-                                                    <label>{{ trans('admin/main.reply') }}
-                                                        <small class="text-muted">{{ trans('admin/main.optional') }}</small>
-                                                    </label>
+                                                    <label>{{ trans('admin/main.reply') }} <small class="text-muted">({{ trans('admin/main.optional') }})</small></label>
                                                     <textarea name="reply" rows="3"
                                                               class="form-control @error('reply') is-invalid @enderror"
                                                               placeholder="{{ trans('admin/main.write_reply') }}">{{ !empty($editReview) ? $editReview->reply : old('reply') }}</textarea>
@@ -287,3 +329,76 @@
     </div>
 </section>
 @endsection
+
+@push('scripts_bottom')
+<script>
+(function () {
+
+    var bookingSelect = document.getElementById('selectBooking');
+    var orderSelect   = document.getElementById('selectOrder');
+    var orderHint     = document.getElementById('orderHint');
+
+    if (!bookingSelect || !orderSelect) return; // edit mode — selects not present
+
+    // All <option> elements inside order select (except placeholder)
+    var allOrderOptions = Array.prototype.slice.call(
+        orderSelect.querySelectorAll('option[data-bookings]')
+    );
+
+    bookingSelect.addEventListener('change', function () {
+        var selectedBookingId = this.value;
+
+        // Reset order dropdown
+        orderSelect.innerHTML = '';
+        orderSelect.disabled  = true;
+        orderHint.textContent = 'No orders found for this booking.';
+
+        if (!selectedBookingId) {
+            orderSelect.innerHTML = '<option value="">— Select Booking First —</option>';
+            orderHint.textContent = 'Please select a booking first.';
+            return;
+        }
+
+        // Filter options whose data-bookings includes the selected booking id
+        var matched = allOrderOptions.filter(function (opt) {
+            var ids = opt.getAttribute('data-bookings').split(',');
+            return ids.indexOf(selectedBookingId) !== -1;
+        });
+
+        if (matched.length === 0) {
+            orderSelect.innerHTML = '<option value="">— No orders for this booking —</option>';
+            orderHint.textContent = 'No completed orders found for this booking.';
+            return;
+        }
+
+        // Prepend placeholder
+        var placeholder = document.createElement('option');
+        placeholder.value       = '';
+        placeholder.textContent = '— Select Order —';
+        orderSelect.appendChild(placeholder);
+
+        matched.forEach(function (opt) {
+            var clone = opt.cloneNode(true);
+            clone.style.display = '';
+            orderSelect.appendChild(clone);
+        });
+
+        orderSelect.disabled  = false;
+        orderHint.textContent = matched.length + ' order(s) found.';
+    });
+
+    // On page load: if booking_id already selected (old input after validation error), trigger change
+    if (bookingSelect.value) {
+        bookingSelect.dispatchEvent(new Event('change'));
+
+        // Re-select old order_id after re-render
+        var oldOrderId = '{{ old("order_id") }}';
+        if (oldOrderId) {
+            var opts = orderSelect.querySelectorAll('option');
+            opts.forEach(function(o){ if(o.value === oldOrderId) o.selected = true; });
+        }
+    }
+
+})();
+</script>
+@endpush

@@ -146,10 +146,11 @@
                                             <form action="{{ getAdminPanelUrl() }}/booking/time-slot/{{ !empty($editSlot) ? $editSlot->id . '/update' : 'store' }}" method="post">
                                                 {{ csrf_field() }}
 
+                                                {{-- Booking --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.booking') }} <span class="text-danger">*</span></label>
                                                     @php $selectedBooking = !empty($editSlot) ? $editSlot->booking_id : old('booking_id'); @endphp
-                                                    <select name="booking_id" class="form-control @error('booking_id') is-invalid @enderror">
+                                                    <select name="booking_id" id="booking_id" class="form-control @error('booking_id') is-invalid @enderror">
                                                         <option value="">{{ trans('admin/main.select') }}</option>
                                                         @foreach($bookings as $booking)
                                                             <option value="{{ $booking->id }}" {{ (string) $selectedBooking === (string) $booking->id ? 'selected' : '' }}>
@@ -162,13 +163,17 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Resource (filtered by selected booking via JS) --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.resource') }}</label>
                                                     @php $selectedResource = !empty($editSlot) ? $editSlot->resource_id : old('resource_id'); @endphp
-                                                    <select name="resource_id" class="form-control @error('resource_id') is-invalid @enderror">
+                                                    <select name="resource_id" id="resource_id" class="form-control @error('resource_id') is-invalid @enderror">
                                                         <option value="">{{ trans('admin/main.select') }}</option>
                                                         @foreach($resources as $resource)
-                                                            <option value="{{ $resource->id }}" {{ (string) $selectedResource === (string) $resource->id ? 'selected' : '' }}>
+                                                            <option
+                                                                value="{{ $resource->id }}"
+                                                                data-booking="{{ $resource->booking_id }}"
+                                                                {{ (string) $selectedResource === (string) $resource->id ? 'selected' : '' }}>
                                                                 #{{ $resource->id }} - {{ $resource->name }}
                                                             </option>
                                                         @endforeach
@@ -178,6 +183,7 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Days of week --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.days') }} <span class="text-danger">*</span></label>
                                                     @php $selectedDays = array_map('strval', (array) (!empty($editSlot) ? $editSlot->day_of_week : old('day_of_week', []))); @endphp
@@ -197,6 +203,7 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Start time --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.start_time') }} <span class="text-danger">*</span></label>
                                                     <input type="time" name="start_time" class="form-control @error('start_time') is-invalid @enderror" value="{{ !empty($editSlot) ? substr($editSlot->start_time, 0, 5) : old('start_time') }}">
@@ -205,6 +212,7 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- End time --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.end_time') }} <span class="text-danger">*</span></label>
                                                     <input type="time" name="end_time" class="form-control @error('end_time') is-invalid @enderror" value="{{ !empty($editSlot) ? substr($editSlot->end_time, 0, 5) : old('end_time') }}">
@@ -213,6 +221,7 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Duration --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.duration') }} (minutes) <span class="text-danger">*</span></label>
                                                     <input type="number" name="duration_minutes" class="form-control @error('duration_minutes') is-invalid @enderror" min="1" value="{{ !empty($editSlot) ? $editSlot->duration_minutes : old('duration_minutes', 60) }}">
@@ -221,6 +230,7 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Buffer --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.buffer') }} (minutes)</label>
                                                     <input type="number" name="buffer_minutes" class="form-control @error('buffer_minutes') is-invalid @enderror" min="0" value="{{ !empty($editSlot) ? $editSlot->buffer_minutes : old('buffer_minutes', 0) }}">
@@ -229,6 +239,7 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Max bookings --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.max_bookings') }} <span class="text-danger">*</span></label>
                                                     <input type="number" name="max_bookings" class="form-control @error('max_bookings') is-invalid @enderror" min="1" value="{{ !empty($editSlot) ? $editSlot->max_bookings : old('max_bookings', 1) }}">
@@ -237,6 +248,7 @@
                                                     @enderror
                                                 </div>
 
+                                                {{-- Status --}}
                                                 <div class="form-group">
                                                     <div class="custom-control custom-switch">
                                                         <input type="checkbox" class="custom-control-input" id="statusSwitch" name="status" {{ (isset($editSlot) ? $editSlot->status : old('status', 1)) ? 'checked' : '' }}>
@@ -253,6 +265,7 @@
                                 </div>
                             @endcan
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -260,3 +273,49 @@
     </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var bookingSelect  = document.getElementById('booking_id');
+    var resourceSelect = document.getElementById('resource_id');
+
+    if (!bookingSelect || !resourceSelect) return;
+
+    // Cache all resource options that have a data-booking attribute
+    var allResourceOptions = Array.from(
+        resourceSelect.querySelectorAll('option[data-booking]')
+    );
+
+    function filterResources() {
+        var selectedBookingId = bookingSelect.value;
+        var currentValue      = resourceSelect.value;
+
+        // Remove all resource options from the select
+        allResourceOptions.forEach(function (opt) {
+            opt.remove();
+        });
+
+        // Re-append only those that belong to the selected booking
+        allResourceOptions.forEach(function (opt) {
+            if (!selectedBookingId || opt.getAttribute('data-booking') === selectedBookingId) {
+                resourceSelect.appendChild(opt);
+            }
+        });
+
+        // Keep previously selected value if it still exists in the filtered list,
+        // otherwise reset to the empty placeholder
+        var stillExists = Array.from(resourceSelect.options).some(function (opt) {
+            return opt.value === currentValue;
+        });
+        resourceSelect.value = stillExists ? currentValue : '';
+    }
+
+    // Filter on booking change
+    bookingSelect.addEventListener('change', filterResources);
+
+    // Run immediately on page load so edit-mode pre-selection is respected
+    filterResources();
+})();
+</script>
+@endpush
