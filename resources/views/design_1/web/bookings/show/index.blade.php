@@ -387,26 +387,27 @@
                     return;
                 }
 
-                $.get('/bookings/' + slug + '/favorite-toggle')
-                    .done(function (res) {
-                        if (res && res.status === 'added') {
-                            $emptyIcon.addClass('d-none');
-                            $fullIcon.removeClass('d-none');
-                            $btn.find('span').text('Favorited');
-                        } else {
-                            $emptyIcon.removeClass('d-none');
-                            $fullIcon.addClass('d-none');
-                            $btn.find('span').text('Add to favorites');
-                        }
-                    })
-                    .fail(function (xhr) {
-                        if (xhr.status === 401 || xhr.status === 302) {
-                            // redirect to login
-                            window.location = '/login';
-                        } else {
-                            showToast('error', 'Error', 'Could not update favorite');
-                        }
-                    });
+                $.ajax({
+                    url: '/bookings/' + slug + '/favorite-toggle',
+                    method: 'GET',
+                    dataType: 'json'
+                }).done(function (res) {
+                    if (res && res.status === 'added') {
+                        $emptyIcon.addClass('d-none');
+                        $fullIcon.removeClass('d-none');
+                        $btn.find('span').text('Favorited');
+                    } else {
+                        $emptyIcon.removeClass('d-none');
+                        $fullIcon.addClass('d-none');
+                        $btn.find('span').text('Add to favorites');
+                    }
+                }).fail(function (xhr) {
+                    if (xhr.status === 401 || xhr.status === 302 || xhr.status === 419) {
+                        window.location = '/login';
+                    } else {
+                        showToast('error', 'Error', 'Could not update favorite');
+                    }
+                });
             });
 
         })(jQuery)
