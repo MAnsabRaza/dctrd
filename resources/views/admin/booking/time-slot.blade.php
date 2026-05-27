@@ -46,6 +46,8 @@
                         </ul>
 
                         <div class="tab-content mt-3">
+
+                            {{-- ===================== LIST TAB ===================== --}}
                             @can('admin_booking_time_slots')
                                 <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}" id="listTab" role="tabpanel">
                                     @if(!empty($timeSlots) && $timeSlots->count())
@@ -90,7 +92,7 @@
                                                             <td class="text-center">{{ substr($slot->start_time, 0, 5) }}</td>
                                                             <td class="text-center">{{ substr($slot->end_time, 0, 5) }}</td>
                                                             <td class="text-center">{{ $slot->duration_minutes }} min</td>
-                                                            <td class="text-center">{{ $slot->buffer_minutes }} min</td>
+                                                            <td class="text-center">{{ $slot->buffer_minutes ?? 0 }} min</td>
                                                             <td class="text-center">{{ $slot->max_bookings }}</td>
                                                             <td class="text-center">
                                                                 @if($slot->status)
@@ -139,6 +141,7 @@
                                 </div>
                             @endcan
 
+                            {{-- ===================== CREATE / EDIT TAB ===================== --}}
                             @can('admin_booking_time_slots_create')
                                 <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}" id="createTab" role="tabpanel">
                                     <div class="row">
@@ -149,11 +152,11 @@
                                                 {{-- Booking --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.booking') }} <span class="text-danger">*</span></label>
-                                                    @php $selectedBooking = !empty($editSlot) ? $editSlot->booking_id : old('booking_id'); @endphp
+                                                    @php $selectedBooking = !empty($editSlot) ? (string) $editSlot->booking_id : (string) old('booking_id'); @endphp
                                                     <select name="booking_id" id="booking_id" class="form-control @error('booking_id') is-invalid @enderror">
                                                         <option value="">{{ trans('admin/main.select') }}</option>
                                                         @foreach($bookings as $booking)
-                                                            <option value="{{ $booking->id }}" {{ (string) $selectedBooking === (string) $booking->id ? 'selected' : '' }}>
+                                                            <option value="{{ $booking->id }}" {{ $selectedBooking === (string) $booking->id ? 'selected' : '' }}>
                                                                 #{{ $booking->id }} - {{ $booking->title }}
                                                             </option>
                                                         @endforeach
@@ -163,17 +166,22 @@
                                                     @enderror
                                                 </div>
 
-                                                {{-- Resource (filtered by selected booking via JS) --}}
-                                                <div class="form-group">
+                                                {{--
+                                                    Resource wrapper — hidden by default.
+                                                    JS shows it only when:
+                                                      1. A booking is selected AND
+                                                      2. That booking has at least one resource
+                                                --}}
+                                                <div class="form-group" id="resource_wrapper" style="display:none;">
                                                     <label>{{ trans('admin/main.resource') }}</label>
-                                                    @php $selectedResource = !empty($editSlot) ? $editSlot->resource_id : old('resource_id'); @endphp
+                                                    @php $selectedResource = !empty($editSlot) ? (string) $editSlot->resource_id : (string) old('resource_id'); @endphp
                                                     <select name="resource_id" id="resource_id" class="form-control @error('resource_id') is-invalid @enderror">
                                                         <option value="">{{ trans('admin/main.select') }}</option>
                                                         @foreach($resources as $resource)
                                                             <option
                                                                 value="{{ $resource->id }}"
                                                                 data-booking="{{ $resource->booking_id }}"
-                                                                {{ (string) $selectedResource === (string) $resource->id ? 'selected' : '' }}>
+                                                                {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}>
                                                                 #{{ $resource->id }} - {{ $resource->name }}
                                                             </option>
                                                         @endforeach
@@ -264,8 +272,8 @@
                                     </div>
                                 </div>
                             @endcan
-                        </div>
 
+                        </div>{{-- end .tab-content --}}
                     </div>
                 </div>
             </div>
@@ -277,44 +285,70 @@
 @push('scripts')
 <script>
 (function () {
-    var bookingSelect  = document.getElementById('booking_id');
-    var resourceSelect = document.getElementById('resource_id');
+    'use strict';
 
-    if (!bookingSelect || !resourceSelect) return;
+    var bookingSelect   = document.getElementById('booking_id');
+    var resourceSelect  = document.getElementById('resource_id');
+    var resourceWrapper = document.getElementById('resource_wrapper');
 
-    // Cache all resource options that have a data-booking attribute
-    var allResourceOptions = Array.from(
-        resourceSelect.querySelectorAll('option[data-booking]')
-    );
+    if (!bookingSelect || !resourceSelect || !resourceWrapper) return;
+
+    /*
+     * Detach ALL data-booking options from the DOM right away.
+     * They live only in this array until filterResources() re-inserts
+     * the relevant subset.
+     */
+    var allOptions = Array.from(resourceSelect.querySelectorAll('option[data-booking]'));
+    allOptions.forEach(function (opt) { opt.remove(); });
 
     function filterResources() {
-        var selectedBookingId = bookingSelect.value;
-        var currentValue      = resourceSelect.value;
+        var bookingId = String(bookingSelect.value).trim();
+        var prevValue = String(resourceSelect.value).trim();
 
-        // Remove all resource options from the select
-        allResourceOptions.forEach(function (opt) {
-            opt.remove();
+        /* Remove any options currently inside the select */
+        Array.from(resourceSelect.querySelectorAll('option[data-booking]'))
+             .forEach(function (opt) { opt.remove(); });
+
+        /* No booking chosen → hide wrapper, done */
+        if (!bookingId) {
+            resourceWrapper.style.display = 'none';
+            resourceSelect.value = '';
+            return;
+        }
+
+        /* Find options that belong to this booking */
+        var matched = allOptions.filter(function (opt) {
+            return String(opt.getAttribute('data-booking')).trim() === bookingId;
         });
 
-        // Re-append only those that belong to the selected booking
-        allResourceOptions.forEach(function (opt) {
-            if (!selectedBookingId || opt.getAttribute('data-booking') === selectedBookingId) {
-                resourceSelect.appendChild(opt);
-            }
-        });
+        /* Booking has no resources → hide wrapper, done */
+        if (matched.length === 0) {
+            resourceWrapper.style.display = 'none';
+            resourceSelect.value = '';
+            return;
+        }
 
-        // Keep previously selected value if it still exists in the filtered list,
-        // otherwise reset to the empty placeholder
-        var stillExists = Array.from(resourceSelect.options).some(function (opt) {
-            return opt.value === currentValue;
+        /* Insert matching options and reveal the wrapper */
+        matched.forEach(function (opt) {
+            resourceSelect.appendChild(opt);
         });
-        resourceSelect.value = stillExists ? currentValue : '';
+        resourceWrapper.style.display = 'block';
+
+        /* Restore previous selection only if it is still in the filtered list */
+        var stillValid = matched.some(function (opt) {
+            return String(opt.value).trim() === prevValue;
+        });
+        resourceSelect.value = stillValid ? prevValue : '';
     }
 
-    // Filter on booking change
+    /* React to booking changes */
     bookingSelect.addEventListener('change', filterResources);
 
-    // Run immediately on page load so edit-mode pre-selection is respected
+    /*
+     * Run once on page load.
+     * Covers: edit mode (booking pre-selected) and
+     * validation-failed repopulation (old() values restored by Blade).
+     */
     filterResources();
 })();
 </script>
