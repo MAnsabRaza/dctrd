@@ -324,6 +324,8 @@ Route::group(['namespace' => 'Web', 'middleware' => ['check_mobile_app', 'impers
 
     Route::group(['prefix' => 'bookings'], function () {
         Route::get('/', 'BookingController@index');
+        // Toggle favorite for a booking (requires auth)
+        Route::get('/{slug}/favorite-toggle', 'BookingFavoriteController@toggle')->middleware('web.auth');
         Route::get('/{slug}', 'BookingController@show');
         Route::post('/{slug}/pricing', 'BookingController@calculatePrice');
         Route::get('/{slug}/slots', 'BookingController@getSlots');

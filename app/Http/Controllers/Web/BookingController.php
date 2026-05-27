@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\BookingFavorite;
 use App\Models\BookingCategory;
 use App\Services\PricingEngine;
 use App\Services\SlotEngine;
@@ -104,6 +105,13 @@ class BookingController extends Controller
             );
         }
 
+        $isFavorited = false;
+        if (auth()->check()) {
+            $isFavorited = BookingFavorite::where('user_id', auth()->id())
+                ->where('booking_id', $booking->id)
+                ->exists();
+        }
+
         return view('design_1.web.bookings.show.index', [
             'pageTitle' => $booking->title,
             'pageDescription' => strip_tags((string) $booking->description),
@@ -112,6 +120,7 @@ class BookingController extends Controller
             'booking' => $booking,
             'relatedBookings' => $relatedBookings,
             'availableSlots' => $availableSlots,
+            'isFavorited' => $isFavorited,
         ]);
     }
 

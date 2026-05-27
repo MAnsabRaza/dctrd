@@ -80,17 +80,22 @@
 
                         <div class="d-flex align-items-center gap-12 flex-wrap mt-16">
                             <form action="/cart/store" method="post" id="bookingAddToCartForm">
-    {{ csrf_field() }}
+                                {{ csrf_field() }}
 
-    <input type="hidden" name="item_id" value="{{ $booking->id }}">
-    <input type="hidden" name="item_name" value="booking_id">
-    <input type="hidden" name="item_type" value="booking">
+                                <input type="hidden" name="item_id" value="{{ $booking->id }}">
+                                <input type="hidden" name="item_name" value="booking_id">
+                                <input type="hidden" name="item_type" value="booking">
 
-    <button type="submit" class="btn btn-primary btn-lg">
-        <x-iconsax-lin-calendar-2 class="icons text-white" width="24px" height="24px"/>
-        <span class="ml-4 text-white">Book Now</span>
-    </button>
-</form>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <x-iconsax-lin-calendar-2 class="icons text-white" width="24px" height="24px"/>
+                                    <span class="ml-4 text-white">Book Now</span>
+                                </button>
+                            </form>
+
+                            <button id="bookingFavoriteBtn" type="button" class="btn btn-outline-secondary btn-lg ml-2 d-flex align-items-center" data-slug="{{ $booking->slug }}">
+                                <i class="fa fa-heart mr-2 {{ (!empty($isFavorited) && $isFavorited) ? 'text-danger' : '' }}" aria-hidden="true"></i>
+                                <span class="font-14">{{ $isFavorited ? 'Favorited' : 'Add to favorites' }}</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -359,6 +364,38 @@
                         showToast('error', 'Error', 'Something went wrong');
                     }
                 });
+            });
+
+            // Favorite toggle
+            $('body').on('click', '#bookingFavoriteBtn', function (e) {
+                e.preventDefault();
+
+                var $btn = $(this);
+                var slug = $btn.data('slug');
+                var $icon = $btn.find('i.fa-heart');
+
+                if (!slug) {
+                    return;
+                }
+
+                $.get('/bookings/' + slug + '/favorite-toggle')
+                    .done(function (res) {
+                        if (res && res.status === 'added') {
+                            $icon.addClass('favorited');
+                            $btn.find('span').text('Favorited');
+                        } else {
+                            $icon.removeClass('favorited');
+                            $btn.find('span').text('Add to favorites');
+                        }
+                    })
+                    .fail(function (xhr) {
+                        if (xhr.status === 401 || xhr.status === 302) {
+                            // redirect to login
+                            window.location = '/login';
+                        } else {
+                            showToast('error', 'Error', 'Could not update favorite');
+                        }
+                    });
             });
 
         })(jQuery)
