@@ -192,305 +192,344 @@
 
                                 @csrf
 
-                               {{-- CONDITIONS + ACTIONS + META --}}
-@if(in_array($field, ['conditions', 'actions', 'meta']))
+                               @foreach($config['fields'] as $field)
 
     @php
+        $value = old(
+            $field,
+            !empty($editItem)
+                ? data_get($editItem, $field)
+                : null
+        );
 
-        $rows = [];
+        $validationRule = $config['validation'][$field] ?? '';
 
-        $oldKeys = old($field . '_keys');
+        $isRequired = str_contains($validationRule, 'required');
+    @endphp
 
-        if (is_array($oldKeys)) {
+    <div class="form-group">
 
-            $oldValues = old($field . '_values', []);
+        <label>
 
-            foreach ($oldKeys as $idx => $k) {
+            {{ ucwords(str_replace('_', ' ', $field)) }}
 
-                $rows[] = [
-                    'key'   => $k,
-                    'value' => $oldValues[$idx] ?? '',
-                ];
-            }
+            @if($isRequired)
+                <span class="text-danger">*</span>
+            @endif
 
-        } elseif (!empty($editItem)) {
+        </label>
 
-            $existingData = data_get($editItem, $field);
+        {{-- CONDITIONS + ACTIONS + META --}}
+        @if(in_array($field, ['conditions', 'actions', 'meta']))
 
-            if (is_string($existingData)) {
-                $existingData = json_decode($existingData, true) ?: [];
-            }
+            @php
 
-            if (is_array($existingData)) {
+                $rows = [];
 
-                foreach ($existingData as $k => $v) {
+                $oldKeys = old($field . '_keys');
+
+                if (is_array($oldKeys)) {
+
+                    $oldValues = old($field . '_values', []);
+
+                    foreach ($oldKeys as $idx => $k) {
+
+                        $rows[] = [
+                            'key'   => $k,
+                            'value' => $oldValues[$idx] ?? '',
+                        ];
+                    }
+
+                } elseif (!empty($editItem)) {
+
+                    $existingData = data_get($editItem, $field);
+
+                    if (is_string($existingData)) {
+                        $existingData = json_decode($existingData, true) ?: [];
+                    }
+
+                    if (is_array($existingData)) {
+
+                        foreach ($existingData as $k => $v) {
+
+                            $rows[] = [
+                                'key'   => $k,
+                                'value' => is_array($v) || is_bool($v)
+                                    ? json_encode($v)
+                                    : $v,
+                            ];
+                        }
+                    }
+                }
+
+                if (empty($rows)) {
 
                     $rows[] = [
-                        'key'   => $k,
-                        'value' => is_array($v) || is_bool($v)
-                            ? json_encode($v)
-                            : $v,
+                        'key'   => '',
+                        'value' => '',
                     ];
                 }
-            }
-        }
 
-        if (empty($rows)) {
+            @endphp
 
-            $rows[] = [
-                'key'   => '',
-                'value' => '',
-            ];
-        }
+            <div id="{{ $field }}Wrapper">
 
-    @endphp
+                @foreach($rows as $row)
 
-    <div id="{{ $field }}Wrapper">
+                    <div class="row align-items-center mb-2 js-{{ $field }}-row">
 
-        @foreach($rows as $row)
+                        <div class="col-5">
 
-            <div class="row align-items-center mb-2 js-{{ $field }}-row">
+                            <input type="text"
+                                   name="{{ $field }}_keys[]"
+                                   class="form-control"
+                                   value="{{ $row['key'] }}"
+                                   placeholder="Key">
 
-                <div class="col-5">
+                        </div>
 
-                    <input type="text"
-                           name="{{ $field }}_keys[]"
-                           class="form-control"
-                           value="{{ $row['key'] }}"
-                           placeholder="Key">
+                        <div class="col-5">
 
-                </div>
+                            <input type="text"
+                                   name="{{ $field }}_values[]"
+                                   class="form-control"
+                                   value="{{ $row['value'] }}"
+                                   placeholder="Value">
 
-                <div class="col-5">
+                        </div>
 
-                    <input type="text"
-                           name="{{ $field }}_values[]"
-                           class="form-control"
-                           value="{{ $row['value'] }}"
-                           placeholder="Value">
+                        <div class="col-2 text-right">
 
-                </div>
+                            <button type="button"
+                                    class="btn btn-sm btn-danger js-remove-{{ $field }}-row">
 
-                <div class="col-2 text-right">
+                                &times;
 
-                    <button type="button"
-                            class="btn btn-sm btn-danger js-remove-{{ $field }}-row">
+                            </button>
 
-                        &times;
+                        </div>
 
-                    </button>
+                    </div>
 
-                </div>
+                @endforeach
 
             </div>
 
-        @endforeach
+            <button type="button"
+                    class="btn btn-sm btn-primary mt-2 js-add-{{ $field }}-row">
 
-    </div>
+                + {{ trans('admin/main.add') }}
 
-    <button type="button"
-            class="btn btn-sm btn-primary mt-2 js-add-{{ $field }}-row">
+            </button>
 
-        + {{ trans('admin/main.add') }}
+        {{-- OPTIONS --}}
+        @elseif($field === 'options')
 
-    </button>
+            @php
 
-{{-- OPTIONS --}}
-@elseif($field === 'options')
+                $optionRows = [];
 
-    @php
+                $oldOptionKeys = old('option_keys');
 
-        $optionRows = [];
+                if (is_array($oldOptionKeys)) {
 
-        $oldOptionKeys = old('option_keys');
+                    $oldOptionValues = old('option_values', []);
 
-        if (is_array($oldOptionKeys)) {
+                    foreach ($oldOptionKeys as $idx => $k) {
 
-            $oldOptionValues = old('option_values', []);
+                        $optionRows[] = [
+                            'key'   => $k,
+                            'value' => $oldOptionValues[$idx] ?? '',
+                        ];
+                    }
 
-            foreach ($oldOptionKeys as $idx => $k) {
+                } elseif (!empty($editItem)) {
 
-                $optionRows[] = [
-                    'key'   => $k,
-                    'value' => $oldOptionValues[$idx] ?? '',
-                ];
-            }
+                    $existingOptions = data_get($editItem, 'options');
 
-        } elseif (!empty($editItem)) {
+                    if (is_string($existingOptions)) {
+                        $existingOptions = json_decode($existingOptions, true) ?: [];
+                    }
 
-            $existingOptions = data_get($editItem, 'options');
+                    if (is_array($existingOptions)) {
 
-            if (is_string($existingOptions)) {
-                $existingOptions = json_decode($existingOptions, true) ?: [];
-            }
+                        foreach ($existingOptions as $k => $v) {
 
-            if (is_array($existingOptions)) {
+                            $optionRows[] = [
+                                'key'   => $k,
+                                'value' => is_array($v) || is_bool($v)
+                                    ? json_encode($v)
+                                    : $v,
+                            ];
+                        }
+                    }
+                }
 
-                foreach ($existingOptions as $k => $v) {
+                if (empty($optionRows)) {
 
                     $optionRows[] = [
-                        'key'   => $k,
-                        'value' => is_array($v) || is_bool($v)
-                            ? json_encode($v)
-                            : $v,
+                        'key'   => '',
+                        'value' => '',
                     ];
                 }
-            }
-        }
 
-        if (empty($optionRows)) {
+            @endphp
 
-            $optionRows[] = [
-                'key'   => '',
-                'value' => '',
-            ];
-        }
+            <div id="optionAttributesWrapper">
 
-    @endphp
+                @foreach($optionRows as $optRow)
 
-    <div id="optionAttributesWrapper">
+                    <div class="row align-items-center mb-2 js-option-row">
 
-        @foreach($optionRows as $optRow)
+                        <div class="col-5">
 
-            <div class="row align-items-center mb-2 js-option-row">
+                            <input type="text"
+                                   name="option_keys[]"
+                                   class="form-control"
+                                   value="{{ $optRow['key'] }}"
+                                   placeholder="Key">
 
-                <div class="col-5">
+                        </div>
 
-                    <input type="text"
-                           name="option_keys[]"
-                           class="form-control"
-                           value="{{ $optRow['key'] }}"
-                           placeholder="Key">
+                        <div class="col-5">
 
-                </div>
+                            <input type="text"
+                                   name="option_values[]"
+                                   class="form-control"
+                                   value="{{ $optRow['value'] }}"
+                                   placeholder="Value">
 
-                <div class="col-5">
+                        </div>
 
-                    <input type="text"
-                           name="option_values[]"
-                           class="form-control"
-                           value="{{ $optRow['value'] }}"
-                           placeholder="Value">
+                        <div class="col-2 text-right">
 
-                </div>
+                            <button type="button"
+                                    class="btn btn-sm btn-danger js-remove-option-row">
 
-                <div class="col-2 text-right">
+                                &times;
 
-                    <button type="button"
-                            class="btn btn-sm btn-danger js-remove-option-row">
+                            </button>
 
-                        &times;
+                        </div>
 
-                    </button>
+                    </div>
 
-                </div>
+                @endforeach
 
             </div>
 
-        @endforeach
+            <button type="button"
+                    class="btn btn-sm btn-primary mt-2 js-add-option-row">
+
+                + {{ trans('admin/main.add') }}
+
+            </button>
+
+        {{-- BOOLEAN --}}
+        @elseif(in_array($field, $config['booleans'] ?? []))
+
+            <select name="{{ $field }}"
+                    class="form-control @error($field) is-invalid @enderror">
+
+                <option value="1"
+                    {{ (string)$value === '1' ? 'selected' : '' }}>
+
+                    {{ trans('admin/main.active') }}
+
+                </option>
+
+                <option value="0"
+                    {{ (string)$value === '0' ? 'selected' : '' }}>
+
+                    {{ trans('admin/main.inactive') }}
+
+                </option>
+
+            </select>
+
+        {{-- SELECT --}}
+        @elseif(isset($selectOptions[$field]))
+
+            <select name="{{ $field }}"
+                    data-plugin-selectTwo
+                    class="form-control @error($field) is-invalid @enderror">
+
+                <option value="">
+                    {{ trans('admin/main.select') }}
+                </option>
+
+                @foreach($selectOptions[$field] as $option)
+
+                    <option value="{{ $option['id'] }}"
+                        {{ (string)$value === (string)$option['id'] ? 'selected' : '' }}>
+
+                        {{ $option['title'] }}
+
+                    </option>
+
+                @endforeach
+
+            </select>
+
+        {{-- JSON --}}
+        @elseif(in_array($field, $config['json'] ?? []))
+
+            <textarea name="{{ $field }}"
+                      rows="3"
+                      class="form-control @error($field) is-invalid @enderror">{{ is_array($value) ? json_encode($value) : $value }}</textarea>
+
+        {{-- DATETIME --}}
+        @elseif(str_contains($field, '_at'))
+
+            <input type="datetime-local"
+                   name="{{ $field }}"
+                   value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d\TH:i') : '' }}"
+                   class="form-control @error($field) is-invalid @enderror">
+
+        {{-- DATE --}}
+        @elseif(str_contains($field, 'date'))
+
+            <input type="date"
+                   name="{{ $field }}"
+                   value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : '' }}"
+                   class="form-control @error($field) is-invalid @enderror">
+
+        {{-- TIME --}}
+        @elseif(str_contains($field, 'time'))
+
+            <input type="time"
+                   name="{{ $field }}"
+                   value="{{ $value }}"
+                   class="form-control @error($field) is-invalid @enderror">
+
+        {{-- TEXTAREA --}}
+        @elseif(in_array($field, ['message', 'description']))
+
+            <textarea name="{{ $field }}"
+                      rows="3"
+                      class="form-control @error($field) is-invalid @enderror">{{ $value }}</textarea>
+
+        {{-- DEFAULT --}}
+        @else
+
+            <input type="text"
+                   name="{{ $field }}"
+                   value="{{ $value }}"
+                   class="form-control @error($field) is-invalid @enderror">
+
+        @endif
+
+        @error($field)
+
+            <div class="invalid-feedback">
+                {{ $message }}
+            </div>
+
+        @enderror
 
     </div>
 
-    <button type="button"
-            class="btn btn-sm btn-primary mt-2 js-add-option-row">
-
-        + {{ trans('admin/main.add') }}
-
-    </button>
-
-{{-- BOOLEAN --}}
-@elseif(in_array($field, $config['booleans'] ?? []))
-
-    <select name="{{ $field }}"
-            class="form-control @error($field) is-invalid @enderror">
-
-        <option value="1"
-            {{ (string)$value === '1' ? 'selected' : '' }}>
-
-            {{ trans('admin/main.active') }}
-
-        </option>
-
-        <option value="0"
-            {{ (string)$value === '0' ? 'selected' : '' }}>
-
-            {{ trans('admin/main.inactive') }}
-
-        </option>
-
-    </select>
-
-{{-- SELECT --}}
-@elseif(isset($selectOptions[$field]))
-
-    <select name="{{ $field }}"
-            data-plugin-selectTwo
-            class="form-control @error($field) is-invalid @enderror">
-
-        <option value="">
-            {{ trans('admin/main.select') }}
-        </option>
-
-        @foreach($selectOptions[$field] as $option)
-
-            <option value="{{ $option['id'] }}"
-                {{ (string)$value === (string)$option['id'] ? 'selected' : '' }}>
-
-                {{ $option['title'] }}
-
-            </option>
-
-        @endforeach
-
-    </select>
-
-{{-- JSON --}}
-@elseif(in_array($field, $config['json'] ?? []))
-
-    <textarea name="{{ $field }}"
-              rows="3"
-              class="form-control @error($field) is-invalid @enderror">{{ is_array($value) ? json_encode($value) : $value }}</textarea>
-
-{{-- DATETIME --}}
-@elseif(str_contains($field, '_at'))
-
-    <input type="datetime-local"
-           name="{{ $field }}"
-           value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d\TH:i') : '' }}"
-           class="form-control @error($field) is-invalid @enderror">
-
-{{-- DATE --}}
-@elseif(str_contains($field, 'date'))
-
-    <input type="date"
-           name="{{ $field }}"
-           value="{{ $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : '' }}"
-           class="form-control @error($field) is-invalid @enderror">
-
-{{-- TIME --}}
-@elseif(str_contains($field, 'time'))
-
-    <input type="time"
-           name="{{ $field }}"
-           value="{{ $value }}"
-           class="form-control @error($field) is-invalid @enderror">
-
-{{-- TEXTAREA --}}
-@elseif(in_array($field, ['message', 'description']))
-
-    <textarea name="{{ $field }}"
-              rows="3"
-              class="form-control @error($field) is-invalid @enderror">{{ $value }}</textarea>
-
-{{-- DEFAULT --}}
-@else
-
-    <input type="text"
-           name="{{ $field }}"
-           value="{{ $value }}"
-           class="form-control @error($field) is-invalid @enderror">
-
-@endif
+@endforeach
 
                                 <div class="d-flex justify-content-between align-items-center mt-3">
 
