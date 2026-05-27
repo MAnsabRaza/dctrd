@@ -340,109 +340,92 @@
                                                 {{ csrf_field() }}
 
                                                 {{-- BOOKING --}}
-                                                {{-- BOOKING --}}
-<div class="form-group">
+                                                <div class="form-group">
 
-    <label>
-        {{ trans('admin/main.booking') }}
-        <span class="text-danger">*</span>
-    </label>
+                                                    <label>
+                                                        {{ trans('admin/main.booking') }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
 
-    @php
-        $selectedBooking = !empty($editSlot)
-            ? (string) $editSlot->booking_id
-            : (string) old('booking_id');
-    @endphp
+                                                    @php
+                                                        $selectedBooking = !empty($editSlot)
+                                                            ? (string) $editSlot->booking_id
+                                                            : (string) old('booking_id');
+                                                    @endphp
 
-    <select name="booking_id"
-            id="booking_id"
-            class="form-control @error('booking_id') is-invalid @enderror"
-            required>
+                                                    <select name="booking_id"
+                                                            id="booking_id"
+                                                            class="form-control @error('booking_id') is-invalid @enderror"
+                                                            required>
 
-        <option value="">
-            Select Booking
-        </option>
+                                                        <option value="">Select Booking</option>
 
-        @foreach($bookings as $booking)
+                                                        @foreach($bookings as $booking)
 
-            <option value="{{ $booking->id }}"
-                {{ $selectedBooking === (string) $booking->id ? 'selected' : '' }}>
+                                                            <option value="{{ $booking->id }}"
+                                                                {{ $selectedBooking === (string) $booking->id ? 'selected' : '' }}>
 
-                #{{ $booking->id }} - {{ $booking->title }}
+                                                                #{{ $booking->id }} - {{ $booking->title }}
 
-            </option>
+                                                            </option>
 
-        @endforeach
+                                                        @endforeach
 
-    </select>
+                                                    </select>
 
-    @error('booking_id')
+                                                    @error('booking_id')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
 
-        <div class="invalid-feedback">
-            {{ $message }}
-        </div>
+                                                </div>
 
-    @enderror
+                                                {{-- RESOURCE --}}
+                                                <div class="form-group">
 
-</div>
+                                                    <label>
+                                                        {{ trans('admin/main.resource') }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
 
-   {{-- RESOURCE --}}
-<div class="form-group">
+                                                    @php
+                                                        $selectedResource = !empty($editSlot)
+                                                            ? (string) $editSlot->resource_id
+                                                            : (string) old('resource_id');
+                                                    @endphp
 
-    <label>
-        {{ trans('admin/main.resource') }}
-        <span class="text-danger">*</span>
-    </label>
+                                                    <select name="resource_id"
+                                                            id="resource_id"
+                                                            class="form-control @error('resource_id') is-invalid @enderror">
 
-    @php
-        $selectedResource = !empty($editSlot)
-            ? (string) $editSlot->resource_id
-            : (string) old('resource_id');
-    @endphp
+                                                        <option value="">Select Resource</option>
 
-    <select name="resource_id"
-            id="resource_id"
-            class="form-control @error('resource_id') is-invalid @enderror"
-            required>
+                                                        @foreach($resources as $resource)
 
-        <option value="">
-            Select Resource
-        </option>
+                                                            <option
+                                                                value="{{ $resource->id }}"
+                                                                data-booking="{{ $resource->booking_id }}"
+                                                                {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}>
 
-        @foreach($resources as $resource)
+                                                                #{{ $resource->id }} - {{ $resource->name }}
 
-            <option
-                value="{{ $resource->id }}"
-                data-booking="{{ $resource->booking_id }}"
-                {{ $selectedResource == $resource->id ? 'selected' : '' }}>
+                                                            </option>
 
-                #{{ $resource->id }} - {{ $resource->name }}
+                                                        @endforeach
 
-            </option>
+                                                    </select>
 
-        @endforeach
+                                                    @error('resource_id')
+                                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                    @enderror
 
-    </select>
-
-    @error('resource_id')
-
-        <div class="invalid-feedback d-block">
-            {{ $message }}
-        </div>
-
-    @enderror
-
-</div>
+                                                </div>
 
                                                 {{-- DAYS --}}
                                                 <div class="form-group">
 
                                                     <label>
-
                                                         {{ trans('admin/main.days') }}
-
                                                         <span class="text-danger">*</span>
-
                                                     </label>
 
                                                     @php
@@ -470,9 +453,7 @@
 
                                                                 <label class="custom-control-label"
                                                                        for="day_{{ $day }}">
-
                                                                     {{ $label }}
-
                                                                 </label>
 
                                                             </div>
@@ -486,9 +467,7 @@
                                                 {{-- START TIME --}}
                                                 <div class="form-group">
 
-                                                    <label>
-                                                        {{ trans('admin/main.start_time') }}
-                                                    </label>
+                                                    <label>{{ trans('admin/main.start_time') }}</label>
 
                                                     <input type="time"
                                                            name="start_time"
@@ -500,9 +479,7 @@
                                                 {{-- END TIME --}}
                                                 <div class="form-group">
 
-                                                    <label>
-                                                        {{ trans('admin/main.end_time') }}
-                                                    </label>
+                                                    <label>{{ trans('admin/main.end_time') }}</label>
 
                                                     <input type="time"
                                                            name="end_time"
@@ -514,9 +491,7 @@
                                                 {{-- DURATION --}}
                                                 <div class="form-group">
 
-                                                    <label>
-                                                        {{ trans('admin/main.duration') }}
-                                                    </label>
+                                                    <label>{{ trans('admin/main.duration') }}</label>
 
                                                     <input type="number"
                                                            min="1"
@@ -529,9 +504,7 @@
                                                 {{-- BUFFER --}}
                                                 <div class="form-group">
 
-                                                    <label>
-                                                        {{ trans('admin/main.buffer') }}
-                                                    </label>
+                                                    <label>{{ trans('admin/main.buffer') }}</label>
 
                                                     <input type="number"
                                                            min="0"
@@ -544,9 +517,7 @@
                                                 {{-- MAX BOOKINGS --}}
                                                 <div class="form-group">
 
-                                                    <label>
-                                                        {{ trans('admin/main.max_bookings') }}
-                                                    </label>
+                                                    <label>{{ trans('admin/main.max_bookings') }}</label>
 
                                                     <input type="number"
                                                            min="1"
@@ -567,19 +538,15 @@
                                                                name="status"
                                                                {{ (isset($editSlot) ? $editSlot->status : old('status', 1)) ? 'checked' : '' }}>
 
-                                                        <label class="custom-control-label"
-                                                               for="statusSwitch">
-
+                                                        <label class="custom-control-label" for="statusSwitch">
                                                             {{ trans('admin/main.active') }}
-
                                                         </label>
 
                                                     </div>
 
                                                 </div>
 
-                                                <button type="submit"
-                                                        class="btn btn-primary">
+                                                <button type="submit" class="btn btn-primary">
 
                                                     {{ !empty($editSlot)
                                                         ? trans('admin/main.update_time_slot')
@@ -615,56 +582,79 @@
 <script>
 $(document).ready(function () {
 
-    const bookingSelect = $('#booking_id');
-    const resourceSelect = $('#resource_id');
+    var bookingSelect  = $('#booking_id');
+    var resourceSelect = $('#resource_id');
+
+    // ============================================================
+    // Yahan PHP se selected resource_id pass ho raha hai
+    // Edit mode mein yeh value hogi, create mein empty hogi
+    // ============================================================
+    var preSelectedResourceId = "{{ $selectedResource ?? '' }}";
 
     function filterResources() {
 
-        let bookingId = bookingSelect.val();
+        var selectedBookingId = bookingSelect.val();
 
-        // Reset resource
-        resourceSelect.val('');
+        // Pehle saare resource options hide karo
+        resourceSelect.find('option').each(function () {
+            var val = $(this).val();
+            // Default empty option hamesha show karo
+            if (val === '') {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
 
-        // Hide all resources first
-        resourceSelect.find('option').hide();
-
-        // Always show default option
-        resourceSelect.find('option[value=""]').show();
-
-        // No booking selected
-        if (!bookingId) {
-
+        // Agar koi booking select nahi ki
+        if (!selectedBookingId || selectedBookingId === '') {
+            resourceSelect.val('');
             resourceSelect.prop('disabled', true);
-
             return;
         }
 
-        // Enable resource dropdown
+        // Resource dropdown enable karo
         resourceSelect.prop('disabled', false);
 
-        // Show ONLY matching booking resources
-        resourceSelect.find('option').each(function () {
-
-            let optionBookingId = $(this).data('booking');
-
-            if (String(optionBookingId) === String(bookingId)) {
-
+        // Sirf us booking ke resources show karo
+        resourceSelect.find('option[data-booking]').each(function () {
+            var optionBookingId = String($(this).data('booking'));
+            if (optionBookingId === String(selectedBookingId)) {
                 $(this).show();
-
             }
-
         });
 
+        // Agar pre-selected resource hai (edit mode)
+        // aur wo is booking ka hai toh usse select karo
+        if (preSelectedResourceId !== '') {
+            var matchFound = false;
+            resourceSelect.find('option[data-booking]:visible').each(function () {
+                if (String($(this).val()) === String(preSelectedResourceId)) {
+                    matchFound = true;
+                }
+            });
+
+            if (matchFound) {
+                resourceSelect.val(preSelectedResourceId);
+            } else {
+                resourceSelect.val('');
+            }
+
+            // Ek baar use karne ke baad reset karo
+            // taake booking change par reset ho sake
+            preSelectedResourceId = '';
+        } else {
+            // Booking change hone par resource reset
+            resourceSelect.val('');
+        }
     }
 
-    // Booking change
+    // Booking dropdown change hone par filter chalao
     bookingSelect.on('change', function () {
-
         filterResources();
-
     });
 
-    // Initial load
+    // Page load hone par bhi filter chalao (edit + validation error dono ke liye)
     filterResources();
 
 });
