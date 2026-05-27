@@ -25,7 +25,7 @@
 
                     <div class="position-relative bg-white p-16 rounded-24 z-index-2">
                         <div class="position-absolute" style="top: 24px; right: 24px; z-index: 10;">
-                            <div class="bookingFavoriteBtn d-flex align-items-center justify-content-center rounded-circle bg-white border border-gray-200" style="width: 42px; height: 42px; cursor: pointer;" data-slug="{{ $booking->slug }}" onclick="event.preventDefault(); event.stopPropagation();">
+                            <div class="bookingFavoriteBtn d-flex align-items-center justify-content-center rounded-circle bg-white border border-gray-200" style="width: 42px; height: 42px; cursor: pointer;" data-slug="{{ $booking->slug }}">
                                 <x-iconsax-lin-heart class="icons js-empty-fav text-gray-500 {{ !empty($isFavorited) ? 'd-none' : '' }}" width="22px" height="22px"/>
                                 <x-iconsax-bol-heart class="icons js-full-fav text-danger {{ !empty($isFavorited) ? '' : 'd-none' }}" width="22px" height="22px"/>
                             </div>
