@@ -265,6 +265,17 @@ class BookingController extends Controller
             ->offset(($page - 1) * $count)
             ->get();
 
+        if (auth()->check() && $bookings->count()) {
+            $favoriteIds = BookingFavorite::where('user_id', auth()->id())
+                ->whereIn('booking_id', $bookings->pluck('id')->toArray())
+                ->pluck('booking_id')
+                ->toArray();
+
+            foreach ($bookings as $booking) {
+                $booking->isFavorited = in_array($booking->id, $favoriteIds);
+            }
+        }
+
         if ($request->ajax()) {
             return response()->json([
                 'data' => (string) view()->make('design_1.web.bookings.components.cards.grids.index', [

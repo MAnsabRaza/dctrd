@@ -78,4 +78,41 @@
     <script src="{{ getDesign1ScriptPath("swiper_slider") }}"></script>
     <script src="{{ getDesign1ScriptPath("get_view_data") }}"></script>
     <script src="{{ getDesign1ScriptPath("products_lists") }}"></script>
+    <script>
+        (function ($) {
+            'use strict';
+
+            $('body').on('click', '.bookingFavoriteBtn', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var $btn = $(this);
+                var slug = $btn.data('slug');
+                var $emptyIcon = $btn.find('.js-empty-fav');
+                var $fullIcon = $btn.find('.js-full-fav');
+
+                if (!slug) {
+                    return;
+                }
+
+                $.get('/bookings/' + slug + '/favorite-toggle')
+                    .done(function (res) {
+                        if (res && res.status === 'added') {
+                            $emptyIcon.addClass('d-none');
+                            $fullIcon.removeClass('d-none');
+                        } else {
+                            $emptyIcon.removeClass('d-none');
+                            $fullIcon.addClass('d-none');
+                        }
+                    })
+                    .fail(function (xhr) {
+                        if (xhr.status === 401 || xhr.status === 302) {
+                            window.location = '/login';
+                        } else {
+                            showToast('error', 'Error', 'Could not update favorite');
+                        }
+                    });
+            });
+        })(jQuery);
+    </script>
 @endpush

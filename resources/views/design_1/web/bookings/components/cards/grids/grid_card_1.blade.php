@@ -2,6 +2,13 @@
     <div class="product-card position-relative">
         <div class="product-card__mask"></div>
 
+        <div class="position-absolute" style="top: 16px; right: 16px; z-index: 10;">
+            <div class="bookingFavoriteBtn d-flex align-items-center justify-content-center rounded-circle bg-white border border-gray-200" style="width: 38px; height: 38px; cursor: pointer;" data-slug="{{ $booking->slug }}" onclick="event.preventDefault(); event.stopPropagation();">
+                <x-iconsax-lin-heart class="icons js-empty-fav text-gray-500 {{ !empty($booking->isFavorited) ? 'd-none' : '' }}" width="20px" height="20px"/>
+                <x-iconsax-bol-heart class="icons js-full-fav text-danger {{ !empty($booking->isFavorited) ? '' : 'd-none' }}" width="20px" height="20px"/>
+            </div>
+        </div>
+
         <div class="position-relative d-flex p-12 rounded-16 bg-white z-index-2">
             <div class="product-card__image rounded-16">
                 <img src="{{ $booking->thumbnail_url }}" class="img-cover rounded-16" alt="{{ $booking->title }}">
