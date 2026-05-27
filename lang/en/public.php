@@ -203,6 +203,7 @@ return [
 
 'close' => 'Close',
 'save' => 'Save',
+'back'=>'Back',
 'continue' => 'Continue',
 'submit' => 'Submit',
 'new' => 'New',
