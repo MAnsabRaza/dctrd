@@ -228,6 +228,7 @@ return [
 
     //Booking
     'booking' => 'Booking',
+    
     'bookings' => 'Bookings',
     'booking_list' => 'Booking List',
     'create_booking' => 'Create Booking',
@@ -254,6 +255,7 @@ return [
 
     //booking value
     'booking_type' => 'Booking Type',
+    'numeric_value'=>'Numeric Value',
     'search_by_title' => 'Search By Title',
     'min_persons' => 'Min Person',
     'max_persons' => 'Max Persons',

@@ -322,7 +322,7 @@
                                                     <label class="input-label">{{ trans('admin/main.sub_type') }}</label>
                                                     <input type="text" name="sub_type" class="form-control"
                                                            value="{{ !empty($editBooking) ? $editBooking->sub_type : old('sub_type') }}"
-                                                           placeholder="{{ trans('admin/main.sub_type_placeholder') }}">
+                                                           placeholder="{{ trans('admin/main.sub_type') }}">
                                                 </div>
 
                                                 {{-- Requirements --}}
@@ -330,7 +330,7 @@
                                                     <label class="input-label">{{ trans('admin/main.requirements') }}</label>
                                                     <input type="text" name="requirements" class="form-control"
                                                            value="{{ !empty($editBooking) ? $editBooking->requirements : old('requirements') }}"
-                                                           placeholder="{{ trans('admin/main.requirements_placeholder') }}">
+                                                           placeholder="{{ trans('admin/main.requirements') }}">
                                                 </div>
 
                                                 {{-- Price --}}
