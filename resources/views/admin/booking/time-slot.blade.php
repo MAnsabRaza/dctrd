@@ -298,45 +298,52 @@
 
     if (!bookingSelect || !resourceSelect) return;
 
-    // Cache all resource options that carry a data-booking attribute
+    // PHP se values JS mein (edit mode ya validation fail dono handle)
+    var preSelectedBookingId  = '{{ !empty($editSlot) ? $editSlot->booking_id : old("booking_id", "") }}';
+    var preSelectedResourceId = '{{ !empty($editSlot) ? $editSlot->resource_id : old("resource_id", "") }}';
+
+    // Sare resource options ek baar cache karo (data-booking wale)
     var allResourceOptions = Array.prototype.slice.call(
         resourceSelect.querySelectorAll('option[data-booking]')
     );
 
-    function filterResources() {
-        var selectedBookingId = String(bookingSelect.value).trim();
-        var prevValue         = String(resourceSelect.value).trim();
+    function filterResources(restoreId) {
+        var bookingId = String(bookingSelect.value).trim();
 
-        // Clear current options (keep placeholder)
+        // Reset dropdown
         resourceSelect.innerHTML = '';
         resourceSelect.disabled  = true;
-        resourceHint.textContent = 'No resources found for this booking.';
+        resourceHint.textContent = 'Please select a booking first.';
 
-        // No booking chosen yet
-        if (!selectedBookingId) {
-            resourceSelect.innerHTML = '<option value="">— Select Booking First —</option>';
-            resourceHint.textContent = 'Please select a booking first.';
+        if (!bookingId) {
+            var opt = document.createElement('option');
+            opt.value       = '';
+            opt.textContent = '— Select Booking First —';
+            resourceSelect.appendChild(opt);
             return;
         }
 
-        // Filter options belonging to the selected booking
+        // Sirf is booking ki resources filter karo
         var matched = allResourceOptions.filter(function (opt) {
-            return String(opt.getAttribute('data-booking')).trim() === selectedBookingId;
+            return String(opt.getAttribute('data-booking')).trim() === bookingId;
         });
 
-        // Booking has no resources
         if (matched.length === 0) {
-            resourceSelect.innerHTML = '<option value="">— No resources for this booking —</option>';
+            var noOpt = document.createElement('option');
+            noOpt.value       = '';
+            noOpt.textContent = '— No resources for this booking —';
+            resourceSelect.appendChild(noOpt);
             resourceHint.textContent = 'No resources found for this booking.';
             return;
         }
 
-        // Add placeholder then matching options
+        // Placeholder
         var placeholder = document.createElement('option');
         placeholder.value       = '';
         placeholder.textContent = '— Select Resource (Optional) —';
         resourceSelect.appendChild(placeholder);
 
+        // Matched options add karo (style:none hata ke)
         matched.forEach(function (opt) {
             var clone = opt.cloneNode(true);
             clone.style.display = '';
@@ -346,28 +353,25 @@
         resourceSelect.disabled  = false;
         resourceHint.textContent = matched.length + ' resource(s) found.';
 
-        // Restore previously selected value if still valid
-        var stillValid = matched.some(function (opt) {
-            return String(opt.value).trim() === prevValue;
-        });
-        resourceSelect.value = stillValid ? prevValue : '';
+        // Agar restoreId diya hai aur matched mein hai to select karo
+        if (restoreId) {
+            var exists = matched.some(function (o) {
+                return String(o.value).trim() === String(restoreId).trim();
+            });
+            resourceSelect.value = exists ? restoreId : '';
+        }
     }
 
-    // Fire on booking change
-    bookingSelect.addEventListener('change', filterResources);
+    // User change kare to fresh filter (koi restore nahi)
+    bookingSelect.addEventListener('change', function () {
+        filterResources('');
+    });
 
-    // Fire on page load — handles edit mode & validation-failed repopulation
-    if (bookingSelect.value) {
-        filterResources();
-
-        // Restore old resource_id after validation failure
-        var oldResourceId = '{{ old("resource_id") }}';
-        if (oldResourceId) {
-            var opts = resourceSelect.querySelectorAll('option');
-            opts.forEach(function (o) {
-                if (o.value === oldResourceId) o.selected = true;
-            });
-        }
+    // ── Page load ──
+    // Agar booking already selected hai (edit mode ya validation fail)
+    if (preSelectedBookingId) {
+        bookingSelect.value = preSelectedBookingId; // booking set karo
+        filterResources(preSelectedResourceId);     // filter + resource restore
     }
 
 })();
