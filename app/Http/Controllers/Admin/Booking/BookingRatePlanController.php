@@ -39,9 +39,9 @@ class BookingRatePlanController extends Controller
 
         $this->validate($request, [
             'name'             => 'required|string|max:255',
-            'type'             => 'nullable|string|max:255',
+            'type'             => 'required|string|max:255',
             'price'            => 'nullable|numeric|min:0',
-            'price_unit'       => 'nullable|integer|min:0',
+            'price_unit'       => 'nullable|string|max:255',
             'calculation_type' => 'nullable|numeric|min:0',
             'priority'         => 'nullable|integer|min:0',
             'conditions'       => 'nullable|array',

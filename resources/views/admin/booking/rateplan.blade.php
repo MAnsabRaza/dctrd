@@ -228,7 +228,7 @@
                                                         <div class="col-12 col-md-6">
                                                             <div class="form-group">
                                                                 <label>{{ trans('admin/main.price_unit') }}</label>
-                                                                <input type="number" name="price_unit" min="0"
+                                                                <input type="text" name="price_unit" min="0"
                                                                        class="form-control @error('price_unit') is-invalid @enderror"
                                                                        value="{{ !empty($editRatePlan) ? $editRatePlan->price_unit : old('price_unit') }}"
                                                                        placeholder="0"/>

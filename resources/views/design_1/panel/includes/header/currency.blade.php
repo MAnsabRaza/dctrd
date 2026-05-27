@@ -8,7 +8,7 @@
         $currencyItems = collect([$fallbackCurrency]);
     }
 
-    if (!$currencyItems->pluck('currency')->map(fn($currency) => strtoupper($currency))->contains(strtoupper($userCurrency))) {
+    if (!$currencyItems->pluck('currency')->map(function ($currency) { return strtoupper($currency); })->contains(strtoupper($userCurrency))) {
         $currencyItems->prepend((new \App\Mixins\Financial\MultiCurrency())->getDefaultCurrency());
     }
 @endphp

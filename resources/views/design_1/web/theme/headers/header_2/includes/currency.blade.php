@@ -29,7 +29,7 @@
                 $currencyName = currenciesLists()[$currencyItem->currency] ?? $currencyItem->currency;
             @endphp
 
-            <div class="js-currency-dropdown-item header-2-dropdown-menu__item cursor-pointer {{ ($userCurrency == $currencyItem->currency) ? 'active' : '' }}" data-value="{{ $currencyItem->currency }}" data-title="{{ $currencyItem->currency }}">
+            <div class="js-currency-dropdown-item header-2-dropdown-menu__item cursor-pointer {{ (strtoupper($userCurrency) == strtoupper($currencyItem->currency)) ? 'active' : '' }}" data-value="{{ $currencyItem->currency }}" data-title="{{ $currencyItem->currency }}">
                 <div class="d-flex align-items-center justify-content-between w-100 px-16 py-8 bg-transparent">
                     <span class="text-gray-500 text-dark">{{ $currencyName }}</span>
 
