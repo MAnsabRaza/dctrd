@@ -184,6 +184,7 @@ return [
     'comments_section' => 'Enable Comments',
 
     'booking_rate_plan' => 'Booking Rate Plans',
+    'select_booking'=>'Select Booking',
     'rate_plans' => 'Rate Plans',
     'create_rate_plan' => 'New Rate Plan',
     'edit_rate_plan' => 'Edit Rate Plan',
