@@ -28,6 +28,11 @@
                 @endforeach
             @endif
 
+            {{-- Unit Preferences --}}
+            <div class="js-mobile-header-show-specific-drawer d-flex-center size-32 bg-gray-100 rounded-8" data-drawer="unit">
+                <x-iconsax-lin-setting-2 class="icons text-gray-500" width="18px" height="18px"/>
+            </div>
+
             {{-- Cart --}}
             <div class="js-view-cart-drawer position-relative d-flex-center size-32 bg-gray-100 rounded-8">
                 <x-iconsax-lin-bag class="icons text-gray-500" width="20px" height="20px"/>

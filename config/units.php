@@ -6,8 +6,8 @@ return [
     | Unit Conversion Configuration
     |--------------------------------------------------------------------------
     |
-    | This configuration handles unit conversions for length, mass, and area
-    | allowing users to view content in their preferred units.
+    | This configuration handles common unit conversions, allowing users to
+    | view content in their preferred units.
     |
     */
 
@@ -20,9 +20,15 @@ return [
     | All values are stored in these base units in the database
     */
     'base_units' => [
-        'length' => 'km',
+        'length' => 'cm',
+        'area' => 'cm2',
         'mass' => 'kg',
-        'area' => 'sqm',
+        'speed' => 'km',
+        'temperature' => 'c',
+        'force' => 'n',
+        'volume' => 'l',
+        'energy' => 'btu',
+        'heat_flow_rate' => 'w',
     ],
 
     /*
@@ -33,26 +39,48 @@ return [
     */
     'conversions' => [
         'length' => [
-            'km' => 1,
-            'mi' => 0.621371,
-            'm' => 1000,
-            'ft' => 3280.84,
-            'cm' => 100000,
-            'in' => 39370.1,
+            'cm' => 1,
+            'in' => 0.393701,
+            'ft' => 0.0328084,
+        ],
+        'area' => [
+            'cm2' => 1,
+            'm2' => 0.0001,
+            'in2' => 0.155,
         ],
         'mass' => [
             'kg' => 1,
-            'lbs' => 2.20462,
-            'g' => 1000,
-            'oz' => 35.274,
-            'ton' => 0.001,
+            'lb' => 2.20462,
         ],
-        'area' => [
-            'sqm' => 1,
-            'sqft' => 10.7639,
-            'sqkm' => 0.000001,
-            'acre' => 0.000247105,
-            'hectare' => 0.0001,
+        'speed' => [
+            'km' => 1,
+            'mph' => 0.621371,
+        ],
+        'temperature' => [
+            'c' => 1,
+            'f' => 33.8,
+            'k' => 274.15,
+        ],
+        'force' => [
+            'n' => 1,
+            'lb' => 0.224809,
+        ],
+        'volume' => [
+            'l' => 1,
+            'm3' => 0.001,
+            'in3' => 61.0237,
+            'gal' => 0.264172,
+        ],
+        'energy' => [
+            'btu' => 1,
+            'erg' => 10550558526.2,
+            'j' => 1055.06,
+            'cal' => 252.164,
+            'kwh' => 0.000293071,
+        ],
+        'heat_flow_rate' => [
+            'w' => 1,
+            'btuh' => 3.41214,
         ],
     ],
 
@@ -64,26 +92,43 @@ return [
     */
     'display_labels' => [
         // Length
-        'km' => 'Kilometers',
-        'mi' => 'Miles',
-        'm' => 'Meters',
-        'ft' => 'Feet',
         'cm' => 'Centimeters',
         'in' => 'Inches',
-        
-        // Mass
-        'kg' => 'Kilograms',
-        'lbs' => 'Pounds',
-        'g' => 'Grams',
-        'oz' => 'Ounces',
-        'ton' => 'Metric Tons',
-        
+        'ft' => 'Feet',
+
         // Area
-        'sqm' => 'Square Meters',
-        'sqft' => 'Square Feet',
-        'sqkm' => 'Square Kilometers',
-        'acre' => 'Acres',
-        'hectare' => 'Hectares',
+        'cm2' => 'Square Centimeters',
+        'm2' => 'Square Meters',
+        'in2' => 'Square Inches',
+
+        // Mass / Force
+        'kg' => 'Kilograms',
+        'lb' => 'Pounds',
+        'n' => 'Newtons',
+
+        // Speed
+        'km' => 'Kilometers',
+        'mph' => 'Miles per hour',
+
+        // Temperature
+        'c' => 'Celsius',
+        'f' => 'Fahrenheit',
+        'k' => 'Kelvin',
+
+        // Volume
+        'l' => 'Liters',
+        'm3' => 'Cubic Meters',
+        'in3' => 'Cubic Inches',
+        'gal' => 'Gallons',
+
+        // Energy / heat
+        'btu' => 'Btu',
+        'erg' => 'Erg',
+        'j' => 'Joules',
+        'cal' => 'Calories',
+        'kwh' => 'Kilowatt hours',
+        'w' => 'Watts',
+        'btuh' => 'Btu/h',
     ],
 
     /*
@@ -93,21 +138,30 @@ return [
     | Abbreviated labels for compact display
     */
     'short_labels' => [
-        'km' => 'km',
-        'mi' => 'mi',
-        'm' => 'm',
-        'ft' => 'ft',
         'cm' => 'cm',
         'in' => 'in',
+        'ft' => 'ft',
+        'cm2' => 'cm2',
+        'm2' => 'm2',
+        'in2' => 'in2',
         'kg' => 'kg',
-        'lbs' => 'lbs',
-        'g' => 'g',
-        'oz' => 'oz',
-        'ton' => 't',
-        'sqm' => 'm2',
-        'sqft' => 'ft2',
-        'sqkm' => 'km2',
-        'acre' => 'ac',
-        'hectare' => 'ha',
+        'lb' => 'lb',
+        'km' => 'km',
+        'mph' => 'mph',
+        'c' => 'deg C',
+        'f' => 'deg F',
+        'k' => 'Kelvin',
+        'n' => 'N',
+        'l' => 'L',
+        'm3' => 'm3',
+        'in3' => 'in3',
+        'gal' => 'Gallons',
+        'btu' => 'Btu',
+        'erg' => 'erg',
+        'j' => 'J',
+        'cal' => 'cal',
+        'kwh' => 'kW-h',
+        'w' => 'W',
+        'btuh' => 'Btu/h',
     ],
 ];

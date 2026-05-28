@@ -153,58 +153,7 @@
 
                 @if(!empty($unitPreferences))
                     <div class="mt-20 pt-20 border-top">
-                        <div class="d-flex align-items-center justify-content-between mb-16">
-                            <div>
-                                <h3 class="font-14 font-weight-bold mb-4">Common Units & Conversions</h3>
-                                <p class="font-12 text-gray-500 mb-0">Checkout and reports use these display units.</p>
-                            </div>
-                            <div class="d-flex-center size-40 rounded-12 bg-primary-20">
-                                <i class="fas fa-ruler-combined text-primary"></i>
-                            </div>
-                        </div>
-
-                        @foreach([
-                            'length' => ['title' => 'Length', 'name' => 'preferred_length_unit', 'base' => config('units.base_units.length')],
-                            'mass' => ['title' => 'Mass', 'name' => 'preferred_mass_unit', 'base' => config('units.base_units.mass')],
-                            'area' => ['title' => 'Area', 'name' => 'preferred_area_unit', 'base' => config('units.base_units.area')],
-                        ] as $unitType => $unitMeta)
-                            @if(!empty($unitPreferences[$unitType]))
-                                @php
-                                    $selectedUnit = old($unitMeta['name'], $user->{$unitMeta['name']} ?? $unitMeta['base']);
-                                @endphp
-
-                                <div class="{{ $loop->first ? '' : 'mt-16' }}">
-                                    <div class="d-flex align-items-center justify-content-between mb-8">
-                                        <span class="font-12 font-weight-bold text-dark">{{ $unitMeta['title'] }}</span>
-                                        <span class="font-11 text-gray-500">Base: {{ config('units.short_labels')[$unitMeta['base']] ?? $unitMeta['base'] }}</span>
-                                    </div>
-
-                                    <div class="row gutters-8">
-                                        @foreach($unitPreferences[$unitType] as $unit => $label)
-                                            <div class="col-6 mb-8">
-                                                <label class="d-flex align-items-center justify-content-between w-100 p-8 rounded-12 border-gray-200 cursor-pointer mb-0 {{ $selectedUnit == $unit ? 'bg-primary-20 border-primary' : 'bg-gray-100' }}">
-                                                    <span class="d-flex flex-column">
-                                                        <span class="font-12 font-weight-bold text-dark">{{ config('units.short_labels')[$unit] ?? $unit }}</span>
-                                                        <span class="font-11 text-gray-500 text-ellipsis">{{ $label }}</span>
-                                                    </span>
-
-                                                    <input
-                                                        type="radio"
-                                                        name="{{ $unitMeta['name'] }}"
-                                                        value="{{ $unit }}"
-                                                        {{ $selectedUnit == $unit ? 'checked' : '' }}
-                                                    >
-                                                </label>
-                                            </div>
-                                        @endforeach
-                                    </div>
-
-                                    @error($unitMeta['name'])
-                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            @endif
-                        @endforeach
+                        @include('design_1.common.unit_preferences', ['user' => $user, 'unitPreferences' => $unitPreferences])
                     </div>
                 @endif
 

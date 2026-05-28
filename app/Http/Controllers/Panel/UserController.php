@@ -129,12 +129,13 @@ class UserController extends Controller
     private function getUnitPreferencesData(): array
     {
         $unitService = app(UnitConversionService::class);
+        $unitPreferences = [];
 
-        return [
-            'length' => $unitService->getAvailableUnits('length'),
-            'mass' => $unitService->getAvailableUnits('mass'),
-            'area' => $unitService->getAvailableUnits('area'),
-        ];
+        foreach ($unitService->getUnitTypes() as $type) {
+            $unitPreferences[$type] = $unitService->getAvailableUnits($type);
+        }
+
+        return $unitPreferences;
     }
 
     public function update(Request $request)
@@ -157,20 +158,27 @@ class UserController extends Controller
 
         if ($step == "basic_information") {
             $registerMethod = getGeneralSettings('register_method') ?? 'mobile';
+            $unitService = app(UnitConversionService::class);
 
             $rules = [
                 'full_name' => 'required|string',
                 'email' => (($registerMethod == 'email') ? 'required' : 'nullable') . '|email|max:255|unique:users,email,' . $user->id,
                 'mobile' => (($registerMethod == 'mobile') ? 'required' : 'nullable') . '|numeric|unique:users,mobile,' . $user->id,
                 'currency' => 'nullable|string|max:3',
-                'preferred_length_unit' => 'nullable|in:' . implode(',', array_keys(config('units.conversions.length', []))),
-                'preferred_mass_unit' => 'nullable|in:' . implode(',', array_keys(config('units.conversions.mass', []))),
-                'preferred_area_unit' => 'nullable|in:' . implode(',', array_keys(config('units.conversions.area', []))),
+                'preferred_date_format' => 'nullable|string|max:30',
+                'preferred_custom_date_format' => 'nullable|string|max:30',
+                'preferred_time_format' => 'nullable|string|max:30',
+                'preferred_custom_time_format' => 'nullable|string|max:30',
+                'preferred_week_start' => 'nullable|string|max:10',
                 'booking_default_currency' => 'nullable|string|max:3',
                 'booking_default_price_unit' => 'nullable|string|max:64',
                 'booking_auto_publish' => 'nullable|in:on,1,true',
                 'booking_location_enabled' => 'nullable|in:on,1,true',
             ];
+
+            foreach ($unitService->getUnitTypes() as $type) {
+                $rules["preferred_{$type}_unit"] = 'nullable|in:' . implode(',', array_keys(config("units.conversions.{$type}", [])));
+            }
         }
 
         $this->validate($request, $rules);
@@ -192,6 +200,13 @@ class UserController extends Controller
 
             if ($step == "basic_information") {
                 $joinNewsletter = (!empty($data['join_newsletter']) and $data['join_newsletter'] == 'on');
+                $unitService = app(UnitConversionService::class);
+                $dateFormat = (($data['preferred_date_format'] ?? null) === 'custom')
+                    ? ($data['preferred_custom_date_format'] ?? null)
+                    : ($data['preferred_date_format'] ?? null);
+                $timeFormat = (($data['preferred_time_format'] ?? null) === 'custom')
+                    ? ($data['preferred_custom_time_format'] ?? null)
+                    : ($data['preferred_time_format'] ?? null);
 
                 $updateData = [
                     'full_name' => $data['full_name'],
@@ -201,9 +216,9 @@ class UserController extends Controller
                     'timezone' => $data['timezone'] ?? null,
                     'currency' => !empty($data['currency']) ? strtoupper($data['currency']) : null,
                     'preferred_currency' => !empty($data['currency']) ? strtoupper($data['currency']) : config('exchange.base_currency', 'USD'),
-                    'preferred_length_unit' => $data['preferred_length_unit'] ?? config('units.base_units.length', 'km'),
-                    'preferred_mass_unit' => $data['preferred_mass_unit'] ?? config('units.base_units.mass', 'kg'),
-                    'preferred_area_unit' => $data['preferred_area_unit'] ?? config('units.base_units.area', 'sqm'),
+                    'preferred_date_format' => $dateFormat ?: 'F j, Y',
+                    'preferred_time_format' => $timeFormat ?: 'g:i a',
+                    'preferred_week_start' => $data['preferred_week_start'] ?? 'Monday',
                     'offline' => (!empty($data['offline']) and $data['offline'] == "on"),
                     'offline_message' => (!empty($data['offline_message'])) ? $data['offline_message'] : null,
                     'newsletter' => $joinNewsletter,
@@ -211,6 +226,11 @@ class UserController extends Controller
                     'enable_profile_statistics' => (!empty($data['enable_profile_statistics']) and $data['enable_profile_statistics'] == 'on'),
                     'auto_renew_subscription' => (!empty($data['auto_renew_subscription']) and $data['auto_renew_subscription'] == 'on'),
                 ];
+
+                foreach ($unitService->getUnitTypes() as $type) {
+                    $key = "preferred_{$type}_unit";
+                    $updateData[$key] = $data[$key] ?? config("units.base_units.{$type}");
+                }
 
                 $updateUserMeta = [
                     'booking_default_currency' => !empty($data['booking_default_currency']) ? strtoupper($data['booking_default_currency']) : null,

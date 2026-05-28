@@ -37,11 +37,36 @@ class UnitConversionService
 
         $cacheKey = 'unit_conversion:' . md5($type . '|' . $value . '|' . $fromUnit . '|' . $toUnit);
 
-        return Cache::remember($cacheKey, now()->addDay(), function () use ($value, $conversions, $fromUnit, $toUnit) {
+        return Cache::remember($cacheKey, now()->addDay(), function () use ($value, $type, $conversions, $fromUnit, $toUnit) {
+            if ($type === 'temperature') {
+                return $this->convertTemperatureValue($value, $fromUnit, $toUnit);
+            }
+
             $baseValue = $value / $conversions[$fromUnit];
 
             return round($baseValue * $conversions[$toUnit], 2);
         });
+    }
+
+    private function convertTemperatureValue(float $value, string $fromUnit, string $toUnit): float
+    {
+        if ($fromUnit === 'f') {
+            $celsius = ($value - 32) * 5 / 9;
+        } elseif ($fromUnit === 'k') {
+            $celsius = $value - 273.15;
+        } else {
+            $celsius = $value;
+        }
+
+        if ($toUnit === 'f') {
+            return round(($celsius * 9 / 5) + 32, 2);
+        }
+
+        if ($toUnit === 'k') {
+            return round($celsius + 273.15, 2);
+        }
+
+        return round($celsius, 2);
     }
 
     /**

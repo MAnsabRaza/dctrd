@@ -19,13 +19,13 @@ return new class extends Migration
                 $table->string('preferred_currency', 3)->default('USD')->after('timezone')->nullable();
             }
             if (!Schema::hasColumn('users', 'preferred_length_unit')) {
-                $table->string('preferred_length_unit', 10)->default('km')->after('preferred_currency')->nullable();
+                $table->string('preferred_length_unit', 10)->default('cm')->after('preferred_currency')->nullable();
             }
             if (!Schema::hasColumn('users', 'preferred_mass_unit')) {
                 $table->string('preferred_mass_unit', 10)->default('kg')->after('preferred_length_unit')->nullable();
             }
             if (!Schema::hasColumn('users', 'preferred_area_unit')) {
-                $table->string('preferred_area_unit', 10)->default('sqm')->after('preferred_mass_unit')->nullable();
+                $table->string('preferred_area_unit', 10)->default('cm2')->after('preferred_mass_unit')->nullable();
             }
         });
     }
