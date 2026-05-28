@@ -88,8 +88,14 @@
 
                 var $btn = $(this);
                 var slug = $btn.data('slug');
+                var loginUrl = $btn.data('login-url');
                 var $emptyIcon = $btn.find('.js-empty-fav');
                 var $fullIcon = $btn.find('.js-full-fav');
+
+                if (loginUrl) {
+                    window.location = loginUrl;
+                    return;
+                }
 
                 if (!slug) {
                     return;

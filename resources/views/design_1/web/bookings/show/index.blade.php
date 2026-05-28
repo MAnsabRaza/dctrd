@@ -25,7 +25,7 @@
 
                     <div class="position-relative bg-white p-16 rounded-24 z-index-2">
                         <div class="position-absolute" style="top: 24px; right: 24px; z-index: 10;">
-                            <div class="bookingFavoriteBtn d-flex align-items-center justify-content-center rounded-circle bg-white border border-gray-200" style="width: 42px; height: 42px; cursor: pointer;" data-slug="{{ $booking->slug }}">
+                            <div class="bookingFavoriteBtn d-flex align-items-center justify-content-center rounded-circle bg-white border border-gray-200" style="width: 42px; height: 42px; cursor: pointer;" data-slug="{{ $booking->slug }}" @if(auth()->guest()) data-login-url="/login" @endif>
                                 <x-iconsax-lin-heart class="icons js-empty-fav text-gray-500 {{ !empty($isFavorited) ? 'd-none' : '' }}" width="22px" height="22px"/>
                                 <x-iconsax-bol-heart class="icons js-full-fav text-danger {{ !empty($isFavorited) ? '' : 'd-none' }}" width="22px" height="22px"/>
                             </div>
@@ -98,7 +98,7 @@
                                 </button>
                             </form>
 
-                            <button id="bookingFavoriteBtn" type="button" class="btn btn-outline-secondary btn-lg ml-2 d-flex align-items-center" data-slug="{{ $booking->slug }}">
+                            <button id="bookingFavoriteBtn" type="button" class="btn btn-outline-secondary btn-lg ml-2 d-flex align-items-center" data-slug="{{ $booking->slug }}" @if(auth()->guest()) data-login-url="/login" @endif>
                                 <x-iconsax-lin-heart class="js-empty-fav icons text-gray-500 mr-2 {{ (!empty($isFavorited) && $isFavorited) ? 'd-none' : '' }}" width="20px" height="20px"/>
                                 <x-iconsax-bol-heart class="js-full-fav icons text-danger mr-2 {{ (!empty($isFavorited) && $isFavorited) ? '' : 'd-none' }}" width="20px" height="20px"/>
                                 <span class="font-14">{{ $isFavorited ? 'Favorited' : 'Add to favorites' }}</span>
@@ -380,8 +380,14 @@
 
                 var $btn = $(this);
                 var slug = $btn.data('slug');
+                var loginUrl = $btn.data('login-url');
                 var $emptyIcon = $btn.find('.js-empty-fav');
                 var $fullIcon = $btn.find('.js-full-fav');
+
+                if (loginUrl) {
+                    window.location = loginUrl;
+                    return;
+                }
 
                 if (!slug) {
                     return;
