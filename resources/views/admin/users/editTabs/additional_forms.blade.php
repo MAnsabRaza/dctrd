@@ -217,7 +217,7 @@
 @push('styles_bottom')
     <style>
         .admin-user-additional-forms {
-            border: 2px solid #28a745;
+            border: none;
             border-radius: 8px;
             padding: 16px;
             background: #fff;
