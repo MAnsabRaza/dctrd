@@ -215,6 +215,9 @@ Route::group(['prefix' => 'booking'], function () {
 Route::post('/users/{id}/booking-orders/store', [UserController::class, 'storeManualBookingOrder'])
     ->name('admin.users.booking_orders.store');
 
+Route::post('/users/{id}/booking-options-update', [UserController::class, 'bookingOptionsUpdate'])
+    ->name('admin.users.booking_options.update');
+
 /**
  * To use these routes, you must have your controller in App\Http\Controllers\Admin namespace
  * or specify the complete namespace like:

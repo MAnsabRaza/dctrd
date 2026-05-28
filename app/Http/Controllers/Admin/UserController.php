@@ -1137,6 +1137,79 @@ class UserController extends Controller
         return redirect()->back();
     }
 
+    public function bookingOptionsUpdate(Request $request, $id)
+    {
+        $this->authorize('admin_users_edit');
+
+        $user = User::findOrFail($id);
+
+        $data = $request->validate([
+            'booking_checkout_use_global_availability' => 'nullable|in:0,1',
+            'booking_checkout_limited_availability' => 'nullable|in:0,1',
+            'booking_checkout_ranges' => 'nullable|array',
+            'booking_checkout_ranges.*.range_type' => 'nullable|in:date,time,date_time',
+            'booking_checkout_ranges.*.from' => 'nullable|string|max:255',
+            'booking_checkout_ranges.*.to' => 'nullable|string|max:255',
+            'booking_checkout_ranges.*.available' => 'nullable|in:0,1',
+            'booking_use_all_assets' => 'nullable|in:0,1',
+            'booking_assets' => 'nullable|array',
+            'booking_assets.*.name' => 'nullable|string|max:255',
+            'booking_assets.*.quantity' => 'nullable|integer|min:0',
+            'booking_use_default_asset_availability' => 'nullable|in:0,1',
+            'booking_asset_availability' => 'nullable|array',
+            'booking_asset_availability.*.asset' => 'nullable|string|max:255',
+            'booking_asset_availability.*.range_type' => 'nullable|in:date,time,date_time',
+            'booking_asset_availability.*.from' => 'nullable|string|max:255',
+            'booking_asset_availability.*.to' => 'nullable|string|max:255',
+            'booking_asset_availability.*.available' => 'nullable|in:0,1',
+        ]);
+
+        $metas = [
+            'booking_checkout_use_global_availability' => $data['booking_checkout_use_global_availability'] ?? '0',
+            'booking_checkout_limited_availability' => $data['booking_checkout_limited_availability'] ?? '0',
+            'booking_checkout_ranges' => json_encode($this->filterEmptyRows($data['booking_checkout_ranges'] ?? [], ['range_type', 'from', 'to', 'available'])),
+            'booking_use_all_assets' => $data['booking_use_all_assets'] ?? '0',
+            'booking_assets' => json_encode($this->filterEmptyRows($data['booking_assets'] ?? [], ['name', 'quantity'])),
+            'booking_use_default_asset_availability' => $data['booking_use_default_asset_availability'] ?? '0',
+            'booking_asset_availability' => json_encode($this->filterEmptyRows($data['booking_asset_availability'] ?? [], ['asset', 'range_type', 'from', 'to', 'available'])),
+        ];
+
+        foreach ($metas as $name => $value) {
+            UserMeta::updateOrCreate([
+                'user_id' => $user->id,
+                'name' => $name,
+            ], [
+                'value' => $value,
+            ]);
+        }
+
+        return redirect(getAdminPanelUrl("/users/{$user->id}/edit?tab=additionalForms"))
+            ->with('msg', trans('update.saved_successfully'));
+    }
+
+    private function filterEmptyRows(array $rows, array $keys): array
+    {
+        $filtered = [];
+
+        foreach ($rows as $row) {
+            $item = [];
+
+            foreach ($keys as $key) {
+                $item[$key] = $row[$key] ?? null;
+            }
+
+            $hasValue = collect($item)->filter(function ($value) {
+                return $value !== null && $value !== '';
+            })->isNotEmpty();
+
+            if ($hasValue) {
+                $filtered[] = $item;
+            }
+        }
+
+        return $filtered;
+    }
+
     public function financialUpdate(Request $request, $id)
     {
         $this->authorize('admin_users_edit');

@@ -212,6 +212,10 @@
                                         @endif
 
                                         <li class="nav-item">
+                                            <a class="nav-link {{ (request()->get('tab') == "additionalForms") ? 'active' : '' }}" id="additional_forms-tab" data-toggle="tab" href="#additional_forms" role="tab" aria-controls="additional_forms" aria-selected="true">Additional Forms</a>
+                                        </li>
+
+                                        <li class="nav-item">
                                             <a class="nav-link" id="images-tab" data-toggle="tab" href="#images" role="tab" aria-controls="images" aria-selected="true">{{ trans('auth.images') }}</a>
                                         </li>
 
@@ -291,6 +295,8 @@
                                         @if(!empty($formFieldsHtml))
                                             @include('admin.users.editTabs.extra_information')
                                         @endif
+
+                                        @include('admin.users.editTabs.additional_forms')
 
                                         @include('admin.users.editTabs.images')
 
