@@ -573,3 +573,89 @@
     </div>
 </section>
 @endsection
+@push('scripts')
+<script>
+(function () {
+
+    function bindDynamicRows(field) {
+
+        $(document).on('click', '.js-add-' + field + '-row', function () {
+
+            $('#' + field + 'Wrapper').append(`
+                <div class="row align-items-center mb-2 js-${field}-row">
+                    <div class="col-5">
+                        <input type="text"
+                               name="${field}_keys[]"
+                               class="form-control"
+                               placeholder="Key">
+                    </div>
+
+                    <div class="col-5">
+                        <input type="text"
+                               name="${field}_values[]"
+                               class="form-control"
+                               placeholder="Value">
+                    </div>
+
+                    <div class="col-2 text-right">
+                        <button type="button"
+                                class="btn btn-sm btn-danger js-remove-${field}-row">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            `);
+
+        });
+
+        $(document).on('click', '.js-remove-' + field + '-row', function () {
+
+            $(this).closest('.js-' + field + '-row').remove();
+
+        });
+    }
+
+    bindDynamicRows('conditions');
+    bindDynamicRows('actions');
+    bindDynamicRows('meta');
+
+    // Options
+
+    $(document).on('click', '.js-add-option-row', function () {
+
+        $('#optionAttributesWrapper').append(`
+            <div class="row align-items-center mb-2 js-option-row">
+                <div class="col-5">
+                    <input type="text"
+                           name="option_keys[]"
+                           class="form-control"
+                           placeholder="Key">
+                </div>
+
+                <div class="col-5">
+                    <input type="text"
+                           name="option_values[]"
+                           class="form-control"
+                           placeholder="Value">
+                </div>
+
+                <div class="col-2 text-right">
+                    <button type="button"
+                            class="btn btn-sm btn-danger js-remove-option-row">
+                        &times;
+                    </button>
+                </div>
+            </div>
+        `);
+
+    });
+
+    $(document).on('click', '.js-remove-option-row', function () {
+
+        $(this).closest('.js-option-row').remove();
+
+    });
+
+})();
+</script>
+@endpush

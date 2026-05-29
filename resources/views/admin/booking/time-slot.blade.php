@@ -587,9 +587,9 @@ $(document).ready(function () {
 
     // ============================================================
     // Yahan PHP se selected resource_id pass ho raha hai
-    // Edit mode mein yeh value hogi, create mein empty hogi
+    // Edit mode ya validation error mein yeh value hogi
     // ============================================================
-    var preSelectedResourceId = "{{ $selectedResource ?? '' }}";
+    var preSelectedResourceId = "{{ old('resource_id', !empty($editSlot) ? $editSlot->resource_id : '') }}";
 
     function filterResources() {
 

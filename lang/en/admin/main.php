@@ -254,6 +254,8 @@ return [
     //booking
 
     //booking value
+    'validity_days'=>'Validity Days',
+    'usage_limit'=>'Usage Limit',
     'booking_type' => 'Booking Type',
     'numeric_value'=>'Numeric Value',
     'search_by_title' => 'Search By Title',

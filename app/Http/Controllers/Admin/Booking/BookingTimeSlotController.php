@@ -55,6 +55,11 @@ class BookingTimeSlotController extends Controller
             'status'        => 'required|boolean',
         ]);
 
+        $validated['resource_id'] = !empty($validated['resource_id']) ? $validated['resource_id'] : null;
+       $validated['duration_minutes'] = (int) $validated['duration_minutes'];
+        $validated['max_bookings'] = (int) $validated['max_bookings'];
+        $validated['status'] = (int) $validated['status'];
+
         if (!empty($validated['resource_id']) && !BookingResource::where('id', $validated['resource_id'])->where('booking_id', $validated['booking_id'])->exists()) {
             return back()
                 ->withInput()
@@ -115,6 +120,12 @@ class BookingTimeSlotController extends Controller
             'max_bookings'  => 'required|integer|min:1',
             'status'        => 'required|boolean',
         ]);
+
+        $validated['resource_id'] = !empty($validated['resource_id']) ? $validated['resource_id'] : null;
+        $validated['buffer_minutes'] = $validated['buffer_minutes'] !== null && $validated['buffer_minutes'] !== '' ? (int) $validated['buffer_minutes'] : 0;
+        $validated['duration_minutes'] = (int) $validated['duration_minutes'];
+        $validated['max_bookings'] = (int) $validated['max_bookings'];
+        $validated['status'] = (int) $validated['status'];
 
         if (!empty($validated['resource_id']) && !BookingResource::where('id', $validated['resource_id'])->where('booking_id', $validated['booking_id'])->exists()) {
             return back()
