@@ -573,7 +573,7 @@
     </div>
 </section>
 @endsection
-@push('scripts')
+@push('scripts_bottom')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
