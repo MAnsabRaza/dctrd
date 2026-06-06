@@ -55,6 +55,24 @@
                         var map = L.map(mapEl).setView([lat, lng], latInput.value && lngInput.value ? 13 : 5);
                         var marker = L.marker([lat, lng], {draggable: true}).addTo(map);
 
+                        // store instance for later visibility checks
+                        RocketLocationPicker.instances.push({root: root, map: map, marker: marker});
+
+                        // If the picker is in a hidden container (tabs/collapsed), wait until visible then invalidate size
+                        (function waitForVisibleAndInvalidate() {
+                            try {
+                                var rect = mapEl.getBoundingClientRect();
+                                var visible = rect.width > 0 && rect.height > 0;
+                                if (visible) {
+                                    setTimeout(function () { map.invalidateSize(); }, 120);
+                                } else {
+                                    setTimeout(waitForVisibleAndInvalidate, 250);
+                                }
+                            } catch (e) {
+                                setTimeout(waitForVisibleAndInvalidate, 300);
+                            }
+                        })();
+
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                             maxZoom: 19,
                             attribution: '&copy; OpenStreetMap'
@@ -173,10 +191,71 @@
                     document.querySelectorAll('[data-location-picker]').forEach(RocketLocationPicker.init);
                 }
 
+                // Attach lightweight suggestions to plain address inputs used in other forms (e.g. bookings)
+                function attachGlobalAddressSuggestions() {
+                    var selector = 'input[name="address_line"], input[name="address"]';
+                    document.querySelectorAll(selector).forEach(function (input) {
+                        if (input.dataset.locSuggestReady === '1') return;
+                        input.dataset.locSuggestReady = '1';
+
+                        var suggestionsEl = document.createElement('div');
+                        suggestionsEl.className = 'location-picker-suggestions dropdown-menu d-none show';
+                        suggestionsEl.style.position = 'absolute';
+                        suggestionsEl.style.zIndex = 1050;
+                        suggestionsEl.style.width = input.offsetWidth + 'px';
+                        input.parentNode.style.position = 'relative';
+                        input.parentNode.appendChild(suggestionsEl);
+
+                        var render = function (items) {
+                            suggestionsEl.innerHTML = '';
+                            items.forEach(function (item) {
+                                var option = document.createElement('button');
+                                option.type = 'button';
+                                option.className = 'location-picker-suggestion dropdown-item text-wrap py-8';
+                                option.textContent = item.display_name;
+                                option.addEventListener('click', function () {
+                                    // fill nearest fields in the same form
+                                    var form = input.closest('form') || document;
+                                    input.value = item.display_name || input.value;
+                                    var latField = form.querySelector('input[name="lat"]');
+                                    var lngField = form.querySelector('input[name="lng"]');
+                                    var cityField = form.querySelector('input[name="city"]');
+                                    var stateField = form.querySelector('input[name="state"]');
+                                    var countryField = form.querySelector('input[name="country"]');
+                                    var postalField = form.querySelector('input[name="postal_code"]');
+
+                                    if (latField) latField.value = item.lat || '';
+                                    if (lngField) lngField.value = item.lng || '';
+                                    if (cityField) cityField.value = item.city || '';
+                                    if (stateField) stateField.value = item.state || '';
+                                    if (countryField) countryField.value = item.country || '';
+                                    if (postalField) postalField.value = item.postal_code || '';
+
+                                    suggestionsEl.classList.add('d-none');
+                                });
+                                suggestionsEl.appendChild(option);
+                            });
+                            suggestionsEl.classList.toggle('d-none', !items.length);
+                        };
+
+                        var doSuggest = RocketLocationPicker.debounce(function () {
+                            var q = input.value.trim();
+                            if (q.length < 3) { render([]); return; }
+                            fetch('/location/suggestions?q=' + encodeURIComponent(q))
+                                .then(function (r) { return r.json(); })
+                                .then(render)
+                                .catch(function () { render([]); });
+                        }, 400);
+
+                        input.addEventListener('input', doSuggest);
+                        input.addEventListener('keyup', doSuggest);
+                    });
+                }
+
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', initLocationPickers);
+                    document.addEventListener('DOMContentLoaded', function () { initLocationPickers(); attachGlobalAddressSuggestions(); });
                 } else {
-                    initLocationPickers();
+                    initLocationPickers(); attachGlobalAddressSuggestions();
                 }
             })();
         </script>
