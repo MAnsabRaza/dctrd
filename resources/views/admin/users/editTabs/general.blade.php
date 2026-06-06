@@ -317,6 +317,16 @@
                     </div>
                 @endif
 
+                <div class="form-group mt-4">
+                    <label class="input-label">{{ trans('update.location') }}</label>
+                    @include('partials._location_picker', [
+                        'locationModel' => $user,
+                        'addressName' => 'address',
+                        'showAjaxSave' => false,
+                        'pickerId' => 'adminUserLocationPicker'
+                    ])
+                </div>
+
                 <div class=" mt-4">
                     <button class="btn btn-primary">{{ trans('admin/main.submit') }}</button>
                 </div>

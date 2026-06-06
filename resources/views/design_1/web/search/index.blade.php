@@ -22,9 +22,23 @@
                         <div class="search-form-box bg-white p-12 mt-20 rounded-16 w-100">
                             <form action="/search" method="get">
                                 <div class="form-group d-flex align-items-center mb-0">
-                                    <input type="text" name="search" class="form-control border-0 p-12" value="{{ request()->get('search','') }}" placeholder="{{ trans('home.slider_search_placeholder') }}"/>
-                                    <button type="submit" class="btn btn-primary btn-lg">{{ trans('public.search') }}</button>
+                                            <input type="text" name="search" class="form-control border-0 p-12" value="{{ request()->get('search','') }}" placeholder="{{ trans('home.slider_search_placeholder') }}"/>
+                                            <button type="submit" class="btn btn-primary btn-lg">{{ trans('public.search') }}</button>
                                 </div>
+
+                                        <div class="mt-12">
+                                            @include('partials._location_picker', [
+                                                'locationModel' => null,
+                                                'addressName' => 'address',
+                                                'showAjaxSave' => false,
+                                                'pickerId' => 'searchLocationPicker'
+                                            ])
+
+                                            <div class="form-group mt-8">
+                                                <label class="input-label">Radius (km)</label>
+                                                <input type="number" name="radius_km" value="{{ request()->get('radius_km', 50) }}" class="form-control" step="1" min="1">
+                                            </div>
+                                        </div>
                             </form>
                         </div>
                     </div>

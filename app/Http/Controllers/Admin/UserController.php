@@ -1057,6 +1057,15 @@ class UserController extends Controller
 
         $user->save();
 
+        // save location fields if provided (address, city, state, country, postal_code, lat, lng)
+        try {
+            if (!empty($data)) {
+                app(\App\Services\LocationService::class)->saveLocation($user, $data);
+            }
+        } catch (\Throwable $e) {
+            // fail silently — location saving should not block user update
+        }
+
         // save certificate_additional in user metas table
         $this->handleUserCertificateAdditional($user->id, $data['certificate_additional']);
 

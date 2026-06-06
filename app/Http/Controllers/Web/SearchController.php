@@ -32,14 +32,14 @@ class SearchController extends Controller
         $search = $request->get('search', null);
 
         if (!empty($search) and strlen($search) >= 3) {
-            $searchData = $this->getSearchData($search);
+            $searchData = $this->getSearchData($search, $request);
             $data = array_merge($data, $searchData);
         }
 
         return view('design_1.web.search.index', $data);
     }
 
-    private function getSearchData($search)
+    private function getSearchData($search, Request $request)
     {
         $webinarsQuery = Webinar::query()->where('status', 'active')
             ->where('private', false)
@@ -54,6 +54,10 @@ class SearchController extends Controller
                 },
                 'reviews'
             ]);
+
+        if ($request->filled(['lat', 'lng', 'radius_km'])) {
+            $webinarsQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
+        }
 
         $webinarsCount = deepClone($webinarsQuery)->count();
         $webinars = $webinarsQuery
@@ -110,6 +114,10 @@ class SearchController extends Controller
                 }
             ]);
 
+        if ($request->filled(['lat', 'lng', 'radius_km'])) {
+            $productsQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
+        }
+
         $productsCount = deepClone($productsQuery)->count();
         $products = $productsQuery
             ->inRandomOrder()
@@ -144,6 +152,10 @@ class SearchController extends Controller
                 $query->where('role_name', Role::$teacher);
                 $query->orWhere('role_name', Role::$organization);
             });
+
+        if ($request->filled(['lat', 'lng', 'radius_km'])) {
+            $usersQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
+        }
 
         $usersCount = deepClone($usersQuery)->count();
 
