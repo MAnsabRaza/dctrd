@@ -90,6 +90,15 @@
                         <a href="/panel/setting/deleteAccount" class="delete-action btn btn-outline-danger btn-block mt-16" data-confirm="{{ trans('update.delete_account_modal_confirm_btn_text') }}" data-msg="{{ trans('update.delete_account_modal_hint') }}">{{ trans('update.delete_account') }}</a>
                     @endif
                 </div>
+                   <div class="bg-white p-16 rounded-16 border-gray-200 mt-20">
+                <h3 class="font-14 font-weight-bold mb-24">{{ trans('update.geolocation') }}</h3>
+                @include('partials._location_picker', [
+                    'locationModel' => $user,
+                    'addressName' => 'address',
+                    'showAjaxSave' => true,
+                ])
+            </div>
+
 
             @endif
 
@@ -210,15 +219,7 @@
                 </div>
             </div>
 
-            <div class="bg-white p-16 rounded-16 border-gray-200 mt-20">
-                <h3 class="font-14 font-weight-bold mb-24">{{ trans('update.geolocation') }}</h3>
-                @include('partials._location_picker', [
-                    'locationModel' => $user,
-                    'addressName' => 'address',
-                    'showAjaxSave' => true,
-                ])
-            </div>
-
+         
             <div class="bg-white p-16 rounded-16 border-gray-200 mt-20">
                 <h3 class="font-14 font-weight-bold mb-24">{{ trans('update.vacation_mode') }}</h3>
 

@@ -100,7 +100,7 @@
                         }
 
                         if (addressInput) {
-                            addressInput.addEventListener('keyup', RocketLocationPicker.debounce(function () {
+                            var suggestAddress = RocketLocationPicker.debounce(function () {
                                 var q = addressInput.value.trim();
 
                                 if (q.length < 3) {
@@ -112,7 +112,10 @@
                                     .then(function (response) { return response.json(); })
                                     .then(renderSuggestions)
                                     .catch(function () { renderSuggestions([]); });
-                            }, 400));
+                            }, 400);
+
+                            addressInput.addEventListener('keyup', suggestAddress);
+                            addressInput.addEventListener('input', suggestAddress);
                         }
 
                         marker.on('dragend', function () {
@@ -166,9 +169,15 @@
                     }
                 };
 
-                document.addEventListener('DOMContentLoaded', function () {
+                function initLocationPickers() {
                     document.querySelectorAll('[data-location-picker]').forEach(RocketLocationPicker.init);
-                });
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initLocationPickers);
+                } else {
+                    initLocationPickers();
+                }
             })();
         </script>
     @endpush
