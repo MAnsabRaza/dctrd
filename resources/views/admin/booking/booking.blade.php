@@ -448,45 +448,13 @@
 
                                                 {{-- Location Fields --}}
                                                 <div id="locationFields" style="{{ (!empty($editBooking) && $editBooking->location_enabled) ? '' : 'display:none' }}">
-                                                    <div class="form-group">
-                                                        <label class="input-label">{{ trans('admin/main.address_line') }}</label>
-                                                        <input type="text" name="address_line" class="form-control"
-                                                               value="{{ !empty($editBooking) ? $editBooking->address_line : old('address_line') }}">
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-6">
-                                                            <div class="form-group">
-                                                                <label class="input-label">{{ trans('admin/main.city') }}</label>
-                                                                <input type="text" name="city" class="form-control"
-                                                                       value="{{ !empty($editBooking) ? $editBooking->city : old('city') }}">
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-6">
-                                                            <div class="form-group">
-                                                                <label class="input-label">{{ trans('admin/main.country') }}</label>
-                                                                <input type="text" name="country" class="form-control"
-                                                                       value="{{ !empty($editBooking) ? $editBooking->country : old('country') }}">
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-6">
-                                                            <div class="form-group">
-                                                                <label class="input-label">Latitude</label>
-                                                                <input type="number" name="lat" step="0.0000001" class="form-control"
-                                                                       value="{{ !empty($editBooking) ? $editBooking->lat : old('lat') }}"
-                                                                       placeholder="e.g. 31.5204">
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-6">
-                                                            <div class="form-group">
-                                                                <label class="input-label">Longitude</label>
-                                                                <input type="number" name="lng" step="0.0000001" class="form-control"
-                                                                       value="{{ !empty($editBooking) ? $editBooking->lng : old('lng') }}"
-                                                                       placeholder="e.g. 74.3587">
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    @php $locationModel = $editBooking ?? null; @endphp
+                                                    @include('partials._location_picker', [
+                                                        'locationModel' => $locationModel,
+                                                        'addressName' => 'address_line',
+                                                        'showAjaxSave' => false,
+                                                        'pickerId' => 'adminBookingLocationPicker'
+                                                    ])
                                                 </div>
 
                                             </div>{{-- col-md-6 right --}}
