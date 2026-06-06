@@ -211,7 +211,7 @@ return [
 'item_id' => 'Item ID',
 'export_list' => 'Export Student List',
 'duplicate' => 'Duplicate',
-
+'update'=>'Update',
 'updated_at' => 'Last Updated',
 'from' => 'From',
 'to' => 'To',

@@ -203,7 +203,9 @@
                                 option.type = 'button';
                                 option.className = 'location-picker-suggestion dropdown-item text-wrap py-8';
                                 option.textContent = item.display_name;
-                                option.addEventListener('click', function () {
+                                option.addEventListener('click', function (e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
                                     // fill nearest fields in the same form
                                     var form = input.closest('form') || document;
                                     input.value = item.display_name || input.value;
@@ -221,12 +223,20 @@
                                     if (countryField) countryField.value = item.country || '';
                                     if (postalField) postalField.value = item.postal_code || '';
 
+                                    suggestionsEl.innerHTML = '';
                                     suggestionsEl.classList.add('d-none');
                                 });
                                 suggestionsEl.appendChild(option);
                             });
                             suggestionsEl.classList.toggle('d-none', !items.length);
                         };
+
+                        // Close dropdown when clicking outside
+                        document.addEventListener('click', function (e) {
+                            if (e.target !== input && !suggestionsEl.contains(e.target)) {
+                                suggestionsEl.classList.add('d-none');
+                            }
+                        }, true);
 
                         var doSuggest = RocketLocationPicker.debounce(function () {
                             var q = input.value.trim();

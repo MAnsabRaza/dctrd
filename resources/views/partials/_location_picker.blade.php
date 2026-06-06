@@ -107,8 +107,11 @@
                                 option.type = 'button';
                                 option.className = 'location-picker-suggestion dropdown-item text-wrap py-8';
                                 option.textContent = item.display_name;
-                                option.addEventListener('click', function () {
+                                option.addEventListener('click', function (e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
                                     fillFields(item);
+                                    suggestionsEl.innerHTML = '';
                                     suggestionsEl.classList.add('d-none');
                                 });
                                 suggestionsEl.appendChild(option);
@@ -134,6 +137,13 @@
 
                             addressInput.addEventListener('keyup', suggestAddress);
                             addressInput.addEventListener('input', suggestAddress);
+
+                            // Close suggestions when clicking outside
+                            document.addEventListener('click', function (e) {
+                                if (e.target !== addressInput && !suggestionsEl.contains(e.target)) {
+                                    suggestionsEl.classList.add('d-none');
+                                }
+                            }, true);
                         }
 
                         marker.on('dragend', function () {
