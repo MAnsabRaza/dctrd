@@ -2,23 +2,29 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Tables that will receive a spatial index on the `location` column.
+     * MySQL requires spatial index columns to be NOT NULL.
+     * We store which tables get spatial indexes here.
+     */
     private array $spatialTables = ['users', 'webinars', 'products', 'bookings'];
 
     public function up(): void
     {
         $this->addLocationFields('users', [
             'address_line' => false, // users already have address
-            'city' => true,
-            'state' => true,
-            'country' => true,
-            'postal_code' => true,
-            'lat' => true,
-            'lng' => true,
-            'location' => true,
+            'city'         => true,
+            'state'        => true,
+            'country'      => true,
+            'postal_code'  => true,
+            'lat'          => true,
+            'lng'          => true,
+            'location'     => true,
         ]);
 
         $this->addLocationFields('webinars');
@@ -26,24 +32,24 @@ return new class extends Migration
 
         $this->addLocationFields('bookings', [
             'address_line' => false,
-            'city' => false,
-            'state' => false,
-            'country' => false,
-            'postal_code' => false,
-            'lat' => false,
-            'lng' => false,
-            'location' => true,
+            'city'         => false,
+            'state'        => false,
+            'country'      => false,
+            'postal_code'  => false,
+            'lat'          => false,
+            'lng'          => false,
+            'location'     => true,
         ]);
 
         $this->addLocationFields('orders', [
             'address_line' => true,
-            'city' => true,
-            'state' => true,
-            'country' => true,
-            'postal_code' => true,
-            'lat' => false,
-            'lng' => false,
-            'location' => false,
+            'city'         => true,
+            'state'        => true,
+            'country'      => true,
+            'postal_code'  => true,
+            'lat'          => false,
+            'lng'          => false,
+            'location'     => false,
         ]);
 
         if (Schema::hasTable('vendors')) {
@@ -59,6 +65,7 @@ return new class extends Migration
             }
 
             Schema::table($table, function (Blueprint $blueprint) use ($table) {
+                // Drop spatial index before dropping the column
                 if (in_array($table, $this->spatialTables, true) && Schema::hasColumn($table, 'location')) {
                     $blueprint->dropSpatialIndex(['location']);
                 }
@@ -80,16 +87,18 @@ return new class extends Migration
 
         $columns = array_merge([
             'address_line' => true,
-            'city' => true,
-            'state' => true,
-            'country' => true,
-            'postal_code' => true,
-            'lat' => true,
-            'lng' => true,
-            'location' => true,
+            'city'         => true,
+            'state'        => true,
+            'country'      => true,
+            'postal_code'  => true,
+            'lat'          => true,
+            'lng'          => true,
+            'location'     => true,
         ], $columns);
 
-        Schema::table($table, function (Blueprint $blueprint) use ($table, $columns) {
+        $needsSpatialIndex = $columns['location'] && in_array($table, $this->spatialTables, true);
+
+        Schema::table($table, function (Blueprint $blueprint) use ($table, $columns, $needsSpatialIndex) {
             if (in_array($table, ['webinars', 'products'], true) && !Schema::hasColumn($table, 'location_enabled')) {
                 $blueprint->boolean('location_enabled')->default(false);
             }
@@ -123,11 +132,27 @@ return new class extends Migration
             }
 
             if ($columns['location'] && !Schema::hasColumn($table, 'location')) {
-                $blueprint->point('location')->nullable();
+                if ($needsSpatialIndex) {
+                    // -------------------------------------------------------
+                    // FIX: MySQL SPATIAL indexes require NOT NULL columns.
+                    // We define the point as NOT NULL with a default of
+                    // POINT(0, 0) so the spatial index can be created.
+                    // Application code should treat (0,0) as "no location set"
+                    // or check lat/lng columns for NULL instead.
+                    // -------------------------------------------------------
+                    $blueprint->point('location')
+                        ->default(DB::raw("ST_GeomFromText('POINT(0 0)')"))
+                        ->nullable(false);
+                } else {
+                    // Tables that do NOT need a spatial index can stay nullable
+                    $blueprint->point('location')->nullable();
+                }
             }
         });
 
-        if ($columns['location'] && in_array($table, $this->spatialTables, true)) {
+        // Add the spatial index in a separate Schema::table call.
+        // This must happen after the column is created.
+        if ($needsSpatialIndex) {
             Schema::table($table, function (Blueprint $blueprint) use ($table) {
                 if (Schema::hasColumn($table, 'location')) {
                     $blueprint->spatialIndex('location');
