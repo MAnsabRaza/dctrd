@@ -10,7 +10,6 @@ return new class extends Migration
     /**
      * Tables that will receive a spatial index on the `location` column.
      * MySQL requires spatial index columns to be NOT NULL.
-     * We store which tables get spatial indexes here.
      */
     private array $spatialTables = ['users', 'webinars', 'products', 'bookings'];
 
@@ -98,6 +97,7 @@ return new class extends Migration
 
         $needsSpatialIndex = $columns['location'] && in_array($table, $this->spatialTables, true);
 
+        // ── Step 1: add any missing columns ─────────────────────────────────
         Schema::table($table, function (Blueprint $blueprint) use ($table, $columns, $needsSpatialIndex) {
             if (in_array($table, ['webinars', 'products'], true) && !Schema::hasColumn($table, 'location_enabled')) {
                 $blueprint->boolean('location_enabled')->default(false);
@@ -133,28 +133,39 @@ return new class extends Migration
 
             if ($columns['location'] && !Schema::hasColumn($table, 'location')) {
                 if ($needsSpatialIndex) {
-                    // -------------------------------------------------------
-                    // FIX: MySQL SPATIAL indexes require NOT NULL columns.
-                    // We define the point as NOT NULL with a default of
-                    // POINT(0, 0) so the spatial index can be created.
-                    // Application code should treat (0,0) as "no location set"
-                    // or check lat/lng columns for NULL instead.
-                    // -------------------------------------------------------
+                    // Spatial index requires NOT NULL — add with default POINT(0 0)
                     $blueprint->point('location')
                         ->default(DB::raw("ST_GeomFromText('POINT(0 0)')"))
                         ->nullable(false);
                 } else {
-                    // Tables that do NOT need a spatial index can stay nullable
                     $blueprint->point('location')->nullable();
                 }
             }
         });
 
-        // Add the spatial index in a separate Schema::table call.
-        // This must happen after the column is created.
+        // ── Step 2: if column already existed as nullable, convert it ────────
+        // This handles cases where a previous (failed) migration already added
+        // the column as nullable. We must make it NOT NULL before adding the
+        // spatial index, otherwise MySQL throws error 1252.
+        if ($needsSpatialIndex && Schema::hasColumn($table, 'location')) {
+            // First set any NULL values to the default point so NOT NULL won't fail
+            DB::statement("UPDATE `{$table}` SET `location` = ST_GeomFromText('POINT(0 0)') WHERE `location` IS NULL");
+
+            // Alter the column to NOT NULL with a default
+            DB::statement("ALTER TABLE `{$table}` MODIFY COLUMN `location` POINT NOT NULL DEFAULT (ST_GeomFromText('POINT(0 0)'))");
+        }
+
+        // ── Step 3: add spatial index (separate call, after column is ready) ─
         if ($needsSpatialIndex) {
             Schema::table($table, function (Blueprint $blueprint) use ($table) {
-                if (Schema::hasColumn($table, 'location')) {
+                // Only add if the index does not already exist
+                $indexes = collect(DB::select("SHOW INDEX FROM `{$table}`"))
+                    ->pluck('Key_name')
+                    ->toArray();
+
+                $indexName = "{$table}_location_spatialindex";
+
+                if (!in_array($indexName, $indexes, true)) {
                     $blueprint->spatialIndex('location');
                 }
             });
