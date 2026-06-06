@@ -31,6 +31,9 @@ Route::get('/mobile-app', 'Web\MobileAppController@index')->middleware(['share',
 Route::get('/maintenance', 'Web\MaintenanceController@index')->middleware(['share', 'impersonate'])->name('maintenanceRoute');
 Route::get('/restriction', 'Web\RestrictionController@index')->middleware(['share', 'impersonate'])->name('restrictionRoute');
 Route::post('/unit-preferences', 'Web\UnitPreferenceController@update')->middleware(['share', 'impersonate'])->name('unitPreferences.update');
+Route::post('/location/save', 'LocationController@save')->middleware(['web', 'auth'])->name('location.save');
+Route::get('/location/suggestions', 'LocationController@suggestions')->middleware(['web'])->name('location.suggestions');
+Route::get('/location/detect', 'LocationController@detect')->middleware(['web'])->name('location.detect');
 
 Route::group(['prefix' => 'cookie-security', 'middleware' => ['share', 'impersonate']], function () {
     Route::post('/all', 'Web\CookieSecurityController@setAll');

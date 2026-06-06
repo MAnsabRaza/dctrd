@@ -29,6 +29,7 @@ use App\Models\Sale;
 use App\Models\Section;
 use App\Models\SessionAttendance;
 use App\Models\TimeSpentOnCourse;
+use App\Models\Traits\HasNearbyLocation;
 use App\Models\UserCommission;
 use App\Models\Webinar;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -39,6 +40,7 @@ use Illuminate\Support\Str;
 class User extends Authenticatable
 {
     use Notifiable;
+    use HasNearbyLocation;
 
     static $active = 'active';
     static $pending = 'pending';

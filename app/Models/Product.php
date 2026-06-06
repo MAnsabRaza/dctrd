@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\CascadeDeletes;
+use App\Models\Traits\HasNearbyLocation;
 use App\User;
 use Cviebrock\EloquentSluggable\Services\SlugService;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -17,6 +18,7 @@ class Product extends Model implements TranslatableContract
     use Translatable;
     use Sluggable;
     use CascadeDeletes;
+    use HasNearbyLocation;
 
     protected $table = 'products';
     public $timestamps = false;

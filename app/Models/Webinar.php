@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Mixins\Certificate\MakeCertificate;
 use App\Mixins\RegistrationPackage\SubscribeMixins;
 use App\Models\Traits\CascadeDeletes;
+use App\Models\Traits\HasNearbyLocation;
 use App\User;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
@@ -20,6 +21,7 @@ class Webinar extends Model implements TranslatableContract
     use Translatable;
     use Sluggable;
     use CascadeDeletes;
+    use HasNearbyLocation;
 
     protected $table = 'webinars';
     public $timestamps = false;

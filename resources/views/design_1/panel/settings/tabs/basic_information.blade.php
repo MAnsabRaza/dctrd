@@ -211,6 +211,15 @@
             </div>
 
             <div class="bg-white p-16 rounded-16 border-gray-200 mt-20">
+                <h3 class="font-14 font-weight-bold mb-24">{{ trans('update.geolocation') }}</h3>
+                @include('partials._location_picker', [
+                    'locationModel' => $user,
+                    'addressName' => 'address',
+                    'showAjaxSave' => true,
+                ])
+            </div>
+
+            <div class="bg-white p-16 rounded-16 border-gray-200 mt-20">
                 <h3 class="font-14 font-weight-bold mb-24">{{ trans('update.vacation_mode') }}</h3>
 
                 <div class="form-group d-flex align-items-center">

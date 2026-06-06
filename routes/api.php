@@ -40,3 +40,9 @@ Route::group(['prefix' => '/development'], function () {
 
 
 });
+
+Route::prefix('v1')->group(function () {
+    Route::get('/courses', [\App\Http\Controllers\LocationController::class, 'courses']);
+    Route::get('/products', [\App\Http\Controllers\LocationController::class, 'products']);
+    Route::get('/bookings', [\App\Http\Controllers\LocationController::class, 'bookings']);
+});

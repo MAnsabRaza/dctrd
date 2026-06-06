@@ -14,6 +14,7 @@ use App\Models\ProductSelectedFilterOption;
 use App\Models\ProductSpecification;
 use App\Models\ProductSpecificationCategory;
 use App\Models\Translation\ProductTranslation;
+use App\Services\LocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -306,6 +307,7 @@ class ProductController extends Controller
             ];
 
             $data['unlimited_inventory'] = (!empty($data['unlimited_inventory']) and $data['unlimited_inventory'] == 'on');
+            $data['location_enabled'] = !empty($data['location_enabled']);
         }
 
         $this->validate($request, $rules);
@@ -382,6 +384,10 @@ class ProductController extends Controller
         }
 
         $product->update($data);
+
+        if ($currentStep == 2 and (!empty($data['lat']) or !empty($data['lng']))) {
+            app(LocationService::class)->saveLocation($product, $data);
+        }
 
         $url = '/panel/store/products';
         if ($getNextStep) {

@@ -23,6 +23,7 @@ use App\Models\UserSelectedBank;
 use App\Models\UserSelectedBankSpecification;
 use App\Models\UserZoomApi;
 use App\Services\UnitConversionService;
+use App\Services\LocationService;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -174,6 +175,13 @@ class UserController extends Controller
                 'booking_default_price_unit' => 'nullable|string|max:64',
                 'booking_auto_publish' => 'nullable|in:on,1,true',
                 'booking_location_enabled' => 'nullable|in:on,1,true',
+                'address' => 'nullable|string|max:255',
+                'city' => 'nullable|string|max:100',
+                'state' => 'nullable|string|max:100',
+                'country' => 'nullable|string|max:100',
+                'postal_code' => 'nullable|string|max:20',
+                'lat' => 'nullable|numeric',
+                'lng' => 'nullable|numeric',
             ];
 
             foreach ($unitService->getUnitTypes() as $type) {
@@ -225,6 +233,13 @@ class UserController extends Controller
                     'public_message' => (!empty($data['public_message']) and $data['public_message'] == 'on'),
                     'enable_profile_statistics' => (!empty($data['enable_profile_statistics']) and $data['enable_profile_statistics'] == 'on'),
                     'auto_renew_subscription' => (!empty($data['auto_renew_subscription']) and $data['auto_renew_subscription'] == 'on'),
+                    'address' => $data['address'] ?? null,
+                    'city' => $data['city'] ?? null,
+                    'state' => $data['state'] ?? null,
+                    'country' => $data['country'] ?? null,
+                    'postal_code' => $data['postal_code'] ?? null,
+                    'lat' => $data['lat'] ?? null,
+                    'lng' => $data['lng'] ?? null,
                 ];
 
                 foreach ($unitService->getUnitTypes() as $type) {
@@ -333,6 +348,10 @@ class UserController extends Controller
 
             if (!empty($updateData)) {
                 $user->update($updateData);
+            }
+
+            if ($step == "basic_information" and (!empty($data['lat']) or !empty($data['lng']))) {
+                app(LocationService::class)->saveLocation($user, $data);
             }
 
             if (!empty($updateUserMeta)) {

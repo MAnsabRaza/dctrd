@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Models\Traits\HasNearbyLocation;
 
 class Booking extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasNearbyLocation;
 
     protected $table = 'bookings';
 
@@ -97,8 +98,8 @@ class Booking extends Model
         'tax' => 'decimal:2',
         'commission' => 'decimal:2',
         'rating' => 'decimal:1',
-        'lat' => 'decimal:7',
-        'lng' => 'decimal:7',
+        'lat' => 'decimal:8',
+        'lng' => 'decimal:8',
 
         // Booleans
         'deposit_enabled' => 'boolean',
@@ -144,19 +145,6 @@ class Booking extends Model
     public function scopeActive($query)
     {
         return $query->whereIn('status', ['published', 'pending']);
-    }
-
-     public function scopeNearby($query, float $lat, float $lng, float $radiusKm = 50)
-    {
-        return $query->selectRaw("*, (
-            6371 * acos(
-                cos(radians(?)) * cos(radians(lat)) *
-                cos(radians(lng) - radians(?)) +
-                sin(radians(?)) * sin(radians(lat))
-            )
-        ) AS distance_km", [$lat, $lng, $lat])
-        ->having('distance_km', '<=', $radiusKm)
-        ->orderBy('distance_km');
     }
 
     // ─── Accessors ───────────────────────────────────────────────────

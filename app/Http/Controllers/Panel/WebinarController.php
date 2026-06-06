@@ -28,6 +28,7 @@ use App\User;
 use App\Models\Webinar;
 use App\Models\WebinarPartnerTeacher;
 use App\Models\WebinarFilterOption;
+use App\Services\LocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -450,6 +451,7 @@ class WebinarController extends Controller
             $data['certificate'] = !empty($data['certificate']) ? true : false;
             $data['downloadable'] = !empty($data['downloadable']) ? true : false;
             $data['partner_instructor'] = !empty($data['partner_instructor']) ? true : false;
+            $data['location_enabled'] = !empty($data['location_enabled']);
 
             if (empty($data['partner_instructor'])) {
                 WebinarPartnerTeacher::where('webinar_id', $webinar->id)->delete();
@@ -537,6 +539,10 @@ class WebinarController extends Controller
         }
 
         $webinar->update($data);
+
+        if ($currentStep == 2 and (!empty($data['lat']) or !empty($data['lng']))) {
+            app(LocationService::class)->saveLocation($webinar, $data);
+        }
 
         $stepCount = empty(getGeneralOptionsSettings('direct_publication_of_courses')) ? 8 : 7;
 
