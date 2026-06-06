@@ -9,6 +9,7 @@
 
 <head>
     @include('design_1.web.includes.metas')
+    @include('partials._location_picker_assets')
     <title>{{ $pageTitle ?? '' }}{{ !empty($generalSettings['site_name']) ? (' | '.$generalSettings['site_name']) : '' }}</title>
 
     <!-- General CSS File -->
