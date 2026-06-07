@@ -19,7 +19,7 @@ class LocationService
             $model->{$addressColumn} = $data['address_line'] ?? $data['address'] ?? $model->{$addressColumn};
         }
 
-        foreach (['city', 'state', 'country', 'postal_code', 'lat', 'lng'] as $column) {
+        foreach (['city', 'state', 'country', 'postal_code', 'lat', 'lng', 'location_enabled'] as $column) {
             if (Schema::hasColumn($table, $column) && array_key_exists($column, $data)) {
                 $model->{$column} = $data[$column] ?: null;
             }

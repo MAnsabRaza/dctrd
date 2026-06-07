@@ -113,11 +113,20 @@ class WebinarController extends Controller
             'image_cover' => 'required',
             'summary' => 'required',
             'description' => 'required',
+            'location_enabled' => 'nullable|in:on',
+            'address_line' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric',
         ];
 
         $this->validate($request, $rules);
 
         $data = $request->all();
+        $data['location_enabled'] = !empty($data['location_enabled']);
 
         $webinar = Webinar::create([
             'teacher_id' => $user->isTeacher() ? $user->id : (!empty($data['teacher_id']) ? $data['teacher_id'] : $user->id),
@@ -141,6 +150,17 @@ class WebinarController extends Controller
                 'summary' => $data['summary'] ?? null,
                 'description' => $data['description'],
                 'seo_description' => $data['seo_description'],
+            ]);
+
+            app(LocationService::class)->saveLocation($webinar, [
+                'location_enabled' => $data['location_enabled'],
+                'address_line' => $data['location_enabled'] ? ($data['address_line'] ?? null) : null,
+                'city' => $data['location_enabled'] ? ($data['city'] ?? null) : null,
+                'state' => $data['location_enabled'] ? ($data['state'] ?? null) : null,
+                'country' => $data['location_enabled'] ? ($data['country'] ?? null) : null,
+                'postal_code' => $data['location_enabled'] ? ($data['postal_code'] ?? null) : null,
+                'lat' => $data['location_enabled'] ? ($data['lat'] ?? null) : null,
+                'lng' => $data['location_enabled'] ? ($data['lng'] ?? null) : null,
             ]);
         }
 
@@ -367,6 +387,14 @@ class WebinarController extends Controller
                 'title' => 'required|max:255',
                 'summary' => 'required',
                 'description' => 'required',
+                'location_enabled' => 'nullable|in:on',
+                'address_line' => 'nullable|string|max:255',
+                'city' => 'nullable|string|max:100',
+                'state' => 'nullable|string|max:100',
+                'country' => 'nullable|string|max:100',
+                'postal_code' => 'nullable|string|max:20',
+                'lat' => 'nullable|numeric',
+                'lng' => 'nullable|numeric',
             ];
         }
 
@@ -409,6 +437,7 @@ class WebinarController extends Controller
 
         if ($currentStep == 1) {
             $data['private'] = (!empty($data['private']) and $data['private'] == 'on');
+            $data['location_enabled'] = !empty($data['location_enabled']);
 
             // Handle Image and Video
             $webinar = $this->storeWebinarMedia($request, $webinar);
@@ -540,8 +569,17 @@ class WebinarController extends Controller
 
         $webinar->update($data);
 
-        if ($currentStep == 2 and (!empty($data['lat']) or !empty($data['lng']))) {
-            app(LocationService::class)->saveLocation($webinar, $data);
+        if ($currentStep == 1) {
+            app(LocationService::class)->saveLocation($webinar, [
+                'location_enabled' => !empty($data['location_enabled']),
+                'address_line' => !empty($data['location_enabled']) ? ($data['address_line'] ?? null) : null,
+                'city' => !empty($data['location_enabled']) ? ($data['city'] ?? null) : null,
+                'state' => !empty($data['location_enabled']) ? ($data['state'] ?? null) : null,
+                'country' => !empty($data['location_enabled']) ? ($data['country'] ?? null) : null,
+                'postal_code' => !empty($data['location_enabled']) ? ($data['postal_code'] ?? null) : null,
+                'lat' => !empty($data['location_enabled']) ? ($data['lat'] ?? null) : null,
+                'lng' => !empty($data['location_enabled']) ? ($data['lng'] ?? null) : null,
+            ]);
         }
 
         $stepCount = empty(getGeneralOptionsSettings('direct_publication_of_courses')) ? 8 : 7;

@@ -220,7 +220,23 @@
         </div>
         @enderror
     </div>
+    <div class="form-group mt-20 d-flex align-items-center">
+        <div class="custom-switch mr-8">
+            <input id="webinarLocationSwitch" type="checkbox" name="location_enabled" class="custom-control-input" {{ (old('location_enabled') == 'on' || (!empty($webinar) && $webinar->location_enabled)) ? 'checked' : '' }}>
+            <label class="custom-control-label cursor-pointer" for="webinarLocationSwitch"></label>
+        </div>
 
+        <div class="">
+            <label class="cursor-pointer" for="webinarLocationSwitch">{{ trans('admin/main.enable_location') }}</label>
+        </div>
+    </div>
+
+    <div id="webinarLocationFields" style="{{ (old('location_enabled') == 'on' || (!empty($webinar) && $webinar->location_enabled)) ? '' : 'display:none' }}">
+        @include('partials._location_picker', [
+            'locationModel' => !empty($webinar) ? $webinar : null,
+            'pickerId' => 'webinarLocationPicker'
+        ])
+    </div>
     {{-- Course Description --}}
     <h3 class="font-14 font-weight-bold mt-24 mb-16">{{ trans('update.course_description') }}</h3>
 
@@ -257,4 +273,22 @@
 
 @push('scripts_bottom')
     <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
+    <script>
+        function toggleWebinarLocation(show) {
+            var container = document.getElementById('webinarLocationFields');
+            if (!container) {
+                return;
+            }
+            container.style.display = show ? '' : 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var locationSwitch = document.getElementById('webinarLocationSwitch');
+            if (locationSwitch) {
+                locationSwitch.addEventListener('change', function () {
+                    toggleWebinarLocation(this.checked);
+                });
+            }
+        });
+    </script>
 @endpush
