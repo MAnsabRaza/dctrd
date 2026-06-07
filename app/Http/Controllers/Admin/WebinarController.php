@@ -28,6 +28,7 @@ use App\Models\Tag;
 use App\Models\TextLesson;
 use App\Models\Ticket;
 use App\Models\Translation\WebinarTranslation;
+use App\Services\LocationService;
 use App\Models\WebinarChapter;
 use App\Models\WebinarChapterItem;
 use App\Models\WebinarFilterOption;
@@ -344,9 +345,18 @@ class WebinarController extends Controller
             'start_date' => 'required_if:type,webinar',
             'capacity' => 'nullable|numeric|min:0',
             'price' => 'nullable|numeric|min:0',
+            'location_enabled' => 'nullable|in:on',
+            'address_line' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric',
         ]);
 
         $data = $request->all();
+        $data['location_enabled'] = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
 
 
         if (!empty($data['capacity']) and !empty($data['sales_count_number']) and $data['sales_count_number'] > $data['capacity']) {
@@ -414,6 +424,7 @@ class WebinarController extends Controller
             'points' => $data['points'] ?? null,
             'category_id' => $data['category_id'],
             'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
+            'location_enabled' => $data['location_enabled'],
             'status' => Webinar::$pending,
             'created_at' => time(),
             'updated_at' => time(),
@@ -428,6 +439,17 @@ class WebinarController extends Controller
                 'summary' => $data['summary'],
                 'description' => $data['description'],
                 'seo_description' => $data['seo_description'],
+            ]);
+
+            app(LocationService::class)->saveLocation($webinar, [
+                'location_enabled' => $data['location_enabled'],
+                'address_line' => $data['location_enabled'] ? ($data['address_line'] ?? null) : null,
+                'city' => $data['location_enabled'] ? ($data['city'] ?? null) : null,
+                'state' => $data['location_enabled'] ? ($data['state'] ?? null) : null,
+                'country' => $data['location_enabled'] ? ($data['country'] ?? null) : null,
+                'postal_code' => $data['location_enabled'] ? ($data['postal_code'] ?? null) : null,
+                'lat' => $data['location_enabled'] ? ($data['lat'] ?? null) : null,
+                'lng' => $data['location_enabled'] ? ($data['lng'] ?? null) : null,
             ]);
         }
 
@@ -567,6 +589,7 @@ class WebinarController extends Controller
     {
         $this->authorize('admin_webinars_edit');
         $data = $request->all();
+        $data['location_enabled'] = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
 
         $webinar = Webinar::find($id);
         $isDraft = (!empty($data['draft']) and $data['draft'] == 1);
@@ -584,6 +607,14 @@ class WebinarController extends Controller
             'teacher_id' => 'required|exists:users,id',
             'category_id' => 'required',
             'price' => 'nullable|numeric|min:0',
+            'location_enabled' => 'nullable|in:on',
+            'address_line' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric',
         ];
 
         if ($webinar->isWebinar()) {
@@ -745,6 +776,7 @@ class WebinarController extends Controller
             'category_id' => $data['category_id'],
             'points' => $data['points'] ?? null,
             'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
+            'location_enabled' => $data['location_enabled'],
             'status' => $data['status'],
             'updated_at' => time(),
         ]);
@@ -758,6 +790,17 @@ class WebinarController extends Controller
                 'summary' => $data['summary'],
                 'description' => $data['description'],
                 'seo_description' => $data['seo_description'],
+            ]);
+
+            app(LocationService::class)->saveLocation($webinar, [
+                'location_enabled' => $data['location_enabled'],
+                'address_line' => $data['location_enabled'] ? ($data['address_line'] ?? null) : null,
+                'city' => $data['location_enabled'] ? ($data['city'] ?? null) : null,
+                'state' => $data['location_enabled'] ? ($data['state'] ?? null) : null,
+                'country' => $data['location_enabled'] ? ($data['country'] ?? null) : null,
+                'postal_code' => $data['location_enabled'] ? ($data['postal_code'] ?? null) : null,
+                'lat' => $data['location_enabled'] ? ($data['lat'] ?? null) : null,
+                'lng' => $data['location_enabled'] ? ($data['lng'] ?? null) : null,
             ]);
         }
 

@@ -25,8 +25,12 @@ class LocationService
             }
         }
 
-        if (Schema::hasColumn($table, 'location') && !empty($data['lat']) && !empty($data['lng'])) {
-            $model->location = new Point((float) $data['lat'], (float) $data['lng'], 4326);
+        if (Schema::hasColumn($table, 'location')) {
+            if (!empty($data['lat']) && !empty($data['lng'])) {
+                $model->location = new Point((float) $data['lat'], (float) $data['lng'], 4326);
+            } elseif (array_key_exists('location_enabled', $data) && !$data['location_enabled']) {
+                $model->location = null;
+            }
         }
 
         $model->save();

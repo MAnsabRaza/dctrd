@@ -113,6 +113,20 @@
                                                 @enderror
                                             </div>
 
+                                            <div class="form-group mt-25 d-flex align-items-center">
+                                                <div class="custom-control custom-switch mr-3">
+                                                    <input type="checkbox" name="location_enabled" class="custom-control-input" id="webinarLocationSwitch" {{ (!empty(old('location_enabled')) or (!empty($webinar) && $webinar->location_enabled)) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="webinarLocationSwitch"></label>
+                                                </div>
+                                                <label class="cursor-pointer mb-0" for="webinarLocationSwitch">
+                                                    {{ trans('admin/main.enable_location') }}
+                                                </label>
+                                            </div>
+
+                                            <div id="webinarLocationFields" style="{{ (!empty(old('location_enabled')) or (!empty($webinar) && $webinar->location_enabled)) ? '' : 'display:none' }}">
+                                                @include('partials._location_picker', ['locationModel' => !empty($webinar) ? $webinar : null, 'pickerId' => 'webinarLocationPicker'])
+                                            </div>
+
                                             @if(!empty($webinar) and $webinar->creator->isOrganization())
                                                 <div class="form-group mt-15 ">
                                                     <label class="input-label d-block">{{ trans('admin/main.organization') }}</label>
@@ -1061,6 +1075,17 @@
             iframe: '{{ trans('update.file_source_iframe_placeholder') }}',
             s3: '{{ trans('update.file_source_s3_placeholder') }}',
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var locationSwitch = document.getElementById('webinarLocationSwitch');
+            var locationFields = document.getElementById('webinarLocationFields');
+
+            if (locationSwitch && locationFields) {
+                locationSwitch.addEventListener('change', function () {
+                    locationFields.style.display = locationSwitch.checked ? '' : 'none';
+                });
+            }
+        });
     </script>
 
 

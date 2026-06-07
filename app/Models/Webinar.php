@@ -27,6 +27,11 @@ class Webinar extends Model implements TranslatableContract
     public $timestamps = false;
     protected $dateFormat = 'U';
     protected $guarded = ['id'];
+    protected $casts = [
+        'location_enabled' => 'boolean',
+        'lat' => 'float',
+        'lng' => 'float',
+    ];
 
     public $morphsFunctions = ['productBadgeContents', 'relatedCourses', 'deleteRequest'];
 
