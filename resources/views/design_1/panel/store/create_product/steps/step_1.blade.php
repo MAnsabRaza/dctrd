@@ -95,9 +95,45 @@
         <p class="text-gray-500 font-12 mt-6">{{ trans('update.create_product_enable_ordering_hint') }}</p>
     </div>
 
+    <div class="form-group mt-20 d-flex align-items-center">
+        <div class="custom-switch mr-8">
+            <input id="productLocationSwitch" type="checkbox" name="location_enabled" class="custom-control-input" {{ (old('location_enabled') == 'on' || (!empty($product) && $product->location_enabled)) ? 'checked' : '' }}>
+            <label class="custom-control-label cursor-pointer" for="productLocationSwitch"></label>
+        </div>
+
+        <div class="">
+            <label class="cursor-pointer" for="productLocationSwitch">{{ trans('admin/main.enable_location') }}</label>
+        </div>
+    </div>
+
+    <div id="productLocationFields" style="{{ (old('location_enabled') == 'on' || (!empty($product) && $product->location_enabled)) ? '' : 'display:none' }}">
+        @php $locationModel = $product ?? null; @endphp
+        @include('partials._location_picker', [
+            'locationModel' => $locationModel,
+            'pickerId' => 'panelProductLocationPicker'
+        ])
+    </div>
 </div>
 
 
 @push('scripts_bottom')
     <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
+    <script>
+        function toggleProductLocation(show) {
+            var container = document.getElementById('productLocationFields');
+            if (!container) {
+                return;
+            }
+            container.style.display = show ? '' : 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var locationSwitch = document.getElementById('productLocationSwitch');
+            if (locationSwitch) {
+                locationSwitch.addEventListener('change', function () {
+                    toggleProductLocation(this.checked);
+                });
+            }
+        });
+    </script>
 @endpush

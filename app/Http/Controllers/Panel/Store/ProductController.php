@@ -122,11 +122,20 @@ class ProductController extends Controller
             'seo_description' => 'required|max:255',
             'summary' => 'required',
             'description' => 'required',
+            'location_enabled' => 'nullable|in:on',
+            'address_line' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric',
         ];
 
         $this->validate($request, $rules);
 
         $data = $request->all();
+        $data['location_enabled'] = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
 
         $product = Product::create([
             'creator_id' => $user->id,
@@ -142,12 +151,25 @@ class ProductController extends Controller
             'delivery_fee' => null,
             'delivery_estimated_time' => null,
             'message_for_reviewer' => null,
+            'location_enabled' => $data['location_enabled'],
             'status' => ((!empty($data['draft']) and $data['draft'] == 1) or (!empty($data['get_next']) and $data['get_next'] == 1)) ? Product::$draft : Product::$pending,
             'updated_at' => time(),
             'created_at' => time(),
         ]);
 
         if ($product) {
+            if (!empty($data['location_enabled']) || !empty($data['address_line']) || !empty($data['city']) || !empty($data['state']) || !empty($data['country']) || !empty($data['postal_code']) || !empty($data['lat']) || !empty($data['lng'])) {
+                app(LocationService::class)->saveLocation($product, [
+                    'location_enabled' => $data['location_enabled'],
+                    'address_line' => $data['location_enabled'] ? ($data['address_line'] ?? null) : null,
+                    'city' => $data['location_enabled'] ? ($data['city'] ?? null) : null,
+                    'state' => $data['location_enabled'] ? ($data['state'] ?? null) : null,
+                    'country' => $data['location_enabled'] ? ($data['country'] ?? null) : null,
+                    'postal_code' => $data['location_enabled'] ? ($data['postal_code'] ?? null) : null,
+                    'lat' => $data['location_enabled'] ? ($data['lat'] ?? null) : null,
+                    'lng' => $data['location_enabled'] ? ($data['lng'] ?? null) : null,
+                ]);
+            }
             ProductTranslation::updateOrCreate([
                 'product_id' => $product->id,
                 'locale' => mb_strtolower($data['locale']),
@@ -297,7 +319,18 @@ class ProductController extends Controller
         }
 
         if ($currentStep == 1) {
+            $rules = [
+                'location_enabled' => 'nullable|in:on',
+                'address_line' => 'nullable|string|max:255',
+                'city' => 'nullable|string|max:100',
+                'state' => 'nullable|string|max:100',
+                'country' => 'nullable|string|max:100',
+                'postal_code' => 'nullable|string|max:20',
+                'lat' => 'nullable|numeric',
+                'lng' => 'nullable|numeric',
+            ];
 
+            $data['location_enabled'] = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
         }
 
         if ($currentStep == 2) {
@@ -385,8 +418,17 @@ class ProductController extends Controller
 
         $product->update($data);
 
-        if ($currentStep == 2 and (!empty($data['lat']) or !empty($data['lng']))) {
-            app(LocationService::class)->saveLocation($product, $data);
+        if ($currentStep == 1 && array_key_exists('location_enabled', $data)) {
+            app(LocationService::class)->saveLocation($product, [
+                'location_enabled' => $data['location_enabled'] ?? false,
+                'address_line' => $data['location_enabled'] ? ($data['address_line'] ?? null) : null,
+                'city' => $data['location_enabled'] ? ($data['city'] ?? null) : null,
+                'state' => $data['location_enabled'] ? ($data['state'] ?? null) : null,
+                'country' => $data['location_enabled'] ? ($data['country'] ?? null) : null,
+                'postal_code' => $data['location_enabled'] ? ($data['postal_code'] ?? null) : null,
+                'lat' => $data['location_enabled'] ? ($data['lat'] ?? null) : null,
+                'lng' => $data['location_enabled'] ? ($data['lng'] ?? null) : null,
+            ]);
         }
 
         $url = '/panel/store/products';
