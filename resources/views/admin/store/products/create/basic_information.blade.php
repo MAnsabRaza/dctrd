@@ -155,6 +155,26 @@
                 </div>
                 @enderror
             </div>
+
+            <div class="form-group mt-20 d-flex align-items-center">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" name="location_enabled" class="custom-control-input" id="productLocationSwitch" value="on"
+                           {{ (old('location_enabled') == 'on' || (!empty($product) && $product->location_enabled)) ? 'checked' : '' }}
+                           onchange="toggleProductLocation(this.checked)">
+                    <label class="custom-control-label" for="productLocationSwitch"></label>
+                </div>
+                <label for="productLocationSwitch" class="mb-0 ml-2">{{ trans('admin/main.enable_location') }}</label>
+            </div>
+
+            <div id="productLocationFields" style="{{ (old('location_enabled') == 'on' || (!empty($product) && $product->location_enabled)) ? '' : 'display:none' }}">
+                @php $locationModel = $product ?? null; @endphp
+                @include('partials._location_picker', [
+                    'locationModel' => $locationModel,
+                    'addressName' => 'address_line',
+                    'showAjaxSave' => false,
+                    'pickerId' => 'adminProductLocationPicker'
+                ])
+            </div>
         </div>
     </div>
 

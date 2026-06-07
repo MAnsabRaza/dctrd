@@ -20,6 +20,7 @@ use App\Models\Translation\SettingTranslation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProductsController extends Controller
@@ -337,6 +338,14 @@ class ProductsController extends Controller
             'point' => 'nullable|integer',
             'tax' => 'nullable|integer',
             'commission' => 'nullable|integer',
+            'location_enabled' => 'nullable|in:on',
+            'address_line' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric',
         ];
 
         $this->validate($request, $rules);
@@ -357,7 +366,23 @@ class ProductsController extends Controller
             }
         }
 
-        $product = Product::create([
+        $locationEnabled = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
+        $locationData = [
+            'location_enabled' => $locationEnabled,
+            'address_line' => $locationEnabled ? ($data['address_line'] ?: null) : null,
+            'city' => $locationEnabled ? ($data['city'] ?: null) : null,
+            'state' => $locationEnabled ? ($data['state'] ?: null) : null,
+            'country' => $locationEnabled ? ($data['country'] ?: null) : null,
+            'postal_code' => $locationEnabled ? ($data['postal_code'] ?: null) : null,
+            'lat' => $locationEnabled ? ($data['lat'] ?: null) : null,
+            'lng' => $locationEnabled ? ($data['lng'] ?: null) : null,
+        ];
+
+        if ($locationEnabled && !empty($data['lat']) && !empty($data['lng'])) {
+            $locationData['location'] = new Point((float)$data['lat'], (float)$data['lng']);
+        }
+
+        $product = Product::create(array_merge([
             'creator_id' => $data['creator_id'],
             'type' => $data['type'],
             'slug' => $data['slug'],
@@ -377,7 +402,7 @@ class ProductsController extends Controller
             'status' => Product::$pending,
             'updated_at' => time(),
             'created_at' => time(),
-        ]);
+        ], $locationData));
 
         if ($product) {
             ProductTranslation::updateOrCreate([
@@ -499,6 +524,14 @@ class ProductsController extends Controller
             'thumbnail' => 'required',
             'images' => 'required|array|min:1',
             'category_id' => 'required',
+            'location_enabled' => 'nullable|in:on',
+            'address_line' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric',
         ];
 
         $this->validate($request, $rules);
@@ -534,7 +567,25 @@ class ProductsController extends Controller
             }
         }
 
-        $product->update([
+        $locationEnabled = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
+        $locationData = [
+            'location_enabled' => $locationEnabled,
+            'address_line' => $locationEnabled ? ($data['address_line'] ?: null) : null,
+            'city' => $locationEnabled ? ($data['city'] ?: null) : null,
+            'state' => $locationEnabled ? ($data['state'] ?: null) : null,
+            'country' => $locationEnabled ? ($data['country'] ?: null) : null,
+            'postal_code' => $locationEnabled ? ($data['postal_code'] ?: null) : null,
+            'lat' => $locationEnabled ? ($data['lat'] ?: null) : null,
+            'lng' => $locationEnabled ? ($data['lng'] ?: null) : null,
+        ];
+
+        if ($locationEnabled && !empty($data['lat']) && !empty($data['lng'])) {
+            $locationData['location'] = new Point((float)$data['lat'], (float)$data['lng']);
+        } elseif (!$locationEnabled) {
+            $locationData['location'] = new Point(0, 0);
+        }
+
+        $product->update(array_merge([
             'creator_id' => $data['creator_id'],
             'type' => $data['type'],
             'slug' => $data['slug'],
@@ -554,7 +605,7 @@ class ProductsController extends Controller
             'commission' => $commission,
             'status' => $data['status'],
             'updated_at' => time(),
-        ]);
+        ], $locationData));
 
         ProductTranslation::updateOrCreate([
             'product_id' => $product->id,

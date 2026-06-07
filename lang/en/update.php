@@ -4840,5 +4840,6 @@ return [
 'latitude'=>'Latitude',
 'longitude'=>'Lngitude',
 'leave_empty_for_auto_generation'=>'Leave Empty For Auto Generation',
+'geolocation'=>'GeoLocation',
 
 ];

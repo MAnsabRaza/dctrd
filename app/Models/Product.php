@@ -24,6 +24,13 @@ class Product extends Model implements TranslatableContract
     public $timestamps = false;
     protected $dateFormat = 'U';
     protected $guarded = ['id'];
+    protected $casts = [
+        'location_enabled' => 'boolean',
+        'unlimited_inventory' => 'boolean',
+        'ordering' => 'boolean',
+        'lat' => 'float',
+        'lng' => 'float',
+    ];
 
     public $morphsFunctions = ['productBadgeContents', 'relatedCourses', 'deleteRequest'];
 

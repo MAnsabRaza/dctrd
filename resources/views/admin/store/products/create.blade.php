@@ -99,4 +99,13 @@
     <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
 
     <script src="/assets/admin/js/parts/new_product.min.js"></script>
+    <script>
+        function toggleProductLocation(show) {
+            var container = document.getElementById('productLocationFields');
+            if (!container) {
+                return;
+            }
+            container.style.display = show ? '' : 'none';
+        }
+    </script>
 @endpush
