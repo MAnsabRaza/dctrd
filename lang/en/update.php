@@ -4841,5 +4841,8 @@ return [
 'longitude'=>'Lngitude',
 'leave_empty_for_auto_generation'=>'Leave Empty For Auto Generation',
 'geolocation'=>'GeoLocation',
+'delivery_address'=>'Delivery Address',
+'use_my_profile_address'=>'Use My Profile Address',
+'address_line'=>'Address Line',
 
 ];

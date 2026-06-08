@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\UserController as ApiUserController;
 use App\Http\Controllers\Web\PurchaseCodeController;
 
 /*
@@ -34,6 +35,8 @@ Route::post('/unit-preferences', 'Web\UnitPreferenceController@update')->middlew
 Route::post('/location/save', 'LocationController@save')->middleware(['web', 'auth'])->name('location.save');
 Route::get('/location/suggestions', 'LocationController@suggestions')->middleware(['web'])->name('location.suggestions');
 Route::get('/location/detect', 'LocationController@detect')->middleware(['web'])->name('location.detect');
+
+Route::middleware(['web', 'auth'])->get('/api/user/address', [ApiUserController::class, 'getAddress']);
 
 Route::group(['prefix' => 'cookie-security', 'middleware' => ['share', 'impersonate']], function () {
     Route::post('/all', 'Web\CookieSecurityController@setAll');
