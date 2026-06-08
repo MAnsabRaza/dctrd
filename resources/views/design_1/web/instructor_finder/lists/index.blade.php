@@ -103,6 +103,11 @@
         var currency = '{{ $currency }}';
         var mapUsers = JSON.parse(@json($mapUsers->toJson()));
 
+        mapUsers = mapUsers.map(function (user) {
+            user.location = user.mapLocation || user.location;
+            return user;
+        });
+
         var starIcon = `<x-iconsax-bol-star-1 class="icons" width="14" height="14"/>`;
         var frameIcon = `<x-iconsax-bol-frame class="icons text-gray-500" width="20px" height="20px"/>`;
         var calendarIcon = `<x-iconsax-bol-calendar-2 class="icons text-white" width="20px" height="20px"/>`;

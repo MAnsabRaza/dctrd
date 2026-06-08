@@ -61,7 +61,7 @@ class InstructorFinderController extends Controller
             $mapUser->rate = $mapUser->rates();
             $mapUser->profileUrl = url($mapUser->getProfileUrl());
 
-            $mapUser->location = Geo::get_geo_array($mapUser->userLocation);
+            $mapUser->mapLocation = Geo::get_geo_array($mapUser->userLocation);
         }
 
         $seoSettings = getSeoMetas('instructor_finder');
@@ -119,7 +119,7 @@ class InstructorFinderController extends Controller
     {
 
         foreach ($instructors as $instructor) {
-            $instructor->location = $instructor->userLocation ?? null;
+            $instructor->location_text = $instructor->userLocation ?? null;
 
             $instructor->webinars_count = Webinar::query()->where('status', 'active')
                 ->where(function ($query) use ($instructor) {
