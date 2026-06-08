@@ -108,6 +108,109 @@
         var calendarIcon = `<x-iconsax-bol-calendar-2 class="icons text-white" width="20px" height="20px"/>`;
     </script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var placeInput = document.getElementById('nearby_from_place');
+            var radiusInput = document.getElementById('nearby_radius_km');
+            var latInput = document.getElementById('nearby_lat');
+            var lngInput = document.getElementById('nearby_lng');
+            var suggestions = document.getElementById('nearby_place_suggestions');
+            var clearButton = document.getElementById('clearNearbyFilter');
+            var filtersForm = document.getElementById('filtersForm');
+            var timer;
+
+            if (!placeInput || !radiusInput || !latInput || !lngInput || !suggestions) {
+                return;
+            }
+
+            function renderSuggestions(items) {
+                suggestions.innerHTML = '';
+
+                items.forEach(function (item) {
+                    var option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'dropdown-item text-wrap py-8';
+                    option.textContent = item.display_name;
+                    option.addEventListener('click', function () {
+                        placeInput.value = item.display_name || '';
+                        latInput.value = item.lat || '';
+                        lngInput.value = item.lng || '';
+                        if (!radiusInput.value) {
+                            radiusInput.value = 50;
+                        }
+                        suggestions.classList.add('d-none');
+                        filtersForm.submit();
+                    });
+                    suggestions.appendChild(option);
+                });
+
+                suggestions.classList.toggle('d-none', !items.length);
+            }
+
+            function fetchSuggestions(query) {
+                fetch('/location/suggestions?q=' + encodeURIComponent(query), {
+                    headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
+                }).then(function (response) {
+                    return response.json();
+                }).then(renderSuggestions).catch(function () {
+                    suggestions.classList.add('d-none');
+                });
+            }
+
+            placeInput.addEventListener('input', function () {
+                var query = placeInput.value.trim();
+                clearTimeout(timer);
+
+                if (!query) {
+                    latInput.value = '';
+                    lngInput.value = '';
+                    suggestions.classList.add('d-none');
+                    return;
+                }
+
+                if (query.length >= 3) {
+                    timer = setTimeout(function () {
+                        fetchSuggestions(query);
+                    }, 400);
+                }
+            });
+
+            radiusInput.addEventListener('change', function () {
+                if (placeInput.value.trim() && latInput.value && lngInput.value) {
+                    filtersForm.submit();
+                }
+            });
+
+            clearButton.addEventListener('click', function () {
+                placeInput.value = '';
+                radiusInput.value = '';
+                latInput.value = '';
+                lngInput.value = '';
+                filtersForm.submit();
+            });
+
+            document.addEventListener('click', function (event) {
+                if (event.target !== placeInput && !suggestions.contains(event.target)) {
+                    suggestions.classList.add('d-none');
+                }
+            });
+
+            if (!placeInput.value && !latInput.value && !lngInput.value) {
+                fetch('/location/detect', {
+                    headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
+                }).then(function (response) {
+                    return response.json();
+                }).then(function (data) {
+                    if (data && data.city) {
+                        placeInput.value = [data.city, data.country].filter(Boolean).join(', ');
+                        latInput.value = data.lat || '';
+                        lngInput.value = data.lng || '';
+                    }
+                }).catch(function () {});
+            }
+        });
+    </script>
+
     <script src="/assets/vendors/leaflet/leaflet.min.js"></script>
     <script src="/assets/vendors/leaflet/leaflet.markercluster/leaflet.markercluster-src.js"></script>
     <script src="{{ getDesign1ScriptPath("leaflet_map") }}"></script>

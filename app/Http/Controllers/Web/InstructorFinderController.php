@@ -182,6 +182,7 @@ class InstructorFinderController extends Controller
         $hasFreeMeetings = $request->get('free_meetings');
         $withDiscount = $request->get('discount');
         $rating = $request->get('rating');
+        $nearbyIsActive = $request->filled(['lat', 'lng', 'radius_km']);
 
         if (empty($request->get('role'))) {
             $role = [Role::$organization, Role::$teacher];
@@ -228,6 +229,9 @@ class InstructorFinderController extends Controller
 
         $query = $this->handlePriceFilter($query, $request);
 
+        if ($nearbyIsActive) {
+            $query->nearby((float) $request->get('lat'), (float) $request->get('lng'), (float) $request->get('radius_km'));
+        }
 
         $query = $this->handleAgeFilter($query, $request);
 
@@ -264,7 +268,7 @@ class InstructorFinderController extends Controller
             $query = $this->getBestRateUsers($query, $roleForSort, $rating);
         }
 
-        if (!empty($sort)) {
+        if (!empty($sort) and !$nearbyIsActive) {
             if ($sort == 'top_rate') {
                 $roleForSort = ($request->get('role') == Role::$organization) ? Role::$organization : Role::$teacher;
 
@@ -274,7 +278,7 @@ class InstructorFinderController extends Controller
             if ($sort == 'top_sale') {
                 $query = $this->getTopSalesUsers($query);
             }
-        } else {
+        } elseif (!$nearbyIsActive) {
             // order by meetings
             $query->leftJoin('meetings', 'meetings.creator_id', '=', 'users.id')
                 ->select('users.*', DB::raw('count(meetings.id) as meetingCounts'))

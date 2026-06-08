@@ -95,6 +95,8 @@
         </div>
     </div>
 
+    @include('design_1.web.instructor_finder.lists.left_side.nearby')
+
     {{-- Days --}}
     <div class="accordion py-16 border-bottom-gray-100">
         <div class="accordion__title d-flex align-items-center justify-content-between">

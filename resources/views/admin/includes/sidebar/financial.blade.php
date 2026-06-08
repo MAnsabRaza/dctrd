@@ -33,11 +33,22 @@
             @endcan
 
             @can('admin_sales_list')
-                <li class="nav-item {{ (request()->is(getAdminPanelUrl('/financial/sales*', false))) ? 'active' : '' }}">
-                    <a href="{{ getAdminPanelUrl() }}/financial/sales" class="nav-link">
+                <li class="nav-item dropdown {{ (request()->is(getAdminPanelUrl('/financial/sales*', false))) ? 'active' : '' }}">
+                    <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">
                         <x-iconsax-bul-bag-timer class="icons" width="24px" height="24px"/>
                         <span>{{ trans('admin/main.sales_list') }}</span>
                     </a>
+                    <ul class="dropdown-menu">
+                        <li class="{{ (request()->is(getAdminPanelUrl('/financial/sales', false))) ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ getAdminPanelUrl() }}/financial/sales">{{ trans('admin/main.list') }}</a>
+                        </li>
+                        <li class="{{ (request()->is(getAdminPanelUrl('/financial/location-sales/city', false))) ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ getAdminPanelUrl() }}/financial/location-sales/city">Sales by City</a>
+                        </li>
+                        <li class="{{ (request()->is(getAdminPanelUrl('/financial/location-sales/country', false))) ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ getAdminPanelUrl() }}/financial/location-sales/country">Sales by Country</a>
+                        </li>
+                    </ul>
                 </li>
             @endcan
 

@@ -41,6 +41,8 @@ class SearchController extends Controller
 
     private function getSearchData($search, Request $request)
     {
+        $nearbyIsActive = $request->filled(['lat', 'lng', 'radius_km']);
+
         $webinarsQuery = Webinar::query()->where('status', 'active')
             ->where('private', false)
             ->where('only_for_students', false)
@@ -60,10 +62,11 @@ class SearchController extends Controller
         }
 
         $webinarsCount = deepClone($webinarsQuery)->count();
-        $webinars = $webinarsQuery
-            ->inRandomOrder()
-            ->limit(20)
-            ->get();
+        if (!$nearbyIsActive) {
+            $webinarsQuery->inRandomOrder();
+        }
+
+        $webinars = $webinarsQuery->limit(20)->get();
 
         $bundlesQuery = Bundle::query()->where('status', 'active')
             ->where('private', false)
@@ -119,10 +122,11 @@ class SearchController extends Controller
         }
 
         $productsCount = deepClone($productsQuery)->count();
-        $products = $productsQuery
-            ->inRandomOrder()
-            ->limit(20)
-            ->get();
+        if (!$nearbyIsActive) {
+            $productsQuery->inRandomOrder();
+        }
+
+        $products = $productsQuery->limit(20)->get();
 
         $postsQuery = Blog::query()->where('status', 'publish')
             ->where(function (Builder $query) use ($search) {
@@ -159,15 +163,21 @@ class SearchController extends Controller
 
         $usersCount = deepClone($usersQuery)->count();
 
-        $instructors = deepClone($usersQuery)->where('role_name', Role::$teacher)
-            ->inRandomOrder()
-            ->limit(20)
-            ->get();
+        $instructorsQuery = deepClone($usersQuery)->where('role_name', Role::$teacher);
 
-        $organizations = deepClone($usersQuery)->where('role_name', Role::$organization)
-            ->inRandomOrder()
-            ->limit(20)
-            ->get();
+        if (!$nearbyIsActive) {
+            $instructorsQuery->inRandomOrder();
+        }
+
+        $instructors = $instructorsQuery->limit(20)->get();
+
+        $organizationsQuery = deepClone($usersQuery)->where('role_name', Role::$organization);
+
+        if (!$nearbyIsActive) {
+            $organizationsQuery->inRandomOrder();
+        }
+
+        $organizations = $organizationsQuery->limit(20)->get();
 
         return [
             'resultCount' => $webinarsCount + $bundlesCount + $upcomingCoursesCount + $productsCount + $postsCount + $usersCount,

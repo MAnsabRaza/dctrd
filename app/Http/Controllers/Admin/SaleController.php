@@ -12,6 +12,7 @@ use App\Models\SaleLog;
 use App\Models\Webinar;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class SaleController extends Controller
@@ -338,5 +339,80 @@ class SaleController extends Controller
         $export = new salesExport($sales);
 
         return Excel::download($export, 'sales.xlsx');
+    }
+
+    public function salesByCity(Request $request)
+    {
+        $this->authorize('admin_sales_list');
+
+        $rows = $this->getSalesByLocationRows('city');
+
+        if ($request->get('export') === 'csv') {
+            return $this->exportSalesByLocationCsv($rows, 'city', 'sales_by_city.csv');
+        }
+
+        return view('admin.financial.sales.location_report', [
+            'pageTitle' => 'Sales by City',
+            'locationLabel' => 'City',
+            'locationKey' => 'city',
+            'rows' => $rows,
+            'exportUrl' => getAdminPanelUrl() . '/financial/location-sales/city?export=csv',
+        ]);
+    }
+
+    public function salesByCountry(Request $request)
+    {
+        $this->authorize('admin_sales_list');
+
+        $rows = $this->getSalesByLocationRows('country');
+
+        if ($request->get('export') === 'csv') {
+            return $this->exportSalesByLocationCsv($rows, 'country', 'sales_by_country.csv');
+        }
+
+        return view('admin.financial.sales.location_report', [
+            'pageTitle' => 'Sales by Country',
+            'locationLabel' => 'Country',
+            'locationKey' => 'country',
+            'rows' => $rows,
+            'exportUrl' => getAdminPanelUrl() . '/financial/location-sales/country?export=csv',
+        ]);
+    }
+
+    private function getSalesByLocationRows(string $column)
+    {
+        return DB::table('orders')
+            ->join('users', 'orders.user_id', '=', 'users.id')
+            ->where('orders.status', Order::$paid)
+            ->selectRaw("COALESCE(NULLIF(users.{$column}, ''), 'Unknown') as {$column}")
+            ->selectRaw('COUNT(orders.id) as total_orders')
+            ->selectRaw('SUM(orders.total_amount) as total_revenue')
+            ->groupBy(DB::raw("COALESCE(NULLIF(users.{$column}, ''), 'Unknown')"))
+            ->orderByDesc('total_revenue')
+            ->get();
+    }
+
+    private function exportSalesByLocationCsv($rows, string $locationKey, string $filename)
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        return response()->stream(function () use ($rows, $locationKey) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [ucfirst($locationKey), 'Total Orders', 'Total Revenue']);
+
+            foreach ($rows as $row) {
+                fputcsv($handle, [
+                    $row->{$locationKey},
+                    $row->total_orders,
+                    $row->total_revenue,
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, $headers);
     }
 }

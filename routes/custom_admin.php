@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\Booking\BookingSpecificationValueController;
 use App\Http\Controllers\Admin\Booking\BookingVariantController;
 use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
 use App\Http\Controllers\Admin\Booking\BookingOrderController;
+use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -217,6 +218,11 @@ Route::post('/users/{id}/booking-orders/store', [UserController::class, 'storeMa
 
 Route::post('/users/{id}/booking-options-update', [UserController::class, 'bookingOptionsUpdate'])
     ->name('admin.users.booking_options.update');
+
+Route::group(['prefix' => 'financial/location-sales'], function () {
+    Route::get('/city', [SaleController::class, 'salesByCity'])->name('admin.sales.reports.city');
+    Route::get('/country', [SaleController::class, 'salesByCountry'])->name('admin.sales.reports.country');
+});
 
 /**
  * To use these routes, you must have your controller in App\Http\Controllers\Admin namespace
