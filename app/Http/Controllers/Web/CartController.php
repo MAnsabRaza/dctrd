@@ -291,6 +291,11 @@ class CartController extends Controller
             'city_id' => Rule::requiredIf($checkAddressValidation),
             'district_id' => Rule::requiredIf($checkAddressValidation),
             'address' => Rule::requiredIf($checkAddressValidation),
+            'address_line' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
         ]);
 
         $discountId = $request->input('discount_id');
@@ -306,7 +311,7 @@ class CartController extends Controller
         if (!empty($carts) and !$carts->isEmpty()) {
             $calculate = $this->calculatePrice($carts, $user, $discountCoupon);
 
-            $order = $this->createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon);
+            $order = $this->createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon, $request);
 
             if (count($hasPhysicalProduct) > 0) {
                 $this->updateProductOrders($request, $carts, $user);
@@ -371,7 +376,7 @@ class CartController extends Controller
         ]);
     }
 
-    public function createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon = null)
+    public function createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon = null, Request $request = null)
     {
         $totalAmount = $calculate["total"];
 
@@ -383,7 +388,7 @@ class CartController extends Controller
         // Remove User Pending Orders
         $this->handleRemoveUserPendingOrders($user);
 
-        $order = Order::create([
+        $orderData = [
             'user_id' => $user->id,
             'status' => Order::$pending,
             'amount' => $calculate["sub_total"],
@@ -392,7 +397,18 @@ class CartController extends Controller
             'total_amount' => ($totalAmount > 0) ? $totalAmount : 0,
             'product_delivery_fee' => $calculate["product_delivery_fee"] ?? null,
             'created_at' => time(),
-        ]);
+        ];
+
+        // Add address fields if provided via request
+        if (!empty($request)) {
+            if (!empty($request->input('address_line'))) $orderData['address_line'] = $request->input('address_line');
+            if (!empty($request->input('city'))) $orderData['city'] = $request->input('city');
+            if (!empty($request->input('state'))) $orderData['state'] = $request->input('state');
+            if (!empty($request->input('country'))) $orderData['country'] = $request->input('country');
+            if (!empty($request->input('postal_code'))) $orderData['postal_code'] = $request->input('postal_code');
+        }
+
+        $order = Order::create($orderData);
 
         $productsFee = $this->productDeliveryFeeBySeller($carts);
         $sellersProductsCount = $this->physicalProductCountBySeller($carts);

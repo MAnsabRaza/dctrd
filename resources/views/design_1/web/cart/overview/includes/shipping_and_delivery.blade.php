@@ -111,7 +111,65 @@
             </div>
         @endif
 
-        <div class="form-group {{ (!empty(getStoreSettings('show_address_selection_in_cart'))) ? '' : 'mt-28' }}">
+        {{-- ===== DELIVERY ADDRESS SECTION ===== --}}
+        <div class="mt-28 border-top pt-20">
+            <h5 class="font-14 mb-20 font-weight-600">{{ trans('update.delivery_address') ?? 'Delivery Address' }}</h5>
+
+            {{-- Use Profile Address Button --}}
+            <div class="form-group mb-24">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="useProfileAddressBtn">
+                    <i class="fas fa-user-circle mr-2"></i>
+                    {{ trans('update.use_my_profile_address') ?? 'Use My Profile Address' }}
+                </button>
+            </div>
+
+            {{-- Address Line with Autocomplete --}}
+            <div class="form-group">
+                <label class="form-group-label">{{ trans('update.address_line') ?? 'Address Line' }}</label>
+                <input type="text" name="address_line" id="checkoutAddressLine" placeholder="e.g., 123 Main Street" class="form-control form-control-lg autocomplete-input" value="{{ old('address_line') }}" autocomplete="off">
+                <small class="text-gray-500 d-block mt-4">Start typing for address suggestions</small>
+                <div id="addressSuggestions" class="list-group position-absolute bg-white rounded-12 mt-2 w-100 shadow-sm" style="display:none; z-index: 1000;"></div>
+                <div class="invalid-feedback d-block">@error('address_line') {{ $message }} @enderror</div>
+            </div>
+
+            {{-- City, State, Country, Postal Code Row --}}
+            <div class="row mt-20">
+                <div class="col-6">
+                    <div class="form-group">
+                        <label class="form-group-label">{{ trans('update.city') ?? 'City' }}</label>
+                        <input type="text" name="city" id="checkoutCity" class="form-control" value="{{ old('city') }}">
+                        <div class="invalid-feedback d-block">@error('city') {{ $message }} @enderror</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-group">
+                        <label class="form-group-label">{{ trans('update.state') ?? 'State/Province' }}</label>
+                        <input type="text" name="state" id="checkoutState" class="form-control" value="{{ old('state') }}">
+                        <div class="invalid-feedback d-block">@error('state') {{ $message }} @enderror</div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Country and Postal Code Row --}}
+            <div class="row mt-20">
+                <div class="col-6">
+                    <div class="form-group">
+                        <label class="form-group-label">{{ trans('update.country') ?? 'Country' }}</label>
+                        <input type="text" name="country" id="checkoutCountry" class="form-control" value="{{ old('country') }}">
+                        <div class="invalid-feedback d-block">@error('country') {{ $message }} @enderror</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-group">
+                        <label class="form-group-label">{{ trans('update.postal_code') ?? 'Postal Code' }}</label>
+                        <input type="text" name="postal_code" id="checkoutPostalCode" class="form-control" value="{{ old('postal_code') }}">
+                        <div class="invalid-feedback d-block">@error('postal_code') {{ $message }} @enderror</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group {{ (!empty(getStoreSettings('show_address_selection_in_cart'))) ? '' : 'mt-28' }} mt-20">
             <label class="form-group-label">{{ trans('update.address') }}</label>
             <textarea name="address" rows="6" class="js-ajax-address form-control">{{ !empty($user) ? $user->address : '' }}</textarea>
             <div class="invalid-feedback d-block">@error('address') {{ $message }} @enderror</div>

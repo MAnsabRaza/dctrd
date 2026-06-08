@@ -80,5 +80,6 @@
 
     <script src="{{ getDesign1ScriptPath("get_regions") }}"></script>
     <script src="{{ getDesign1ScriptPath("cart_page") }}"></script>
+    <script src="{{ asset('js/checkout-address-autocomplete.js') }}"></script>
 
 @endpush

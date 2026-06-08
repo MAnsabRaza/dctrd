@@ -46,3 +46,12 @@ Route::prefix('v1')->group(function () {
     Route::get('/products', [\App\Http\Controllers\LocationController::class, 'products']);
     Route::get('/bookings', [\App\Http\Controllers\LocationController::class, 'bookings']);
 });
+
+// Checkout Address APIs
+Route::prefix('location')->group(function () {
+    Route::get('/suggestions', [\App\Http\Controllers\Api\LocationController::class, 'suggestions']);
+});
+
+Route::prefix('user')->middleware('auth:api')->group(function () {
+    Route::get('/address', [\App\Http\Controllers\Api\UserController::class, 'getAddress']);
+});
