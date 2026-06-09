@@ -147,6 +147,24 @@
             </div>
 
             <div class="form-group">
+                <label class="input-label">{{ trans('public.checkout_message') }}</label>
+                <textarea name="checkout_message" rows="6" class="form-control @error('checkout_message')  is-invalid @enderror " placeholder="{{ trans('update.checkout_message_placeholder') }}">{{ (!empty($product) and !empty($product->translate($locale))) ? $product->translate($locale)->checkout_message : old('checkout_message') }}</textarea>
+                @error('checkout_message')
+                <div class="invalid-feedback">
+                    {{ $message }}
+                </div>
+                @enderror
+            </div>
+              <div class="form-group">
+                <label class="input-label">{{ trans('public.reviewer_message') }}</label>
+                <textarea name="reviewer_message" rows="6" class="form-control @error('reviewer_message')  is-invalid @enderror " placeholder="{{ trans('update.reviewer_message_placeholder') }}">{{ (!empty($product) and !empty($product->translate($locale))) ? $product->translate($locale)->reviewer_message : old('reviewer_message') }}</textarea>
+                @error('reviewer_message')
+                <div class="invalid-feedback">
+                    {{ $message }}
+                </div>
+                @enderror
+            </div>
+              <div class="form-group">
                 <label class="input-label">{{ trans('public.summary') }}</label>
                 <textarea name="summary" rows="6" class="form-control @error('summary')  is-invalid @enderror " placeholder="{{ trans('update.product_summary_placeholder') }}">{{ (!empty($product) and !empty($product->translate($locale))) ? $product->translate($locale)->summary : old('summary') }}</textarea>
                 @error('summary')
@@ -155,6 +173,7 @@
                 </div>
                 @enderror
             </div>
+           
 
             <div class="form-group mt-20 d-flex align-items-center">
                 <div class="custom-control custom-switch">

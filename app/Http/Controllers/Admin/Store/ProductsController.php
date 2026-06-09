@@ -331,6 +331,8 @@ class ProductsController extends Controller
             'creator_id' => 'required|exists:users,id',
             'type' => 'required|in:' . implode(',', Product::$productTypes),
             'title' => 'required|max:255',
+            'checkout_message'=>'nullable|string',
+            'reviewer_message'=>'nullable|string',
             'slug' => 'max:255|unique:products,slug',
             'seo_description' => 'required|max:255',
             'summary' => 'required',
@@ -346,6 +348,8 @@ class ProductsController extends Controller
             'postal_code' => 'nullable|string|max:20',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
+            'checkout_message'=>'nullable|string',
+            'reviewer_message'=>'nullable|string',
         ];
 
         $this->validate($request, $rules);
@@ -388,6 +392,8 @@ class ProductsController extends Controller
             'slug' => $data['slug'],
             'category_id' => null,
             'price' => null,
+            'checkout_message' => $data['checkout_message'] ?? null,
+            'reviewer_message' => $data['reviewer_message'] ?? null,
             'unlimited_inventory' => false,
             'ordering' => (!empty($data['ordering']) and $data['ordering'] == 'on'),
             'inventory' => null,
@@ -511,6 +517,8 @@ class ProductsController extends Controller
 
         $rules = [
             'creator_id' => 'required|exists:users,id',
+            'checkout_message'=>'nullable|string',
+            'reviewer_message'=>'nullable|string',
             'type' => 'required|in:' . implode(',', Product::$productTypes),
             'title' => 'required|max:255',
             'slug' => 'max:255|unique:products,slug,' . $product->id,
@@ -599,6 +607,8 @@ class ProductsController extends Controller
             'delivery_fee' => $data['delivery_fee'] ?? null,
             'delivery_estimated_time' => $data['delivery_estimated_time'] ?? null,
             'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
+            'checkout_message' => $data['checkout_message'] ?? null,
+            'reviewer_message' => $data['reviewer_message'] ?? null,
             'point' => $data['point'] ?? null,
             'tax' => $data['tax'] ?? null,
             'commission_type' => $data['commission_type'] ?? 'percent',
