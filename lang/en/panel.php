@@ -33,6 +33,8 @@ return [
 'featured'=>'Featured',
 'search'=>'Search',
 'filter_bookings'=>'Filter bookings',
+'checkout_message'=>'Checkout message',
+'reviewer_message'=>'Reviewer message',
 'category'=>'Category',
 'sort'=>'Sort',
 'default'=>'Default',
