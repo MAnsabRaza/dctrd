@@ -49,6 +49,16 @@
                                                 </div>
                                             </div>
                                         </div>
+                                         <div class="form-group">
+                <label class="input-label">{{ trans('public.checkout_message') }}</label>
+                <textarea name="checkout_message" rows="6" class="form-control @error('checkout_message')  is-invalid @enderror " placeholder="{{ trans('update.checkout_message_placeholder') }}">{{ old('checkout_message', !empty($product) ? $product->checkout_message : '') }}</textarea>
+                @error('checkout_message')
+                <div class="invalid-feedback">
+                    {{ $message }}
+                </div>
+                @enderror
+            </div>
+
                                     </section>
                                 @endif
 
