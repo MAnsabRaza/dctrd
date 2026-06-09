@@ -99,6 +99,9 @@ class BookingController extends Controller
             // Status
             'status'           => $request->status === 'published' ? 'published' : 'draft',
             'featured'         => $request->featured === 'on',
+            'reviewer_message' => $request->reviewer_message ?: null,
+            'checkout_message' => $request->checkout_message ?: null
+
         ]);
 
         $this->sendBookingNotification($booking, 'booking_created');
@@ -184,6 +187,8 @@ class BookingController extends Controller
             // Status
             'status'           => $request->status === 'published' ? 'published' : 'draft',
             'featured'         => $request->featured === 'on',
+            'reviewer_message' => $request->reviewer_message ?: null,
+            'checkout_message' => $request->checkout_message ?: null
         ]);
 
         $this->sendBookingNotification($booking, 'booking_updated');

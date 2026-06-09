@@ -392,6 +392,25 @@
 
                                             </div>{{-- col-md-6 left --}}
 
+                                            <div class="row">
+                                                <div class="col-6">
+                                                     <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.reviewer_message') }}</label>
+                                                    <input type="text" name="reviewer_message" class="form-control"
+                                                           value="{{ !empty($editBooking) ? $editBooking->reviewer_message : old('reviewer_message') }}"
+                                                           placeholder="e.g. per night, per adult">
+                                                </div>
+                                                </div>
+                                                <div class="col-6">
+                                                     <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.checkout_message') }}</label>
+                                                    <input type="text" name="checkout_message" class="form-control"
+                                                           value="{{ !empty($editBooking) ? $editBooking->checkout_message : old('checkout_message') }}"
+                                                           placeholder="e.g. per night, per adult">
+                                                </div>
+                                                </div>
+                                            </div>
+
                                             {{-- RIGHT COLUMN --}}
                                             <div class="col-12 col-md-6">
 
