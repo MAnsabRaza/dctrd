@@ -77,8 +77,8 @@
     {{-- Actions --}}
     <td class="text-right">
         <div class="dropdown">
-            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                {{ trans('update.controls') }}
+            <button type="button" class="btn btn-transparent dropdown-toggle p-0" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-ellipsis-h text-gray-600" aria-hidden="true"></i>
             </button>
 
             <div class="dropdown-menu dropdown-menu-right">

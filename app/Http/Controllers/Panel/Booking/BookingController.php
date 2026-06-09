@@ -385,6 +385,10 @@ class BookingController extends Controller
 
             'city' => 'nullable|string',
 
+            'reviewer_message' => 'nullable|string',
+
+            'checkout_message' => 'nullable|string',
+
             'state' => 'nullable|string',
 
             'country' => 'nullable|string',
