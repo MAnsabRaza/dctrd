@@ -10,6 +10,25 @@
         <label class="form-group-label">{{ trans('site.message') }}</label>
         <textarea name="message_for_reviewer" rows="10" class="form-control">{{ (!empty($product) and $product->message_for_reviewer) ? $product->message_for_reviewer : old('message_for_reviewer') }}</textarea>
     </div>
+    <div class="form-group">
+    <label class="form-group-label">
+        Checkout Message
+    </label>
+
+    <textarea
+        name="checkout_message"
+        rows="4"
+        class="form-control @error('checkout_message') is-invalid @enderror"
+        placeholder="Enter checkout message..."
+    >{{ old('checkout_message', !empty($product) ? $product->checkout_message : '') }}</textarea>
+
+    @error('checkout_message')
+    <div class="invalid-feedback">
+        {{ $message }}
+    </div>
+    @enderror
+</div>
+
 
     <div class="form-group">
         <div class="d-flex align-items-center">
