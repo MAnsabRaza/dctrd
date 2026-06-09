@@ -85,13 +85,13 @@
     </label>
 
     <textarea
-        name="review_message"
+        name="reviewer_message"
         rows="4"
-        class="form-control @error('review_message') is-invalid @enderror"
+        class="form-control @error('reviewer_message') is-invalid @enderror"
         placeholder="Enter review message..."
-    >{{ !empty($product) ? $product->review_message : old('review_message') }}</textarea>
+    >{{ old('reviewer_message', !empty($product) ? $product->reviewer_message : '') }}</textarea>
 
-    @error('review_message')
+    @error('reviewer_message')
     <div class="invalid-feedback">
         {{ $message }}
     </div>
@@ -108,7 +108,7 @@
         rows="4"
         class="form-control @error('checkout_message') is-invalid @enderror"
         placeholder="Enter checkout message..."
-    >{{ !empty($product) ? $product->checkout_message : old('checkout_message') }}</textarea>
+    >{{ old('checkout_message', !empty($product) ? $product->checkout_message : '') }}</textarea>
 
     @error('checkout_message')
     <div class="invalid-feedback">
