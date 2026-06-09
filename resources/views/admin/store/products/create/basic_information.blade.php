@@ -148,7 +148,7 @@
 
             <div class="form-group">
                 <label class="input-label">{{ trans('public.checkout_message') }}</label>
-                <textarea name="checkout_message" rows="6" class="form-control @error('checkout_message')  is-invalid @enderror " placeholder="{{ trans('update.checkout_message_placeholder') }}">{{ (!empty($product) and !empty($product->translate($locale))) ? $product->translate($locale)->checkout_message : old('checkout_message') }}</textarea>
+                <textarea name="checkout_message" rows="6" class="form-control @error('checkout_message')  is-invalid @enderror " placeholder="{{ trans('update.checkout_message_placeholder') }}">{{ old('checkout_message', !empty($product) ? $product->checkout_message : '') }}</textarea>
                 @error('checkout_message')
                 <div class="invalid-feedback">
                     {{ $message }}
@@ -157,7 +157,7 @@
             </div>
               <div class="form-group">
                 <label class="input-label">{{ trans('public.reviewer_message') }}</label>
-                <textarea name="reviewer_message" rows="6" class="form-control @error('reviewer_message')  is-invalid @enderror " placeholder="{{ trans('update.reviewer_message_placeholder') }}">{{ (!empty($product) and !empty($product->translate($locale))) ? $product->translate($locale)->reviewer_message : old('reviewer_message') }}</textarea>
+                <textarea name="reviewer_message" rows="6" class="form-control @error('reviewer_message')  is-invalid @enderror " placeholder="{{ trans('update.reviewer_message_placeholder') }}">{{ old('reviewer_message', !empty($product) ? $product->reviewer_message : '') }}</textarea>
                 @error('reviewer_message')
                 <div class="invalid-feedback">
                     {{ $message }}
