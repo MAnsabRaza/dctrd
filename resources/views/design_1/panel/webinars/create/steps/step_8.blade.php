@@ -12,6 +12,24 @@
     </div>
 
     <div class="form-group">
+        <label class="form-group-label">
+            {{ trans('public.checkout_message') }}
+        </label>
+        <textarea
+            name="checkout_message"
+            rows="4"
+            class="form-control @error('checkout_message') is-invalid @enderror"
+            placeholder="Enter checkout message..."
+        >{{ old('checkout_message', !empty($webinar) ? $webinar->checkout_message : '') }}</textarea>
+        @error('checkout_message')
+        <div class="invalid-feedback">
+            {{ $message }}
+        </div>
+        @enderror
+    </div>
+    
+
+    <div class="form-group">
         <div class="d-flex align-items-center">
             <div class="custom-switch mr-8">
                 <input id="rulesSwitch" type="checkbox" name="rules" class="custom-control-input">

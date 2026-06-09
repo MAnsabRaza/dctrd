@@ -121,6 +121,8 @@ class WebinarController extends Controller
             'postal_code' => 'nullable|string|max:20',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
+            'checkout_message' => 'nullable|string',
+            'reviewer_message' => 'nullable|string',
         ];
 
         $this->validate($request, $rules);
@@ -395,6 +397,8 @@ class WebinarController extends Controller
                 'postal_code' => 'nullable|string|max:20',
                 'lat' => 'nullable|numeric',
                 'lng' => 'nullable|numeric',
+                'checkout_message' => 'nullable|string',
+            'reviewer_message' => 'nullable|string',
             ];
         }
 
