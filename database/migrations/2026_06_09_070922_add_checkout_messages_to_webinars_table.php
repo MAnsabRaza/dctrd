@@ -1,0 +1,41 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::table('webinars', function (Blueprint $table) {
+                        $table->text('checkout_message')
+                  ->nullable()
+                  ->after('status');
+ 
+            // Message shown to instructor/reviewer
+            // Example: "Student must complete pre-test first"
+            $table->text('reviewer_message')
+                  ->nullable()
+                  ->after('checkout_message');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table('webinars', function (Blueprint $table) {
+            $table->dropColumn(['checkout_message', 'reviewer_message']);
+        });
+
+    }
+};
