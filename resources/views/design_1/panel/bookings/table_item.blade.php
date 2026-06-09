@@ -77,8 +77,9 @@
     {{-- Actions --}}
     <td class="text-right">
         <div class="dropdown">
-            <button type="button" class="btn btn-transparent dropdown-toggle p-0" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="fa fa-ellipsis-h text-gray-600" aria-hidden="true"></i>
+            <button type="button" class="btn-transparent dropdown-toggle p-0 d-flex align-items-center justify-content-center" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 36px; height: 36px;">
+                <span class="text-gray-600" style="font-size: 18px; line-height: 1;">⋮</span>
+                <span class="sr-only">Actions</span>
             </button>
 
             <div class="dropdown-menu dropdown-menu-right">
