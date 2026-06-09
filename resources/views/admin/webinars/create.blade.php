@@ -113,6 +113,28 @@
                                                 @enderror
                                             </div>
 
+                                               <div class="form-group mt-15">
+                                                <label class="input-label">{{ trans('public.checkout_message') }}</label>
+                                                <input type="text" name="checkout_message" value="{{ !empty($webinar) ? $webinar->checkout_message : old('checkout_message') }}" class="form-control @error('checkout_message')  is-invalid @enderror" placeholder=""/>
+                                                @error('checkout_message')
+                                                <div class="invalid-feedback">
+                                                    {{ $message }}
+                                                </div>
+                                                @enderror
+                                            </div>
+
+                                            <div class="form-group mt-15">
+                                                <label class="input-label">{{ trans('public.reviewer_message') }}</label>
+                                                <input type="text" name="reviewer_message" value="{{ !empty($webinar) ? $webinar->reviewer_message : old('reviewer_message') }}" class="form-control @error('reviewer_message')  is-invalid @enderror" placeholder=""/>
+                                                @error('reviewer_message')
+                                                <div class="invalid-feedback">
+                                                    {{ $message }}
+                                                </div>
+                                                @enderror
+                                            </div>
+
+
+
                                             <div class="form-group mt-25 d-flex align-items-center">
                                                 <div class="custom-control custom-switch mr-3">
                                                     <input type="checkbox" name="location_enabled" class="custom-control-input" id="webinarLocationSwitch" {{ (!empty(old('location_enabled')) or (!empty($webinar) && $webinar->location_enabled)) ? 'checked' : '' }}>

@@ -353,6 +353,8 @@ class WebinarController extends Controller
             'postal_code' => 'nullable|string|max:20',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
+            'checkout_message' => 'nullable|string',
+            'reviewer_message' => 'nullable|string',
         ]);
 
         $data = $request->all();
@@ -424,6 +426,8 @@ class WebinarController extends Controller
             'points' => $data['points'] ?? null,
             'category_id' => $data['category_id'],
             'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
+            'checkout_message'=> $data['checkout_message'] ?? null,
+            'reviewer_message'=> $data['reviewer_message'] ?? null,
             'location_enabled' => $data['location_enabled'],
             'status' => Webinar::$pending,
             'created_at' => time(),
@@ -615,6 +619,8 @@ class WebinarController extends Controller
             'postal_code' => 'nullable|string|max:20',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
+            'checkout_message' => 'nullable|string',
+            'reviewer_message' => 'nullable|string',
         ];
 
         if ($webinar->isWebinar()) {
@@ -778,6 +784,8 @@ class WebinarController extends Controller
             'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
             'location_enabled' => $data['location_enabled'],
             'status' => $data['status'],
+            'checkout_message' => $data['checkout_message'] ?? null,
+            'reviewer_message' => $data['reviewer_message'] ?? null,
             'updated_at' => time(),
         ]);
 
