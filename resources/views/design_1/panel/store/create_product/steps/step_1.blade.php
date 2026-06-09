@@ -79,6 +79,44 @@
         @enderror
     </div>
 
+   <div class="form-group">
+    <label class="form-group-label">
+        Review Message
+    </label>
+
+    <textarea
+        name="review_message"
+        rows="4"
+        class="form-control @error('review_message') is-invalid @enderror"
+        placeholder="Enter review message..."
+    >{{ !empty($product) ? $product->review_message : old('review_message') }}</textarea>
+
+    @error('review_message')
+    <div class="invalid-feedback">
+        {{ $message }}
+    </div>
+    @enderror
+</div>
+
+<div class="form-group">
+    <label class="form-group-label">
+        Checkout Message
+    </label>
+
+    <textarea
+        name="checkout_message"
+        rows="4"
+        class="form-control @error('checkout_message') is-invalid @enderror"
+        placeholder="Enter checkout message..."
+    >{{ !empty($product) ? $product->checkout_message : old('checkout_message') }}</textarea>
+
+    @error('checkout_message')
+    <div class="invalid-feedback">
+        {{ $message }}
+    </div>
+    @enderror
+</div>
+
 
     <div class="form-group">
         <div class="d-flex align-items-center">

@@ -130,6 +130,8 @@ class ProductController extends Controller
             'postal_code' => 'nullable|string|max:20',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
+            'checkout_message' => 'nullable|string',
+            'reviewer_message' => 'nullable|string',
         ];
 
         $this->validate($request, $rules);
@@ -149,6 +151,8 @@ class ProductController extends Controller
             'inventory_warning' => null,
             'inventory_updated_at' => null,
             'delivery_fee' => null,
+            'checkout_message' => $data['checkout_message'] ?? null,
+            'reviewer_message' => $data['reviewer_message'] ?? null,
             'delivery_estimated_time' => null,
             'message_for_reviewer' => null,
             'location_enabled' => $data['location_enabled'],
@@ -328,6 +332,8 @@ class ProductController extends Controller
                 'postal_code' => 'nullable|string|max:20',
                 'lat' => 'nullable|numeric',
                 'lng' => 'nullable|numeric',
+                 'checkout_message' => 'nullable|string',
+                 'reviewer_message' => 'nullable|string',
             ];
 
             $data['location_enabled'] = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
