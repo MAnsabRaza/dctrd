@@ -35,6 +35,7 @@ return [
 'filter_bookings'=>'Filter bookings',
 'checkout_message'=>'Checkout message',
 'reviewer_message'=>'Reviewer message',
+'select_type'=>'Select type',
 'category'=>'Category',
 'sort'=>'Sort',
 'default'=>'Default',
