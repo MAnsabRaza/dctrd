@@ -17,12 +17,6 @@ return new class extends Migration
                         $table->text('checkout_message')
                   ->nullable()
                   ->after('status');
- 
-            // Message shown to org/instructor reviewer
-            // Example: "Verify guest count before confirming"
-            $table->text('reviewer_message')
-                  ->nullable()
-                  ->after('checkout_message');
 
         });
     }
