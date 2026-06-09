@@ -389,6 +389,8 @@ return [
 'forbidden_request_toast_lang' => 'Forbidden Request',
 'forbidden_request_toast_msg_lang' => 'You do not have access to this content.',
 'redirect_to_app' => 'Redirecting to the app',
+'checkout_message'=>'checkout_message',
+'reviewer_message'=>'reviewer_message',
 
 
 ];
