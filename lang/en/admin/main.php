@@ -254,6 +254,8 @@ return [
     //booking
 
     //booking value
+    'reviewer_message'=>'Reviewer Message',
+    'checkout_message'=>'Checkout Message',
     'validity_days'=>'Validity Days',
     'usage_limit'=>'Usage Limit',
     'booking_type' => 'Booking Type',

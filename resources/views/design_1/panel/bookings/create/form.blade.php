@@ -278,6 +278,21 @@
         </div>
     </div>
 
+    <div class="col-6">
+          <div class="form-group">
+            <label>{{ trans('panel.reviewer_message') }}</label>
+            <textarea name="reviewer_message" class="form-control"
+                      placeholder="Reviewer message">{{ !empty($editBooking) ? $editBooking->reviewer_message : old('reviewer_message') }}</textarea>
+        </div>
+    </div>
+    <div class="col-6">
+          <div class="form-group">
+            <label>{{ trans('panel.checkout_message') }}</label>
+            <textarea name="checkout_message" class="form-control"
+                      placeholder="Checkout message">{{ !empty($editBooking) ? $editBooking->checkout_message : old('checkout_message') }}</textarea>
+        </div>
+    </div>
+
     {{-- ── Description ──────────────────────────────────────────────── --}}
     <div class="col-12">
         <div class="form-group">
