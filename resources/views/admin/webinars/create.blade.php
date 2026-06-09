@@ -112,24 +112,9 @@
                                                 </div>
                                                 @enderror
                                             </div>
-<div class="form-group mt-15">
-    <label class="input-label">{{ trans('public.checkout_message') }}</label>
 
-    <textarea
-        name="checkout_message"
-        rows="6"
-        class="form-control @error('checkout_message') is-invalid @enderror"
-        placeholder="{{ trans('update.checkout_message_placeholder') }}"
-    >{{ old('checkout_message', !empty($webinar) ? $webinar->checkout_message : '') }}</textarea>
 
-    @error('checkout_message')
-    <div class="invalid-feedback">
-        {{ $message }}
-    </div>
-    @enderror
-</div>
-
-<div class="form-group mt-15">
+<!-- <div class="form-group mt-15">
     <label class="input-label">{{ trans('public.reviewer_message') }}</label>
 
     <textarea
@@ -144,7 +129,7 @@
         {{ $message }}
     </div>
     @enderror
-</div>
+</div> -->
 
 
 
@@ -1048,6 +1033,24 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="form-group mt-15">
+    <label class="input-label">{{ trans('public.checkout_message') }}</label>
+
+    <textarea
+        name="checkout_message"
+        rows="6"
+        class="form-control @error('checkout_message') is-invalid @enderror"
+        placeholder="{{ trans('update.checkout_message_placeholder') }}"
+    >{{ old('checkout_message', !empty($webinar) ? $webinar->checkout_message : '') }}</textarea>
+
+    @error('checkout_message')
+    <div class="invalid-feedback">
+        {{ $message }}
+    </div>
+    @enderror
+</div>
+
                                 </section>
 
                                 <input type="hidden" name="draft" value="no" id="forDraft"/>
