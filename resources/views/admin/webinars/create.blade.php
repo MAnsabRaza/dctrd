@@ -120,7 +120,7 @@
         rows="6"
         class="form-control @error('checkout_message') is-invalid @enderror"
         placeholder="{{ trans('update.checkout_message_placeholder') }}"
-    >{{ old('checkout_message', !empty($product) ? $product->checkout_message : '') }}</textarea>
+    >{{ old('checkout_message', !empty($webinar) ? $webinar->checkout_message : '') }}</textarea>
 
     @error('checkout_message')
     <div class="invalid-feedback">
@@ -137,7 +137,7 @@
         rows="6"
         class="form-control @error('reviewer_message') is-invalid @enderror"
         placeholder="Enter reviewer message"
-    >{{ old('reviewer_message', !empty($product) ? $product->reviewer_message : '') }}</textarea>
+    >{{ old('reviewer_message', !empty($webinar) ? $webinar->reviewer_message : '') }}</textarea>
 
     @error('reviewer_message')
     <div class="invalid-feedback">
