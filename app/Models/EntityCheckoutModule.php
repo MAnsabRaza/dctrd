@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EntityCheckoutModule extends Model
 {
@@ -16,4 +17,18 @@ class EntityCheckoutModule extends Model
         'enabled',
         'config_override',
     ];
+
+    protected $casts = [
+        'enabled' => 'boolean',
+        'config_override' => 'array',
+    ];
+
+    // ─────────────────────────────────────────
+    // RELATIONSHIPS
+    // ─────────────────────────────────────────
+
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(CheckoutModule::class, 'module_id');
+    }
 }

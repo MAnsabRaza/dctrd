@@ -35,7 +35,7 @@ class CheckoutSettingsController extends Controller
         $moduleSettings = $this->checkoutModuleService->getOrgModuleSettings($orgId);
 
         return view('panel.setting.checkout_options', [
-            'pageTitle'      => trans('panel/checkout_settings.page_title'),
+            'pageTitle'      => trans('panel.checkout_options'),
             'moduleSettings' => $moduleSettings,
         ]);
     }
@@ -55,8 +55,8 @@ class CheckoutSettingsController extends Controller
             'modules'   => 'required|array',
             'modules.*' => 'boolean',
         ], [
-            'modules.required' => trans('panel/checkout_settings.modules_required'),
-            'modules.array'    => trans('panel/checkout_settings.modules_invalid'),
+            'modules.required' => trans('panel.checkout_options_modules_required'),
+            'modules.array'    => trans('panel.checkout_options_modules_invalid'),
         ]);
 
         $orgId = Auth::id();
@@ -72,24 +72,24 @@ class CheckoutSettingsController extends Controller
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => trans('panel/checkout_settings.saved_successfully'),
+                    'message' => trans('panel.checkout_options_saved'),
                 ]);
             }
 
             return redirect()
                 ->route('panel.checkout-settings')
-                ->with('success', trans('panel/checkout_settings.saved_successfully'));
+                ->with('success', trans('panel.checkout_options_saved'));
 
         } catch (\Exception $e) {
 
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => trans('panel/checkout_settings.save_failed'),
+                    'message' => trans('panel.checkout_options_save_failed'),
                 ], 500);
             }
 
-            return back()->with('error', trans('panel/checkout_settings.save_failed'));
+            return back()->with('error', trans('panel.checkout_options_save_failed'));
         }
     }
 
@@ -117,9 +117,9 @@ class CheckoutSettingsController extends Controller
             'modules.*.enabled'         => 'required|boolean',
             'modules.*.config_override' => 'nullable|array',
         ], [
-            'entity_type.in'      => trans('panel/checkout_settings.invalid_entity_type'),
-            'entity_id.required'  => trans('panel/checkout_settings.entity_id_required'),
-            'modules.required'    => trans('panel/checkout_settings.modules_required'),
+            'entity_type.in'      => trans('panel.checkout_options_invalid_entity_type'),
+            'entity_id.required'  => trans('panel.checkout_options_entity_id_required'),
+            'modules.required'    => trans('panel.checkout_options_modules_required'),
         ]);
 
         $orgId      = Auth::id();
@@ -130,7 +130,7 @@ class CheckoutSettingsController extends Controller
         if (!$this->entityBelongsToOrg($entityType, $entityId, $orgId)) {
             return response()->json([
                 'success' => false,
-                'message' => trans('panel/checkout_settings.entity_not_found'),
+                'message' => trans('panel.checkout_options_entity_not_found'),
             ], 403);
         }
 
@@ -162,13 +162,13 @@ class CheckoutSettingsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => trans('panel/checkout_settings.entity_saved_successfully'),
+                'message' => trans('panel.checkout_options_entity_saved'),
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => trans('panel/checkout_settings.save_failed'),
+                'message' => trans('panel.checkout_options_save_failed'),
             ], 500);
         }
     }

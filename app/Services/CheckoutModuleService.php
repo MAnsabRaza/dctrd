@@ -3,12 +3,12 @@
 namespace App\Services;
 
 use App\Models\CheckoutModule;
+use App\Models\CheckoutModuleAudit;
 use App\Models\EntityCheckoutModule;
 use App\Models\OrderMeta;
 use App\Models\OrgCheckoutModule;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class CheckoutModuleService
 {
@@ -41,6 +41,9 @@ class CheckoutModuleService
 
         // Step 4: Har module ko check karo — enabled hai ya nahi
         $enabledModules = $allModules->filter(function ($module) use ($orgEnabledIds, $entityOverrides) {
+            if ($module->is_required) {
+                return true;
+            }
 
             // Entity level override hai toh woh priority pe hai
             if ($entityOverrides->has($module->id)) {
@@ -164,6 +167,7 @@ class CheckoutModuleService
             $existing = OrderMeta::where('order_id', $orderId)
                 ->where('key', $moduleName)
                 ->first();
+            $oldValue = $existing ? $existing->getRawOriginal('value') : null;
 
             // Save/Update order_meta
             OrderMeta::updateOrCreate(
@@ -172,16 +176,20 @@ class CheckoutModuleService
             );
 
             // Agar pehle se record tha toh audit trail likho
-            if ($existing && $existing->value !== $newValue) {
-                DB::table('checkout_module_audit')->insert([
+            if ($existing && $oldValue !== $newValue) {
+                $changedBy = Auth::id();
+
+                if (empty($changedBy)) {
+                    continue;
+                }
+
+                CheckoutModuleAudit::create([
                     'order_id'    => $orderId,
                     'module_name' => $moduleName,
-                    'old_value'   => $existing->value,
+                    'old_value'   => $oldValue,
                     'new_value'   => $newValue,
-                    'changed_by'  => Auth::id(),
+                    'changed_by'  => $changedBy,
                     'reason'      => trans('checkout.audit_order_update'),
-                    'created_at'  => now(),
-                    'updated_at'  => now(),
                 ]);
             }
         }
@@ -355,10 +363,11 @@ class CheckoutModuleService
                 'id'               => $module->id,
                 'name'             => $module->name,
                 'label'            => $module->translated_label,
+                'help_text'        => $module->translated_help_text,
                 'input_type'       => $module->input_type,
                 'order_index'      => $module->order_index,
                 'is_required'      => $module->is_required,
-                'enabled'          => (bool) ($orgSettings[$module->id] ?? false),
+                'enabled'          => (bool) ($module->is_required || ($orgSettings[$module->id] ?? false)),
             ];
         })->toArray();
     }
@@ -382,13 +391,15 @@ class CheckoutModuleService
                 continue; // Unknown module — skip karo
             }
 
+            $enabled = $module->is_required ? true : (bool) $isEnabled;
+
             OrgCheckoutModule::updateOrCreate(
                 [
                     'org_id'    => $orgId,
                     'module_id' => $module->id,
                 ],
                 [
-                    'enabled' => (bool) $isEnabled,
+                    'enabled' => $enabled,
                 ]
             );
         }

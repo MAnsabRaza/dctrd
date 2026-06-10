@@ -515,6 +515,16 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
             Route::post("/{id}/update", 'UserProfileAttachmentsController@update');
             Route::get("/{id}/delete", 'UserProfileAttachmentsController@delete');
         });
+
+        // ═══════════════════════════════════════════════════════════════
+        // CHECKOUT SETTINGS ROUTES
+        // ═══════════════════════════════════════════════════════════════
+        Route::get('/checkout-options', 'CheckoutSettingsController@index')
+            ->name('panel.checkout-settings');
+        Route::post('/checkout-settings/save', 'CheckoutSettingsController@save')
+            ->name('panel.checkout-settings.save');
+        Route::post('/checkout-settings/entity', 'CheckoutSettingsController@saveEntityModules')
+            ->name('panel.checkout-settings.entity');
     });
 
     Route::group(['prefix' => 'support'], function () {

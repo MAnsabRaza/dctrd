@@ -269,6 +269,12 @@
                                             @endcan
                                         @endif
 
+                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
+                                            <li class="nav-item">
+                                                <a class="nav-link {{ (request()->get('tab') == 'checkoutOptions') ? 'active' : '' }}" id="checkoutOptions-tab" data-toggle="tab" href="#checkoutOptions" role="tab" aria-controls="checkoutOptions" aria-selected="true">{{ trans('panel.checkout_options') }}</a>
+                                            </li>
+                                        @endif
+
                                         @if(!empty($becomeInstructor))
                                             <li class="nav-item">
                                                 <a class="nav-link @if(!empty($becomeInstructor)) active @endif" id="become_instructor-tab" data-toggle="tab" href="#become_instructor" role="tab" aria-controls="become_instructor" aria-selected="true">{{ trans('admin/main.become_instructor_info') }}</a>
@@ -338,6 +344,10 @@
                                             @can('admin_update_user_meeting_settings')
                                                 @include('admin.users.editTabs.meeting_settings')
                                             @endcan
+                                        @endif
+
+                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
+                                            @include('admin.users.editTabs.checkout_options')
                                         @endif
 
                                         @if(!empty($becomeInstructor))

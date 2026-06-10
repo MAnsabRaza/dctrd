@@ -33,6 +33,7 @@ use App\Models\UserOccupation;
 use App\Models\UserRegistrationPackage;
 use App\Models\UserSelectedBank;
 use App\Models\UserSelectedBankSpecification;
+use App\Services\CheckoutModuleService;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -656,6 +657,11 @@ class UserController extends Controller
                 ->paginate(10);
         }
 
+        $moduleSettings = [];
+        if ($user->isOrganization() or $user->isTeacher()) {
+            $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
+        }
+
         $data = [
             'pageTitle' => trans('admin/pages/users.edit_page_title'),
             'user' => $user,
@@ -676,6 +682,7 @@ class UserController extends Controller
             'becomeInstructorForm' => $becomeInstructorForm,
             'becomeInstructorFormFieldsSubmissions' => $becomeInstructorFormFieldsSubmissions,
             'userLoginHistories' => $userLoginHistories,
+            'moduleSettings' => $moduleSettings,
         ];
 
         // Purchased Classes Data
@@ -1655,6 +1662,30 @@ class UserController extends Controller
         }
 
         abort(404);
+    }
+
+    public function checkoutOptionsUpdate(Request $request, $id)
+    {
+        $this->authorize('admin_users_edit');
+
+        $user = User::query()->findOrFail($id);
+
+        if (!($user->isOrganization() or $user->isTeacher())) {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'modules' => 'required|array',
+            'modules.*' => 'nullable|boolean',
+        ]);
+
+        app(CheckoutModuleService::class)->saveOrgModuleSettings(
+            $user->id,
+            $data['modules'] ?? []
+        );
+
+        return redirect(getAdminPanelUrl("/users/{$user->id}/edit?tab=checkoutOptions"))
+            ->with('msg', trans('update.saved_successfully'));
     }
 
     public function disableCashbackToggle($id)

@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrgCheckoutModule extends Model
 {
@@ -14,4 +16,22 @@ class OrgCheckoutModule extends Model
         'module_id',
         'enabled',
     ];
+
+    protected $casts = [
+        'enabled' => 'boolean',
+    ];
+
+    // ─────────────────────────────────────────
+    // RELATIONSHIPS
+    // ─────────────────────────────────────────
+
+    public function org(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'org_id');
+    }
+
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(CheckoutModule::class, 'module_id');
+    }
 }

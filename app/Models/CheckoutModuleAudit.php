@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class CheckoutModuleAudit extends Model
 {
     use HasFactory;
-    protected $table = 'checkout_module_audit';
+    protected $table = 'checkout_module_audits';
     protected $fillable = [
         'order_id',
         'module_name',
