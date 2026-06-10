@@ -909,16 +909,14 @@
         @endcan
 
         @if($authUser->isTeacher() or $authUser->isOrganization())
-            @can('panel_others_checkout_options')
-                <li class="sidenav-item {{ (request()->is('panel/setting/step/checkout_options')) ? 'sidenav-item-active' : '' }}">
-                    <a href="/panel/setting/step/checkout_options" class="d-flex align-items-center">
-                <span class="sidenav-setting-icon sidenav-item-icon mr-10">
-                    @include('web.default.panel.includes.sidebar_icons.setting')
-                </span>
-                        <span class="font-14 text-dark-blue font-weight-500">{{ trans('panel.checkout_options') }}</span>
-                    </a>
-                </li>
-            @endcan
+            <li class="sidenav-item {{ (request()->is('panel/setting/step/checkout_options')) ? 'sidenav-item-active' : '' }}">
+                <a href="/panel/setting/step/checkout_options" class="d-flex align-items-center">
+            <span class="sidenav-setting-icon sidenav-item-icon mr-10">
+                @include('web.default.panel.includes.sidebar_icons.setting')
+            </span>
+                    <span class="font-14 text-dark-blue font-weight-500">{{ trans('panel.checkout_options') }}</span>
+                </a>
+            </li>
         @endif
 
         @if($authUser->isTeacher() or $authUser->isOrganization())

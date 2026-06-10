@@ -686,7 +686,7 @@ class SidebarItems
                 'items' => []
             ];
 
-            if (($user->isTeacher() or $user->isOrganization()) and $user->can('panel_others_checkout_options')) {
+            if ($user->isTeacher() or $user->isOrganization()) {
                 $items['setting']['items'][] = [
                     'text' => trans('panel.checkout_options'),
                     'url' => '/panel/setting/step/checkout_options',

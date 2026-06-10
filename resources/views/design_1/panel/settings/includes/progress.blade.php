@@ -19,7 +19,7 @@
     <span class="ml-4">{{ trans('public.identity_and_financial') }}</span>
 </a>
 
-@if(($user->isTeacher() or $user->isOrganization()) and $user->can('panel_others_checkout_options'))
+@if($user->isTeacher() or $user->isOrganization())
     <a href="/panel/setting/step/checkout_options" class="navbar-item navbar-item-h-52 d-inline-flex-center cursor-pointer {{ ($currentStep == "checkout_options") ? 'active' : '' }}">
         <div class="size-20">
             <x-iconsax-lin-setting-2 class="icons" width="20px" height="20px"/>
