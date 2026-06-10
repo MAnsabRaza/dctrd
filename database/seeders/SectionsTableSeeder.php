@@ -875,6 +875,14 @@ class SectionsTableSeeder extends Seeder
             ]
         );
 
+        // Checkout Modules 3400 - 3405
+        Section::updateOrCreate(['id' => 3400], ['name' => 'admin_checkout_modules', 'caption' => 'Checkout Modules']);
+        Section::updateOrCreate(['id' => 3401], ['name' => 'admin_checkout_modules_list', 'section_group_id' => 3400, 'caption' => 'Checkout Modules List']);
+        Section::updateOrCreate(['id' => 3402], ['name' => 'admin_checkout_modules_create', 'section_group_id' => 3400, 'caption' => 'Checkout Modules Create/Edit']);
+        Section::updateOrCreate(['id' => 3403], ['name' => 'admin_checkout_modules_edit', 'section_group_id' => 3400, 'caption' => 'Checkout Modules Edit']);
+        Section::updateOrCreate(['id' => 3404], ['name' => 'admin_checkout_modules_delete', 'section_group_id' => 3400, 'caption' => 'Checkout Modules Delete']);
+        Section::updateOrCreate(['id' => 3405], ['name' => 'admin_checkout_modules_toggle', 'section_group_id' => 3400, 'caption' => 'Checkout Modules Toggle']);
+
         $bookingModuleSections = [
             3360 => ['admin_booking_filters', 'Booking Filters'],
             3364 => ['admin_booking_rules', 'Booking Rules'],
@@ -1070,6 +1078,7 @@ class SectionsTableSeeder extends Seeder
         $this->createPanelSection(['id' => 301], ['name' => 'panel_others_profile_setting', 'section_group_id' => 300, 'caption' => 'Profile Settings']);
         $this->createPanelSection(['id' => 302], ['name' => 'panel_others_profile_url', 'section_group_id' => 300, 'caption' => 'Profile Url']);
         $this->createPanelSection(['id' => 303], ['name' => 'panel_others_logout', 'section_group_id' => 300, 'caption' => 'Logout']);
+        $this->createPanelSection(['id' => 304], ['name' => 'panel_others_checkout_options', 'section_group_id' => 300, 'caption' => 'Check-Out Options']);
         // Attendances 320 - 329
         $this->createPanelSection(['id' => 320], ['name' => 'panel_attendances', 'caption' => 'Attendances']);
         $this->createPanelSection(['id' => 321], ['name' => 'panel_attendances_lists', 'section_group_id' => 320, 'caption' => 'Attendances lists']);

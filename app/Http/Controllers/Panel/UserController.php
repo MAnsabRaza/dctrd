@@ -22,6 +22,7 @@ use App\Models\UserOccupation;
 use App\Models\UserSelectedBank;
 use App\Models\UserSelectedBankSpecification;
 use App\Models\UserZoomApi;
+use App\Services\CheckoutModuleService;
 use App\Services\UnitConversionService;
 use App\Services\LocationService;
 use App\User;
@@ -77,6 +78,7 @@ class UserController extends Controller
         $districts = null;
         $attachments = null;
         $userLoginHistories = null;
+        $moduleSettings = null;
         $formFieldsHtml = null;
 
         if ($step == "extra_information") {
@@ -99,6 +101,12 @@ class UserController extends Controller
             $userLoginHistories = UserLoginHistory::query()->where('user_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->get();
+        } elseif ($step == "checkout_options") {
+            if (!($user->isOrganization() or $user->isTeacher())) {
+                abort(404);
+            }
+
+            $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
         }
 
         $userBanks = UserBank::query()
@@ -124,6 +132,7 @@ class UserController extends Controller
             'formFieldsHtml' => $formFieldsHtml,
             'attachments' => $attachments,
             'userLoginHistories' => $userLoginHistories,
+            'moduleSettings' => $moduleSettings,
         ];
     }
 
@@ -344,6 +353,20 @@ class UserController extends Controller
                 } else {
                     UserZoomApi::where('user_id', $user->id)->delete();
                 }
+            } elseif ($step == "checkout_options") {
+                if (!($user->isOrganization() or $user->isTeacher())) {
+                    abort(404);
+                }
+
+                $this->validate($request, [
+                    'modules' => 'required|array',
+                    'modules.*' => 'nullable|boolean',
+                ]);
+
+                app(CheckoutModuleService::class)->saveOrgModuleSettings(
+                    $user->id,
+                    $data['modules'] ?? []
+                );
             }
 
             if (!empty($updateData)) {

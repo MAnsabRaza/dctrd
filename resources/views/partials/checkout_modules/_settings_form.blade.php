@@ -5,6 +5,7 @@
     $submitLabel = $submitLabel ?? trans('admin/main.save');
     $title = $title ?? trans('panel.checkout_options');
     $description = $description ?? trans('panel.checkout_options_hint');
+    $wrapForm = $wrapForm ?? true;
 
     $moduleSettings = collect($moduleSettings ?? []);
     $totalModules = $moduleSettings->count();
@@ -42,8 +43,10 @@
         </div>
     </div>
 
-    <form action="{{ $saveUrl }}" method="POST" id="{{ $formId }}" class="{{ trim($formClass) }}">
-        @csrf
+    @if($wrapForm)
+        <form action="{{ $saveUrl }}" method="POST" id="{{ $formId }}" class="{{ trim($formClass) }}">
+            @csrf
+    @endif
 
         <div class="checkout-options-card">
             @if($moduleSettings->isEmpty())
@@ -112,12 +115,17 @@
             @endif
         </div>
 
-        <div class="panel-bottom-bar d-flex align-items-center justify-content-end bg-white px-32 py-16 mt-3">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save mr-1"></i>{{ $submitLabel }}
-            </button>
-        </div>
-    </form>
+        @if($wrapForm)
+            <div class="panel-bottom-bar d-flex align-items-center justify-content-end bg-white px-32 py-16 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i>{{ $submitLabel }}
+                </button>
+            </div>
+        @endif
+
+    @if($wrapForm)
+        </form>
+    @endif
 </div>
 
 @push('styles_top')

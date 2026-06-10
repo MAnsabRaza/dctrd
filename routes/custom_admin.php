@@ -219,9 +219,6 @@ Route::post('/users/{id}/booking-orders/store', [UserController::class, 'storeMa
 Route::post('/users/{id}/booking-options-update', [UserController::class, 'bookingOptionsUpdate'])
     ->name('admin.users.booking_options.update');
 
-Route::post('/users/{id}/checkout-options-update', [UserController::class, 'checkoutOptionsUpdate'])
-    ->name('admin.users.checkout_options.update');
-
 Route::group(['prefix' => 'financial/location-sales'], function () {
     Route::get('/city', [SaleController::class, 'salesByCity'])->name('admin.sales.reports.city');
     Route::get('/country', [SaleController::class, 'salesByCountry'])->name('admin.sales.reports.country');

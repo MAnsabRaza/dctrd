@@ -685,6 +685,13 @@ class SidebarItems
                 'url' => '/panel/setting',
                 'items' => []
             ];
+
+            if (($user->isTeacher() or $user->isOrganization()) and $user->can('panel_others_checkout_options')) {
+                $items['setting']['items'][] = [
+                    'text' => trans('panel.checkout_options'),
+                    'url' => '/panel/setting/step/checkout_options',
+                ];
+            }
         }
 
         if ($user->can('panel_others_logout')) {

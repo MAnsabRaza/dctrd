@@ -29,15 +29,7 @@ class CheckoutSettingsController extends Controller
      */
     public function index()
     {
-        $orgId = Auth::id();
-
-        // Service se saare modules + org ka enabled/disabled status lao
-        $moduleSettings = $this->checkoutModuleService->getOrgModuleSettings($orgId);
-
-        return view('panel.setting.checkout_options', [
-            'pageTitle'      => trans('panel.checkout_options'),
-            'moduleSettings' => $moduleSettings,
-        ]);
+        return redirect('/panel/setting/step/checkout_options');
     }
 
     // =========================================================
