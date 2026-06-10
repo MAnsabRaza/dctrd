@@ -33,6 +33,7 @@ use App\Models\UserOccupation;
 use App\Models\UserRegistrationPackage;
 use App\Models\UserSelectedBank;
 use App\Models\UserSelectedBankSpecification;
+use App\Services\CheckoutModuleService;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
