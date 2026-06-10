@@ -17,14 +17,15 @@
         $placeholder = $module->config['placeholder'] ?? trans('checkout.message_to_reviewer');
     @endphp
 
+    @php $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]"; @endphp
     <textarea 
-        name="checkout_modules[reviewer_message]"
+        name="{{ $prefix }}"
         class="form-control checkout-textarea"
         rows="4"
         placeholder="{{ $placeholder }}"
         maxlength="{{ $maxLength }}"
         {{ $module->is_required ? 'required' : '' }}
-    >{{ old('checkout_modules.reviewer_message') }}</textarea>
+    >{{ old($prefix) }}</textarea>
 
     <div class="small text-muted mt-1">
         <span id="reviewer_message_count">0</span> / {{ $maxLength }} {{ trans('checkout.characters') }}
@@ -37,13 +38,13 @@
 
 @push('scripts_bottom')
     <script>
-        $(document).on('input', 'textarea[name="checkout_modules[reviewer_message]"]', function() {
+        $(document).on('input', 'textarea[name="{{ $prefix }}"]', function() {
             let count = $(this).val().length;
             $('#reviewer_message_count').text(count);
         });
 
         // Initialize on load
-        let initialCount = $('textarea[name="checkout_modules[reviewer_message]"]').val().length;
+        let initialCount = $('textarea[name="{{ $prefix }}"]').val() ? $('textarea[name="{{ $prefix }}"]').val().length : 0;
         $('#reviewer_message_count').text(initialCount);
     </script>
 @endpush

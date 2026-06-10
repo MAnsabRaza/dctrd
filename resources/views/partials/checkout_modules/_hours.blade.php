@@ -16,15 +16,18 @@
         $slots = $module->config['slots'] ?? ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
     @endphp
 
+    @php $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]"; @endphp
     <div class="time-slot-grid">
         @foreach($slots as $slot)
+            @php $optId = $itemId ?? '0'; @endphp
             <label class="time-slot-label">
                 <input 
                     type="radio" 
-                    name="checkout_modules[hours]"
+                    name="{{ $prefix }}"
                     value="{{ $slot }}"
                     class="checkout-time-slot"
-                    {{ old('checkout_modules.hours') == $slot ? 'checked' : '' }}
+                    id="checkout_time_{{ $optId }}_{{ str_replace(':','', $slot) }}"
+                    {{ old($prefix) == $slot ? 'checked' : '' }}
                 >
                 <span>{{ $slot }}</span>
             </label>

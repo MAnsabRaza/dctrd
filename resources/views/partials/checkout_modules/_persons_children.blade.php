@@ -17,6 +17,7 @@
         $adultsConfig = $config['adults'] ?? ['min' => 1, 'max' => 20];
         $childrenConfig = $config['children'] ?? ['min' => 0, 'max' => 10];
         $roomsConfig = $config['rooms'] ?? ['min' => 1, 'max' => 10];
+        $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]";
     @endphp
 
     <div class="stepper-group">
@@ -27,9 +28,9 @@
                 <button type="button" class="btn btn-sm btn-light stepper-btn-minus" data-field="adults">−</button>
                 <input 
                     type="number" 
-                    name="checkout_modules[persons_children][adults]"
-                    class="stepper-input"
-                    value="{{ old('checkout_modules.persons_children.adults', 1) }}"
+                    name="{{ $prefix }}[adults]"
+                    class="stepper-input checkout-stepper-input"
+                    value="{{ old($prefix . '.adults', 1) }}"
                     min="{{ $adultsConfig['min'] }}"
                     max="{{ $adultsConfig['max'] }}"
                     required
@@ -45,9 +46,9 @@
                 <button type="button" class="btn btn-sm btn-light stepper-btn-minus" data-field="children">−</button>
                 <input 
                     type="number" 
-                    name="checkout_modules[persons_children][children]"
-                    class="stepper-input"
-                    value="{{ old('checkout_modules.persons_children.children', 0) }}"
+                    name="{{ $prefix }}[children]"
+                    class="stepper-input checkout-stepper-input"
+                    value="{{ old($prefix . '.children', 0) }}"
                     min="{{ $childrenConfig['min'] }}"
                     max="{{ $childrenConfig['max'] }}"
                 >
@@ -62,9 +63,9 @@
                 <button type="button" class="btn btn-sm btn-light stepper-btn-minus" data-field="rooms">−</button>
                 <input 
                     type="number" 
-                    name="checkout_modules[persons_children][rooms]"
-                    class="stepper-input"
-                    value="{{ old('checkout_modules.persons_children.rooms', 1) }}"
+                    name="{{ $prefix }}[rooms]"
+                    class="stepper-input checkout-stepper-input"
+                    value="{{ old($prefix . '.rooms', 1) }}"
                     min="{{ $roomsConfig['min'] }}"
                     max="{{ $roomsConfig['max'] }}"
                     required

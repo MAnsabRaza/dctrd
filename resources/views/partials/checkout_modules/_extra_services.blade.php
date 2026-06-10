@@ -16,17 +16,23 @@
         $options = $module->config['options'] ?? [];
     @endphp
 
+    @php
+        $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]";
+    @endphp
+
     <div class="extra-services-list">
         @foreach($options as $index => $option)
+            @php $optId = $itemId ?? '0'; @endphp
             <div class="extra-service-item">
                 <label class="custom-checkbox">
                     <input 
                         type="checkbox" 
-                        name="checkout_modules[extra_services][]"
+                        name="{{ $prefix }}[]"
                         value="{{ $option['label'] }}"
                         class="checkout-extra-service"
                         data-price="{{ $option['price'] ?? 0 }}"
-                        {{ in_array($option['label'], old('checkout_modules.extra_services', [])) ? 'checked' : '' }}
+                        id="checkout_extra_{{ $optId }}_{{ $index }}"
+                        {{ in_array($option['label'], old($prefix, [])) ? 'checked' : '' }}
                     >
                     <span>{{ $option['label'] }}</span>
                     <span class="price">+${{ number_format($option['price'] ?? 0, 2) }}</span>

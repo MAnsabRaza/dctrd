@@ -51,6 +51,10 @@
                     $item_model_classes = [];
                 @endphp
 
+            <form action="/cart/checkout" method="post" id="cartForm">
+                {{ csrf_field() }}
+                <input type="hidden" name="discount_id" value="">
+
                 @foreach ($carts as $cart)
                     @php
                         if ($cart->webinar_id) {
@@ -87,7 +91,48 @@
                                             $cartTaxType = !empty($cartItemInfo['isProduct']) ? 'store' : 'general';
                                         @endphp
                                         <img src="{{ $cartItemInfo['imgPath'] }}" class="img-cover" alt="user avatar">
-                                    </div>
+                                            </div>
+                                            {{-- Render checkout modules for this item (if any) --}}
+                                            @php
+                                                try {
+                                                    $entityType = null;
+                                                    $entityId = null;
+                                                    $orgId = null;
+
+                                                    if (!empty($cart->webinar_id)) {
+                                                        $entityType = 'course';
+                                                        $entityId = $cart->webinar_id;
+                                                        $orgId = optional($cart->webinar)->teacher_id;
+                                                    } elseif (!empty($cart->productOrder) && !empty($cart->productOrder->product_id)) {
+                                                        $entityType = 'product';
+                                                        $entityId = $cart->productOrder->product_id;
+                                                        $orgId = optional(optional($cart->productOrder)->product)->creator_id;
+                                                    } elseif (!empty($cart->reserve_meeting_id)) {
+                                                        $entityType = 'booking';
+                                                        $entityId = $cart->reserve_meeting_id;
+                                                        $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id ?? null;
+                                                    }
+
+                                                    $modules = [];
+                                                    if ($entityType && $entityId && $orgId) {
+                                                        $modules = app(\App\Services\CheckoutModuleService::class)->getModulesForEntity($entityType, $entityId, $orgId);
+                                                    }
+                                                } catch (\Throwable $e) {
+                                                    $modules = [];
+                                                }
+                                            @endphp
+
+                                            @if(!empty($modules) && count($modules))
+                                                <div class="mt-15 p-15 rounded-sm" style="border:2px solid #d1e7dd;background:#f8fff9;">
+                                                    <div class="row align-items-center gx-2">
+                                                        @foreach($modules as $module)
+                                                            <div class="col-12 col-md-4">
+                                                                @includeIf('partials.checkout_modules._' . $module->name, ['module' => $module, 'itemId' => $cart->id])
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
                                 </div>
 
                                 <div class="col-8">
@@ -192,10 +237,6 @@
                     class="btn btn-sm btn-primary mt-25">{{ trans('cart.continue_shopping') }}</button>
             </div>
         </section>
-        {{-- ++++++++++++++++++++++ checkout ++++++++++++++++++++++ --}}
-        <form action="/cart/checkout" method="post" id="cartForm">
-            {{ csrf_field() }}
-            <input type="hidden" name="discount_id" value="">
 
             @if ($hasPhysicalProduct)
                 @include('web.default.cart.includes.shipping_and_delivery')
@@ -214,8 +255,7 @@
                                 </p>
                             @endif
 
-                            <form action="/carts/coupon/validate" method="Post">
-                                {{ csrf_field() }}
+                            <div class="coupon-form">
                                 <div class="form-group">
                                     <input type="text" name="coupon" id="coupon_input" class="form-control mt-25"
                                         placeholder="{{ trans('cart.enter_your_code_here') }}">
@@ -223,9 +263,9 @@
                                     <span class="valid-feedback">{{ trans('cart.coupon_valid') }}</span>
                                 </div>
 
-                                <button type="submit" id="checkCoupon"
+                                <button type="button" id="checkCoupon"
                                     class="btn btn-sm btn-primary mt-50">{{ trans('cart.validate') }}</button>
-                            </form>
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -245,6 +285,11 @@
                                 <span class="font-14 text-gray font-weight-bold">
                                     <span id="totalDiscount">{{ handlePrice($totalDiscount) }}</span>
                                 </span>
+                            </div>
+
+                            <div class="cart-checkout-item">
+                                <h4 class="text-secondary font-14 font-weight-500">{{ trans('checkout.extras') ?? 'Extras' }}</h4>
+                                <span class="font-14 text-gray font-weight-bold"><span id="extraPrice">0</span></span>
                             </div>
 
                             <div class="cart-checkout-item">
@@ -370,4 +415,72 @@
 
     <script src="/assets/default/js/parts/get-regions.min.js"></script>
     <script src="/assets/default/js/parts/cart.min.js"></script>
+    <script>
+        (function($){
+            function formatPrice(num){
+                // simple formatter - adjust if handlePrice needed
+                return num.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+            }
+
+            function calculateExtras(){
+                var totalExtra = 0;
+                // iterate each cart row and sum extras inside
+                $('.cart-row').each(function(){
+                    var row = $(this);
+                    var rowExtra = 0;
+                    row.find('.checkout-extra-service:checked').each(function(){
+                        var p = parseFloat($(this).data('price') || 0);
+                        if (!isNaN(p)) rowExtra += p;
+                    });
+                    totalExtra += rowExtra;
+                    // update inline per-row display if present
+                    row.find('.item-extra-amount').text(formatPrice(rowExtra));
+                });
+
+                // update extras row
+                $('#extraPrice').text(formatPrice(totalExtra));
+
+                // update grand total: read subtotal and tax
+                try{
+                    var subtotalText = $('#totalAmount').text().replace(/[^0-9\.\,]/g,'');
+                    // fallback: use data attr or server total; here we won't recalc tax
+                }catch(e){ }
+
+                $(document).trigger('checkout:extrasUpdated', [totalExtra]);
+            }
+
+            $(document).ready(function(){
+                // initial calc
+                calculateExtras();
+
+                // listen to changes from partials
+                $(document).on('change', '.checkout-extra-service, .checkout-date-input, .checkout-stepper-input', function(){
+                    calculateExtras();
+                });
+
+                // allow manual trigger
+                $(document).on('checkout:priceUpdate', function(){
+                    calculateExtras();
+                });
+            });
+        })(jQuery);
+    </script>
+    <script>
+        (function($){
+            $('#checkCoupon').on('click', function(e){
+                e.preventDefault();
+                var coupon = $('#coupon_input').val();
+                if (!coupon) return;
+                var token = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val();
+
+                $.post('/carts/coupon/validate', {coupon: coupon, _token: token})
+                    .done(function(resp){
+                        // on success, reload to apply coupon server-side
+                        window.location.reload();
+                    }).fail(function(){
+                        alert(couponInvalidLng || 'Invalid coupon');
+                    });
+            });
+        })(jQuery);
+    </script>
 @endpush

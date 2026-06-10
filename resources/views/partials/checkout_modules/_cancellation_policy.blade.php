@@ -16,17 +16,18 @@
         {{ $policyText }}
     </div>
 
+    @php $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]"; $optId = $itemId ?? '0'; @endphp
     <div class="custom-control custom-checkbox">
         <input 
             type="checkbox" 
-            id="cancellation_policy_agree"
-            name="checkout_modules[cancellation_policy]"
+            id="cancellation_policy_agree_{{ $optId }}"
+            name="{{ $prefix }}"
             value="1"
             class="custom-control-input"
-            {{ old('checkout_modules.cancellation_policy') ? 'checked' : '' }}
+            {{ old($prefix) ? 'checked' : '' }}
             {{ $module->is_required ? 'required' : '' }}
         >
-        <label class="custom-control-label" for="cancellation_policy_agree">
+        <label class="custom-control-label" for="cancellation_policy_agree_{{ $optId }}">
             {{ trans('checkout.i_agree_cancellation_policy') }}
         </label>
     </div>

@@ -12,8 +12,9 @@
         <p class="text-muted small mb-2">{{ $module->translated_help_text }}</p>
     @endif
 
+    @php $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]"; @endphp
     <select 
-        name="checkout_modules[staff_member]"
+        name="{{ $prefix }}"
         class="form-control checkout-staff-select"
         {{ $module->is_required ? 'required' : '' }}
     >

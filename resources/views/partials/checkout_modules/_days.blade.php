@@ -12,14 +12,18 @@
         <p class="text-muted small mb-2">{{ $module->translated_help_text }}</p>
     @endif
 
+    @php
+        $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]";
+    @endphp
+
     <div class="row">
         <div class="col-md-6">
             <input 
                 type="date" 
-                name="checkout_modules[days][check_in]"
+                name="{{ $prefix }}[check_in]"
                 class="form-control checkout-date-input"
-                id="checkout_days_check_in"
-                value="{{ old('checkout_modules.days.check_in') }}"
+                id="checkout_days_check_in_{{ $itemId ?? '0' }}"
+                value="{{ old($prefix . '.check_in') }}"
                 data-min-date="{{ now()->format('Y-m-d') }}"
                 required
             >
@@ -28,10 +32,10 @@
         <div class="col-md-6">
             <input 
                 type="date" 
-                name="checkout_modules[days][check_out]"
+                name="{{ $prefix }}[check_out]"
                 class="form-control checkout-date-input"
-                id="checkout_days_check_out"
-                value="{{ old('checkout_modules.days.check_out') }}"
+                id="checkout_days_check_out_{{ $itemId ?? '0' }}"
+                value="{{ old($prefix . '.check_out') }}"
                 required
             >
             <small class="text-muted">{{ trans('checkout.check_out') }}</small>
@@ -55,11 +59,11 @@
         $(document).ready(function() {
             updateNights();
             
-            $('#checkout_days_check_in, #checkout_days_check_out').on('change', updateNights);
+                    $('#checkout_days_check_in_{{ $itemId ?? '0' }}, #checkout_days_check_out_{{ $itemId ?? '0' }}').on('change', updateNights);
 
             function updateNights() {
-                let checkIn = $('#checkout_days_check_in').val();
-                let checkOut = $('#checkout_days_check_out').val();
+                let checkIn = $('#checkout_days_check_in_{{ $itemId ?? '0' }}').val();
+                let checkOut = $('#checkout_days_check_out_{{ $itemId ?? '0' }}').val();
 
                 if (checkIn && checkOut) {
                     let inDate = new Date(checkIn);
