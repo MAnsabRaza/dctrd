@@ -67,6 +67,13 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 117], ['name' => 'admin_update_user_meeting_settings', 'section_group_id' => 100, 'caption' => 'Edit user meeting settings']);
         Section::updateOrCreate(['id' => 118], ['name' => 'admin_update_user_role_in_edit_page', 'section_group_id' => 100, 'caption' => 'Update User role in edit page']);
 
+        // Checkout Modules 500 - 549
+        Section::updateOrCreate(['id' => 500], ['name' => 'admin_checkout_modules', 'caption' => 'Checkout Modules']);
+        Section::updateOrCreate(['id' => 501], ['name' => 'admin_checkout_modules_list', 'section_group_id' => 500, 'caption' => 'Checkout Modules List']);
+        Section::updateOrCreate(['id' => 502], ['name' => 'admin_checkout_modules_create', 'section_group_id' => 500, 'caption' => 'Create Checkout Module']);
+        Section::updateOrCreate(['id' => 503], ['name' => 'admin_checkout_modules_edit', 'section_group_id' => 500, 'caption' => 'Edit Checkout Module']);
+        Section::updateOrCreate(['id' => 504], ['name' => 'admin_checkout_modules_delete', 'section_group_id' => 500, 'caption' => 'Delete Checkout Module']);
+
         // Webinar 150 - 199
         Section::updateOrCreate(['id' => 150], ['name' => 'admin_webinars', 'caption' => trans('/admin/pages/webinars.admin_webinars')]);
         Section::updateOrCreate(['id' => 151], ['name' => 'admin_webinars_list', 'section_group_id' => 150, 'caption' => trans('/admin/pages/webinars.admin_webinars_list')]);

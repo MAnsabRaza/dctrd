@@ -515,6 +515,28 @@
     </li>
 @endcan
 
+@can('admin_checkout_modules')
+    <li class="nav-item dropdown {{ (request()->is(getAdminPanelUrl('/checkout-modules*', false))) ? 'active' : '' }}">
+        <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">
+            <x-iconsax-bul-bag-2 class="icons" width="24px" height="24px" />
+            <span>{{ trans('admin/main.checkout_modules') }}</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('admin_checkout_modules_list')
+                <li class="{{ (request()->is(getAdminPanelUrl('/checkout-modules', false))) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/checkout-modules">{{ trans('admin/main.list') }}</a>
+                </li>
+            @endcan
+
+            @can('admin_checkout_modules_create')
+                <li class="{{ (request()->is(getAdminPanelUrl('/checkout-modules/create', false))) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/checkout-modules/create">{{ trans('admin/main.new') }}</a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @can('admin_ai_contents')
     <li class="nav-item dropdown {{ (request()->is(getAdminPanelUrl('/ai-contents*', false))) ? 'active' : '' }}">
         <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">

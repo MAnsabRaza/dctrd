@@ -629,5 +629,12 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 200304], ['role_id' => 2, 'section_id' => 100304, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 300304], ['role_id' => 3, 'section_id' => 100304, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 400304], ['role_id' => 4, 'section_id' => 100304, 'allow' => 1]);
+
+        // Admin checkout modules (500-504)
+        \App\Models\Permission::updateOrCreate(['id' => 200500], ['role_id' => 2, 'section_id' => 500, 'allow' => 1]); // super admin
+        \App\Models\Permission::updateOrCreate(['id' => 200501], ['role_id' => 2, 'section_id' => 501, 'allow' => 1]); // list
+        \App\Models\Permission::updateOrCreate(['id' => 200502], ['role_id' => 2, 'section_id' => 502, 'allow' => 1]); // create
+        \App\Models\Permission::updateOrCreate(['id' => 200503], ['role_id' => 2, 'section_id' => 503, 'allow' => 1]); // edit
+        \App\Models\Permission::updateOrCreate(['id' => 200504], ['role_id' => 2, 'section_id' => 504, 'allow' => 1]); // delete
     }
 }
