@@ -151,30 +151,6 @@
   filter: grayscale(100%);
 }
 
-.cart-page-shell {
-  max-width: 1240px;
-}
-
-.cart-page-hero {
-  max-width: 980px;
-  margin: 0 auto;
-}
-
-.cart-page-grid {
-  --bs-gutter-x: 24px;
-  --bs-gutter-y: 24px;
-}
-
-.cart-items-panel {
-  margin-bottom: 24px;
-}
-
-.cart-items-stack,
-.cart-items-group {
-  display: flex;
-  flex-direction: column;
-}
-
 .cart-item-card {
   gap: 20px;
 }

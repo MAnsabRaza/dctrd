@@ -1,11 +1,8 @@
 <div class="cart-summary-card card-with-mask position-relative">
     <div class="mask-8-white"></div>
 
-    <div class="position-relative z-index-2 bg-white rounded-16 p-16 p-lg-20 w-100 h-100">
-        <div class="d-flex align-items-center justify-content-between">
-            <h5 class="font-14 font-weight-bold mb-0">{{ trans('home.order_summary') }}</h5>
-            <span class="font-12 text-gray-500">{{ trans('cart.total') }}</span>
-        </div>
+    <div class="position-relative z-index-2 bg-white rounded-16 p-16 w-100 h-100">
+        <h5 class="font-14">{{ trans('home.order_summary') }}</h5>
 
         <div class="cart-summary-row d-flex align-items-center justify-content-between mt-20">
             <span class="text-gray-500">{{ trans('update.subtotal') }}</span>
