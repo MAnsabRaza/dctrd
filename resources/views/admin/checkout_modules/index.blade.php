@@ -214,12 +214,43 @@
                                                     @enderror
                                                 </div>
 
-                                                {{-- ── Config (JSON) ── --}}
+                                                {{-- ── Config (Key/Value editor -> saved as JSON) ── --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/pages/checkout_modules.config') }}</label>
-                                                    <textarea name="config" rows="5"
-                                                              class="form-control font-monospace @error('config') is-invalid @enderror"
-                                                              placeholder='{"min_days": 1, "max_days": 365}'>{{ !empty($editModule) && $editModule->config ? json_encode($editModule->config, JSON_PRETTY_PRINT) : old('config') }}</textarea>
+
+                                                    <div id="configAttributes" class="mb-2">
+                                                        @php
+                                                            $configInit = [];
+                                                            if(!empty($editModule) && $editModule->config) {
+                                                                $configInit = (array) $editModule->config;
+                                                            } elseif(old('config')) {
+                                                                try { $configInit = (array) json_decode(old('config'), true) ?? []; } catch(\Exception $e) { $configInit = []; }
+                                                            }
+                                                        @endphp
+
+                                                        @if(!empty($configInit))
+                                                            @foreach($configInit as $k => $v)
+                                                                <div class="config-attribute-row d-flex mb-2 js-config-attribute-row">
+                                                                    <input type="text" name="config_keys[]" class="form-control mr-2" placeholder="Key" value="{{ $k }}">
+                                                                    <input type="text" name="config_values[]" class="form-control mr-2" placeholder="Value (JSON for complex)" value='{{ is_scalar($v) ? $v : json_encode($v) }}'>
+                                                                    <button type="button" class="btn btn-sm btn-danger js-remove-config-attribute">&minus;</button>
+                                                                </div>
+                                                            @endforeach
+                                                        @else
+                                                            <div class="config-attribute-row d-flex mb-2 js-config-attribute-row">
+                                                                <input type="text" name="config_keys[]" class="form-control mr-2" placeholder="Key" value="">
+                                                                <input type="text" name="config_values[]" class="form-control mr-2" placeholder="Value (JSON for complex)" value="">
+                                                                <button type="button" class="btn btn-sm btn-danger js-remove-config-attribute">&minus;</button>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+
+                                                    <div class="mb-2">
+                                                        <button type="button" class="btn btn-sm btn-primary js-add-config-attribute">{{ trans('admin/main.add') ?? 'Add' }}</button>
+                                                    </div>
+
+                                                    <textarea name="config" id="config_json" rows="5" class="form-control font-monospace @error('config') is-invalid @enderror" placeholder='{"min_days": 1, "max_days": 365'>{{ !empty($editModule) && $editModule->config ? json_encode($editModule->config, JSON_PRETTY_PRINT) : old('config') }}</textarea>
+
                                                     <div class="text-muted text-small mt-1">
                                                         {{ trans('admin/pages/checkout_modules.config_hint') }}
                                                     </div>
@@ -228,12 +259,43 @@
                                                     @enderror
                                                 </div>
 
-                                                {{-- ── Price Rule (JSON) ── --}}
+                                                {{-- ── Price Rule (Key/Value -> saved as JSON) ── --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/pages/checkout_modules.price_rule') }}</label>
-                                                    <textarea name="price_rule" rows="3"
-                                                              class="form-control font-monospace @error('price_rule') is-invalid @enderror"
-                                                              placeholder='{"type": "per_day", "amount": 0}'>{{ !empty($editModule) && $editModule->price_rule ? json_encode($editModule->price_rule, JSON_PRETTY_PRINT) : old('price_rule') }}</textarea>
+
+                                                    <div id="priceRuleAttributes" class="mb-2">
+                                                        @php
+                                                            $priceInit = [];
+                                                            if(!empty($editModule) && $editModule->price_rule) {
+                                                                $priceInit = (array) $editModule->price_rule;
+                                                            } elseif(old('price_rule')) {
+                                                                try { $priceInit = (array) json_decode(old('price_rule'), true) ?? []; } catch(\Exception $e) { $priceInit = []; }
+                                                            }
+                                                        @endphp
+
+                                                        @if(!empty($priceInit))
+                                                            @foreach($priceInit as $k => $v)
+                                                                <div class="price-attribute-row d-flex mb-2 js-price-attribute-row">
+                                                                    <input type="text" name="price_keys[]" class="form-control mr-2" placeholder="Key" value="{{ $k }}">
+                                                                    <input type="text" name="price_values[]" class="form-control mr-2" placeholder="Value" value='{{ is_scalar($v) ? $v : json_encode($v) }}'>
+                                                                    <button type="button" class="btn btn-sm btn-danger js-remove-price-attribute">&minus;</button>
+                                                                </div>
+                                                            @endforeach
+                                                        @else
+                                                            <div class="price-attribute-row d-flex mb-2 js-price-attribute-row">
+                                                                <input type="text" name="price_keys[]" class="form-control mr-2" placeholder="Key" value="type">
+                                                                <input type="text" name="price_values[]" class="form-control mr-2" placeholder="Value" value="none">
+                                                                <button type="button" class="btn btn-sm btn-danger js-remove-price-attribute">&minus;</button>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+
+                                                    <div class="mb-2">
+                                                        <button type="button" class="btn btn-sm btn-primary js-add-price-attribute">{{ trans('admin/main.add') ?? 'Add' }}</button>
+                                                    </div>
+
+                                                    <textarea name="price_rule" id="price_rule_json" rows="3" class="form-control font-monospace @error('price_rule') is-invalid @enderror" placeholder='{"type": "per_day", "amount": 0}'>{{ !empty($editModule) && $editModule->price_rule ? json_encode($editModule->price_rule, JSON_PRETTY_PRINT) : old('price_rule') }}</textarea>
+
                                                     <div class="text-muted text-small mt-1">
                                                         {{ trans('admin/pages/checkout_modules.price_rule_hint') }}
                                                     </div>
@@ -356,6 +418,107 @@
 <script>
 (function () {
 
+    function escapeHtml(str) {
+        if(!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function addConfigRow(key, value) {
+        key = key || '';
+        value = value || '';
+        var container = document.getElementById('configAttributes');
+        if(!container) return;
+        var row = document.createElement('div');
+        row.className = 'config-attribute-row d-flex mb-2 js-config-attribute-row';
+        row.innerHTML = '<input type="text" name="config_keys[]" class="form-control mr-2" placeholder="Key" value="'+ escapeHtml(key) +'">' +
+                        '<input type="text" name="config_values[]" class="form-control mr-2" placeholder="Value (JSON for complex)" value="'+ escapeHtml(value) +'">' +
+                        '<button type="button" class="btn btn-sm btn-danger js-remove-config-attribute">&minus;</button>';
+        container.appendChild(row);
+    }
+
+    function addPriceRow(key, value) {
+        key = key || '';
+        value = value || '';
+        var container = document.getElementById('priceRuleAttributes');
+        if(!container) return;
+        var row = document.createElement('div');
+        row.className = 'price-attribute-row d-flex mb-2 js-price-attribute-row';
+        row.innerHTML = '<input type="text" name="price_keys[]" class="form-control mr-2" placeholder="Key" value="'+ escapeHtml(key) +'">' +
+                        '<input type="text" name="price_values[]" class="form-control mr-2" placeholder="Value" value="'+ escapeHtml(value) +'">' +
+                        '<button type="button" class="btn btn-sm btn-danger js-remove-price-attribute">&minus;</button>';
+        container.appendChild(row);
+    }
+
+    // Delegated click handlers for add/remove
+    document.addEventListener('click', function(e){
+        if(e.target && e.target.classList.contains('js-remove-config-attribute')) {
+            var row = e.target.closest('.js-config-attribute-row');
+            if(row) row.remove();
+            return;
+        }
+        if(e.target && e.target.classList.contains('js-remove-price-attribute')) {
+            var row = e.target.closest('.js-price-attribute-row');
+            if(row) row.remove();
+            return;
+        }
+        if(e.target && e.target.classList.contains('js-add-config-attribute')) {
+            addConfigRow();
+            return;
+        }
+        if(e.target && e.target.classList.contains('js-add-price-attribute')) {
+            addPriceRow();
+            return;
+        }
+    });
+
+    // On form submit, serialize attribute rows into JSON textareas
+    var form = document.querySelector('form[action$="/checkout-modules"]') || document.querySelector('form[action*="/checkout-modules/"]');
+    if(!form) form = document.querySelector('form');
+    if(form) {
+        form.addEventListener('submit', function(e){
+            // config
+            var configObj = {};
+            document.querySelectorAll('#configAttributes .js-config-attribute-row').forEach(function(row){
+                var kEl = row.querySelector('input[name="config_keys[]"]');
+                var vEl = row.querySelector('input[name="config_values[]"]');
+                if(!kEl) return;
+                var k = (kEl.value || '').trim();
+                var v = (vEl && vEl.value) ? vEl.value.trim() : '';
+                if(k !== '') {
+                    try {
+                        var parsed = JSON.parse(v);
+                        configObj[k] = parsed;
+                    } catch(err) {
+                        configObj[k] = v;
+                    }
+                }
+            });
+            var configTa = document.getElementById('config_json');
+            if(configTa) configTa.value = JSON.stringify(configObj, null, 2);
+
+            // price_rule
+            var priceObj = {};
+            document.querySelectorAll('#priceRuleAttributes .js-price-attribute-row').forEach(function(row){
+                var kEl = row.querySelector('input[name="price_keys[]"]');
+                var vEl = row.querySelector('input[name="price_values[]"]');
+                if(!kEl) return;
+                var k = (kEl.value || '').trim();
+                var v = (vEl && vEl.value) ? vEl.value.trim() : '';
+                if(k !== '') {
+                    try {
+                        var parsed = JSON.parse(v);
+                        priceObj[k] = parsed;
+                    } catch(err) {
+                        priceObj[k] = v;
+                    }
+                }
+            });
+            var priceTa = document.getElementById('price_rule_json');
+            if(priceTa) priceTa.value = JSON.stringify(priceObj, null, 2);
+
+        });
+    }
+
     // ── Toggle Active/Inactive via AJAX ──────────────────────
     document.querySelectorAll('.module-toggle').forEach(function (toggle) {
         toggle.addEventListener('change', function () {
@@ -372,10 +535,8 @@
             .then(function (res) { return res.json(); })
             .then(function (data) {
                 if (data.success) {
-                    // Toast notification dikhao
                     toastr.success(data.message);
                 } else {
-                    // Fail hua toh toggle wapas karo
                     checkbox.checked = !checkbox.checked;
                     toastr.error('{{ trans('admin/pages/checkout_modules.toggle_failed') }}');
                 }

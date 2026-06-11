@@ -25,7 +25,7 @@ time_slot"',
 'price_rule_hint'=>'JSON defining how the module affects pricing. E.g. {"type": "per_day"}',
 'translations'=>'Translations',
 'label_placeholder'=>'Translated label for this module',
-
+'help_text_placeholder'=>'Translated help text for this module',
 
 
 ];
