@@ -251,7 +251,10 @@ return [
     'booking_resources_updated_successfully' => 'Booking Resources updated successfully.',
     'booking_resources_deleted_successfully' => 'Booking Resources deleted successfully.',
 
-    //booking
+    //checkout modules
+    'checkout_modules'=>'Checkout Modules',
+    'checkout_modules_list_title'=>'Checkout Modules List Title',
+    
 
     //booking value
     'reviewer_message'=>'Reviewer Message',
