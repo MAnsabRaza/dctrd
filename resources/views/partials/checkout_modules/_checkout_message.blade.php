@@ -1,5 +1,4 @@
 {{-- resources/views/partials/checkout_modules/_checkout_message.blade.php --}}
-
 @php
     $itemKey = $itemId ?? '0';
     $maxLength = $module->config['max_length'] ?? 500;
@@ -19,7 +18,6 @@
             <span class="text-danger">*</span>
         @endif
     </div>
-
     @if($module->translated_help_text)
         <p class="checkout-module-helper mb-0 mt-4">{{ $module->translated_help_text }}</p>
     @endif
@@ -27,7 +25,7 @@
     <textarea
         name="{{ $prefix }}"
         class="form-control checkout-textarea mt-12"
-        rows="4"
+        rows="3"
         id="checkout_message_{{ $itemKey }}"
         placeholder="{{ $placeholder }}"
         maxlength="{{ $maxLength }}"
@@ -46,15 +44,14 @@
 </div>
 
 @push('scripts_bottom')
-    <script>
-        (function ($) {
-            function updateCheckoutMessageCount{{ $itemKey }}() {
-                var $input = $('textarea[name="{{ $prefix }}"]');
-                $('#checkout_message_count_{{ $itemKey }}').text($input.val() ? $input.val().length : 0);
-            }
-
-            $(document).on('input', 'textarea[name="{{ $prefix }}"]', updateCheckoutMessageCount{{ $itemKey }});
-            $(document).ready(updateCheckoutMessageCount{{ $itemKey }});
-        })(jQuery);
-    </script>
+<script>
+(function ($) {
+    function updateCheckoutMessageCount_{{ $itemKey }}() {
+        var val = $('textarea[name="{{ $prefix }}"]').val() || '';
+        $('#checkout_message_count_{{ $itemKey }}').text(val.length);
+    }
+    $(document).on('input', 'textarea[name="{{ $prefix }}"]', updateCheckoutMessageCount_{{ $itemKey }});
+    $(document).ready(updateCheckoutMessageCount_{{ $itemKey }});
+})(jQuery);
+</script>
 @endpush

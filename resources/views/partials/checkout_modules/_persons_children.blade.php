@@ -1,11 +1,10 @@
 {{-- resources/views/partials/checkout_modules/_persons_children.blade.php --}}
-
 @php
     $itemKey = $itemId ?? '0';
     $config = $module->config ?? [];
-    $adultsConfig = $config['adults'] ?? ['min' => 1, 'max' => 20];
+    $adultsConfig   = $config['adults']   ?? ['min' => 1, 'max' => 20];
     $childrenConfig = $config['children'] ?? ['min' => 0, 'max' => 10];
-    $roomsConfig = $config['rooms'] ?? ['min' => 1, 'max' => 10];
+    $roomsConfig    = $config['rooms']    ?? ['min' => 1, 'max' => 10];
     $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]";
     $priceRule = $module->price_rule ?? [];
     $perPersonAmount = $priceRule['amount'] ?? 0;
@@ -18,7 +17,8 @@
     data-price-type="per_person"
     data-price-amount="{{ $perPersonAmount }}"
 >
-    <div class="d-flex align-items-start justify-content-between">
+    {{-- Header --}}
+    <div class="d-flex align-items-start justify-content-between mb-12">
         <div>
             <div class="font-13 font-weight-bold text-dark">
                 {{ $module->translated_label }}
@@ -30,23 +30,25 @@
                 <p class="checkout-module-helper mb-0 mt-4">{{ $module->translated_help_text }}</p>
             @endif
         </div>
-
         @if($perPersonAmount)
-            <span class="checkout-module-price">{{ handlePrice($perPersonAmount) }}/person</span>
+            <span class="checkout-module-price">{{ handlePrice($perPersonAmount) }}/{{ trans('checkout.person') }}</span>
         @endif
     </div>
 
-    <div class="checkout-module-stack mt-12">
-        <div class="checkout-stepper-row">
-            <label>{{ trans('checkout.adults') }}</label>
+    {{-- Steppers --}}
+    <div class="checkout-stepper-row">
+
+        {{-- Adults --}}
+        <div class="d-flex align-items-center justify-content-between mb-8">
+            <label class="font-12 text-gray-600 mb-0">{{ trans('checkout.adults') }}</label>
             <div class="checkout-stepper">
-                <button type="button" class="checkout-stepper-btn stepper-btn-minus" data-field="adults">-</button>
+                <button type="button" class="checkout-stepper-btn stepper-btn-minus" data-field="adults">−</button>
                 <input
                     type="number"
                     name="{{ $prefix }}[adults]"
                     class="stepper-input checkout-stepper-input"
                     id="checkout_person_adults_{{ $itemKey }}"
-                    value="{{ old('checkout_modules.' . $itemKey . '.' . $module->name . '.adults', 1) }}"
+                    value="{{ old('checkout_modules.' . $itemKey . '.' . $module->name . '.adults', $adultsConfig['min'] ?? 1) }}"
                     min="{{ $adultsConfig['min'] }}"
                     max="{{ $adultsConfig['max'] }}"
                     required
@@ -55,10 +57,11 @@
             </div>
         </div>
 
-        <div class="checkout-stepper-row">
-            <label>{{ trans('checkout.children') }}</label>
+        {{-- Children --}}
+        <div class="d-flex align-items-center justify-content-between mb-8">
+            <label class="font-12 text-gray-600 mb-0">{{ trans('checkout.children') }}</label>
             <div class="checkout-stepper">
-                <button type="button" class="checkout-stepper-btn stepper-btn-minus" data-field="children">-</button>
+                <button type="button" class="checkout-stepper-btn stepper-btn-minus" data-field="children">−</button>
                 <input
                     type="number"
                     name="{{ $prefix }}[children]"
@@ -68,20 +71,21 @@
                     min="{{ $childrenConfig['min'] }}"
                     max="{{ $childrenConfig['max'] }}"
                 >
-                <button type="button" class="checkout-stepper-btn stepper-btn-plus" data-field="children">+</button>
+                <button type="button" class="checkout-stepper-btn stepper-btn-minus" data-field="children">+</button>
             </div>
         </div>
 
-        <div class="checkout-stepper-row">
-            <label>{{ trans('checkout.rooms') }}</label>
+        {{-- Rooms --}}
+        <div class="d-flex align-items-center justify-content-between">
+            <label class="font-12 text-gray-600 mb-0">{{ trans('checkout.rooms') }}</label>
             <div class="checkout-stepper">
-                <button type="button" class="checkout-stepper-btn stepper-btn-minus" data-field="rooms">-</button>
+                <button type="button" class="checkout-stepper-btn stepper-btn-minus" data-field="rooms">−</button>
                 <input
                     type="number"
                     name="{{ $prefix }}[rooms]"
                     class="stepper-input checkout-stepper-input"
                     id="checkout_person_rooms_{{ $itemKey }}"
-                    value="{{ old('checkout_modules.' . $itemKey . '.' . $module->name . '.rooms', 1) }}"
+                    value="{{ old('checkout_modules.' . $itemKey . '.' . $module->name . '.rooms', $roomsConfig['min'] ?? 1) }}"
                     min="{{ $roomsConfig['min'] }}"
                     max="{{ $roomsConfig['max'] }}"
                     required
@@ -89,6 +93,7 @@
                 <button type="button" class="checkout-stepper-btn stepper-btn-plus" data-field="rooms">+</button>
             </div>
         </div>
+
     </div>
 
     @error('checkout_modules.' . $itemKey . '.persons_children')
@@ -97,27 +102,26 @@
 </div>
 
 @push('scripts_bottom')
-    <script>
-        $(document).on('click', '.stepper-btn-minus, .stepper-btn-plus', function (e) {
-            e.preventDefault();
+<script>
+$(document).on('click', '.stepper-btn-minus, .stepper-btn-plus', function (e) {
+    e.preventDefault();
+    var $input = $(this).closest('.checkout-stepper').find('.stepper-input');
+    var value  = parseInt($input.val(), 10) || 0;
+    var min    = parseInt($input.attr('min'), 10) || 0;
+    var max    = parseInt($input.attr('max'), 10) || 999;
 
-            var $input = $(this).closest('.checkout-stepper').find('.stepper-input');
-            var value = parseInt($input.val(), 10) || 0;
-            var min = parseInt($input.attr('min'), 10) || 0;
-            var max = parseInt($input.attr('max'), 10) || 999;
+    if ($(this).hasClass('stepper-btn-minus')) {
+        value = Math.max(min, value - 1);
+    } else {
+        value = Math.min(max, value + 1);
+    }
 
-            if ($(this).hasClass('stepper-btn-minus')) {
-                value = Math.max(min, value - 1);
-            } else {
-                value = Math.min(max, value + 1);
-            }
+    $input.val(value).trigger('change');
+    $(document).trigger('checkout:priceUpdate');
+});
 
-            $input.val(value).trigger('change');
-            $(document).trigger('checkout:priceUpdate');
-        });
-
-        $(document).on('change', '.checkout-stepper-input', function () {
-            $(document).trigger('checkout:priceUpdate');
-        });
-    </script>
+$(document).on('change', '.checkout-stepper-input', function () {
+    $(document).trigger('checkout:priceUpdate');
+});
+</script>
 @endpush

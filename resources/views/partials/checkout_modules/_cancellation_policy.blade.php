@@ -1,5 +1,4 @@
 {{-- resources/views/partials/checkout_modules/_cancellation_policy.blade.php --}}
-
 @php
     $itemKey = $itemId ?? '0';
     $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]";
@@ -19,8 +18,10 @@
         @endif
     </div>
 
-    <div class="alert alert-info mt-12 mb-0">
-        {{ $policyText }}
+    <div class="d-flex align-items-start gap-8 p-10 rounded-12 mt-12"
+         style="background: rgba(30,84,255,0.06); border: 1px solid rgba(30,84,255,0.14);">
+        <x-iconsax-lin-info-circle class="icons text-primary mt-2 flex-shrink-0" width="16px" height="16px"/>
+        <p class="font-12 text-gray-600 mb-0">{{ $policyText }}</p>
     </div>
 
     <div class="custom-control custom-checkbox mt-12">
@@ -33,7 +34,7 @@
             {{ old('checkout_modules.' . $itemKey . '.' . $module->name) ? 'checked' : '' }}
             {{ $module->is_required ? 'required' : '' }}
         >
-        <label class="custom-control-label" for="cancellation_policy_agree_{{ $itemKey }}">
+        <label class="custom-control-label font-12 text-gray-700" for="cancellation_policy_agree_{{ $itemKey }}">
             {{ trans('checkout.i_agree_cancellation_policy') }}
         </label>
     </div>
