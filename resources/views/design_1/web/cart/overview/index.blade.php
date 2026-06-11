@@ -64,14 +64,18 @@
 @endsection
 
 @push('scripts_bottom')
-    <script>
-        var cartPriceFormat = @json([
+    @php
+        $cartPriceFormat = [
             'symbol' => currencySign($userCurrencyItem->currency ?? currency()),
             'position' => $userCurrencyItem->currency_position ?? 'left',
             'decimals' => (int) ($userCurrencyItem->currency_decimal ?? 2),
             'decimalSeparator' => ($userCurrencyItem->currency_separator ?? 'dot') == 'dot' ? '.' : ',',
             'thousandsSeparator' => ($userCurrencyItem->currency_separator ?? 'dot') == 'dot' ? ',' : '.',
-        ]);
+        ];
+    @endphp
+
+    <script>
+        var cartPriceFormat = @json($cartPriceFormat);
         var selectRegionDefaultVal = '';
         var selectStateLang = '{{ trans('update.choose_a_state') }}';
         var selectCityLang = '{{ trans('update.choose_a_city') }}';
