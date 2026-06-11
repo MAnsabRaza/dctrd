@@ -56,6 +56,9 @@
 
         input.val(value);
 
+        // Update the form's hidden quantity field
+        $('.js-form-quantity-input').val(value);
+
         const $productPoints = $('.js-product-points');
         const productRequirePointText = $('.js-product-require-point-text');
 
@@ -85,7 +88,60 @@
     /*===========
     | Cart
     * *********/
-    $('body').on('click', '.js-add-to-cart-btn', function (e) {
+    $('body').on('submit', '#productAddToCartForm', function (e) {
+        e.preventDefault();
+
+        var $form = $(this);
+        var $btn = $form.find('button[type="submit"]');
+
+        $btn.addClass('loadingbar').prop('disabled', true);
+
+        // Update quantity from visual input
+        const quantity = $('.js-product-quantity-card input[name="quantity"]').val();
+        $form.find('.js-form-quantity-input').val(quantity);
+
+        // Collect form data
+        var formData = $form.serialize();
+        
+        // Add specifications if present
+        const $specifications = $('.js-product-specifications');
+        if ($specifications.length) {
+            var specData = serializeObjectByTag($specifications);
+            for (var key in specData) {
+                formData += '&specifications[' + key + ']=' + encodeURIComponent(specData[key]);
+            }
+        }
+
+        $.post($form.attr('action'), formData, function (result) {
+            // show toast if available
+            if (result && result.title) {
+                showToast(result.status || 'success', result.title, result.msg || '');
+            }
+
+            // open cart drawer if drawer exists
+            if ($('.js-view-cart-drawer').length) {
+                $('.js-view-cart-drawer').trigger('click');
+            } else if ($('.cart-drawer').length) {
+                $('.cart-drawer').addClass('show');
+            } else {
+                // fallback: reload to show cart
+                setTimeout(function () { window.location.reload(); }, 800);
+            }
+        }).fail(function (err) {
+            $btn.removeClass('loadingbar').prop('disabled', false);
+            var errors = err.responseJSON;
+            if (errors && errors.toast_alert) {
+                showToast('error', errors.toast_alert.title, errors.toast_alert.msg)
+            } else if (errors && errors.msg) {
+                showToast('error', errors.title, errors.msg);
+            } else {
+                showToast('error', 'Error', 'Something went wrong');
+            }
+        });
+    });
+
+    // Direct payment button
+    $('body').on('click', '.js-direct-payment-btn', function (e) {
         e.preventDefault();
         const $this = $(this);
 
@@ -97,20 +153,13 @@
             data = serializeObjectByTag($specifications)
         }
 
-        const $quantity = $('input[name="quantity"]');
-        const $itemIdInput = $('input[name="item_id"]');
-
-        data['item_id'] = $quantity.attr("data-item") || $itemIdInput.val();
+        const quantity = $('.js-product-quantity-card input[name="quantity"]').val();
+        
+        data['item_id'] = '{{ $product->id ?? '' }}';
         data['item_name'] = "product_id";
-        data['quantity'] = $quantity.val() || 1;
+        data['quantity'] = quantity || 1;
 
-        let path = "/cart/store";
-
-        if ($this.attr('data-direct-payment') === 'true') {
-            path = "/products/direct-payment";
-        }
-
-        $.post(path, data, function (result) {
+        $.post("/products/direct-payment", data, function (result) {
             showToast('success', result.title, result.msg);
 
             if (result.redirect_to && result.redirect_to !== '') {
@@ -121,10 +170,9 @@
                 }, 2000)
             }
         }).fail(function (err) {
-            $this.removeClass('loadingbar primary').prop('disabled', false);
+            $this.removeClass('loadingbar').prop('disabled', false);
             const errors = err.responseJSON;
 
-            // toast
             if (errors && errors.toast_alert) {
                 showToast('error', errors.toast_alert.title, errors.toast_alert.msg)
             } else if (errors && errors.msg) {
@@ -132,7 +180,7 @@
             } else {
                 showToast('error', oopsLang, somethingWentWrongLang);
             }
-        })
+        });
     });
 
 

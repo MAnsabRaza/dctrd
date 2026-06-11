@@ -180,34 +180,43 @@
     @endif
 
     {{-- Actions --}}
-    <div class="d-flex align-items-center gap-12 flex-wrap mt-16">
+    <form id="productAddToCartForm" action="/cart/store" method="post">
+        {{ csrf_field() }}
 
-        <button type="button" class="js-add-to-cart-btn btn btn-primary btn-lg">
-            <x-iconsax-lin-bag-happy class="icons text-white" width="24px" height="24px"/>
-            <span class="ml-4 text-white">{{ trans('public.add_to_cart') }}</span>
-        </button>
+        <input type="hidden" name="item_id" value="{{ $product->id }}">
+        <input type="hidden" name="item_name" value="product_id">
+        <input type="hidden" name="item_type" value="product">
+        <input type="hidden" name="quantity" class="js-form-quantity-input" value="1">
 
-        @if(!empty(getFeaturesSettings('direct_products_payment_button_status')))
-            <button type="button" class="js-add-to-cart-btn btn btn-outline-accent btn-lg" data-direct-payment="true">
-                <x-iconsax-lin-moneys class="icons " width="24px" height="24px"/>
-                <span class="ml-4 ">{{ trans('update.buy_now') }}</span>
+        <div class="d-flex align-items-center gap-12 flex-wrap mt-16">
+
+            <button type="submit" class="btn btn-primary btn-lg">
+                <x-iconsax-lin-bag-happy class="icons text-white" width="24px" height="24px"/>
+                <span class="ml-4 text-white">{{ trans('public.add_to_cart') }}</span>
             </button>
-        @endif
 
-        @if(!empty($product->point) and $product->point > 0)
-            <input type="hidden" class="js-product-points" value="{{ $product->point }}">
+            @if(!empty(getFeaturesSettings('direct_products_payment_button_status')))
+                <button type="button" class="js-direct-payment-btn btn btn-outline-accent btn-lg">
+                    <x-iconsax-lin-moneys class="icons " width="24px" height="24px"/>
+                    <span class="ml-4 ">{{ trans('update.buy_now') }}</span>
+                </button>
+            @endif
 
-            <a href="{{ !(auth()->check()) ? '/login' : '#!' }}" class="{{ (auth()->check()) ? 'js-buy-with-point' : '' }} js-buy-with-point-show-btn btn btn-outline-warning btn-lg" rel="nofollow">
-                {!! trans('update.buy_with_n_points',['points' => $product->point]) !!}
-            </a>
-        @endif
+            @if(!empty($product->point) and $product->point > 0)
+                <input type="hidden" class="js-product-points" value="{{ $product->point }}">
 
-        @if($productAvailability > 0 and $hasInstallments)
-            <a href="/products/{{ $product->slug }}/installments" class="js-installments-btn btn btn-outline-primary btn-lg">
-                {{ trans('update.installments') }}
-            </a>
-        @endif
-    </div>
+                <a href="{{ !(auth()->check()) ? '/login' : '#!' }}" class="{{ (auth()->check()) ? 'js-buy-with-point' : '' }} js-buy-with-point-show-btn btn btn-outline-warning btn-lg" rel="nofollow">
+                    {!! trans('update.buy_with_n_points',['points' => $product->point]) !!}
+                </a>
+            @endif
+
+            @if($productAvailability > 0 and $hasInstallments)
+                <a href="/products/{{ $product->slug }}/installments" class="js-installments-btn btn btn-outline-primary btn-lg">
+                    {{ trans('update.installments') }}
+                </a>
+            @endif
+        </div>
+    </form>
 
 @else
     <div class="font-24 font-weight-bold text-gray-500 mt-24">{{ trans('update.out_of_stock') }}</div>
