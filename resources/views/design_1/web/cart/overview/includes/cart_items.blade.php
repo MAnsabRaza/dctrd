@@ -45,6 +45,19 @@
 @endif
 
 
+@if($carts->whereNotNull('booking_id')->count())
+    <div class="card-before-line px-16 mt-16">
+        <h5 class="font-14 mb-16">{{ trans('update.bookings') }}</h5>
+
+        @foreach($carts->whereNotNull('booking_id') as $cartItem)
+            @include('design_1.web.cart.overview.includes.item_cards.booking', [
+                'cartItemInfo' => $cartItem->getItemInfo(),
+                'cart' => $cartItem,
+            ])
+        @endforeach
+    </div>
+@endif
+
 @if($carts->whereNotNull('product_order_id')->count())
     <div class="card-before-line px-16 mt-16">
         <h5 class="font-14 mb-16">{{ trans('update.products') }}</h5>
