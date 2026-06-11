@@ -9,6 +9,7 @@
         @foreach($carts->whereNotNull('webinar_id') as $cartItem)
             @include('design_1.web.cart.overview.includes.item_cards.course', [
                 'cartItemInfo' => $cartItem->getItemInfo(),
+                'cart' => $cartItem,
             ])
         @endforeach
     </div>
@@ -21,6 +22,7 @@
         @foreach($carts->whereNotNull('bundle_id') as $cartItem)
             @include('design_1.web.cart.overview.includes.item_cards.course', [
                 'cartItemInfo' => $cartItem->getItemInfo(),
+                'cart' => $cartItem,
             ])
         @endforeach
     </div>
@@ -33,12 +35,14 @@
         @foreach($carts->whereNotNull('reserve_meeting_id') as $cartItem)
             @include('design_1.web.cart.overview.includes.item_cards.meeting', [
                 'cartItemInfo' => $cartItem->getItemInfo(),
+                'cart' => $cartItem,
             ])
         @endforeach
 
         @foreach($carts->whereNotNull('meeting_package_id') as $cartItem)
             @include('design_1.web.cart.overview.includes.item_cards.meeting_package', [
                 'cartItemInfo' => $cartItem->getItemInfo(),
+                'cart' => $cartItem,
             ])
         @endforeach
     </div>
@@ -52,6 +56,7 @@
         @foreach($carts->whereNotNull('product_order_id') as $cartItem)
             @include('design_1.web.cart.overview.includes.item_cards.product', [
                 'cartItemInfo' => $cartItem->getItemInfo(),
+                'cart' => $cartItem,
             ])
         @endforeach
     </div>
@@ -64,6 +69,7 @@
         @foreach($carts->whereNotNull('event_ticket_id') as $cartItem)
             @include('design_1.web.cart.overview.includes.item_cards.event_ticket', [
                 'cartItemInfo' => $cartItem->getItemInfo(),
+                'cart' => $cartItem,
             ])
         @endforeach
     </div>
@@ -77,6 +83,7 @@
         @foreach($carts->whereNotNull('installment_payment_id') as $cartItem)
             @include('design_1.web.cart.overview.includes.item_cards.installment_payment', [
                 'cartItemInfo' => $cartItem->getItemInfo(),
+                'cart' => $cartItem,
             ])
         @endforeach
     </div>

@@ -98,6 +98,12 @@
             </div>
         </div>
 
+        @if(!empty($cart))
+            <div class="w-100 mt-16">
+                @include('design_1.web.cart.overview.includes.checkout_item_modules', ['cart' => $cart])
+            </div>
+        @endif
+
         <div class="d-flex align-items-center justify-content-between justify-content-lg-start mt-16 mt-lg-0">
             <div class="mr-0 mr-lg-72">
                 @if(!empty($cartItemInfo['discountPrice']))

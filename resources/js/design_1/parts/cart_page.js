@@ -119,4 +119,41 @@
         })
     });
 
+    function formatPrice(num) {
+        return parseFloat(num || 0).toFixed(2);
+    }
+
+    function calculateCheckoutExtras() {
+        var totalExtras = 0;
+
+        $('.checkout-extra-service:checked').each(function () {
+            var price = parseFloat($(this).data('price') || 0);
+            if (!isNaN(price)) {
+                totalExtras += price;
+            }
+        });
+
+        $('.js-cart-extras').text(formatPrice(totalExtras));
+
+        var subtotal = parseFloat($('.js-cart-subtotal').text().replace(/[^0-9\.\-]/g, '')) || 0;
+        var discount = parseFloat($('.js-cart-discount').text().replace(/[^0-9\.\-]/g, '')) || 0;
+        var tax = parseFloat($('.js-cart-tax').text().replace(/[^0-9\.\-]/g, '')) || 0;
+        var delivery = parseFloat($('.js-cart-delivery_fee').text().replace(/[^0-9\.\-]/g, '')) || 0;
+        var total = subtotal - discount + tax + delivery + totalExtras;
+
+        $('.js-cart-total').text(formatPrice(total));
+    }
+
+    $('body').on('change', '.checkout-extra-service, .checkout-date-input, .checkout-stepper-input', function () {
+        calculateCheckoutExtras();
+    });
+
+    $(document).ready(function () {
+        if (typeof hasErrors !== "undefined" && hasErrors === 'true') {
+            showToast('error', oopsLang, hasErrorsHintLang);
+        }
+
+        calculateCheckoutExtras();
+    })
+
 })(jQuery);

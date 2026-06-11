@@ -41,6 +41,12 @@
                         <span class="font-12 text-gray-500 ml-4">{{ $cartItemInfo['meetingPackage']->duration }} {{ trans('update.type_validity', ['type' => trans("update.{$cartItemInfo['meetingPackage']->duration_type}")]) }}</span>
                     </div>
                 </div>
+
+                @if(!empty($cart))
+                    <div class="w-100 mt-16">
+                        @include('design_1.web.cart.overview.includes.checkout_item_modules', ['cart' => $cart])
+                    </div>
+                @endif
             </div>
         </div>
 

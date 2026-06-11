@@ -13,6 +13,7 @@ use App\Models\OrderItem;
 use App\Models\PaymentChannel;
 use App\Models\Product;
 use App\Models\ProductOrder;
+use App\Services\CheckoutModuleService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -309,9 +310,65 @@ class CartController extends Controller
         }
 
         if (!empty($carts) and !$carts->isEmpty()) {
-            $calculate = $this->calculatePrice($carts, $user, $discountCoupon);
+            $checkoutModuleService = app(CheckoutModuleService::class);
+            $checkoutModules = $request->input('checkout_modules', []);
+            $moduleErrors = [];
+            $extraPrice = 0;
 
-            $order = $this->createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon, $request);
+            foreach ($carts as $cart) {
+                $entityType = null;
+                $entityId = null;
+                $orgId = null;
+
+                if (!empty($cart->webinar_id)) {
+                    $entityType = 'course';
+                    $entityId = $cart->webinar_id;
+                    $orgId = optional($cart->webinar)->teacher_id;
+                } elseif (!empty($cart->product_order_id) && !empty($cart->productOrder->product_id)) {
+                    $entityType = 'product';
+                    $entityId = $cart->productOrder->product_id;
+                    $orgId = optional(optional($cart->productOrder)->product)->creator_id;
+                } elseif (!empty($cart->reserve_meeting_id)) {
+                    $entityType = 'booking';
+                    $entityId = $cart->reserve_meeting_id;
+                    $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
+                }
+
+                if (empty($entityType) || empty($entityId) || empty($orgId)) {
+                    continue;
+                }
+
+                try {
+                    $modules = $checkoutModuleService->getModulesForEntity($entityType, $entityId, $orgId);
+                } catch (\Throwable $e) {
+                    $modules = collect();
+                }
+
+                if ($modules->isEmpty()) {
+                    continue;
+                }
+
+                $itemData = $checkoutModules[$cart->id] ?? [];
+                $validation = $checkoutModuleService->validateModuleData($modules, $itemData);
+
+                if (!$validation['valid']) {
+                    foreach ($validation['errors'] as $field => $message) {
+                        $moduleErrors['checkout_modules.' . $cart->id . '.' . $field] = $message;
+                    }
+                }
+
+                $extraPrice += $checkoutModuleService->calculateExtraPrice($modules, $itemData);
+            }
+
+            if (!empty($moduleErrors)) {
+                return back()->withErrors($moduleErrors)->withInput();
+            }
+
+            $calculate = $this->calculatePrice($carts, $user, $discountCoupon);
+            $calculate['extra_price'] = round($extraPrice, 2);
+            $calculate['total'] = round($calculate['total'] + $calculate['extra_price'], 2);
+
+            $order = $this->createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon, $request, $checkoutModules);
 
             if (count($hasPhysicalProduct) > 0) {
                 $this->updateProductOrders($request, $carts, $user);
@@ -376,7 +433,7 @@ class CartController extends Controller
         ]);
     }
 
-    public function createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon = null, Request $request = null)
+    public function createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon = null, Request $request = null, array $checkoutModuleData = [])
     {
         $totalAmount = $calculate["total"];
 
@@ -409,6 +466,14 @@ class CartController extends Controller
         }
 
         $order = Order::create($orderData);
+
+        if (!empty($checkoutModuleData)) {
+            try {
+                app(CheckoutModuleService::class)->saveOrderMeta($order->id, $checkoutModuleData);
+            } catch (\Throwable $e) {
+                // Safe fail if module meta storage is unavailable
+            }
+        }
 
         $productsFee = $this->productDeliveryFeeBySeller($carts);
         $sellersProductsCount = $this->physicalProductCountBySeller($carts);

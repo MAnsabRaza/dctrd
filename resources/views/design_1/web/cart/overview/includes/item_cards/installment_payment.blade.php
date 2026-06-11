@@ -42,5 +42,11 @@
                 <x-iconsax-lin-close-circle class="icons text-danger" width="24px" height="24px"/>
             </a>
         </div>
+
+        @if(!empty($cart))
+            <div class="w-100 mt-16">
+                @include('design_1.web.cart.overview.includes.checkout_item_modules', ['cart' => $cart])
+            </div>
+        @endif
     </div>
 </div>

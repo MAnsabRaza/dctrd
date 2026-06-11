@@ -40,6 +40,12 @@
             </div>
         </div>
 
+        @if(!empty($cart))
+            <div class="w-100 mt-16">
+                @include('design_1.web.cart.overview.includes.checkout_item_modules', ['cart' => $cart])
+            </div>
+        @endif
+
         <div class="js-cart-quantity d-flex align-items-center justify-content-between mt-16 mt-lg-0" data-path="/cart/{{ $cartItem->getId() }}/quantity">
 
             <div class="cart-item__quantity-card d-flex align-items-center mr-32 mr-lg-64">
