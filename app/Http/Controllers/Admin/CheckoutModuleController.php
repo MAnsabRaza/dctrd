@@ -11,6 +11,12 @@ use Illuminate\Support\Facades\Schema;
 
 class CheckoutModuleController extends Controller
 {
+    // Base URL — same helper your views use
+    private function baseUrl(): string
+    {
+        return getAdminPanelUrl() . '/checkout-modules';
+    }
+
     /**
      * LIST — GET /admin/checkout-modules
      */
@@ -30,7 +36,6 @@ class CheckoutModuleController extends Controller
 
     /**
      * CREATE FORM — GET /admin/checkout-modules/create
-     * Redirects to index with create tab open
      */
     public function create()
     {
@@ -65,9 +70,9 @@ class CheckoutModuleController extends Controller
             'translations.*.label'     => 'nullable|string|max:255',
             'translations.*.help_text' => 'nullable|string',
         ], [
-            'name.unique'   => trans('admin/checkout_modules.name_already_exists'),
-            'input_type.in' => trans('admin/checkout_modules.invalid_input_type'),
-            'config.json'   => trans('admin/checkout_modules.invalid_json'),
+            'name.unique'     => trans('admin/checkout_modules.name_already_exists'),
+            'input_type.in'   => trans('admin/checkout_modules.invalid_input_type'),
+            'config.json'     => trans('admin/checkout_modules.invalid_json'),
             'price_rule.json' => trans('admin/checkout_modules.invalid_json'),
         ]);
 
@@ -98,8 +103,7 @@ class CheckoutModuleController extends Controller
 
             DB::commit();
 
-            return redirect()
-                ->route('admin.checkout-modules.index')
+            return redirect($this->baseUrl())
                 ->with('success', trans('admin/checkout_modules.created_successfully'));
 
         } catch (\Exception $e) {
@@ -115,7 +119,7 @@ class CheckoutModuleController extends Controller
      */
     public function show(int $id)
     {
-        return redirect()->route('admin.checkout-modules.edit', $id);
+        return redirect($this->baseUrl() . '/' . $id . '/edit');
     }
 
     /**
@@ -126,15 +130,13 @@ class CheckoutModuleController extends Controller
         $editModule = CheckoutModule::with('translations')->findOrFail($id);
         $modules    = CheckoutModule::orderBy('order_index', 'asc')->paginate(20);
 
-        $translationsByLocale = $editModule->translations->keyBy('locale');
-
         return view('admin.checkout_modules.index', [
             'pageTitle'            => trans('admin/checkout_modules.edit_title'),
             'modules'              => $modules,
             'editModule'           => $editModule,
             'inputTypes'           => $this->getInputTypes(),
             'locales'              => $this->getSupportedLocales(),
-            'translationsByLocale' => $translationsByLocale,
+            'translationsByLocale' => $editModule->translations->keyBy('locale'),
         ]);
     }
 
@@ -187,8 +189,7 @@ class CheckoutModuleController extends Controller
 
             DB::commit();
 
-            return redirect()
-                ->route('admin.checkout-modules.index')
+            return redirect($this->baseUrl())
                 ->with('success', trans('admin/checkout_modules.updated_successfully'));
 
         } catch (\Exception $e) {
@@ -200,34 +201,30 @@ class CheckoutModuleController extends Controller
     }
 
     /**
-     * DELETE (GET route) — GET /admin/checkout-modules/{id}/delete
-     * This is the route called from the blade delete button
+     * DESTROY — GET /admin/checkout-modules/{id}/delete
      */
     public function destroy(int $id)
     {
         $module = CheckoutModule::findOrFail($id);
 
         // Only check order_meta if the table actually exists
-        if (Schema::hasTable('order_metas')) {
-            $inUse = DB::table('order_metas')
+        if (Schema::hasTable('order_meta')) {
+            $inUse = DB::table('order_meta')
                 ->where('key', $module->name)
                 ->exists();
 
             if ($inUse) {
                 return back()->with(
                     'error',
-                    trans('admin/checkout_modules.cannot_delete_in_use', [
-                        'name' => $module->name
-                    ])
+                    trans('admin/checkout_modules.cannot_delete_in_use', ['name' => $module->name])
                 );
             }
         }
 
         try {
-            $module->delete(); // cascade deletes translations
+            $module->delete(); // cascade removes translations
 
-            return redirect()
-                ->route('admin.checkout-modules.index')
+            return redirect($this->baseUrl())
                 ->with('success', trans('admin/checkout_modules.deleted_successfully'));
 
         } catch (\Exception $e) {
@@ -239,7 +236,7 @@ class CheckoutModuleController extends Controller
     }
 
     /**
-     * TOGGLE active/inactive — POST /admin/checkout-modules/{id}/toggle
+     * TOGGLE — POST /admin/checkout-modules/{id}/toggle  (AJAX)
      */
     public function toggle(int $id)
     {

@@ -1,15 +1,15 @@
-{{-- resources/views/admin/checkout_modules/index.blade.php --}}
+{{-- resources/views/admin/pages/checkout_modules/index.blade.php --}}
 @extends('admin.layouts.app')
 
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h1>{{ trans('admin/checkout_modules.list_title') }}</h1>
+            <h1>{{ trans('admin/pages/checkout_modules.list_title') }}</h1>
             <div class="section-header-breadcrumb">
                 <div class="breadcrumb-item active">
                     <a href="{{ getAdminPanelUrl() }}">{{ trans('admin/main.dashboard') }}</a>
                 </div>
-                <div class="breadcrumb-item">{{ trans('admin/checkout_modules.list_title') }}</div>
+                <div class="breadcrumb-item">{{ trans('admin/pages/checkout_modules.list_title') }}</div>
             </div>
         </div>
 
@@ -48,15 +48,15 @@
                                 <li class="nav-item">
                                     <a class="nav-link {{ $openFormTab ? '' : 'active' }}"
                                        id="tab-list" data-toggle="tab" href="#pane-list" role="tab">
-                                        {{ trans('admin/checkout_modules.list_title') }}
+                                        {{ trans('admin/pages/checkout_modules.list_title') }}
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link {{ $openFormTab ? 'active' : '' }}"
                                        id="tab-form" data-toggle="tab" href="#pane-form" role="tab">
                                         {{ !empty($editModule)
-                                            ? trans('admin/checkout_modules.edit_title')
-                                            : trans('admin/checkout_modules.create_title') }}
+                                            ? trans('admin/pages/checkout_modules.edit_title')
+                                            : trans('admin/pages/checkout_modules.create_title') }}
                                     </a>
                                 </li>
                             </ul>
@@ -74,10 +74,10 @@
                                             <table class="table custom-table font-14">
                                                 <thead>
                                                     <tr>
-                                                        <th class="text-left">{{ trans('admin/checkout_modules.name') }}</th>
-                                                        <th class="text-center">{{ trans('admin/checkout_modules.input_type') }}</th>
-                                                        <th class="text-center">{{ trans('admin/checkout_modules.order') }}</th>
-                                                        <th class="text-center">{{ trans('admin/checkout_modules.required') }}</th>
+                                                        <th class="text-left">{{ trans('admin/pages/checkout_modules.name') }}</th>
+                                                        <th class="text-center">{{ trans('admin/pages/checkout_modules.input_type') }}</th>
+                                                        <th class="text-center">{{ trans('admin/pages/checkout_modules.order') }}</th>
+                                                        <th class="text-center">{{ trans('admin/pages/checkout_modules.required') }}</th>
                                                         <th class="text-center">{{ trans('admin/main.status') }}</th>
                                                         <th class="text-center">{{ trans('admin/main.action') }}</th>
                                                     </tr>
@@ -197,7 +197,7 @@
                                                 {{-- ── Name ── --}}
                                                 <div class="form-group">
                                                     <label class="font-weight-bold">
-                                                        {{ trans('admin/checkout_modules.name') }}
+                                                        {{ trans('admin/pages/checkout_modules.name') }}
                                                         <span class="text-danger">*</span>
                                                     </label>
                                                     <input type="text" name="name"
@@ -206,7 +206,7 @@
                                                            placeholder="e.g. days, hours, extra_services"
                                                            {{ !empty($editModule) ? 'readonly' : 'required' }}/>
                                                     <small class="text-muted">
-                                                        {{ trans('admin/checkout_modules.name_hint') }}
+                                                        {{ trans('admin/pages/checkout_modules.name_hint') }}
                                                     </small>
                                                     @error('name')
                                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -216,7 +216,7 @@
                                                 {{-- ── Input Type ── --}}
                                                 <div class="form-group">
                                                     <label class="font-weight-bold">
-                                                        {{ trans('admin/checkout_modules.input_type') }}
+                                                        {{ trans('admin/pages/checkout_modules.input_type') }}
                                                         <span class="text-danger">*</span>
                                                     </label>
                                                     <select name="input_type"
@@ -238,10 +238,10 @@
                                                 {{-- ── Config (Key/Value rows only — no raw textarea) ── --}}
                                                 <div class="form-group">
                                                     <label class="font-weight-bold">
-                                                        {{ trans('admin/checkout_modules.config') }}
+                                                        {{ trans('admin/pages/checkout_modules.config') }}
                                                     </label>
                                                     <small class="d-block text-muted mb-2">
-                                                        {{ trans('admin/checkout_modules.config_hint') }}
+                                                        {{ trans('admin/pages/checkout_modules.config_hint') }}
                                                     </small>
 
                                                     <div id="configAttributes">
@@ -259,11 +259,11 @@
                                                                 <div class="d-flex mb-2 js-config-row">
                                                                     <input type="text" name="config_keys[]"
                                                                            class="form-control mr-2"
-                                                                           placeholder="{{ trans('admin/checkout_modules.key') }}"
+                                                                           placeholder="{{ trans('admin/pages/checkout_modules.key') }}"
                                                                            value="{{ $k }}">
                                                                     <input type="text" name="config_values[]"
                                                                            class="form-control mr-2"
-                                                                           placeholder="{{ trans('admin/checkout_modules.value') }}"
+                                                                           placeholder="{{ trans('admin/pages/checkout_modules.value') }}"
                                                                            value="{{ is_scalar($v) ? $v : json_encode($v) }}">
                                                                     <button type="button"
                                                                             class="btn btn-sm btn-danger js-remove-config">&minus;</button>
@@ -273,10 +273,10 @@
                                                             <div class="d-flex mb-2 js-config-row">
                                                                 <input type="text" name="config_keys[]"
                                                                        class="form-control mr-2"
-                                                                       placeholder="{{ trans('admin/checkout_modules.key') }}">
+                                                                       placeholder="{{ trans('admin/pages/checkout_modules.key') }}">
                                                                 <input type="text" name="config_values[]"
                                                                        class="form-control mr-2"
-                                                                       placeholder="{{ trans('admin/checkout_modules.value') }}">
+                                                                       placeholder="{{ trans('admin/pages/checkout_modules.value') }}">
                                                                 <button type="button"
                                                                         class="btn btn-sm btn-danger js-remove-config">&minus;</button>
                                                             </div>
@@ -298,10 +298,10 @@
                                                 {{-- ── Price Rule (Key/Value rows only) ── --}}
                                                 <div class="form-group">
                                                     <label class="font-weight-bold">
-                                                        {{ trans('admin/checkout_modules.price_rule') }}
+                                                        {{ trans('admin/pages/checkout_modules.price_rule') }}
                                                     </label>
                                                     <small class="d-block text-muted mb-2">
-                                                        {{ trans('admin/checkout_modules.price_rule_hint') }}
+                                                        {{ trans('admin/pages/checkout_modules.price_rule_hint') }}
                                                     </small>
 
                                                     <div id="priceAttributes">
@@ -321,11 +321,11 @@
                                                             <div class="d-flex mb-2 js-price-row">
                                                                 <input type="text" name="price_keys[]"
                                                                        class="form-control mr-2"
-                                                                       placeholder="{{ trans('admin/checkout_modules.key') }}"
+                                                                       placeholder="{{ trans('admin/pages/checkout_modules.key') }}"
                                                                        value="{{ $k }}">
                                                                 <input type="text" name="price_values[]"
                                                                        class="form-control mr-2"
-                                                                       placeholder="{{ trans('admin/checkout_modules.value') }}"
+                                                                       placeholder="{{ trans('admin/pages/checkout_modules.value') }}"
                                                                        value="{{ is_scalar($v) ? $v : json_encode($v) }}">
                                                                 <button type="button"
                                                                         class="btn btn-sm btn-danger js-remove-price">&minus;</button>
@@ -348,7 +348,7 @@
                                                 {{-- ── Order Index ── --}}
                                                 <div class="form-group">
                                                     <label class="font-weight-bold">
-                                                        {{ trans('admin/checkout_modules.order') }}
+                                                        {{ trans('admin/pages/checkout_modules.order') }}
                                                     </label>
                                                     <input type="number" name="order_index" min="0"
                                                            class="form-control @error('order_index') is-invalid @enderror"
@@ -367,7 +367,7 @@
                                                                value="1"
                                                                {{ (!empty($editModule) && $editModule->is_required) ? 'checked' : '' }}>
                                                         <label class="custom-control-label" for="is_required">
-                                                            {{ trans('admin/checkout_modules.required') }}
+                                                            {{ trans('admin/pages/checkout_modules.required') }}
                                                         </label>
                                                     </div>
                                                     <div class="custom-control custom-switch">
@@ -384,7 +384,7 @@
                                                 {{-- ── Translations ── --}}
                                                 <div class="form-group mt-4">
                                                     <label class="font-weight-bold">
-                                                        {{ trans('admin/checkout_modules.translations') }}
+                                                        {{ trans('admin/pages/checkout_modules.translations') }}
                                                     </label>
                                                     <div class="border rounded p-3">
                                                         @foreach($locales as $locale => $localeName)
@@ -401,12 +401,12 @@
                                                                        name="translations[{{ $loop->index }}][label]"
                                                                        class="form-control mb-1"
                                                                        value="{{ $existing ? $existing->label : '' }}"
-                                                                       placeholder="{{ trans('admin/checkout_modules.label_placeholder') }} ({{ $localeName }})"/>
+                                                                       placeholder="{{ trans('admin/pages/checkout_modules.label_placeholder') }} ({{ $localeName }})"/>
                                                                 <input type="text"
                                                                        name="translations[{{ $loop->index }}][help_text]"
                                                                        class="form-control"
                                                                        value="{{ $existing ? ($existing->help_text ?? '') : '' }}"
-                                                                       placeholder="{{ trans('admin/checkout_modules.help_text_placeholder') }} ({{ $localeName }})"/>
+                                                                       placeholder="{{ trans('admin/pages/checkout_modules.help_text_placeholder') }} ({{ $localeName }})"/>
                                                             </div>
 
                                                             @if(!$loop->last)
@@ -470,8 +470,8 @@
         var d = document.createElement('div');
         d.className = 'd-flex mb-2 ' + rowClass;
         d.innerHTML =
-            '<input type="text" name="' + keyName + '" class="form-control mr-2" placeholder="{{ trans('admin/checkout_modules.key') }}">' +
-            '<input type="text" name="' + valueName + '" class="form-control mr-2" placeholder="{{ trans('admin/checkout_modules.value') }}">' +
+            '<input type="text" name="' + keyName + '" class="form-control mr-2" placeholder="{{ trans('admin/pages/checkout_modules.key') }}">' +
+            '<input type="text" name="' + valueName + '" class="form-control mr-2" placeholder="{{ trans('admin/pages/checkout_modules.value') }}">' +
             '<button type="button" class="btn btn-sm btn-danger ' + removeClass + '">&minus;</button>';
         c.appendChild(d);
     }
@@ -541,12 +541,12 @@
                     if (typeof toastr !== 'undefined') toastr.success(data.message);
                 } else {
                     chk.checked = !chk.checked;
-                    if (typeof toastr !== 'undefined') toastr.error('{{ trans('admin/checkout_modules.toggle_failed') }}');
+                    if (typeof toastr !== 'undefined') toastr.error('{{ trans('admin/pages/checkout_modules.toggle_failed') }}');
                 }
             })
             .catch(function () {
                 chk.checked = !chk.checked;
-                if (typeof toastr !== 'undefined') toastr.error('{{ trans('admin/checkout_modules.toggle_failed') }}');
+                if (typeof toastr !== 'undefined') toastr.error('{{ trans('admin/pages/checkout_modules.toggle_failed') }}');
             });
         });
     });
