@@ -232,11 +232,20 @@ Route::group(['prefix' => 'financial/location-sales'], function () {
  * CHECKOUT MODULES ROUTES (Admin Panel)
  * ═════════════════════════════════════════════════════════════════
  */
-Route::resource('checkout-modules', \App\Http\Controllers\Admin\CheckoutModuleController::class)->except(['show']);
+Route::resource('checkout-modules', \App\Http\Controllers\Admin\CheckoutModuleController::class)
+    ->except(['show', 'destroy']);
+ 
+// GET delete route (used by blade delete button)
 Route::get('checkout-modules/{id}/delete', [\App\Http\Controllers\Admin\CheckoutModuleController::class, 'destroy'])
-    ->name('admin.checkout-modules.delete');
+    ->name('checkout-modules.delete');
+ 
+// AJAX toggle active/inactive
 Route::post('checkout-modules/{id}/toggle', [\App\Http\Controllers\Admin\CheckoutModuleController::class, 'toggle'])
     ->name('admin.checkout-modules.toggle');
+ 
+// Redirect show → edit
+Route::get('checkout-modules/{id}', [\App\Http\Controllers\Admin\CheckoutModuleController::class, 'show'])
+    ->name('admin.checkout-modules.show');
 
 /**
  * To use these routes, you must have your controller in App\Http\Controllers\Admin namespace

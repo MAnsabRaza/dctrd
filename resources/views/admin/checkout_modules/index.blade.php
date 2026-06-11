@@ -1,71 +1,83 @@
 {{-- resources/views/admin/checkout_modules/index.blade.php --}}
-{{-- Same style as admin/booking/categories.blade.php --}}
-{{-- List + Create + Edit sab ek hi page pe --}}
-
 @extends('admin.layouts.app')
 
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h1>{{ trans('admin/pages/checkout_modules.list_title') }}</h1>
+            <h1>{{ trans('admin/checkout_modules.list_title') }}</h1>
             <div class="section-header-breadcrumb">
                 <div class="breadcrumb-item active">
                     <a href="{{ getAdminPanelUrl() }}">{{ trans('admin/main.dashboard') }}</a>
                 </div>
-                <div class="breadcrumb-item">{{ trans('admin/pages/checkout_modules.list_title') }}</div>
+                <div class="breadcrumb-item">{{ trans('admin/checkout_modules.list_title') }}</div>
             </div>
         </div>
 
         <div class="section-body">
+
+            {{-- Flash Messages --}}
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                </div>
+            @endif
+
             <div class="row">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body">
 
-                            {{-- ===================== TABS ===================== --}}
                             @php
-                                $createActive = (
+                                // Open create/edit tab when: errors exist, edit mode, or explicitly requested
+                                $openFormTab = (
                                     (!empty($errors) && $errors->any()) ||
                                     !empty($editModule) ||
-                                    (empty($modules) || !$modules->count())
+                                    !empty($openCreateTab)
                                 );
                             @endphp
 
-                            <ul class="nav nav-pills" id="checkoutModuleTabs" role="tablist">
-
+                            {{-- ── TABS ── --}}
+                            <ul class="nav nav-pills mb-3" id="checkoutModuleTabs" role="tablist">
                                 <li class="nav-item">
-                                    <a class="nav-link {{ $createActive ? '' : 'active' }}"
-                                       id="modules-list-tab" data-toggle="tab" href="#modules-list"
-                                       role="tab" aria-controls="modules-list" aria-selected="true">
-                                        {{ trans('admin/pages/checkout_modules.list_title') }}
+                                    <a class="nav-link {{ $openFormTab ? '' : 'active' }}"
+                                       id="tab-list" data-toggle="tab" href="#pane-list" role="tab">
+                                        {{ trans('admin/checkout_modules.list_title') }}
                                     </a>
                                 </li>
-
                                 <li class="nav-item">
-                                    <a class="nav-link {{ $createActive ? 'active' : '' }}"
-                                       id="module-form-tab" data-toggle="tab" href="#module-form"
-                                       role="tab" aria-controls="module-form" aria-selected="false">
-                                        {{ !empty($editModule) ? trans('admin/pages/checkout_modules.edit_title') : trans('admin/pages/checkout_modules.create_title') }}
+                                    <a class="nav-link {{ $openFormTab ? 'active' : '' }}"
+                                       id="tab-form" data-toggle="tab" href="#pane-form" role="tab">
+                                        {{ !empty($editModule)
+                                            ? trans('admin/checkout_modules.edit_title')
+                                            : trans('admin/checkout_modules.create_title') }}
                                     </a>
                                 </li>
-
                             </ul>
 
-                            <div class="tab-content mt-3" id="checkoutModuleTabContent">
+                            <div class="tab-content" id="checkoutModuleTabContent">
 
-                                {{-- ===================== TAB 1: LIST ===================== --}}
-                                <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}"
-                                     id="modules-list" role="tabpanel" aria-labelledby="modules-list-tab">
+                                {{-- ══════════════════════════════════
+                                     TAB 1 : LIST
+                                ══════════════════════════════════ --}}
+                                <div class="tab-pane fade {{ $openFormTab ? '' : 'show active' }}"
+                                     id="pane-list" role="tabpanel">
 
-                                    @if(!empty($modules) && $modules->count())
+                                    @if($modules->count())
                                         <div class="table-responsive">
                                             <table class="table custom-table font-14">
                                                 <thead>
                                                     <tr>
-                                                        <th class="text-left">{{ trans('admin/pages/checkout_modules.name') }}</th>
-                                                        <th class="text-center">{{ trans('admin/pages/checkout_modules.input_type') }}</th>
-                                                        <th class="text-center">{{ trans('admin/pages/checkout_modules.order') }}</th>
-                                                        <th class="text-center">{{ trans('admin/pages/checkout_modules.required') }}</th>
+                                                        <th class="text-left">{{ trans('admin/checkout_modules.name') }}</th>
+                                                        <th class="text-center">{{ trans('admin/checkout_modules.input_type') }}</th>
+                                                        <th class="text-center">{{ trans('admin/checkout_modules.order') }}</th>
+                                                        <th class="text-center">{{ trans('admin/checkout_modules.required') }}</th>
                                                         <th class="text-center">{{ trans('admin/main.status') }}</th>
                                                         <th class="text-center">{{ trans('admin/main.action') }}</th>
                                                     </tr>
@@ -74,12 +86,11 @@
                                                     @foreach($modules as $module)
                                                         <tr id="module-row-{{ $module->id }}">
 
-                                                            {{-- Name --}}
+                                                            {{-- Name + translated label --}}
                                                             <td class="text-left">
                                                                 <span class="font-weight-bold">{{ $module->name }}</span>
-                                                                @if(!empty($module->translated_label))
-                                                                    <br>
-                                                                    <small class="text-muted">{{ $module->translated_label }}</small>
+                                                                @if($module->translated_label !== $module->name)
+                                                                    <br><small class="text-muted">{{ $module->translated_label }}</small>
                                                                 @endif
                                                             </td>
 
@@ -94,13 +105,13 @@
                                                             {{-- Required --}}
                                                             <td class="text-center">
                                                                 @if($module->is_required)
-                                                                    <span class="badge badge-warning">{{ trans('admin/pages/checkout_modules.yes') }}</span>
+                                                                    <span class="badge badge-warning">{{ trans('admin/main.yes') }}</span>
                                                                 @else
                                                                     <span class="text-muted">—</span>
                                                                 @endif
                                                             </td>
 
-                                                            {{-- Active Toggle --}}
+                                                            {{-- Active Toggle (AJAX) --}}
                                                             <td class="text-center">
                                                                 <div class="custom-control custom-switch">
                                                                     <input type="checkbox"
@@ -108,19 +119,19 @@
                                                                            id="toggle-{{ $module->id }}"
                                                                            data-id="{{ $module->id }}"
                                                                            {{ $module->is_active ? 'checked' : '' }}>
-                                                                    <label class="custom-control-label" for="toggle-{{ $module->id }}"></label>
+                                                                    <label class="custom-control-label"
+                                                                           for="toggle-{{ $module->id }}"></label>
                                                                 </div>
                                                             </td>
 
                                                             {{-- Actions --}}
                                                             <td class="text-center" width="80px">
-                                                                <div class="btn-group dropdown table-actions position-relative">
+                                                                <div class="btn-group dropdown table-actions">
                                                                     <button type="button"
                                                                             class="btn-transparent dropdown-toggle"
                                                                             data-toggle="dropdown">
                                                                         <x-iconsax-lin-more class="icons text-gray-500" width="20px" height="20px"/>
                                                                     </button>
-
                                                                     <div class="dropdown-menu dropdown-menu-right">
 
                                                                         {{-- Edit --}}
@@ -138,7 +149,7 @@
                                                                             'btnIcon'   => 'trash',
                                                                             'iconType'  => 'lin',
                                                                             'iconClass' => 'text-danger mr-2',
-                                                                            'method'    => 'DELETE',
+                                                                            'method'    => 'GET',
                                                                         ])
 
                                                                     </div>
@@ -151,47 +162,52 @@
                                             </table>
                                         </div>
 
-                                        {{-- Pagination --}}
-                                        <div class="mt-3">
-                                            {{ $modules->links() }}
-                                        </div>
+                                        <div class="mt-3">{{ $modules->links() }}</div>
 
                                     @else
-                                        <div class="text-center text-gray-500 mt-30">
+                                        <div class="text-center text-gray-500 mt-30 py-4">
                                             {{ trans('admin/main.no_result') }}
                                         </div>
                                     @endif
 
                                 </div>
+                                {{-- END TAB 1 --}}
 
-                                {{-- ===================== TAB 2: CREATE / EDIT FORM ===================== --}}
-                                <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}"
-                                     id="module-form" role="tabpanel" aria-labelledby="module-form-tab">
+                                {{-- ══════════════════════════════════
+                                     TAB 2 : CREATE / EDIT FORM
+                                ══════════════════════════════════ --}}
+                                <div class="tab-pane fade {{ $openFormTab ? 'show active' : '' }}"
+                                     id="pane-form" role="tabpanel">
 
                                     <div class="row">
                                         <div class="col-12 col-md-8">
 
-                                            <form action="{{ !empty($editModule)
+                                            @php
+                                                $formAction = !empty($editModule)
                                                     ? getAdminPanelUrl() . '/checkout-modules/' . $editModule->id
-                                                    : getAdminPanelUrl() . '/checkout-modules' }}"
-                                                  method="POST">
+                                                    : getAdminPanelUrl() . '/checkout-modules';
+                                            @endphp
+
+                                            <form action="{{ $formAction }}" method="POST" id="checkoutModuleForm">
                                                 @csrf
                                                 @if(!empty($editModule))
                                                     @method('PUT')
                                                 @endif
 
-                                                {{-- ── Module Name ── --}}
+                                                {{-- ── Name ── --}}
                                                 <div class="form-group">
-                                                    <label>{{ trans('admin/pages/checkout_modules.name') }} <span class="text-danger">*</span></label>
+                                                    <label class="font-weight-bold">
+                                                        {{ trans('admin/checkout_modules.name') }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
                                                     <input type="text" name="name"
                                                            class="form-control @error('name') is-invalid @enderror"
                                                            value="{{ !empty($editModule) ? $editModule->name : old('name') }}"
-                                                           placeholder="{{ trans('admin/pages/checkout_modules.name_placeholder') }}"
-                                                           required
-                                                           {{ !empty($editModule) ? 'readonly' : '' }}/>
-                                                    <div class="text-muted text-small mt-1">
-                                                        {{ trans('admin/pages/checkout_modules.name_hint') }}
-                                                    </div>
+                                                           placeholder="e.g. days, hours, extra_services"
+                                                           {{ !empty($editModule) ? 'readonly' : 'required' }}/>
+                                                    <small class="text-muted">
+                                                        {{ trans('admin/checkout_modules.name_hint') }}
+                                                    </small>
                                                     @error('name')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
@@ -199,7 +215,10 @@
 
                                                 {{-- ── Input Type ── --}}
                                                 <div class="form-group">
-                                                    <label>{{ trans('admin/pages/checkout_modules.input_type') }} <span class="text-danger">*</span></label>
+                                                    <label class="font-weight-bold">
+                                                        {{ trans('admin/checkout_modules.input_type') }}
+                                                        <span class="text-danger">*</span>
+                                                    </label>
                                                     <select name="input_type"
                                                             class="form-control @error('input_type') is-invalid @enderror"
                                                             required>
@@ -216,128 +235,146 @@
                                                     @enderror
                                                 </div>
 
-                                                {{-- ── Config (Key/Value editor -> saved as JSON) ── --}}
+                                                {{-- ── Config (Key/Value rows only — no raw textarea) ── --}}
                                                 <div class="form-group">
-                                                    <label>{{ trans('admin/pages/checkout_modules.config') }}</label>
+                                                    <label class="font-weight-bold">
+                                                        {{ trans('admin/checkout_modules.config') }}
+                                                    </label>
+                                                    <small class="d-block text-muted mb-2">
+                                                        {{ trans('admin/checkout_modules.config_hint') }}
+                                                    </small>
 
-                                                    <div id="configAttributes" class="mb-2">
+                                                    <div id="configAttributes">
                                                         @php
                                                             $configInit = [];
-                                                            if(!empty($editModule) && $editModule->config) {
+                                                            if (!empty($editModule) && $editModule->config) {
                                                                 $configInit = (array) $editModule->config;
-                                                            } elseif(old('config')) {
-                                                                try { $configInit = (array) json_decode(old('config'), true) ?? []; } catch(\Exception $e) { $configInit = []; }
+                                                            } elseif (old('config')) {
+                                                                try { $configInit = json_decode(old('config'), true) ?? []; } catch(\Exception $e) { $configInit = []; }
                                                             }
                                                         @endphp
 
                                                         @if(!empty($configInit))
                                                             @foreach($configInit as $k => $v)
-                                                                <div class="config-attribute-row d-flex mb-2 js-config-attribute-row">
-                                                                    <input type="text" name="config_keys[]" class="form-control mr-2" placeholder="Key" value="{{ $k }}">
-                                                                    <input type="text" name="config_values[]" class="form-control mr-2" placeholder="Value (JSON for complex)" value='{{ is_scalar($v) ? $v : json_encode($v) }}'>
-                                                                    <button type="button" class="btn btn-sm btn-danger js-remove-config-attribute">&minus;</button>
+                                                                <div class="d-flex mb-2 js-config-row">
+                                                                    <input type="text" name="config_keys[]"
+                                                                           class="form-control mr-2"
+                                                                           placeholder="{{ trans('admin/checkout_modules.key') }}"
+                                                                           value="{{ $k }}">
+                                                                    <input type="text" name="config_values[]"
+                                                                           class="form-control mr-2"
+                                                                           placeholder="{{ trans('admin/checkout_modules.value') }}"
+                                                                           value="{{ is_scalar($v) ? $v : json_encode($v) }}">
+                                                                    <button type="button"
+                                                                            class="btn btn-sm btn-danger js-remove-config">&minus;</button>
                                                                 </div>
                                                             @endforeach
                                                         @else
-                                                            <div class="config-attribute-row d-flex mb-2 js-config-attribute-row">
-                                                                <input type="text" name="config_keys[]" class="form-control mr-2" placeholder="Key" value="">
-                                                                <input type="text" name="config_values[]" class="form-control mr-2" placeholder="Value (JSON for complex)" value="">
-                                                                <button type="button" class="btn btn-sm btn-danger js-remove-config-attribute">&minus;</button>
+                                                            <div class="d-flex mb-2 js-config-row">
+                                                                <input type="text" name="config_keys[]"
+                                                                       class="form-control mr-2"
+                                                                       placeholder="{{ trans('admin/checkout_modules.key') }}">
+                                                                <input type="text" name="config_values[]"
+                                                                       class="form-control mr-2"
+                                                                       placeholder="{{ trans('admin/checkout_modules.value') }}">
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-danger js-remove-config">&minus;</button>
                                                             </div>
                                                         @endif
                                                     </div>
 
-                                                    <div class="mb-2">
-                                                        <button type="button" class="btn btn-sm btn-primary js-add-config-attribute">{{ trans('admin/main.add') ?? 'Add' }}</button>
-                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary js-add-config">
+                                                        + {{ trans('admin/main.add') }}
+                                                    </button>
 
-                                                    <textarea name="config" id="config_json" rows="5" class="form-control font-monospace @error('config') is-invalid @enderror" placeholder='{"min_days": 1, "max_days": 365'>{{ !empty($editModule) && $editModule->config ? json_encode($editModule->config, JSON_PRETTY_PRINT) : old('config') }}</textarea>
-
-                                                    <div class="text-muted text-small mt-1">
-                                                        {{ trans('admin/pages/checkout_modules.config_hint') }}
-                                                    </div>
+                                                    {{-- Hidden textarea — serialized by JS on submit --}}
+                                                    <input type="hidden" name="config" id="config_hidden"
+                                                           value="{{ !empty($editModule) && $editModule->config ? json_encode($editModule->config) : old('config') }}">
                                                     @error('config')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                        <div class="text-danger small mt-1">{{ $message }}</div>
                                                     @enderror
                                                 </div>
 
-                                                {{-- ── Price Rule (Key/Value -> saved as JSON) ── --}}
+                                                {{-- ── Price Rule (Key/Value rows only) ── --}}
                                                 <div class="form-group">
-                                                    <label>{{ trans('admin/pages/checkout_modules.price_rule') }}</label>
+                                                    <label class="font-weight-bold">
+                                                        {{ trans('admin/checkout_modules.price_rule') }}
+                                                    </label>
+                                                    <small class="d-block text-muted mb-2">
+                                                        {{ trans('admin/checkout_modules.price_rule_hint') }}
+                                                    </small>
 
-                                                    <div id="priceRuleAttributes" class="mb-2">
+                                                    <div id="priceAttributes">
                                                         @php
                                                             $priceInit = [];
-                                                            if(!empty($editModule) && $editModule->price_rule) {
+                                                            if (!empty($editModule) && $editModule->price_rule) {
                                                                 $priceInit = (array) $editModule->price_rule;
-                                                            } elseif(old('price_rule')) {
-                                                                try { $priceInit = (array) json_decode(old('price_rule'), true) ?? []; } catch(\Exception $e) { $priceInit = []; }
+                                                            } elseif (old('price_rule')) {
+                                                                try { $priceInit = json_decode(old('price_rule'), true) ?? []; } catch(\Exception $e) { $priceInit = []; }
+                                                            }
+                                                            if (empty($priceInit)) {
+                                                                $priceInit = ['type' => 'none'];
                                                             }
                                                         @endphp
 
-                                                        @if(!empty($priceInit))
-                                                            @foreach($priceInit as $k => $v)
-                                                                <div class="price-attribute-row d-flex mb-2 js-price-attribute-row">
-                                                                    <input type="text" name="price_keys[]" class="form-control mr-2" placeholder="Key" value="{{ $k }}">
-                                                                    <input type="text" name="price_values[]" class="form-control mr-2" placeholder="Value" value='{{ is_scalar($v) ? $v : json_encode($v) }}'>
-                                                                    <button type="button" class="btn btn-sm btn-danger js-remove-price-attribute">&minus;</button>
-                                                                </div>
-                                                            @endforeach
-                                                        @else
-                                                            <div class="price-attribute-row d-flex mb-2 js-price-attribute-row">
-                                                                <input type="text" name="price_keys[]" class="form-control mr-2" placeholder="Key" value="type">
-                                                                <input type="text" name="price_values[]" class="form-control mr-2" placeholder="Value" value="none">
-                                                                <button type="button" class="btn btn-sm btn-danger js-remove-price-attribute">&minus;</button>
+                                                        @foreach($priceInit as $k => $v)
+                                                            <div class="d-flex mb-2 js-price-row">
+                                                                <input type="text" name="price_keys[]"
+                                                                       class="form-control mr-2"
+                                                                       placeholder="{{ trans('admin/checkout_modules.key') }}"
+                                                                       value="{{ $k }}">
+                                                                <input type="text" name="price_values[]"
+                                                                       class="form-control mr-2"
+                                                                       placeholder="{{ trans('admin/checkout_modules.value') }}"
+                                                                       value="{{ is_scalar($v) ? $v : json_encode($v) }}">
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-danger js-remove-price">&minus;</button>
                                                             </div>
-                                                        @endif
+                                                        @endforeach
                                                     </div>
 
-                                                    <div class="mb-2">
-                                                        <button type="button" class="btn btn-sm btn-primary js-add-price-attribute">{{ trans('admin/main.add') ?? 'Add' }}</button>
-                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary js-add-price">
+                                                        + {{ trans('admin/main.add') }}
+                                                    </button>
 
-                                                    <textarea name="price_rule" id="price_rule_json" rows="3" class="form-control font-monospace @error('price_rule') is-invalid @enderror" placeholder='{"type": "per_day", "amount": 0}'>{{ !empty($editModule) && $editModule->price_rule ? json_encode($editModule->price_rule, JSON_PRETTY_PRINT) : old('price_rule') }}</textarea>
-
-                                                    <div class="text-muted text-small mt-1">
-                                                        {{ trans('admin/pages/checkout_modules.price_rule_hint') }}
-                                                    </div>
+                                                    {{-- Hidden — serialized by JS --}}
+                                                    <input type="hidden" name="price_rule" id="price_hidden"
+                                                           value="{{ !empty($editModule) && $editModule->price_rule ? json_encode($editModule->price_rule) : old('price_rule') }}">
                                                     @error('price_rule')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                        <div class="text-danger small mt-1">{{ $message }}</div>
                                                     @enderror
                                                 </div>
 
                                                 {{-- ── Order Index ── --}}
                                                 <div class="form-group">
-                                                    <label>{{ trans('admin/pages/checkout_modules.order') }}</label>
+                                                    <label class="font-weight-bold">
+                                                        {{ trans('admin/checkout_modules.order') }}
+                                                    </label>
                                                     <input type="number" name="order_index" min="0"
                                                            class="form-control @error('order_index') is-invalid @enderror"
                                                            value="{{ !empty($editModule) ? $editModule->order_index : old('order_index', 0) }}"
-                                                           required/>
+                                                           required style="max-width:160px;"/>
                                                     @error('order_index')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
 
-                                                {{-- ── Is Required ── --}}
+                                                {{-- ── Toggles ── --}}
                                                 <div class="form-group">
-                                                    <div class="custom-control custom-switch">
+                                                    <div class="custom-control custom-switch mb-2">
                                                         <input type="checkbox" name="is_required"
                                                                class="custom-control-input" id="is_required"
                                                                value="1"
                                                                {{ (!empty($editModule) && $editModule->is_required) ? 'checked' : '' }}>
                                                         <label class="custom-control-label" for="is_required">
-                                                            {{ trans('admin/pages/checkout_modules.required') }}
+                                                            {{ trans('admin/checkout_modules.required') }}
                                                         </label>
                                                     </div>
-                                                </div>
-
-                                                {{-- ── Is Active ── --}}
-                                                <div class="form-group">
                                                     <div class="custom-control custom-switch">
                                                         <input type="checkbox" name="is_active"
                                                                class="custom-control-input" id="is_active"
                                                                value="1"
-                                                               {{ (empty($editModule) || (!empty($editModule) && $editModule->is_active)) ? 'checked' : '' }}>
+                                                               {{ (empty($editModule) || $editModule->is_active) ? 'checked' : '' }}>
                                                         <label class="custom-control-label" for="is_active">
                                                             {{ trans('admin/main.active') }}
                                                         </label>
@@ -347,47 +384,40 @@
                                                 {{-- ── Translations ── --}}
                                                 <div class="form-group mt-4">
                                                     <label class="font-weight-bold">
-                                                        {{ trans('admin/pages/checkout_modules.translations') }}
+                                                        {{ trans('admin/checkout_modules.translations') }}
                                                     </label>
                                                     <div class="border rounded p-3">
-
                                                         @foreach($locales as $locale => $localeName)
-                                                            @php
-                                                                $existing = $translationsByLocale[$locale] ?? null;
-                                                            @endphp
+                                                            @php $existing = $translationsByLocale[$locale] ?? null; @endphp
 
-                                                            <div class="mb-3">
+                                                            <div class="{{ $loop->last ? '' : 'mb-3' }}">
                                                                 <label class="text-muted font-12 mb-1">
                                                                     {{ $localeName }} ({{ strtoupper($locale) }})
                                                                 </label>
-
                                                                 <input type="hidden"
                                                                        name="translations[{{ $loop->index }}][locale]"
                                                                        value="{{ $locale }}">
-
                                                                 <input type="text"
                                                                        name="translations[{{ $loop->index }}][label]"
                                                                        class="form-control mb-1"
                                                                        value="{{ $existing ? $existing->label : '' }}"
-                                                                       placeholder="{{ trans('admin/pages/checkout_modules.label_placeholder') }} ({{ $localeName }})"/>
-
+                                                                       placeholder="{{ trans('admin/checkout_modules.label_placeholder') }} ({{ $localeName }})"/>
                                                                 <input type="text"
                                                                        name="translations[{{ $loop->index }}][help_text]"
                                                                        class="form-control"
-                                                                       value="{{ $existing ? $existing->help_text : '' }}"
-                                                                       placeholder="{{ trans('admin/pages/checkout_modules.help_text_placeholder') }} ({{ $localeName }})"/>
+                                                                       value="{{ $existing ? ($existing->help_text ?? '') : '' }}"
+                                                                       placeholder="{{ trans('admin/checkout_modules.help_text_placeholder') }} ({{ $localeName }})"/>
                                                             </div>
 
                                                             @if(!$loop->last)
-                                                                <hr class="my-2">
+                                                                <hr class="my-3">
                                                             @endif
                                                         @endforeach
-
                                                     </div>
                                                 </div>
 
-                                                {{-- ── Buttons ── --}}
-                                                <div class="text-right col-12 mt-3">
+                                                {{-- ── Submit Buttons ── --}}
+                                                <div class="d-flex justify-content-end mt-4">
                                                     @if(!empty($editModule))
                                                         <a href="{{ getAdminPanelUrl() }}/checkout-modules"
                                                            class="btn btn-secondary mr-2">
@@ -400,6 +430,7 @@
                                                 </div>
 
                                             </form>
+
                                         </div>
                                     </div>
 
@@ -407,7 +438,7 @@
                                 {{-- END TAB 2 --}}
 
                             </div>
-                            {{-- END tab-content --}}
+                            {{-- end tab-content --}}
 
                         </div>
                     </div>
@@ -420,140 +451,105 @@
 @push('scripts_bottom')
 <script>
 (function () {
+    'use strict';
 
-    function escapeHtml(str) {
-        if(!str) return '';
-        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // ── Helpers ──────────────────────────────────────────────
+
+    function escHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
     }
 
-    function addConfigRow(key, value) {
-        key = key || '';
-        value = value || '';
-        var container = document.getElementById('configAttributes');
-        if(!container) return;
-        var row = document.createElement('div');
-        row.className = 'config-attribute-row d-flex mb-2 js-config-attribute-row';
-        row.innerHTML = '<input type="text" name="config_keys[]" class="form-control mr-2" placeholder="Key" value="'+ escapeHtml(key) +'">' +
-                        '<input type="text" name="config_values[]" class="form-control mr-2" placeholder="Value (JSON for complex)" value="'+ escapeHtml(value) +'">' +
-                        '<button type="button" class="btn btn-sm btn-danger js-remove-config-attribute">&minus;</button>';
-        container.appendChild(row);
+    function addRow(containerId, keyName, valueName, removeClass, rowClass) {
+        var c = document.getElementById(containerId);
+        if (!c) return;
+        var d = document.createElement('div');
+        d.className = 'd-flex mb-2 ' + rowClass;
+        d.innerHTML =
+            '<input type="text" name="' + keyName + '" class="form-control mr-2" placeholder="{{ trans('admin/checkout_modules.key') }}">' +
+            '<input type="text" name="' + valueName + '" class="form-control mr-2" placeholder="{{ trans('admin/checkout_modules.value') }}">' +
+            '<button type="button" class="btn btn-sm btn-danger ' + removeClass + '">&minus;</button>';
+        c.appendChild(d);
     }
 
-    function addPriceRow(key, value) {
-        key = key || '';
-        value = value || '';
-        var container = document.getElementById('priceRuleAttributes');
-        if(!container) return;
-        var row = document.createElement('div');
-        row.className = 'price-attribute-row d-flex mb-2 js-price-attribute-row';
-        row.innerHTML = '<input type="text" name="price_keys[]" class="form-control mr-2" placeholder="Key" value="'+ escapeHtml(key) +'">' +
-                        '<input type="text" name="price_values[]" class="form-control mr-2" placeholder="Value" value="'+ escapeHtml(value) +'">' +
-                        '<button type="button" class="btn btn-sm btn-danger js-remove-price-attribute">&minus;</button>';
-        container.appendChild(row);
-    }
+    // ── Click delegation for add/remove rows ─────────────────
+    document.addEventListener('click', function (e) {
+        var t = e.target;
 
-    // Delegated click handlers for add/remove
-    document.addEventListener('click', function(e){
-        if(e.target && e.target.classList.contains('js-remove-config-attribute')) {
-            var row = e.target.closest('.js-config-attribute-row');
-            if(row) row.remove();
-            return;
-        }
-        if(e.target && e.target.classList.contains('js-remove-price-attribute')) {
-            var row = e.target.closest('.js-price-attribute-row');
-            if(row) row.remove();
-            return;
-        }
-        if(e.target && e.target.classList.contains('js-add-config-attribute')) {
-            addConfigRow();
-            return;
-        }
-        if(e.target && e.target.classList.contains('js-add-price-attribute')) {
-            addPriceRow();
-            return;
+        if (t.classList.contains('js-add-config')) {
+            addRow('configAttributes', 'config_keys[]', 'config_values[]', 'js-remove-config', 'js-config-row');
+        } else if (t.classList.contains('js-add-price')) {
+            addRow('priceAttributes', 'price_keys[]', 'price_values[]', 'js-remove-price', 'js-price-row');
+        } else if (t.classList.contains('js-remove-config')) {
+            var row = t.closest('.js-config-row');
+            if (row) row.remove();
+        } else if (t.classList.contains('js-remove-price')) {
+            var row = t.closest('.js-price-row');
+            if (row) row.remove();
         }
     });
 
-    // On form submit, serialize attribute rows into JSON textareas
-    var form = document.querySelector('form[action$="/checkout-modules"]') || document.querySelector('form[action*="/checkout-modules/"]');
-    if(!form) form = document.querySelector('form');
-    if(form) {
-        form.addEventListener('submit', function(e){
-            // config
+    // ── Serialize key-value rows → hidden JSON inputs on submit ──
+    var form = document.getElementById('checkoutModuleForm');
+    if (form) {
+        form.addEventListener('submit', function () {
+
+            // Config
             var configObj = {};
-            document.querySelectorAll('#configAttributes .js-config-attribute-row').forEach(function(row){
-                var kEl = row.querySelector('input[name="config_keys[]"]');
-                var vEl = row.querySelector('input[name="config_values[]"]');
-                if(!kEl) return;
-                var k = (kEl.value || '').trim();
-                var v = (vEl && vEl.value) ? vEl.value.trim() : '';
-                if(k !== '') {
-                    try {
-                        var parsed = JSON.parse(v);
-                        configObj[k] = parsed;
-                    } catch(err) {
-                        configObj[k] = v;
-                    }
+            document.querySelectorAll('#configAttributes .js-config-row').forEach(function (row) {
+                var k = (row.querySelector('input[name="config_keys[]"]').value || '').trim();
+                var v = (row.querySelector('input[name="config_values[]"]').value || '').trim();
+                if (k) {
+                    try { configObj[k] = JSON.parse(v); } catch (e) { configObj[k] = v; }
                 }
             });
-            var configTa = document.getElementById('config_json');
-            if(configTa) configTa.value = JSON.stringify(configObj, null, 2);
+            document.getElementById('config_hidden').value = JSON.stringify(configObj);
 
-            // price_rule
+            // Price Rule
             var priceObj = {};
-            document.querySelectorAll('#priceRuleAttributes .js-price-attribute-row').forEach(function(row){
-                var kEl = row.querySelector('input[name="price_keys[]"]');
-                var vEl = row.querySelector('input[name="price_values[]"]');
-                if(!kEl) return;
-                var k = (kEl.value || '').trim();
-                var v = (vEl && vEl.value) ? vEl.value.trim() : '';
-                if(k !== '') {
-                    try {
-                        var parsed = JSON.parse(v);
-                        priceObj[k] = parsed;
-                    } catch(err) {
-                        priceObj[k] = v;
-                    }
+            document.querySelectorAll('#priceAttributes .js-price-row').forEach(function (row) {
+                var k = (row.querySelector('input[name="price_keys[]"]').value || '').trim();
+                var v = (row.querySelector('input[name="price_values[]"]').value || '').trim();
+                if (k) {
+                    try { priceObj[k] = JSON.parse(v); } catch (e) { priceObj[k] = v; }
                 }
             });
-            var priceTa = document.getElementById('price_rule_json');
-            if(priceTa) priceTa.value = JSON.stringify(priceObj, null, 2);
-
+            document.getElementById('price_hidden').value = JSON.stringify(priceObj);
         });
     }
 
-    // ── Toggle Active/Inactive via AJAX ──────────────────────
+    // ── AJAX Toggle active/inactive ──────────────────────────
     document.querySelectorAll('.module-toggle').forEach(function (toggle) {
         toggle.addEventListener('change', function () {
-            var moduleId = this.dataset.id;
-            var checkbox = this;
+            var id  = this.dataset.id;
+            var chk = this;
 
-            fetch('{{ getAdminPanelUrl() }}/checkout-modules/' + moduleId + '/toggle', {
+            fetch('{{ getAdminPanelUrl() }}/checkout-modules/' + id + '/toggle', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 }
             })
-            .then(function (res) { return res.json(); })
+            .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.success) {
-                    toastr.success(data.message);
+                    if (typeof toastr !== 'undefined') toastr.success(data.message);
                 } else {
-                    checkbox.checked = !checkbox.checked;
-                    toastr.error('{{ trans('admin/pages/checkout_modules.toggle_failed') }}');
+                    chk.checked = !chk.checked;
+                    if (typeof toastr !== 'undefined') toastr.error('{{ trans('admin/checkout_modules.toggle_failed') }}');
                 }
             })
             .catch(function () {
-                checkbox.checked = !checkbox.checked;
-                toastr.error('{{ trans('admin/pages/checkout_modules.toggle_failed') }}');
+                chk.checked = !chk.checked;
+                if (typeof toastr !== 'undefined') toastr.error('{{ trans('admin/checkout_modules.toggle_failed') }}');
             });
         });
     });
-
-    // ── Edit button click hone pe form tab pe jao ────────────
-    // (Edit link redirect karta hai — controller $editModule pass karta hai
-    //  aur $createActive true ho jata hai — tab automatically switch hoti hai)
 
 })();
 </script>

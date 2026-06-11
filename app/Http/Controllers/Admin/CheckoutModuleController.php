@@ -7,14 +7,12 @@ use App\Models\CheckoutModule;
 use App\Models\CheckoutModuleTranslation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CheckoutModuleController extends Controller
 {
     /**
-     * METHOD 1: index()
-     *
-     * Saare checkout modules list mein dikhata hai.
-     * URL: GET /admin/checkout-modules
+     * LIST — GET /admin/checkout-modules
      */
     public function index()
     {
@@ -30,13 +28,9 @@ class CheckoutModuleController extends Controller
         ]);
     }
 
-    // =========================================================
-
     /**
-     * METHOD 2: create()
-     *
-     * Naya module banane ka form dikhata hai.
-     * URL: GET /admin/checkout-modules/create
+     * CREATE FORM — GET /admin/checkout-modules/create
+     * Redirects to index with create tab open
      */
     public function create()
     {
@@ -49,54 +43,46 @@ class CheckoutModuleController extends Controller
             'inputTypes'           => $this->getInputTypes(),
             'locales'              => $this->getSupportedLocales(),
             'translationsByLocale' => collect(),
+            'openCreateTab'        => true,
         ]);
     }
 
-    // =========================================================
-
     /**
-     * METHOD 3: store()
-     *
-     * Naya module database mein save karta hai.
-     * URL: POST /admin/checkout-modules
+     * STORE — POST /admin/checkout-modules
      */
     public function store(Request $request)
     {
         $request->validate([
-            'name'        => 'required|string|max:100|unique:checkout_modules,name',
-            'input_type'  => 'required|string|in:' . implode(',', array_keys($this->getInputTypes())),
-            'config'      => 'nullable|json',
-            'price_rule'  => 'nullable|json',
-            'order_index' => 'required|integer|min:0',
-            'is_active'   => 'boolean',
-            'is_required' => 'boolean',
-            // Translations validation
-            'translations'          => 'nullable|array',
-            'translations.*.locale' => 'required|string|max:10',
-            'translations.*.label'  => 'required|string|max:255',
+            'name'                     => 'required|string|max:100|unique:checkout_modules,name',
+            'input_type'               => 'required|string|in:' . implode(',', array_keys($this->getInputTypes())),
+            'config'                   => 'nullable|json',
+            'price_rule'               => 'nullable|json',
+            'order_index'              => 'required|integer|min:0',
+            'is_active'                => 'nullable|boolean',
+            'is_required'              => 'nullable|boolean',
+            'translations'             => 'nullable|array',
+            'translations.*.locale'    => 'required|string|max:10',
+            'translations.*.label'     => 'nullable|string|max:255',
             'translations.*.help_text' => 'nullable|string',
         ], [
-            'name.unique'      => trans('admin/checkout_modules.name_already_exists'),
-            'input_type.in'    => trans('admin/checkout_modules.invalid_input_type'),
-            'config.json'      => trans('admin/checkout_modules.invalid_json'),
-            'price_rule.json'  => trans('admin/checkout_modules.invalid_json'),
+            'name.unique'   => trans('admin/checkout_modules.name_already_exists'),
+            'input_type.in' => trans('admin/checkout_modules.invalid_input_type'),
+            'config.json'   => trans('admin/checkout_modules.invalid_json'),
+            'price_rule.json' => trans('admin/checkout_modules.invalid_json'),
         ]);
 
         DB::beginTransaction();
-
         try {
-            // Module save karo
             $module = CheckoutModule::create([
                 'name'        => $request->name,
                 'input_type'  => $request->input_type,
-                'config'      => $request->config ? json_decode($request->config, true) : null,
-                'price_rule'  => $request->price_rule ? json_decode($request->price_rule, true) : null,
-                'order_index' => $request->order_index,
+                'config'      => $request->filled('config') ? json_decode($request->config, true) : null,
+                'price_rule'  => $request->filled('price_rule') ? json_decode($request->price_rule, true) : null,
+                'order_index' => (int) $request->order_index,
                 'is_active'   => $request->boolean('is_active', true),
                 'is_required' => $request->boolean('is_required', false),
             ]);
 
-            // Translations save karo
             if ($request->filled('translations')) {
                 foreach ($request->translations as $translation) {
                     if (!empty($translation['label'])) {
@@ -118,30 +104,30 @@ class CheckoutModuleController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
             return back()
                 ->withInput()
                 ->with('error', trans('admin/checkout_modules.create_failed') . ': ' . $e->getMessage());
         }
     }
 
-    // =========================================================
+    /**
+     * SHOW — redirect to edit
+     */
+    public function show(int $id)
+    {
+        return redirect()->route('admin.checkout-modules.edit', $id);
+    }
 
     /**
-     * METHOD 4: edit()
-     *
-     * Existing module edit karne ka form dikhata hai.
-     * URL: GET /admin/checkout-modules/{id}/edit
+     * EDIT FORM — GET /admin/checkout-modules/{id}/edit
      */
     public function edit(int $id)
     {
         $editModule = CheckoutModule::with('translations')->findOrFail($id);
         $modules    = CheckoutModule::orderBy('order_index', 'asc')->paginate(20);
 
-        // Translations ko locale => data format mein convert karo
         $translationsByLocale = $editModule->translations->keyBy('locale');
 
-        // Category pattern — same index view pe wapas jao, editModule pass karo
         return view('admin.checkout_modules.index', [
             'pageTitle'            => trans('admin/checkout_modules.edit_title'),
             'modules'              => $modules,
@@ -152,62 +138,41 @@ class CheckoutModuleController extends Controller
         ]);
     }
 
-    // =========================================================
-
     /**
-     * METHOD 4.5: show()
-     *
-     * Redirect pure show URL to edit so old links or manual hits do not break.
-     */
-    public function show(int $id)
-    {
-        return redirect()->route('admin.checkout-modules.edit', ['checkout_module' => $id]);
-    }
-
-    // =========================================================
-
-    /**
-     * METHOD 5: update()
-     *
-     * Existing module ka data update karta hai.
-     * URL: PUT /admin/checkout-modules/{id}
+     * UPDATE — PUT /admin/checkout-modules/{id}
      */
     public function update(Request $request, int $id)
     {
         $module = CheckoutModule::findOrFail($id);
 
         $request->validate([
-            'name'        => 'required|string|max:100|unique:checkout_modules,name,' . $id,
-            'input_type'  => 'required|string|in:' . implode(',', array_keys($this->getInputTypes())),
-            'config'      => 'nullable|json',
-            'price_rule'  => 'nullable|json',
-            'order_index' => 'required|integer|min:0',
-            'is_active'   => 'boolean',
-            'is_required' => 'boolean',
+            'name'                     => 'required|string|max:100|unique:checkout_modules,name,' . $id,
+            'input_type'               => 'required|string|in:' . implode(',', array_keys($this->getInputTypes())),
+            'config'                   => 'nullable|json',
+            'price_rule'               => 'nullable|json',
+            'order_index'              => 'required|integer|min:0',
+            'is_active'                => 'nullable|boolean',
+            'is_required'              => 'nullable|boolean',
             'translations'             => 'nullable|array',
             'translations.*.locale'    => 'required|string|max:10',
-            'translations.*.label'     => 'required|string|max:255',
+            'translations.*.label'     => 'nullable|string|max:255',
             'translations.*.help_text' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
-
         try {
-            // Module update karo
             $module->update([
                 'name'        => $request->name,
                 'input_type'  => $request->input_type,
-                'config'      => $request->config ? json_decode($request->config, true) : null,
-                'price_rule'  => $request->price_rule ? json_decode($request->price_rule, true) : null,
-                'order_index' => $request->order_index,
+                'config'      => $request->filled('config') ? json_decode($request->config, true) : null,
+                'price_rule'  => $request->filled('price_rule') ? json_decode($request->price_rule, true) : null,
+                'order_index' => (int) $request->order_index,
                 'is_active'   => $request->boolean('is_active', true),
                 'is_required' => $request->boolean('is_required', false),
             ]);
 
-            // Translations update karo — pehle delete phir re-insert
             if ($request->filled('translations')) {
                 CheckoutModuleTranslation::where('module_id', $module->id)->delete();
-
                 foreach ($request->translations as $translation) {
                     if (!empty($translation['label'])) {
                         CheckoutModuleTranslation::create([
@@ -228,43 +193,38 @@ class CheckoutModuleController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
             return back()
                 ->withInput()
                 ->with('error', trans('admin/checkout_modules.update_failed') . ': ' . $e->getMessage());
         }
     }
 
-    // =========================================================
-
     /**
-     * METHOD 6: destroy()
-     *
-     * Module delete karta hai.
-     * Agar module kisi order_meta mein use ho raha hai toh delete nahi hoga.
-     * URL: DELETE /admin/checkout-modules/{id}
+     * DELETE (GET route) — GET /admin/checkout-modules/{id}/delete
+     * This is the route called from the blade delete button
      */
     public function destroy(int $id)
     {
         $module = CheckoutModule::findOrFail($id);
 
-        // Check karo — koi order is module ka data use kar raha hai?
-        $inUse = DB::table('order_meta')
-            ->where('key', $module->name)
-            ->exists();
+        // Only check order_meta if the table actually exists
+        if (Schema::hasTable('order_metas')) {
+            $inUse = DB::table('order_metas')
+                ->where('key', $module->name)
+                ->exists();
 
-        if ($inUse) {
-            return back()->with(
-                'error',
-                trans('admin/checkout_modules.cannot_delete_in_use', [
-                    'name' => $module->name
-                ])
-            );
+            if ($inUse) {
+                return back()->with(
+                    'error',
+                    trans('admin/checkout_modules.cannot_delete_in_use', [
+                        'name' => $module->name
+                    ])
+                );
+            }
         }
 
         try {
-            // Translations bhi automatically delete hongi (cascade)
-            $module->delete();
+            $module->delete(); // cascade deletes translations
 
             return redirect()
                 ->route('admin.checkout-modules.index')
@@ -278,23 +238,13 @@ class CheckoutModuleController extends Controller
         }
     }
 
-    // =========================================================
-
     /**
-     * METHOD 7: toggle()
-     *
-     * Module ko active/inactive karta hai — AJAX se call hota hai.
-     * URL: POST /admin/checkout-modules/{id}/toggle
-     * Returns: JSON
+     * TOGGLE active/inactive — POST /admin/checkout-modules/{id}/toggle
      */
     public function toggle(int $id)
     {
         $module = CheckoutModule::findOrFail($id);
-
-        // is_active flip karo
-        $module->update([
-            'is_active' => !$module->is_active,
-        ]);
+        $module->update(['is_active' => !$module->is_active]);
 
         return response()->json([
             'success'   => true,
@@ -305,13 +255,8 @@ class CheckoutModuleController extends Controller
         ]);
     }
 
-    // =========================================================
-    // PRIVATE HELPERS
-    // =========================================================
+    // ── Private Helpers ────────────────────────────────────────
 
-    /**
-     * Supported input types ki list — dropdown ke liye
-     */
     private function getInputTypes(): array
     {
         return [
@@ -325,9 +270,6 @@ class CheckoutModuleController extends Controller
         ];
     }
 
-    /**
-     * Supported locales — translations form ke liye
-     */
     private function getSupportedLocales(): array
     {
         return [
