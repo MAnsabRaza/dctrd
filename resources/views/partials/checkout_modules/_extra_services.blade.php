@@ -1,91 +1,54 @@
 {{-- resources/views/partials/checkout_modules/_extra_services.blade.php --}}
 
-<div class="form-group mt-24" id="checkout-module-extra_services">
-    <label class="form-group-label">
+@php
+    $itemKey = $itemId ?? '0';
+    $options = $module->config['options'] ?? [];
+    $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]";
+@endphp
+
+<div
+    class="checkout-module-card checkout-module-card--extras"
+    id="checkout-module-extra-services-{{ $itemKey }}"
+    data-module-name="{{ $module->name }}"
+    data-price-type="additive"
+>
+    <div class="font-13 font-weight-bold text-dark">
         {{ $module->translated_label }}
         @if($module->is_required)
             <span class="text-danger">*</span>
         @endif
-    </label>
-    
+    </div>
+
     @if($module->translated_help_text)
-        <p class="text-muted small mb-2">{{ $module->translated_help_text }}</p>
+        <p class="checkout-module-helper mb-0 mt-4">{{ $module->translated_help_text }}</p>
     @endif
 
-    @php
-        $options = $module->config['options'] ?? [];
-    @endphp
-
-    @php
-        $prefix = isset($itemId) ? "checkout_modules[{$itemId}][{$module->name}]" : "checkout_modules[{$module->name}]";
-    @endphp
-
-    <div class="extra-services-list">
+    <div class="checkout-extra-grid mt-12">
         @foreach($options as $index => $option)
-            @php $optId = $itemId ?? '0'; @endphp
-            <div class="extra-service-item">
-                <label class="custom-checkbox">
-                    <input 
-                        type="checkbox" 
-                        name="{{ $prefix }}[]"
-                        value="{{ $option['label'] }}"
-                        class="checkout-extra-service"
-                        data-price="{{ $option['price'] ?? 0 }}"
-                        id="checkout_extra_{{ $optId }}_{{ $index }}"
-                        {{ in_array($option['label'], old($prefix, [])) ? 'checked' : '' }}
-                    >
-                    <span>{{ $option['label'] }}</span>
-                    <span class="price">+${{ number_format($option['price'] ?? 0, 2) }}</span>
-                </label>
-            </div>
+            <label class="checkout-extra-option">
+                <input
+                    type="checkbox"
+                    name="{{ $prefix }}[]"
+                    value="{{ $option['label'] }}"
+                    class="checkout-extra-service"
+                    data-price="{{ $option['price'] ?? 0 }}"
+                    id="checkout_extra_{{ $itemKey }}_{{ $index }}"
+                    {{ in_array($option['label'], old('checkout_modules.' . $itemKey . '.' . $module->name, [])) ? 'checked' : '' }}
+                >
+                <span class="checkout-extra-option__label">{{ $option['label'] }}</span>
+                <span class="checkout-extra-option__price">+{{ handlePrice($option['price'] ?? 0) }}</span>
+            </label>
         @endforeach
     </div>
 
-    @error('checkout_modules.extra_services')
+    @error('checkout_modules.' . $itemKey . '.extra_services')
         <div class="text-danger small mt-1">{{ $message }}</div>
     @enderror
 </div>
 
 @push('scripts_bottom')
-    <style>
-        .extra-services-list {
-            display: grid;
-            gap: 10px;
-            margin-top: 12px;
-        }
-        .extra-service-item {
-            display: block;
-        }
-        .custom-checkbox {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .custom-checkbox:hover {
-            background: #f9f9f9;
-            border-color: #007bff;
-        }
-        .custom-checkbox input[type="checkbox"] {
-            margin-right: 10px;
-            cursor: pointer;
-        }
-        .custom-checkbox input[type="checkbox"]:checked + span,
-        .custom-checkbox input[type="checkbox"]:checked + span + .price {
-            color: #007bff;
-            font-weight: 600;
-        }
-        .custom-checkbox .price {
-            margin-left: auto;
-            color: #28a745;
-            font-weight: 500;
-        }
-    </style>
     <script>
-        $(document).on('change', '.checkout-extra-service', function() {
+        $(document).on('change', '.checkout-extra-service', function () {
             $(document).trigger('checkout:priceUpdate');
         });
     </script>

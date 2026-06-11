@@ -1,13 +1,17 @@
+@php
+    $cartTaxType = !empty($cartItemInfo['isProduct']) ? 'store' : 'general';
+@endphp
+
 <div class="card-with-mask mb-20 {{ !empty($className) ? $className : '' }}">
     <div class="mask-8-white z-index-1 border-dashed border-gray-300"></div>
 
-    <div class="position-relative z-index-2 d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between bg-white p-8 rounded-16 border-gray-200 w-100 h-100">
+    <div class="cart-item-card position-relative z-index-2 d-flex flex-column flex-xl-row align-items-xl-start justify-content-between bg-white p-12 p-lg-16 rounded-16 border-gray-200 w-100 h-100">
         <div class="d-flex">
             <div class="cart-item__image rounded-8 bg-gray-200">
                 <img src="{{ $cartItemInfo['imgPath'] }}" class="img-cover rounded-8" alt="{{ $cartItemInfo['title'] }}">
             </div>
 
-            <div class="ml-8">
+            <div class="ml-8 cart-item-card__meta">
                 <a href="{{ $cartItemInfo['itemUrl'] ?? '#!' }}" target="_blank">
                     <h6 class="font-12 text-dark">{{ $cartItemInfo['title'] }}</h6>
                 </a>
@@ -104,7 +108,7 @@
             </div>
         @endif
 
-        <div class="d-flex align-items-center justify-content-between justify-content-lg-start mt-16 mt-lg-0">
+        <div class="d-flex align-items-center justify-content-between justify-content-xl-start mt-16 mt-xl-0 cart-item-card__price">
             <div class="mr-0 mr-lg-72">
                 @if(!empty($cartItemInfo['discountPrice']))
                     <div class="d-flex flex-column">

@@ -27,18 +27,30 @@ class CartController extends Controller
         $carts = Cart::where('creator_id', $user->id)
             ->with([
                 'user',
-                'webinar',
-                'installmentPayment',
+                'webinar.teacher',
+                'bundle.teacher',
+                'eventTicket.event.creator',
+                'meetingPackage.creator',
+                'booking.creator',
+                'subscribe',
+                'promotion',
+                'gift',
+                'installmentPayment.installmentOrder.webinar.teacher',
+                'installmentPayment.installmentOrder.bundle.teacher',
+                'installmentPayment.installmentOrder.product.creator',
+                'installmentPayment.installmentOrder.subscribe',
+                'installmentPayment.installmentOrder.registrationPackage',
                 'reserveMeeting' => function ($query) {
                     $query->with([
                         'meeting',
+                        'meeting.creator',
                         'meetingTime'
                     ]);
                 },
                 'ticket',
                 'productOrder' => function ($query) {
                     $query->whereHas('product');
-                    $query->with(['product']);
+                    $query->with(['product.creator']);
                 }
             ])
             ->get();
@@ -70,12 +82,14 @@ class CartController extends Controller
                     ->where('show_only_on_empty_cart', false)
                     ->where('enable', true)
                     ->first();
+                $checkoutModulesByCart = $this->getCheckoutModulesByCart($carts);
 
 
                 $data = [
                     'pageTitle' => trans('public.cart_page_title'),
                     'user' => $user,
                     'carts' => $carts,
+                    'checkoutModulesByCart' => $checkoutModulesByCart,
                     'calculatePrices' => $calculate,
                     'userGroup' => $user->getUserGroup(),
                     'hasPhysicalProduct' => (count($hasPhysicalProduct) > 0),
@@ -195,6 +209,48 @@ class CartController extends Controller
         }
 
         return $productCount;
+    }
+
+    private function getCheckoutModulesByCart($carts): array
+    {
+        $checkoutModuleService = app(CheckoutModuleService::class);
+        $modulesByCart = [];
+
+        foreach ($carts as $cart) {
+            $entityType = null;
+            $entityId = null;
+            $orgId = null;
+
+            if (!empty($cart->webinar_id)) {
+                $entityType = 'course';
+                $entityId = $cart->webinar_id;
+                $orgId = optional($cart->webinar)->teacher_id;
+            } elseif (!empty($cart->product_order_id) && !empty($cart->productOrder->product_id)) {
+                $entityType = 'product';
+                $entityId = $cart->productOrder->product_id;
+                $orgId = optional(optional($cart->productOrder)->product)->creator_id;
+            } elseif (!empty($cart->reserve_meeting_id)) {
+                $entityType = 'booking';
+                $entityId = $cart->reserve_meeting_id;
+                $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
+            } elseif (!empty($cart->meeting_package_id)) {
+                $entityType = 'booking';
+                $entityId = $cart->meeting_package_id;
+                $orgId = optional($cart->meetingPackage)->creator_id;
+            }
+
+            if (empty($entityType) || empty($entityId) || empty($orgId)) {
+                continue;
+            }
+
+            try {
+                $modulesByCart[$cart->id] = $checkoutModuleService->getModulesForEntity($entityType, $entityId, $orgId);
+            } catch (\Throwable $e) {
+                $modulesByCart[$cart->id] = collect();
+            }
+        }
+
+        return $modulesByCart;
     }
 
     private function calculateProductDeliveryFee($carts)

@@ -1,3 +1,7 @@
+@php
+    $cartTaxType = !empty($cartItemInfo['isProduct']) ? 'store' : 'general';
+@endphp
+
 <div class="card-with-mask mb-20 {{ !empty($className) ? $className : '' }}">
     <div class="mask-8-white z-index-1 border-dashed border-gray-300"></div>
 
