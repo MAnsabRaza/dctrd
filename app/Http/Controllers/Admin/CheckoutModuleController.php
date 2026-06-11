@@ -25,7 +25,7 @@ class CheckoutModuleController extends Controller
         $modules = CheckoutModule::orderBy('order_index', 'asc')->paginate(20);
 
         return view('admin.checkout_modules.index', [
-            'pageTitle'            => trans('admin/checkout_modules.list_title'),
+            'pageTitle'            => trans('admin/pages/checkout_modules.list_title'),
             'modules'              => $modules,
             'editModule'           => null,
             'inputTypes'           => $this->getInputTypes(),
@@ -42,7 +42,7 @@ class CheckoutModuleController extends Controller
         $modules = CheckoutModule::orderBy('order_index', 'asc')->paginate(20);
 
         return view('admin.checkout_modules.index', [
-            'pageTitle'            => trans('admin/checkout_modules.create_title'),
+            'pageTitle'            => trans('admin/pages/checkout_modules.create_title'),
             'modules'              => $modules,
             'editModule'           => null,
             'inputTypes'           => $this->getInputTypes(),
@@ -70,10 +70,10 @@ class CheckoutModuleController extends Controller
             'translations.*.label'     => 'nullable|string|max:255',
             'translations.*.help_text' => 'nullable|string',
         ], [
-            'name.unique'     => trans('admin/checkout_modules.name_already_exists'),
-            'input_type.in'   => trans('admin/checkout_modules.invalid_input_type'),
-            'config.json'     => trans('admin/checkout_modules.invalid_json'),
-            'price_rule.json' => trans('admin/checkout_modules.invalid_json'),
+            'name.unique'     => trans('admin/pages/checkout_modules.name_already_exists'),
+            'input_type.in'   => trans('admin/pages/checkout_modules.invalid_input_type'),
+            'config.json'     => trans('admin/pages/checkout_modules.invalid_json'),
+            'price_rule.json' => trans('admin/pages/checkout_modules.invalid_json'),
         ]);
 
         DB::beginTransaction();
@@ -104,13 +104,13 @@ class CheckoutModuleController extends Controller
             DB::commit();
 
             return redirect($this->baseUrl())
-                ->with('success', trans('admin/checkout_modules.created_successfully'));
+                ->with('success', trans('admin/pages/checkout_modules.created_successfully'));
 
         } catch (\Exception $e) {
             DB::rollBack();
             return back()
                 ->withInput()
-                ->with('error', trans('admin/checkout_modules.create_failed') . ': ' . $e->getMessage());
+                ->with('error', trans('admin/pages/checkout_modules.create_failed') . ': ' . $e->getMessage());
         }
     }
 
@@ -131,7 +131,7 @@ class CheckoutModuleController extends Controller
         $modules    = CheckoutModule::orderBy('order_index', 'asc')->paginate(20);
 
         return view('admin.checkout_modules.index', [
-            'pageTitle'            => trans('admin/checkout_modules.edit_title'),
+            'pageTitle'            => trans('admin/pages/checkout_modules.edit_title'),
             'modules'              => $modules,
             'editModule'           => $editModule,
             'inputTypes'           => $this->getInputTypes(),
@@ -190,13 +190,13 @@ class CheckoutModuleController extends Controller
             DB::commit();
 
             return redirect($this->baseUrl())
-                ->with('success', trans('admin/checkout_modules.updated_successfully'));
+                ->with('success', trans('admin/pages/checkout_modules.updated_successfully'));
 
         } catch (\Exception $e) {
             DB::rollBack();
             return back()
                 ->withInput()
-                ->with('error', trans('admin/checkout_modules.update_failed') . ': ' . $e->getMessage());
+                ->with('error', trans('admin/pages/checkout_modules.update_failed') . ': ' . $e->getMessage());
         }
     }
 
@@ -216,7 +216,7 @@ class CheckoutModuleController extends Controller
             if ($inUse) {
                 return back()->with(
                     'error',
-                    trans('admin/checkout_modules.cannot_delete_in_use', ['name' => $module->name])
+                    trans('admin/pages/checkout_modules.cannot_delete_in_use', ['name' => $module->name])
                 );
             }
         }
@@ -225,12 +225,12 @@ class CheckoutModuleController extends Controller
             $module->delete(); // cascade removes translations
 
             return redirect($this->baseUrl())
-                ->with('success', trans('admin/checkout_modules.deleted_successfully'));
+                ->with('success', trans('admin/pages/checkout_modules.deleted_successfully'));
 
         } catch (\Exception $e) {
             return back()->with(
                 'error',
-                trans('admin/checkout_modules.delete_failed') . ': ' . $e->getMessage()
+                trans('admin/pages/checkout_modules.delete_failed') . ': ' . $e->getMessage()
             );
         }
     }
@@ -247,8 +247,8 @@ class CheckoutModuleController extends Controller
             'success'   => true,
             'is_active' => $module->is_active,
             'message'   => $module->is_active
-                ? trans('admin/checkout_modules.module_activated')
-                : trans('admin/checkout_modules.module_deactivated'),
+                ? trans('admin/pages/checkout_modules.module_activated')
+                : trans('admin/pages/checkout_modules.module_deactivated'),
         ]);
     }
 
@@ -257,13 +257,13 @@ class CheckoutModuleController extends Controller
     private function getInputTypes(): array
     {
         return [
-            'date_range'    => trans('admin/checkout_modules.input_type_date_range'),
-            'time_slot'     => trans('admin/checkout_modules.input_type_time_slot'),
-            'select'        => trans('admin/checkout_modules.input_type_select'),
-            'stepper'       => trans('admin/checkout_modules.input_type_stepper'),
-            'checkbox_list' => trans('admin/checkout_modules.input_type_checkbox_list'),
-            'info_checkbox' => trans('admin/checkout_modules.input_type_info_checkbox'),
-            'textarea'      => trans('admin/checkout_modules.input_type_textarea'),
+            'date_range'    => trans('admin/pages/checkout_modules.input_type_date_range'),
+            'time_slot'     => trans('admin/pages/checkout_modules.input_type_time_slot'),
+            'select'        => trans('admin/pages/checkout_modules.input_type_select'),
+            'stepper'       => trans('admin/pages/checkout_modules.input_type_stepper'),
+            'checkbox_list' => trans('admin/pages/checkout_modules.input_type_checkbox_list'),
+            'info_checkbox' => trans('admin/pages/checkout_modules.input_type_info_checkbox'),
+            'textarea'      => trans('admin/pages/checkout_modules.input_type_textarea'),
         ];
     }
 
