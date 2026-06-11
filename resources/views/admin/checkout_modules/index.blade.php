@@ -132,7 +132,7 @@
 
                                                                         {{-- Delete --}}
                                                                         @include('admin.includes.delete_button', [
-                                                                            'url'       => getAdminPanelUrl() . '/checkout-modules/' . $module->id,
+                                                                            'url'       => getAdminPanelUrl() . '/checkout-modules/' . $module->id . '/delete',
                                                                             'btnClass'  => 'dropdown-item text-danger mb-0 py-3 px-0 font-14',
                                                                             'btnText'   => trans('admin/main.delete'),
                                                                             'btnIcon'   => 'trash',
@@ -187,6 +187,7 @@
                                                            class="form-control @error('name') is-invalid @enderror"
                                                            value="{{ !empty($editModule) ? $editModule->name : old('name') }}"
                                                            placeholder="{{ trans('admin/pages/checkout_modules.name_placeholder') }}"
+                                                           required
                                                            {{ !empty($editModule) ? 'readonly' : '' }}/>
                                                     <div class="text-muted text-small mt-1">
                                                         {{ trans('admin/pages/checkout_modules.name_hint') }}
@@ -200,7 +201,8 @@
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/pages/checkout_modules.input_type') }} <span class="text-danger">*</span></label>
                                                     <select name="input_type"
-                                                            class="form-control @error('input_type') is-invalid @enderror">
+                                                            class="form-control @error('input_type') is-invalid @enderror"
+                                                            required>
                                                         <option value="">— {{ trans('admin/main.select') }} —</option>
                                                         @foreach($inputTypes as $value => $label)
                                                             <option value="{{ $value }}"
@@ -309,7 +311,8 @@
                                                     <label>{{ trans('admin/pages/checkout_modules.order') }}</label>
                                                     <input type="number" name="order_index" min="0"
                                                            class="form-control @error('order_index') is-invalid @enderror"
-                                                           value="{{ !empty($editModule) ? $editModule->order_index : old('order_index', 0) }}"/>
+                                                           value="{{ !empty($editModule) ? $editModule->order_index : old('order_index', 0) }}"
+                                                           required/>
                                                     @error('order_index')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror

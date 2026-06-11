@@ -232,7 +232,9 @@ Route::group(['prefix' => 'financial/location-sales'], function () {
  * CHECKOUT MODULES ROUTES (Admin Panel)
  * ═════════════════════════════════════════════════════════════════
  */
-Route::resource('checkout-modules', \App\Http\Controllers\Admin\CheckoutModuleController::class);
+Route::resource('checkout-modules', \App\Http\Controllers\Admin\CheckoutModuleController::class)->except(['show']);
+Route::get('checkout-modules/{id}/delete', [\App\Http\Controllers\Admin\CheckoutModuleController::class, 'destroy'])
+    ->name('admin.checkout-modules.delete');
 Route::post('checkout-modules/{id}/toggle', [\App\Http\Controllers\Admin\CheckoutModuleController::class, 'toggle'])
     ->name('admin.checkout-modules.toggle');
 

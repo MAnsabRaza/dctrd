@@ -155,6 +155,18 @@ class CheckoutModuleController extends Controller
     // =========================================================
 
     /**
+     * METHOD 4.5: show()
+     *
+     * Redirect pure show URL to edit so old links or manual hits do not break.
+     */
+    public function show(int $id)
+    {
+        return redirect()->route('admin.checkout-modules.edit', ['checkout_module' => $id]);
+    }
+
+    // =========================================================
+
+    /**
      * METHOD 5: update()
      *
      * Existing module ka data update karta hai.
