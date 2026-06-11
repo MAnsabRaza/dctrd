@@ -5,7 +5,7 @@ return [
 'chat' => 'Chat',
 'record' => 'Record',
 'features' => 'Features',
-
+'bookings'=>'Bookings',
 'resolution' => 'Resolution',
 'max_bitrate' => 'Maximum bitrate',
 'min_bitrate' => 'Minimum bitrate',
