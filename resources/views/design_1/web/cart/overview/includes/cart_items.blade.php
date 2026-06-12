@@ -81,7 +81,7 @@
 
                 {{-- Checkout Modules (green card) --}}
                 @if($cartModules->isNotEmpty())
-                    @include('design_1.web.cart.overview.includes.checkout_modules', [
+                    @include('design_1.web.cart.overview.includes.checkout_item_modules', [
                         'cart'           => $cart,
                         'checkoutModules'=> $cartModules,
                         'itemKey'        => $itemKey,
