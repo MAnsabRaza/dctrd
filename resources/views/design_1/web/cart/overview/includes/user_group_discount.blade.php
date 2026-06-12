@@ -8,7 +8,7 @@
         </div>
         <div class="ml-8">
             <h6 class="font-14 font-weight-bold text-dark">{{ trans('update.user_group_discount') }}</h6>
-            <div class="mt-4 font-12 text-gray-500">{{ trans('cart.in_user_group', ['group_name' => $userGroup->name , 'percent' => $userGroup->discount]) }}</div>
+            <!-- <div class="mt-4 font-12 text-gray-500">{{ trans('cart.in_user_group', ['group_name' => $userGroup->name , 'percent' => $userGroup->discount]) }}</div> -->
         </div>
     </div>
 </div>
