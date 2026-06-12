@@ -1,5 +1,6 @@
 @php
     $cartTaxType = 'general';
+    $fullAddress = $cartItemInfo['fullAddress'] ?? null;
 @endphp
 
 <div class="card-with-mask mb-20 {{ !empty($className) ? $className : '' }}">
@@ -37,12 +38,23 @@
                         <span class="font-12 text-gray-500 ml-4">{{ trans('update.booking') }}</span>
                     </div>
                 </div>
+
+                @if(!empty($cartItemInfo['locationEnabled']) or !empty($fullAddress))
+                    <div class="booking-location-pill d-inline-flex align-items-center mt-12">
+                        <x-iconsax-lin-location class="icons text-primary" width="16px" height="16px"/>
+                        <span class="ml-4 font-12 text-dark">{{ !empty($fullAddress) ? $fullAddress : 'Location' }}</span>
+                    </div>
+                @endif
             </div>
         </div>
 
         @if(!empty($cart))
             <div class="w-100 mt-16">
-                @include('design_1.web.cart.overview.includes.checkout_item_modules', ['cart' => $cart])
+                @include('design_1.web.cart.overview.includes.checkout_item_modules', [
+                    'cart' => $cart,
+                    'showHeader' => false,
+                    'wrapperClassName' => 'booking-checkout-shell',
+                ])
             </div>
         @endif
 

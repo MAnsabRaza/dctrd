@@ -1,4 +1,7 @@
 @php
+    $showHeader = $showHeader ?? true;
+    $wrapperClassName = $wrapperClassName ?? '';
+
     try {
         $entityType = null;
         $entityId = null;
@@ -29,11 +32,13 @@
 @endphp
 
 @if(!empty($checkoutModules) && count($checkoutModules))
-    <div class="cart-module-shell mt-16 p-12 p-lg-16 rounded-16">
-        <div class="d-flex align-items-center justify-content-between mb-12">
-            <h6 class="font-13 font-weight-bold text-secondary mb-0">{{ trans('update.checkout_options') }}</h6>
-            <span class="font-12 text-gray-500">{{ count($checkoutModules) }}</span>
-        </div>
+    <div class="cart-module-shell mt-16 p-12 p-lg-16 rounded-16 {{ $wrapperClassName }}">
+        @if($showHeader)
+            <div class="d-flex align-items-center justify-content-between mb-12">
+                <h6 class="font-13 font-weight-bold text-secondary mb-0">{{ trans('update.checkout_options') }}</h6>
+                <span class="font-12 text-gray-500">{{ count($checkoutModules) }}</span>
+            </div>
+        @endif
 
         <div class="row gx-3 gy-3">
             @foreach($checkoutModules as $module)

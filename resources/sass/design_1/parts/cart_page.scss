@@ -141,6 +141,36 @@
     top: 100px;
 }
 
+.booking-checkout-shell {
+    border: 1px solid rgba(30, 84, 255, 0.14);
+    background: linear-gradient(180deg, rgba(30, 84, 255, 0.03) 0%, rgba(255, 255, 255, 1) 28%);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+
+    .cart-module-shell {
+        margin-top: 0 !important;
+        padding: 0 !important;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .checkout-module-card {
+        margin-bottom: 0;
+    }
+}
+
+.booking-location-pill {
+    max-width: 100%;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(30, 84, 255, 0.14);
+    background: rgba(30, 84, 255, 0.06);
+
+    .icons {
+        flex-shrink: 0;
+    }
+}
+
 .payment-channel-card {
 
     label {

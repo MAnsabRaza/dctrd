@@ -153,6 +153,15 @@ class CartItemInfo
         $info['discountPrice'] = !empty($booking->discount_price)
             ? convertCurrencyToDefault((float) $booking->discount_price, $booking->currency ?: getDefaultCurrency())
             : null;
+        $info['locationEnabled'] = !empty($booking->location_enabled);
+        $info['addressLine'] = $booking->address_line;
+        $info['city'] = $booking->city;
+        $info['state'] = $booking->state;
+        $info['country'] = $booking->country;
+        $info['postalCode'] = $booking->postal_code;
+        $info['lat'] = $booking->lat;
+        $info['lng'] = $booking->lng;
+        $info['fullAddress'] = $booking->getFullAddressAttribute();
 
         return $info;
     }
