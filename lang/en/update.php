@@ -6,6 +6,7 @@ return [
 'record' => 'Record',
 'features' => 'Features',
 'bookings'=>'Bookings',
+'booking'=>'Booking',
 'resolution' => 'Resolution',
 'max_bitrate' => 'Maximum bitrate',
 'min_bitrate' => 'Minimum bitrate',
