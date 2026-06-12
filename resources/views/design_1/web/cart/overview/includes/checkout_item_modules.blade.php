@@ -15,6 +15,10 @@
             $entityType = 'product';
             $entityId = $cart->productOrder->product_id;
             $orgId = optional(optional($cart->productOrder)->product)->creator_id;
+        } elseif (!empty($cart->booking_id)) {
+            $entityType = 'booking';
+            $entityId = $cart->booking_id;
+            $orgId = optional($cart->booking)->creator_id;
         } elseif (!empty($cart->reserve_meeting_id)) {
             $entityType = 'booking';
             $entityId = $cart->reserve_meeting_id;

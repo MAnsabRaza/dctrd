@@ -6,8 +6,8 @@
 <div class="card-with-mask mb-20 {{ !empty($className) ? $className : '' }}">
     <div class="mask-8-white z-index-1 border-dashed border-gray-300"></div>
 
-    <div class="cart-item-card position-relative z-index-2 d-flex flex-column flex-xl-row align-items-xl-start justify-content-between bg-white p-12 p-lg-16 rounded-16 border-gray-200 w-100 h-100">
-        <div class="d-flex">
+    <div class="booking-cart-card cart-item-card position-relative z-index-2 d-flex flex-column flex-xl-row align-items-xl-start justify-content-between bg-white p-12 p-lg-16 rounded-16 border-gray-200 w-100 h-100">
+        <div class="booking-cart-card__left d-flex">
             <div class="cart-item__image position-relative rounded-8 bg-gray-200">
                 <img src="{{ $cartItemInfo['imgPath'] }}" class="img-cover rounded-8" alt="{{ $cartItemInfo['title'] }}">
             </div>
@@ -49,7 +49,7 @@
         </div>
 
         @if(!empty($cart))
-            <div class="w-100 mt-16">
+            <div class="booking-cart-card__modules w-100 mt-16 mt-xl-0">
                 @include('design_1.web.cart.overview.includes.checkout_item_modules', [
                     'cart' => $cart,
                     'showHeader' => false,
@@ -58,8 +58,8 @@
             </div>
         @endif
 
-        <div class="d-flex align-items-center justify-content-between mt-16 mt-xl-0 cart-item-card__quantity">
-            <div class="d-flex align-items-center mr-56 mr-lg-72">
+        <div class="booking-cart-card__price d-flex align-items-center justify-content-between justify-content-xl-end mt-16 mt-xl-0 cart-item-card__quantity">
+            <div class="d-flex align-items-center mr-56 mr-lg-0">
                 @if(!empty($cartItemInfo['discountPrice']))
                     <div class="d-flex flex-column">
                         <span class="font-16 font-weight-bold text-primary">{{ handlePrice($cartItemInfo['discountPrice'], true, true, false, null, true, $cartTaxType) }}</span>
@@ -71,7 +71,7 @@
             </div>
 
             @if(!empty($cart))
-                <a href="{{ $cartItemInfo['itemUrl'] ?? '#!' }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <a href="{{ $cartItemInfo['itemUrl'] ?? '#!' }}" target="_blank" class="btn btn-sm btn-outline-primary ml-xl-16">
                     <x-iconsax-lin-arrow-right-1 class="icons" width="16px" height="16px"/>
                 </a>
             @endif
