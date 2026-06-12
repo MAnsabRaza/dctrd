@@ -1,173 +1,19 @@
-@import "../bootstrap/variables";
+// ============================================================
+//  Checkout Modules — Cart Page (matches Image 2 design)
+//  Replaces / extends your existing cart.scss entries
+// ============================================================
 
-.cart-empty {
-
-    &__mask {
-        position: absolute;
-        top: -32px;
-        right: -32px;
-        bottom: -32px;
-        left: 50%;
-        border-radius: 48px;
-        background: var(--gray-200);
-        z-index: 1;
-    }
-
-    .cart-empty-image {
-        width: 404px;
-        height: 300px;
-    }
-
-}
-
-.cart-discount-card {
-    position: relative;
-    height: 104px;
-
-    &__mask {
-        position: absolute;
-        top: 8px;
-        bottom: 8px;
-        left: -8px;
-        right: -8px;
-        border-radius: 16px;
-        border: 1px solid var(--gray-200);
-    }
-
-    &__code {
-        position: relative;
-        width: 30%;
-        height: 100%;
-        border-right: 1px dashed var(--gray-300);
-
-        &:before, &:after {
-            content: "";
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background-color: var(--white);
-            right: -8px;
-        }
-
-        &:before {
-            top: -6px;
-        }
-
-        &:after {
-            bottom: -6px;
-        }
-
-        .rtl & {
-            border-right: none;
-            border-left: 1px dashed var(--gray-300);
-
-            &:before, &:after {
-                right: auto;
-                left: -6px;
-            }
-        }
-    }
-}
-
-.cart-item {
-    &__image {
-        min-width: 120px;
-        width: 120px;
-        height: 85px;
-
-        .product-type-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border: 4px solid var(--white);
-            background-color: rgba(255, 255, 255, 0.30);
-            backdrop-filter: blur(5px);
-        }
-
-        @media (max-width: $screen-sm-max) {
-            min-width: 100px;
-            width: 100px;
-            height: 70px;
-        }
-    }
-
-    &__quantity-card {
-        width: 137px;
-        min-width: 137px;
-    }
-
-    &__quantity-btn {
-        width: 32px;
-        min-width: 32px;
-        height: 48px;
-    }
-}
-
-.cart-coupon-btn {
-    width: 146px;
-    min-width: 146px;
-}
-
-.cart-summary-divider {
-    position: relative;
-    margin: 20px 0;
-    height: 1px;
-    border-top: 1px dashed var(--gray-200);
-
-    &:after, &:before {
-        content: "";
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background-color: var(--gray);
-    }
-
-    &:after {
-        left: -24px;
-    }
-
-    &:before {
-        right: -24px;
-    }
-}
-
-.cart-right-side-section {
-    position: sticky;
-    top: 100px;
-}
-
-.booking-cart-card {
-    gap: 16px;
-
-    &__left {
-        flex: 0 0 280px;
-        min-width: 280px;
-    }
-
-    &__modules {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-
-    &__price {
-        flex: 0 0 150px;
-        min-width: 150px;
-        justify-content: flex-end;
-    }
-}
-
+// ----------------------------------------------------------
+//  Shell that wraps all modules for one booking cart item
+// ----------------------------------------------------------
 .booking-checkout-shell {
-    padding: 12px;
-    border: 1px solid rgba(30, 84, 255, 0.16);
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(30, 84, 255, 0.03) 0%, rgba(255, 255, 255, 1) 34%);
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+    padding: 10px;
+    border: 1.5px solid rgba(30, 84, 255, 0.18);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(30, 84, 255, 0.03) 0%, #ffffff 40%);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 
+    // Override cart-module-shell when nested
     .cart-module-shell {
         margin-top: 0 !important;
         padding: 0 !important;
@@ -176,105 +22,373 @@
         box-shadow: none;
     }
 
+    // ---- Grid: all module cards in ONE horizontal row ----
     .row {
-        --bs-gutter-x: 12px;
-        --bs-gutter-y: 12px;
+        --bs-gutter-x: 0px;
+        --bs-gutter-y: 0px;
+        display: flex;
+        flex-wrap: nowrap;          // keep them side-by-side
+        align-items: stretch;
     }
 
     .row > [class*="col-"] {
-        flex: 1 1 210px;
+        flex: 1 1 0;
+        min-width: 0;
         max-width: none;
+        padding: 0;                 // gutters handled by divider below
     }
 
-    .checkout-module-card {
-        height: 100%;
-        margin-bottom: 0;
-        padding: 12px 14px;
-        border: 1px solid rgba(213, 223, 255, 0.95);
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.98);
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.03);
+    // Vertical divider between module cards
+    .row > [class*="col-"] + [class*="col-"] .checkout-module-card {
+        border-left: 1px solid rgba(213, 223, 255, 0.7);
+        border-radius: 0 12px 12px 0;
     }
 
-    .checkout-inline-fields-card {
-        border: 1px solid rgba(30, 84, 255, 0.14) !important;
-        background: rgba(30, 84, 255, 0.03);
+    .row > [class*="col-"]:first-child .checkout-module-card {
+        border-radius: 12px 0 0 12px;
     }
 
-    .checkout-module-price {
-        color: var(--primary);
-        font-weight: 700;
-    }
-
-    .checkout-module-helper {
-        color: var(--gray-500);
-        font-size: 11px;
+    // If only one col, full radius
+    .row > [class*="col-"]:only-child .checkout-module-card {
+        border-radius: 12px;
     }
 }
 
-.booking-location-pill {
-    max-width: 100%;
-    padding: 10px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(30, 84, 255, 0.14);
-    background: rgba(30, 84, 255, 0.06);
+// ----------------------------------------------------------
+//  Individual module card  (matches the green-border card)
+// ----------------------------------------------------------
+.checkout-module-card {
+    height: 100%;
+    margin-bottom: 0;
+    padding: 10px 14px;
+    border: 1.5px solid rgba(34, 197, 94, 0.45);   // green border like Image 2
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: none;
 
-    .icons {
+    // Label row at top
+    .font-11,
+    label.font-11 {
+        font-size: 11px;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 4px;
+    }
+
+    // Price badge top-right
+    .checkout-module-price {
+        color: var(--primary, #1e54ff);
+        font-weight: 700;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    // Helper / hint text
+    .checkout-module-helper {
+        color: #94a3b8;
+        font-size: 11px;
+    }
+
+    // Meta / badge row (nights count, char count)
+    .checkout-module-meta {
+        margin-top: 8px;
+    }
+
+    .checkout-module-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: rgba(30, 84, 255, 0.07);
+        border: 1px solid rgba(30, 84, 255, 0.14);
+        font-size: 11px;
+        color: #334155;
+    }
+}
+
+// ----------------------------------------------------------
+//  Inline date/time card  (the inner white box in Image 2)
+// ----------------------------------------------------------
+.checkout-inline-fields-card {
+    border: 1.5px solid rgba(34, 197, 94, 0.4) !important;
+    border-radius: 10px !important;
+    background: rgba(34, 197, 94, 0.04) !important;
+    padding: 8px 10px !important;
+
+    .row {
+        flex-wrap: nowrap !important;
+    }
+
+    .col-6 {
+        padding: 0 8px;
+    }
+
+    .col-6:first-child {
+        border-right: 1px solid #e2e8f0;
+        padding-left: 0;
+    }
+
+    .col-6:last-child {
+        padding-right: 0;
+    }
+}
+
+// Native date/time input — clean look
+.checkout-inline-date-input,
+.checkout-date-input {
+    border: none !important;
+    background: transparent !important;
+    font-size: 12px;
+    color: #0f172a;
+    padding: 0 !important;
+    width: 100%;
+    outline: none;
+    cursor: pointer;
+
+    &::-webkit-calendar-picker-indicator {
+        opacity: 0.5;
+        cursor: pointer;
+    }
+}
+
+// ----------------------------------------------------------
+//  Staff member card inline style
+// ----------------------------------------------------------
+.checkout-module-card--staff {
+
+    .checkout-inline-fields-card {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkout-staff-select {
+        border: none !important;
+        background: transparent !important;
+        font-size: 12px;
+        color: #0f172a;
+        flex: 1;
+        padding: 0;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    // green check icon for selected staff
+    .staff-check-icon {
+        color: #22c55e;
         flex-shrink: 0;
     }
 }
 
-@media (max-width: $screen-lg-max) {
-    .booking-cart-card {
-        &__left,
-        &__modules,
-        &__price {
+// ----------------------------------------------------------
+//  Time slot grid  (hours module)
+// ----------------------------------------------------------
+.checkout-time-slot-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.checkout-time-slot-option {
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    font-size: 11px;
+    color: #334155;
+    transition: all 0.15s ease;
+    margin: 0;
+
+    input[type="radio"] {
+        display: none;
+    }
+
+    &:has(input:checked),
+    &.selected {
+        border-color: var(--primary, #1e54ff);
+        background: rgba(30, 84, 255, 0.07);
+        color: var(--primary, #1e54ff);
+        font-weight: 600;
+    }
+
+    &:hover {
+        border-color: var(--primary, #1e54ff);
+        background: rgba(30, 84, 255, 0.04);
+    }
+}
+
+// ----------------------------------------------------------
+//  Extra services grid
+// ----------------------------------------------------------
+.checkout-extra-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.checkout-extra-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s ease;
+    margin: 0;
+
+    input[type="checkbox"] {
+        margin-right: 8px;
+        accent-color: var(--primary, #1e54ff);
+    }
+
+    &__label {
+        flex: 1;
+        color: #0f172a;
+    }
+
+    &__price {
+        color: var(--primary, #1e54ff);
+        font-weight: 600;
+        font-size: 11px;
+    }
+
+    &:has(input:checked) {
+        border-color: var(--primary, #1e54ff);
+        background: rgba(30, 84, 255, 0.04);
+    }
+}
+
+// ----------------------------------------------------------
+//  Textarea (message / reviewer modules)
+// ----------------------------------------------------------
+.checkout-textarea {
+    font-size: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    resize: vertical;
+    min-height: 72px;
+
+    &:focus {
+        border-color: rgba(30, 84, 255, 0.4);
+        box-shadow: 0 0 0 3px rgba(30, 84, 255, 0.06);
+    }
+}
+
+// ----------------------------------------------------------
+//  Stepper (persons / children / rooms)
+// ----------------------------------------------------------
+.checkout-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.checkout-stepper-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+
+    &:hover {
+        background: #e2e8f0;
+    }
+
+    &:active {
+        background: #cbd5e1;
+    }
+}
+
+.checkout-stepper-input {
+    width: 36px;
+    text-align: center;
+    border: none;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0f172a;
+    background: #fff;
+    padding: 0;
+    height: 28px;
+
+    &:focus {
+        outline: none;
+        box-shadow: none;
+    }
+
+    // hide number arrows
+    -moz-appearance: textfield;
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+    }
+}
+
+// ----------------------------------------------------------
+//  Cancellation policy card
+// ----------------------------------------------------------
+.checkout-module-card--policy {
+    .policy-info-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(30, 84, 255, 0.05);
+        border: 1px solid rgba(30, 84, 255, 0.14);
+        margin-top: 10px;
+
+        p {
+            font-size: 12px;
+            color: #475569;
+            margin: 0;
+            line-height: 1.6;
+        }
+    }
+}
+
+// ----------------------------------------------------------
+//  Responsive: stack vertically on mobile
+// ----------------------------------------------------------
+@media (max-width: 767px) {
+    .booking-checkout-shell {
+        .row {
+            flex-wrap: wrap !important;
+        }
+
+        .row > [class*="col-"] {
             flex: 1 1 100%;
-            min-width: 0;
         }
 
-        &__price {
-            justify-content: space-between;
-        }
-    }
-}
-
-.payment-channel-card {
-
-    label {
-        height: 161px;
-
-        .gateway-card {
-            border-radius: 16px;
-            border: 1px solid var(--gray-200);
-            transition: all .1s ease;
+        .row > [class*="col-"] + [class*="col-"] .checkout-module-card {
+            border-left: none;
+            border-top: 1px solid rgba(213, 223, 255, 0.7);
+            border-radius: 0 0 12px 12px;
         }
 
-        .gateway-mask {
-            position: absolute;
-            inset: 8px;
-            bottom: -8px;
-            border-radius: 16px;
-            border: 1px solid var(--gray-200);
-            z-index: 1;
+        .row > [class*="col-"]:first-child .checkout-module-card {
+            border-radius: 12px 12px 0 0;
         }
     }
-
-    input {
-        visibility: hidden;
-        position: absolute;
-        opacity: 0;
-
-        &:checked ~ label {
-            & .gateway-card, & .gateway-mask {
-                border: 1px solid var(--primary);
-            }
-        }
-    }
-}
-
-
-.disabled-payment-channel {
-    border-radius: 10px;
-    filter: grayscale(100%);
 }
