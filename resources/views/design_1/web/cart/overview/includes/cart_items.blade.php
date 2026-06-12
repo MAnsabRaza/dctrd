@@ -1,99 +1,152 @@
-@if($carts->whereNotNull('webinar_id')->count())
-    <div class="card-before-line px-16">
-        <h5 class="font-14 mb-16">{{ trans('update.courses') }}</h5>
+{{--
+    design_1/web/cart/overview/includes/cart_items.blade.php
+    Loops all cart items. Booking items get Image-2 style card.
+    All others get the standard card.
+--}}
 
-        @foreach($carts->whereNotNull('webinar_id') as $cartItem)
-            @include('design_1.web.cart.overview.includes.item_cards.course', [
-                'cartItemInfo' => $cartItem->getItemInfo(),
-                'cart' => $cartItem,
-            ])
-        @endforeach
-    </div>
-@endif
+@foreach($carts as $cart)
+    @php
+        $cartItemInfo = app(\App\Mixins\Cart\CartItemInfo::class);
+        $itemInfo     = $cartItemInfo->getItemInfo($cart);
+        $itemKey      = $cart->id;
+        $cartModules  = $checkoutModulesByCart[$cart->id] ?? collect();
+    @endphp
 
-@if($carts->whereNotNull('bundle_id')->count())
-    <div class="card-before-line px-16">
-        <h5 class="font-14 mb-16">{{ trans('update.bundles') }}</h5>
+    {{-- ════════════════════════════════════════
+         BOOKING ITEM  (Image-2 style)
+    ════════════════════════════════════════ --}}
+    @if(!empty($cart->booking_id))
+        @php
+            $booking     = $cart->booking;
+            $title       = $booking->title ?? ($itemInfo['title'] ?? '');
+            $city        = $booking->city ?? ($itemInfo['city'] ?? '');
+            $country     = $booking->country ?? ($itemInfo['country'] ?? '');
+            $locationStr = collect(array_filter([$city, $country]))->implode(', ');
+            $thumbUrl    = $itemInfo['imgPath'] ?? $booking->thumbnail_url ?? '';
+        @endphp
 
-        @foreach($carts->whereNotNull('bundle_id') as $cartItem)
-            @include('design_1.web.cart.overview.includes.item_cards.course', [
-                'cartItemInfo' => $cartItem->getItemInfo(),
-                'cart' => $cartItem,
-            ])
-        @endforeach
-    </div>
-@endif
+        <div class="cart-booking-row" id="cart-item-{{ $itemKey }}">
 
-@if($carts->whereNotNull('reserve_meeting_id')->count() or $carts->whereNotNull('meeting_package_id')->count())
-    <div class="card-before-line px-16 mt-16">
-        <h5 class="font-14 mb-16">{{ trans('panel.meetings') }}</h5>
+            {{-- Thumb --}}
+            <div class="cart-booking-thumb">
+                @if($thumbUrl)
+                    <img src="{{ $thumbUrl }}" alt="{{ $title }}">
+                @else
+                    <x-iconsax-lin-calendar-2 class="icons text-gray-400" width="28px" height="28px"/>
+                @endif
+            </div>
 
-        @foreach($carts->whereNotNull('reserve_meeting_id') as $cartItem)
-            @include('design_1.web.cart.overview.includes.item_cards.meeting', [
-                'cartItemInfo' => $cartItem->getItemInfo(),
-                'cart' => $cartItem,
-            ])
-        @endforeach
+            {{-- Content --}}
+            <div class="flex-1 min-w-0">
 
-        @foreach($carts->whereNotNull('meeting_package_id') as $cartItem)
-            @include('design_1.web.cart.overview.includes.item_cards.meeting_package', [
-                'cartItemInfo' => $cartItem->getItemInfo(),
-                'cart' => $cartItem,
-            ])
-        @endforeach
-    </div>
-@endif
+                {{-- Title + location --}}
+                <div class="d-flex align-items-start justify-content-between gap-8">
+                    <div>
+                        <div class="font-15 font-weight-bold text-dark">
+                            {{ $title }}
+                            @if($locationStr)
+                                <span class="font-13 font-weight-400 text-gray-400"> at {{ $locationStr }}</span>
+                            @endif
+                        </div>
 
+                        {{-- Creator + category --}}
+                        <div class="d-flex align-items-center flex-wrap gap-10 mt-6">
+                            @if(!empty($booking->creator))
+                                <a href="{{ $booking->creator->getProfileUrl() }}"
+                                   class="d-flex align-items-center text-gray-500 text-decoration-none"
+                                   onclick="event.stopPropagation()">
+                                    <img src="{{ $booking->creator->getAvatar(20) }}"
+                                         class="rounded-circle img-cover mr-4"
+                                         style="width:18px;height:18px;"
+                                         alt="{{ $booking->creator->full_name }}">
+                                    <span class="font-12">{{ $booking->creator->full_name }}</span>
+                                </a>
+                            @endif
 
-@if($carts->whereNotNull('booking_id')->count())
-    <div class="card-before-line px-16 mt-16">
-        <h5 class="font-14 mb-16">{{ trans('update.bookings') }}</h5>
+                            @if(!empty($booking->category))
+                                <span class="font-12 text-gray-400">{{ $booking->category->title }}</span>
+                            @endif
 
-        @foreach($carts->whereNotNull('booking_id') as $cartItem)
-            @include('design_1.web.cart.overview.includes.item_cards.booking', [
-                'cartItemInfo' => $cartItem->getItemInfo(),
-                'cart' => $cartItem,
-            ])
-        @endforeach
-    </div>
-@endif
+                            <span class="badge badge-light font-11 text-gray-500">
+                                <x-iconsax-lin-calendar-2 class="icons" width="11px" height="11px"/> Booking
+                            </span>
+                        </div>
+                    </div>
 
-@if($carts->whereNotNull('product_order_id')->count())
-    <div class="card-before-line px-16 mt-16">
-        <h5 class="font-14 mb-16">{{ trans('update.products') }}</h5>
+                    {{-- × Remove --}}
+                    <button type="button" class="cart-remove-btn" data-cart-id="{{ $itemKey }}" title="{{ trans('public.remove') ?? 'Remove' }}">
+                        <x-iconsax-lin-close-circle class="icons text-gray-400" width="16px" height="16px"/>
+                    </button>
+                </div>
 
-        @foreach($carts->whereNotNull('product_order_id') as $cartItem)
-            @include('design_1.web.cart.overview.includes.item_cards.product', [
-                'cartItemInfo' => $cartItem->getItemInfo(),
-                'cart' => $cartItem,
-            ])
-        @endforeach
-    </div>
-@endif
+                {{-- Checkout Modules (green card) --}}
+                @if($cartModules->isNotEmpty())
+                    @include('design_1.web.cart.overview.includes.checkout_modules', [
+                        'cart'           => $cart,
+                        'checkoutModules'=> $cartModules,
+                        'itemKey'        => $itemKey,
+                    ])
+                @endif
 
-@if($carts->whereNotNull('event_ticket_id')->count())
-    <div class="card-before-line px-16 mt-16">
-        <h5 class="font-14 mb-16">{{ trans('update.event_tickets') }}</h5>
+            </div>
+        </div>
 
-        @foreach($carts->whereNotNull('event_ticket_id') as $cartItem)
-            @include('design_1.web.cart.overview.includes.item_cards.event_ticket', [
-                'cartItemInfo' => $cartItem->getItemInfo(),
-                'cart' => $cartItem,
-            ])
-        @endforeach
-    </div>
-@endif
+    {{-- ════════════════════════════════════════
+         ALL OTHER ITEMS (courses, products…)
+    ════════════════════════════════════════ --}}
+    @else
+        <div class="cart-item-card" id="cart-item-{{ $itemKey }}">
 
+            {{-- Thumb --}}
+            <div class="flex-shrink-0">
+                <img src="{{ $itemInfo['imgPath'] ?? '' }}"
+                     alt="{{ $itemInfo['title'] ?? '' }}"
+                     class="rounded-12 img-cover"
+                     style="width:68px;height:68px;object-fit:cover;">
+            </div>
 
-@if($carts->whereNotNull('installment_payment_id')->count())
-    <div class="card-before-line px-16 mt-16">
-        <h5 class="font-14 mb-16">{{ trans('update.installment_upfront') }}</h5>
+            {{-- Info --}}
+            <div class="flex-1 min-w-0">
+                @if(!empty($itemInfo['itemUrl']))
+                    <a href="{{ $itemInfo['itemUrl'] }}" class="font-14 font-weight-bold text-dark d-block">{{ $itemInfo['title'] ?? '' }}</a>
+                @else
+                    <div class="font-14 font-weight-bold text-dark">{{ $itemInfo['title'] ?? '' }}</div>
+                @endif
 
-        @foreach($carts->whereNotNull('installment_payment_id') as $cartItem)
-            @include('design_1.web.cart.overview.includes.item_cards.installment_payment', [
-                'cartItemInfo' => $cartItem->getItemInfo(),
-                'cart' => $cartItem,
-            ])
-        @endforeach
-    </div>
-@endif
+                @if(!empty($itemInfo['teacherName']))
+                    <div class="font-12 text-gray-500 mt-4">{{ $itemInfo['teacherName'] }}</div>
+                @endif
+
+                @if(!empty($itemInfo['extraHint']))
+                    <span class="badge badge-light font-11 mt-4">{{ $itemInfo['extraHint'] }}</span>
+                @endif
+
+                {{-- Checkout modules if any --}}
+                @if($cartModules->isNotEmpty())
+                    @include('design_1.web.cart.overview.includes.checkout_modules', [
+                        'cart'           => $cart,
+                        'checkoutModules'=> $cartModules,
+                        'itemKey'        => $itemKey,
+                    ])
+                @endif
+            </div>
+
+            {{-- Price --}}
+            <div class="flex-shrink-0 text-right">
+                @if(!empty($itemInfo['discountPrice']))
+                    <div class="font-14 font-weight-bold text-primary">{{ handlePrice($itemInfo['discountPrice']) }}</div>
+                    <div class="font-12 text-gray-400 text-line-through mt-2">{{ handlePrice($itemInfo['price']) }}</div>
+                @else
+                    <div class="font-14 font-weight-bold text-primary">{{ handlePrice($itemInfo['price'] ?? 0) }}</div>
+                @endif
+            </div>
+
+            {{-- × Remove --}}
+            <button type="button" class="cart-remove-btn" data-cart-id="{{ $itemKey }}" title="{{ trans('public.remove') ?? 'Remove' }}">
+                <x-iconsax-lin-close-circle class="icons text-gray-400" width="16px" height="16px"/>
+            </button>
+
+        </div>
+    @endif
+
+@endforeach
