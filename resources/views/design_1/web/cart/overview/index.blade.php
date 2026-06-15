@@ -336,18 +336,13 @@
             {{-- ════════ RIGHT COLUMN ════════ --}}
             <div class="col-12 col-lg-4 mt-24 mt-lg-0">
                 <div class="cart-summary-card" id="orderSummaryCard">
-                    <div class="font-16 font-weight-bold text-dark mb-16">
-                        {{ trans('cart.order_summary') ?? 'Order Summary' }}
-                    </div>
+                    
 
                     @include('design_1.web.cart.overview.includes.summary', [
                         'calculatePrices' => $calculatePrices,
                     ])
 
-                    {{-- Single checkout button --}}
-                    <button type="submit" class="btn btn-primary cart-checkout-btn mt-16">
-                        {{ trans('cart.checkout') ?? 'Checkout' }}
-                    </button>
+                
 
                     <div class="d-flex align-items-center justify-content-center gap-8 mt-10">
                         <x-iconsax-lin-shield-tick class="icons text-success" width="14px" height="14px"/>
