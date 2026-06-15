@@ -214,6 +214,81 @@
                 {{-- ── All Cart Items ── --}}
                 @include('design_1.web.cart.overview.includes.cart_items')
 
+                {{-- ════════════════════════════════
+                     DELIVERY ADDRESS — auto-filled from user DB
+                ════════════════════════════════ --}}
+                @auth
+                @php $authUser = auth()->user(); @endphp
+                <div class="cart-location-card" id="cartLocationSection">
+                    <div class="cart-location-card__header" id="cartLocationToggle">
+                        <div class="cart-location-card__title">
+                            <x-iconsax-lin-location class="icons text-primary" width="18px" height="18px"/>
+                            <span>{{ trans('update.delivery_address') ?? 'Delivery Address' }}</span>
+                            <span class="font-12 font-weight-400 text-gray-400">({{ trans('public.optional') ?? 'optional' }})</span>
+                        </div>
+                        <x-iconsax-lin-arrow-down-2 class="icons text-gray-400 cart-location-card__toggle"
+                                                     id="cartLocationChevron"
+                                                     width="16px" height="16px"/>
+                    </div>
+
+                    <div class="cart-location-card__body" id="cartLocationBody" style="display:none;">
+                        <div class="row">
+                            {{-- Address Line --}}
+                            <div class="col-12 mb-14 position-relative">
+                                <div class="form-group mb-0 position-relative">
+                                    <label class="form-group-label font-12">{{ trans('update.address') ?? 'Address' }}</label>
+                                    <input type="text" name="address_line" id="cartAddressLine"
+                                           class="form-control" autocomplete="off"
+                                           placeholder="{{ trans('update.address') ?? 'Start typing address...' }}"
+                                           value="{{ old('address_line', $authUser->address_line ?? $authUser->address ?? '') }}">
+                                    <div class="cart-addr-suggestions d-none" id="cartAddrSuggestions"></div>
+                                </div>
+                            </div>
+
+                            {{-- City --}}
+                            <div class="col-12 col-md-6 mb-14">
+                                <div class="form-group mb-0">
+                                    <label class="form-group-label font-12">{{ trans('update.city') ?? 'City' }}</label>
+                                    <input type="text" name="city" id="cartCity" class="form-control"
+                                           placeholder="{{ trans('update.city') ?? 'City' }}"
+                                           value="{{ old('city', $authUser->city ?? '') }}">
+                                </div>
+                            </div>
+
+                            {{-- State --}}
+                            <div class="col-12 col-md-6 mb-14">
+                                <div class="form-group mb-0">
+                                    <label class="form-group-label font-12">{{ trans('update.state') ?? 'State / Province' }}</label>
+                                    <input type="text" name="state" id="cartState" class="form-control"
+                                           placeholder="{{ trans('update.state') ?? 'State' }}"
+                                           value="{{ old('state', $authUser->state ?? '') }}">
+                                </div>
+                            </div>
+
+                            {{-- Country --}}
+                            <div class="col-12 col-md-6 mb-14">
+                                <div class="form-group mb-0">
+                                    <label class="form-group-label font-12">{{ trans('update.country') ?? 'Country' }}</label>
+                                    <input type="text" name="country" id="cartCountry" class="form-control"
+                                           placeholder="{{ trans('update.country') ?? 'Country' }}"
+                                           value="{{ old('country', $authUser->country ?? '') }}">
+                                </div>
+                            </div>
+
+                            {{-- Postal Code --}}
+                            <div class="col-12 col-md-6 mb-0">
+                                <div class="form-group mb-0">
+                                    <label class="form-group-label font-12">{{ trans('update.postal_code') ?? 'Postal Code' }}</label>
+                                    <input type="text" name="postal_code" id="cartPostalCode" class="form-control"
+                                           placeholder="{{ trans('update.postal_code') ?? 'Postal Code' }}"
+                                           value="{{ old('postal_code', $authUser->postal_code ?? '') }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endauth
+
                 {{-- Coupon --}}
                 @include('design_1.web.cart.overview.includes.coupon')
 
