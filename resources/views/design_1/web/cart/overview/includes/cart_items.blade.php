@@ -287,7 +287,7 @@
                                            {{ old("checkout_modules.{$itemKey}.cancellation_policy") ? 'checked' : '' }}
                                            {{ $policyModule->is_required ? 'required' : '' }}>
                                     <label for="cp_agree_{{ $itemKey }}" class="font-11 text-gray-600 mb-0" style="cursor:pointer;">
-                                        {{ trans('checkout.i_agree_cancellation_policy') ?? 'I agree to the cancellation policy' }}
+                                        {{ trans('cart.i_agree_cancellation_policy') ?? 'I agree to the cancellation policy' }}
                                     </label>
                                 </div>
                             </div>

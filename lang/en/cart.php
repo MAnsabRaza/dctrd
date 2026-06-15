@@ -46,4 +46,8 @@ return [
     'you_not_purchased_this_course' => 'You have not purchased this course.',
     'success_pay_msg_for_free_meeting' => 'The meeting has been successfully reserved.',
     'success_pay_msg_subscribe' => 'You have successfully subscribed to this course.',
+    'items'=>'Items',
+    'order_summary'=>'Order Summary',
+    'secure_payments'=>'Secure Payments',
+    'i_agree_cancellation_policy'=>'I agree to the cancellation policy',
 ];

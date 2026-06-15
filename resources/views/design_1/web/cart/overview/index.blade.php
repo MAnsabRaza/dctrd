@@ -271,7 +271,7 @@
                                     <label class="form-group-label font-12">{{ trans('update.country') ?? 'Country' }}</label>
                                     <input type="text" name="country" id="cartCountry" class="form-control"
                                            placeholder="{{ trans('update.country') ?? 'Country' }}"
-                                           value="{{ old('country', $authUser->country ?? '') }}">
+                                           value="{{ old('country', $authUser->country 
                                 </div>
                             </div>
 
