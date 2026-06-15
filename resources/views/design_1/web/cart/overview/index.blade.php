@@ -335,20 +335,9 @@
 
             {{-- ════════ RIGHT COLUMN ════════ --}}
             <div class="col-12 col-lg-4 mt-24 mt-lg-0">
-                <div class="cart-summary-card" id="orderSummaryCard">
-                    
-
                     @include('design_1.web.cart.overview.includes.summary', [
                         'calculatePrices' => $calculatePrices,
                     ])
-
-                
-
-                    <div class="d-flex align-items-center justify-content-center gap-8 mt-10">
-                        <x-iconsax-lin-shield-tick class="icons text-success" width="14px" height="14px"/>
-                        <span class="font-11 text-gray-400">{{ trans('cart.secure_payments') ?? 'Secure Payments Provided' }}</span>
-                    </div>
-                </div>
             </div>
 
         </div>
