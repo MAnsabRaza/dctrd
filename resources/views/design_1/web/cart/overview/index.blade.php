@@ -7,7 +7,6 @@
         .cart-page-title { font-size: 26px; font-weight: 800; color: #0f172a; }
         .cart-page-subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
 
-        /* Section label */
         .cart-section-label {
             font-size: 12px; font-weight: 700; color: #64748b;
             text-transform: uppercase; letter-spacing: .07em;
@@ -39,7 +38,7 @@
         }
         .cart-booking-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Generic item card (courses, products etc) */
+        /* Generic item card */
         .cart-item-card {
             background: #fff;
             border: 1px solid #e2e8f0;
@@ -93,8 +92,19 @@
             padding: 16px 18px;
             margin-bottom: 14px;
         }
+        .cart-location-card__header {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            cursor: pointer; user-select: none;
+        }
+        .cart-location-card__title {
+            display: flex; align-items: center;
+            gap: 8px; font-size: 14px; font-weight: 700; color: #0f172a;
+        }
+        .cart-location-card__toggle { transition: transform .2s; }
+        .cart-location-card__toggle.open { transform: rotate(180deg); }
+        .cart-location-card__body { margin-top: 14px; }
 
-        /* Address autocomplete */
         .cart-addr-suggestions {
             position: absolute; z-index: 1050;
             width: 100%; max-height: 200px; overflow-y: auto;
@@ -107,73 +117,64 @@
         .cart-addr-item {
             padding: 8px 12px; font-size: 12px; cursor: pointer;
             color: #334155; border-bottom: 1px solid #f1f5f9;
-            transition: background .1s;
         }
-        .cart-addr-item:last-child { border-bottom: none; }
         .cart-addr-item:hover { background: #f0fdf4; color: #15803d; }
 
-        /* Checkout btn */
         .cart-checkout-btn {
             height: 48px; border-radius: 12px;
             font-size: 15px; font-weight: 700;
             width: 100%;
         }
 
-        /* ── User Info Card ── */
-        .cart-user-info-card {
-            background: #fff;
+        /* ── Booking modules — plain card (no green border) ── */
+        .bmod-wrap {
+            margin-top: 12px;
+            background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 16px 18px;
-            margin-bottom: 14px;
+            border-radius: 12px;
+            overflow: hidden;
         }
-        .cart-user-info-card__header {
-            display: flex; align-items: center;
-            justify-content: space-between;
-            cursor: pointer; user-select: none;
+        .bmod-row {
+            display: flex; flex-wrap: wrap;
         }
-        .cart-user-info-card__title {
-            display: flex; align-items: center;
-            gap: 8px; font-size: 14px;
-            font-weight: 700; color: #0f172a;
+        .bmod-col {
+            flex: 1 1 160px; min-width: 0;
+            padding: 10px 14px;
+            border-right: 1px solid #e2e8f0;
         }
-        .cart-user-info-card__toggle { transition: transform .2s; }
-        .cart-user-info-card__toggle.open { transform: rotate(180deg); }
-        .cart-user-info-card__body { margin-top: 14px; }
-
-        /* ── Payment Method Card ── */
-        .cart-payment-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 16px 18px;
-            margin-bottom: 14px;
+        .bmod-col:last-child { border-right: none; }
+        .bmod-label {
+            font-size: 11px; font-weight: 700; color: #64748b;
+            text-transform: uppercase; letter-spacing: .05em;
+            margin-bottom: 5px;
+            display: flex; align-items: center; gap: 4px;
         }
-        .cart-payment-option {
-            display: flex; align-items: center;
-            gap: 10px; padding: 10px 12px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 10px; cursor: pointer;
-            transition: border-color .15s, background .15s;
-            margin-bottom: 8px;
-        }
-        .cart-payment-option:last-child { margin-bottom: 0; }
-        .cart-payment-option.selected,
-        .cart-payment-option:has(input:checked) {
-            border-color: #2563eb;
-            background: rgba(37,99,235,.04);
-        }
-        .cart-payment-option input[type="radio"] {
-            accent-color: #2563eb; flex-shrink: 0;
-        }
-        .cart-payment-option__logo {
-            height: 22px; object-fit: contain; flex-shrink: 0;
-        }
-        .cart-payment-option__label {
+        .bmod-value {
             font-size: 13px; font-weight: 600; color: #0f172a;
+            display: flex; align-items: center; gap: 5px;
         }
-        .cart-payment-option__hint {
-            font-size: 11px; color: #64748b; margin-top: 1px;
+        .bmod-date-input {
+            font-size: 13px; font-weight: 600; color: #0f172a;
+            border: 1px solid #e2e8f0; border-radius: 6px;
+            padding: 3px 6px; background: #fff;
+            cursor: pointer; width: 100%; max-width: 148px;
+        }
+        .bmod-date-input:focus { outline: none; border-color: #94a3b8; }
+        .bmod-nights-badge {
+            display: inline-flex; align-items: center;
+            margin-top: 5px; padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(37,99,235,.08);
+            font-size: 10px; font-weight: 600; color: #2563eb;
+        }
+        .bmod-staff-name {
+            font-size: 13px; font-weight: 600; color: #0f172a;
+            display: flex; align-items: center; gap-6px;
+        }
+
+        @media (max-width: 640px) {
+            .bmod-col { border-right: none; border-bottom: 1px solid #e2e8f0; flex: 1 1 100%; }
+            .bmod-col:last-child { border-bottom: none; }
         }
     </style>
 @endpush
@@ -198,9 +199,7 @@
 
         <div class="row">
 
-            {{-- ════════════════════════════════
-                 LEFT COLUMN — Cart Items
-            ════════════════════════════════ --}}
+            {{-- ════════ LEFT COLUMN ════════ --}}
             <div class="col-12 col-lg-8">
 
                 {{-- Cashback alert --}}
@@ -215,98 +214,6 @@
                 {{-- ── All Cart Items ── --}}
                 @include('design_1.web.cart.overview.includes.cart_items')
 
-                {{-- ════════════════════════════════
-                     USER INFORMATION CARD
-                     Auto-fills from auth user profile
-                ════════════════════════════════ --}}
-                @auth
-                <div class="cart-user-info-card" id="cartUserInfoSection">
-                    <div class="cart-user-info-card__header" id="cartUserInfoToggle">
-                        <div class="cart-user-info-card__title">
-                            <x-iconsax-lin-profile class="icons text-primary" width="18px" height="18px"/>
-                            <span>{{ trans('public.your_information') ?? 'Your Information' }}</span>
-                            <span class="font-12 font-weight-400 text-gray-400">({{ trans('public.optional') ?? 'optional' }})</span>
-                        </div>
-                        <x-iconsax-lin-arrow-down-2 class="icons text-gray-400 cart-user-info-card__toggle"
-                                                     id="cartUserInfoChevron"
-                                                     width="16px" height="16px"/>
-                    </div>
-
-                    <div class="cart-user-info-card__body" id="cartUserInfoBody" style="display:none;">
-                        @php $user = auth()->user(); @endphp
-                        <div class="row">
-                            <div class="col-12 col-md-6 mb-14">
-                                <div class="form-group mb-0">
-                                    <label class="form-group-label font-12">{{ trans('update.full_name') ?? 'Full Name' }}</label>
-                                    <input type="text" name="buyer_name" class="form-control"
-                                           value="{{ old('buyer_name', $user->full_name ?? '') }}"
-                                           placeholder="{{ trans('update.full_name') ?? 'Full Name' }}">
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-14">
-                                <div class="form-group mb-0">
-                                    <label class="form-group-label font-12">{{ trans('auth.email') ?? 'Email' }}</label>
-                                    <input type="email" name="buyer_email" class="form-control"
-                                           value="{{ old('buyer_email', $user->email ?? '') }}"
-                                           placeholder="{{ trans('auth.email') ?? 'Email' }}">
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-0">
-                                <div class="form-group mb-0">
-                                    <label class="form-group-label font-12">{{ trans('update.mobile') ?? 'Phone' }}</label>
-                                    <input type="text" name="buyer_phone" class="form-control"
-                                           value="{{ old('buyer_phone', $user->mobile ?? '') }}"
-                                           placeholder="{{ trans('update.mobile') ?? 'Phone number' }}">
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-0">
-                                <div class="form-group mb-0">
-                                    <label class="form-group-label font-12">{{ trans('update.country') ?? 'Country' }}</label>
-                                    <input type="text" name="buyer_country" class="form-control"
-                                           value="{{ old('buyer_country', $user->country ?? '') }}"
-                                           placeholder="{{ trans('update.country') ?? 'Country' }}">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endauth
-
-                {{-- Location section (above coupon) --}}
-                @include('design_1.web.cart.overview.includes.location_section')
-
-                {{-- ════════════════════════════════
-                     PAYMENT METHOD CARD
-                ════════════════════════════════ --}}
-                @if(!empty($paymentChannels) && count($paymentChannels))
-                <div class="cart-payment-card">
-                    <div class="font-14 font-weight-bold text-dark mb-12 d-flex align-items-center gap-8">
-                        <x-iconsax-lin-card class="icons text-primary" width="18px" height="18px"/>
-                        {{ trans('cart.payment_method') ?? 'Payment Method' }}
-                    </div>
-
-                    @foreach($paymentChannels as $channel)
-                        <label class="cart-payment-option d-flex align-items-center">
-                            <input type="radio" name="payment_method"
-                                   value="{{ $channel->class_name ?? $channel->title }}"
-                                   {{ $loop->first ? 'checked' : '' }}>
-                            @if(!empty($channel->image))
-                                <img src="{{ $channel->image }}" alt="{{ $channel->title }}"
-                                     class="cart-payment-option__logo ml-4">
-                            @else
-                                <x-iconsax-lin-card class="icons text-gray-400 ml-4" width="22px" height="22px"/>
-                            @endif
-                            <div class="ml-8">
-                                <div class="cart-payment-option__label">{{ $channel->title }}</div>
-                                @if(!empty($channel->description))
-                                    <div class="cart-payment-option__hint">{{ $channel->description }}</div>
-                                @endif
-                            </div>
-                        </label>
-                    @endforeach
-                </div>
-                @endif
-
                 {{-- Coupon --}}
                 @include('design_1.web.cart.overview.includes.coupon')
 
@@ -320,9 +227,7 @@
 
             </div>
 
-            {{-- ════════════════════════════════
-                 RIGHT COLUMN — Order Summary
-            ════════════════════════════════ --}}
+            {{-- ════════ RIGHT COLUMN ════════ --}}
             <div class="col-12 col-lg-4 mt-24 mt-lg-0">
                 <div class="cart-summary-card" id="orderSummaryCard">
                     <div class="font-16 font-weight-bold text-dark mb-16">
@@ -333,6 +238,7 @@
                         'calculatePrices' => $calculatePrices,
                     ])
 
+                    {{-- Single checkout button --}}
                     <button type="submit" class="btn btn-primary cart-checkout-btn mt-16">
                         {{ trans('cart.checkout') ?? 'Checkout' }}
                     </button>
@@ -340,23 +246,6 @@
                     <div class="d-flex align-items-center justify-content-center gap-8 mt-10">
                         <x-iconsax-lin-shield-tick class="icons text-success" width="14px" height="14px"/>
                         <span class="font-11 text-gray-400">{{ trans('cart.secure_payments') ?? 'Secure Payments Provided' }}</span>
-                    </div>
-
-                    {{-- Payment logos strip --}}
-                    <div class="d-flex align-items-center justify-content-center flex-wrap gap-6 mt-12">
-                        @php
-                            $paymentLogos = [
-                                ['src' => '/assets/default/img/payments/visa.svg',       'alt' => 'Visa'],
-                                ['src' => '/assets/default/img/payments/mastercard.svg', 'alt' => 'Mastercard'],
-                                ['src' => '/assets/default/img/payments/paypal.svg',     'alt' => 'PayPal'],
-                                ['src' => '/assets/default/img/payments/stripe.svg',     'alt' => 'Stripe'],
-                            ];
-                        @endphp
-                        @foreach($paymentLogos as $logo)
-                            <img src="{{ $logo['src'] }}" alt="{{ $logo['alt'] }}"
-                                 style="height:18px;object-fit:contain;opacity:.7;"
-                                 onerror="this.style.display='none'">
-                        @endforeach
                     </div>
                 </div>
             </div>
@@ -405,12 +294,11 @@
         if (e.key === 'Enter') { e.preventDefault(); $('#couponValidateBtn').trigger('click'); }
     });
 
-    /* ── User Info Card: toggle open/close, auto-open if data exists ── */
+    /* ── Delivery Address toggle — auto-open if user has data ── */
     (function () {
-        var toggle  = document.getElementById('cartUserInfoToggle');
-        var body    = document.getElementById('cartUserInfoBody');
-        var chevron = document.getElementById('cartUserInfoChevron');
-
+        var toggle  = document.getElementById('cartLocationToggle');
+        var body    = document.getElementById('cartLocationBody');
+        var chevron = document.getElementById('cartLocationChevron');
         if (!toggle || !body) return;
 
         toggle.addEventListener('click', function () {
@@ -419,7 +307,7 @@
             if (chevron) chevron.classList.toggle('open', !isOpen);
         });
 
-        // Auto-open if any field has a pre-filled value
+        // Auto-open if any field pre-filled
         var inputs = body.querySelectorAll('input');
         for (var i = 0; i < inputs.length; i++) {
             if (inputs[i].value && inputs[i].value.trim()) {
@@ -428,15 +316,73 @@
                 break;
             }
         }
+
+        /* Address autocomplete */
+        var addrInput   = document.getElementById('cartAddressLine');
+        var suggestions = document.getElementById('cartAddrSuggestions');
+        if (!addrInput || !suggestions) return;
+
+        var debTimer;
+        addrInput.addEventListener('input', function () {
+            clearTimeout(debTimer);
+            debTimer = setTimeout(function () {
+                var q = addrInput.value.trim();
+                if (q.length < 3) { suggestions.classList.add('d-none'); suggestions.innerHTML = ''; return; }
+                fetch('/location/suggestions?q=' + encodeURIComponent(q))
+                    .then(function (r) { return r.json(); })
+                    .then(function (items) {
+                        suggestions.innerHTML = '';
+                        if (!items || !items.length) { suggestions.classList.add('d-none'); return; }
+                        items.forEach(function (item) {
+                            var el = document.createElement('div');
+                            el.className = 'cart-addr-item';
+                            el.textContent = item.display_name;
+                            el.addEventListener('click', function () {
+                                addrInput.value = item.display_name || addrInput.value;
+                                var city = document.getElementById('cartCity');
+                                var state = document.getElementById('cartState');
+                                var country = document.getElementById('cartCountry');
+                                var postal = document.getElementById('cartPostalCode');
+                                if (city && item.city) city.value = item.city;
+                                if (state && item.state) state.value = item.state;
+                                if (country && item.country) country.value = item.country;
+                                if (postal && item.postal_code) postal.value = item.postal_code;
+                                suggestions.classList.add('d-none');
+                            });
+                            suggestions.appendChild(el);
+                        });
+                        suggestions.classList.remove('d-none');
+                    })
+                    .catch(function () { suggestions.classList.add('d-none'); });
+            }, 400);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (e.target !== addrInput && !suggestions.contains(e.target)) {
+                suggestions.classList.add('d-none');
+            }
+        });
     })();
 
-    /* ── Payment option visual selection ── */
-    $(document).on('change', '.cart-payment-option input[type="radio"]', function () {
-        $('.cart-payment-option').removeClass('selected');
-        $(this).closest('.cart-payment-option').addClass('selected');
+    /* ── Nights counter for booking date modules ── */
+    $(document).on('change', '.bmod-cin, .bmod-cout', function () {
+        var $wrap = $(this).closest('[data-item-key]');
+        var key   = $wrap.data('item-key');
+        var inV   = $wrap.find('.bmod-cin').val();
+        var outV  = $wrap.find('.bmod-cout').val();
+        var $badge = $wrap.find('.bmod-nights-badge');
+        if (!inV || !outV) { $badge.text('0 nights'); return; }
+        var inD = new Date(inV), outD = new Date(outV);
+        if (outD <= inD) {
+            var n = new Date(inD); n.setDate(n.getDate() + 1);
+            $wrap.find('.bmod-cout').val(n.getFullYear() + '-' +
+                String(n.getMonth()+1).padStart(2,'0') + '-' +
+                String(n.getDate()).padStart(2,'0'));
+            outD = n;
+        }
+        var nights = Math.max(0, Math.ceil((outD - inD) / 86400000));
+        $badge.text(nights + ' nights');
     });
-    // Mark first as selected on load
-    $('.cart-payment-option input[type="radio"]:checked').closest('.cart-payment-option').addClass('selected');
 
 })(jQuery);
 </script>
