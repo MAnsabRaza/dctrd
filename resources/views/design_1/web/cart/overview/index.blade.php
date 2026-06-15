@@ -17,23 +17,23 @@
         /* Booking row card */
         .cart-booking-row {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #dbe4f0;
             border-radius: 18px;
-            padding: 14px 16px;
+            padding: 14px;
             display: flex;
             align-items: flex-start;
             gap: 14px;
             margin-bottom: 14px;
             position: relative;
-            transition: box-shadow .2s;
+            box-shadow: 0 1px 0 rgba(15, 23, 42, .02);
         }
-        .cart-booking-row:hover { box-shadow: 0 8px 28px rgba(15,23,42,.08); }
+        .cart-booking-row:hover { box-shadow: 0 10px 30px rgba(15,23,42,.06); }
         .cart-booking-thumb {
-            width: 72px; height: 72px;
-            border-radius: 14px;
+            width: 70px; height: 70px;
+            border-radius: 16px;
             overflow: hidden;
             flex-shrink: 0;
-            background: #f1f5f9;
+            background: #eefaf1;
             display: flex; align-items: center; justify-content: center;
         }
         .cart-booking-thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -68,11 +68,12 @@
         /* Summary card */
         .cart-summary-card {
             background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 20px;
+            border: 1px solid #dbe4f0;
+            border-radius: 22px;
             padding: 20px 22px;
             position: sticky;
             top: 20px;
+            box-shadow: 0 1px 0 rgba(15, 23, 42, .02);
         }
 
         /* Coupon card */
@@ -121,59 +122,89 @@
         .cart-addr-item:hover { background: #f0fdf4; color: #15803d; }
 
         .cart-checkout-btn {
-            height: 48px; border-radius: 12px;
-            font-size: 15px; font-weight: 700;
+            height: 48px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
             width: 100%;
+            box-shadow: 0 12px 24px rgba(17, 123, 255, .18);
         }
 
-        /* ── Booking modules — plain card (no green border) ── */
+        /* Booking modules */
         .bmod-wrap {
             margin-top: 12px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            background: #fff;
+            border: 1.5px solid #22c55e;
+            border-radius: 14px;
             overflow: hidden;
         }
         .bmod-row {
-            display: flex; flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
         .bmod-col {
-            flex: 1 1 160px; min-width: 0;
-            padding: 10px 14px;
+            min-width: 0;
+            padding: 10px 12px;
             border-right: 1px solid #e2e8f0;
         }
         .bmod-col:last-child { border-right: none; }
         .bmod-label {
-            font-size: 11px; font-weight: 700; color: #64748b;
-            text-transform: uppercase; letter-spacing: .05em;
+            font-size: 11px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .04em;
             margin-bottom: 5px;
-            display: flex; align-items: center; gap: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         .bmod-value {
-            font-size: 13px; font-weight: 600; color: #0f172a;
-            display: flex; align-items: center; gap: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         .bmod-date-input {
-            font-size: 13px; font-weight: 600; color: #0f172a;
-            border: 1px solid #e2e8f0; border-radius: 6px;
-            padding: 3px 6px; background: #fff;
-            cursor: pointer; width: 100%; max-width: 148px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #0f172a;
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            padding: 3px 8px;
+            background: #fff;
+            cursor: pointer;
+            width: 100%;
+            min-width: 0;
+            max-width: 148px;
+            height: 30px;
         }
-        .bmod-date-input:focus { outline: none; border-color: #94a3b8; }
+        .bmod-date-input:focus { outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
         .bmod-nights-badge {
-            display: inline-flex; align-items: center;
-            margin-top: 5px; padding: 2px 8px;
+            display: inline-flex;
+            align-items: center;
+            margin-top: 5px;
+            padding: 2px 8px;
             border-radius: 999px;
             background: rgba(37,99,235,.08);
-            font-size: 10px; font-weight: 600; color: #2563eb;
+            font-size: 10px;
+            font-weight: 600;
+            color: #2563eb;
         }
         .bmod-staff-name {
-            font-size: 13px; font-weight: 600; color: #0f172a;
-            display: flex; align-items: center; gap-6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        @media (max-width: 640px) {
-            .bmod-col { border-right: none; border-bottom: 1px solid #e2e8f0; flex: 1 1 100%; }
+        @media (max-width: 991px) {
+            .bmod-row { grid-template-columns: 1fr; }
+            .bmod-col { border-right: none; border-bottom: 1px solid #e2e8f0; }
             .bmod-col:last-child { border-bottom: none; }
         }
     </style>
@@ -271,7 +302,7 @@
                                     <label class="form-group-label font-12">{{ trans('update.country') ?? 'Country' }}</label>
                                     <input type="text" name="country" id="cartCountry" class="form-control"
                                            placeholder="{{ trans('update.country') ?? 'Country' }}"
-                                           value="{{ old('country', $authUser->country 
+                                           value="{{ old('country', $authUser->country ?? '') }}">
                                 </div>
                             </div>
 
