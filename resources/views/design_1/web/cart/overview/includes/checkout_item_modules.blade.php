@@ -13,7 +13,7 @@
 ────────────────────────────────────────── */
 .cmod-card {
     display: flex; align-items: stretch;
-    border: 1.5px solid #22c55e;
+    border: 1px solid #e2e8f0;
     border-radius: 12px; overflow: hidden;
     background: #fff; margin-top: 12px;
 }

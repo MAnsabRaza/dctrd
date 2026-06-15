@@ -134,7 +134,7 @@
         .bmod-wrap {
             margin-top: 12px;
             background: #fff;
-            border: 1.5px solid #22c55e;
+            border: 1px solid #e2e8f0;
             border-radius: 14px;
             overflow: hidden;
         }
@@ -361,18 +361,8 @@
         $btn.addClass('loadingbar').prop('disabled', true);
 
         $.ajax({
-            url: '/cart/' + cartId + '/remove',
-            method: 'DELETE',
-            data: { _token: '{{ csrf_token() }}' }
-        }).done(function (res) {
-            $('#cart-item-' + cartId).fadeOut(260, function () {
-                $(this).remove();
-                if ($('.cart-booking-row, .cart-item-card').length === 0) {
-                    location.reload();
-                }
-            });
-            if (res && res.msg) showToast(res.status || 'success', res.title || '', res.msg);
-        }).fail(function (xhr) {
+            url: '/cart/' + cartId + '/delete',
+            method: 'GET'
             $btn.removeClass('loadingbar').prop('disabled', false);
             var err = xhr.responseJSON;
             showToast('error', err && err.title ? err.title : 'Error', err && err.msg ? err.msg : 'Could not remove item');
