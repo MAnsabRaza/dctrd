@@ -123,9 +123,19 @@
             font-size: 11px; font-weight: 700; color: #64748b;
             text-transform: uppercase; letter-spacing: .04em;
         }
-        .booking-info-content {
-            display: flex; align-items: center; gap: 12px;
-        }
+       .booking-info-content{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.booking-info-content .booking-info-icon{
+    flex-shrink:0;
+}
+
+.booking-info-content .form-control{
+    flex:1;
+}
         .booking-info-icon {
             width: 30px; height: 30px; min-width: 30px; min-height: 30px;
             background: rgba(34, 197, 94, .1); border-radius: 12px;

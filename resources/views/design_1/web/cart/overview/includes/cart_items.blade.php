@@ -156,7 +156,7 @@
                                         <div class="booking-info-title">
                                             {{ $daysModule->translated_label ?? trans('update.check_in_date') ?? 'Check-in Date' }}
                                         </div>
-                                        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
+                                        <div class="booking-info-content">
                                             <div class="booking-info-icon">
                                                 <x-iconsax-lin-calendar-2 class="icons" width="16px" height="16px"/>
                                             </div>
@@ -177,7 +177,7 @@
                                         <div class="booking-info-title">
                                             {{ $hoursModule->translated_label ?? trans('update.check_in_time') ?? 'Check-in Time' }}
                                         </div>
-                                        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
+                                        <div class="booking-info-content" >
                                             <div class="booking-info-icon">
                                                 <x-iconsax-lin-clock class="icons" width="16px" height="16px"/>
                                             </div>
@@ -212,7 +212,7 @@
                                         <div class="booking-info-title">
                                             {{ $staffModule->translated_label ?? 'Assigned Staff' }}
                                         </div>
-                                        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
+                                        <div class="booking-info-content">
                                             <div class="booking-info-icon">
                                                 <x-iconsax-lin-profile class="icons" width="16px" height="16px"/>
                                             </div>
