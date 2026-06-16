@@ -481,6 +481,15 @@
         $badge.text(nights + ' nights');
     });
 
+    /* ── Checkout Button Handler ── */
+    $(document).on('click', '.js-cart-checkout', function (e) {
+        e.preventDefault();
+        var form = document.getElementById('cartCheckoutForm');
+        if (form) {
+            form.submit();
+        }
+    });
+
 })(jQuery);
 </script>
 @endpush
