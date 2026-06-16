@@ -1131,6 +1131,23 @@ function currencySign($currency = null)
     return '$';
 }
 
+/**
+ * Compatibility wrapper used in views/JS: return current currency symbol
+ */
+function getCurrencySymbol()
+{
+    return currencySign();
+}
+
+/**
+ * Compatibility wrapper for decimal precision setting used in views/JS
+ */
+function getCurrencyDecimals()
+{
+    $dec = getFinancialCurrencySettings('decimals');
+    return is_numeric($dec) ? (int)$dec : 2;
+}
+
 function getCountriesMobileCode()
 {
     return [
