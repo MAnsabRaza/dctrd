@@ -243,10 +243,6 @@
                             @elseif($authUserName)
                                 {{-- Always show a staff/guest column with user name even if no staff module --}}
                                 <div class="bmod-col">
-                                    <div class="bmod-label">
-                                        <x-iconsax-lin-profile-2user class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                                        Guest
-                                    </div>
                                     <div class="bmod-value mt-4">
                                         <x-iconsax-lin-profile class="icons text-primary" width="13px" height="13px"/>
                                         <span class="font-13 font-weight-600">{{ $authUserName }}</span>
