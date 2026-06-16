@@ -23,18 +23,6 @@
             color: #2563eb; font-weight: 700;
         }
         .booking-slot-pill input[type="radio"] { display: none; }
-
-        /* Book Now button disabled state */
-        #bookingAddToCartBtn:disabled {
-            opacity: .55; cursor: not-allowed;
-        }
-
-        /* Slot required notice */
-        .slot-required-notice {
-            display: none; font-size: 12px; color: #ef4444;
-            margin-top: 6px;
-        }
-        .slot-required-notice.visible { display: block; }
     </style>
 @endpush
 
@@ -55,7 +43,7 @@
 
                     <div class="position-relative bg-white p-16 rounded-24 z-index-2">
 
-                        {{-- Favourite --}}
+                        {{-- Favourite (icon top-right) --}}
                         <div class="position-absolute" style="top:24px;right:24px;z-index:10;">
                             <div class="bookingFavoriteBtn d-flex align-items-center justify-content-center rounded-circle bg-white border border-gray-200"
                                  style="width:42px;height:42px;cursor:pointer;"
@@ -120,18 +108,11 @@
                             @endif
                         </div>
 
-                        {{-- ── Book Now button — disabled until slot selected ── --}}
+                        {{-- Buttons --}}
                         <div class="d-flex align-items-center gap-12 flex-wrap mt-16">
-                            {{--
-                                We do NOT submit a form directly.
-                                JS reads the selected slot + date, then POSTs to /cart/store
-                                only if a slot is selected.
-                            --}}
                             <button type="button"
                                     id="bookingAddToCartBtn"
-                                    class="btn btn-primary btn-lg"
-                                    
-                                    title="Please check and select an available slot first">
+                                    class="btn btn-primary btn-lg">
                                 <x-iconsax-lin-calendar-2 class="icons text-white" width="24px" height="24px"/>
                                 <span class="ml-4 text-white">Book Now</span>
                             </button>
@@ -145,9 +126,6 @@
                                 <span class="font-14">{{ $isFavorited ? 'Favorited' : 'Add to favorites' }}</span>
                             </button>
                         </div>
-                        <div class="slot-required-notice" id="slotRequiredNotice">
-                            ⚠ Please select an available slot before booking.
-                        </div>
 
                     </div>
                 </div>
@@ -155,7 +133,7 @@
                 {{-- ════ CHECK BOOKING / SLOT PANEL ════ --}}
                 <div id="bookingRequest" class="bg-white p-16 rounded-24 mt-24">
                     <h3 class="font-16 font-weight-bold">Check Booking</h3>
-                    <p class="font-12 text-gray-500 mt-4 mb-0">Select a date and check available slots. You must choose a slot before booking.</p>
+                    <p class="font-12 text-gray-500 mt-4 mb-0">Select a date and check available slots.</p>
 
                     <form method="get" action="{{ $booking->getUrl() }}" class="mt-16" id="slotCheckForm">
                         <div class="row">
@@ -379,29 +357,21 @@
 (function ($) {
     'use strict';
 
-    /* ════════════════════════════════════════
-       SLOT SELECTION LOGIC
-       ════════════════════════════════════════ */
-
-    var bookingId  = {{ $booking->id }};
+    var bookingId   = {{ $booking->id }};
     var bookingSlug = '{{ $booking->slug }}';
-    var $bookBtn   = $('#bookingAddToCartBtn');
-    var $notice    = $('#slotRequiredNotice');
-    var selectedSlot = null; // { date, start_time, end_time }
+    var $bookBtn    = $('#bookingAddToCartBtn');
+    var selectedSlot = null; // { date, start_time, end_time } — optional, set when user picks a pill
 
-    /* Enable Book Now only when a slot pill is selected */
-    // $(document).on('change', 'input[name="selected_slot"]', function () {
-    //     selectedSlot = {
-    //         date:       $(this).data('date'),
-    //         start_time: $(this).val(),
-    //         end_time:   $(this).data('end'),
-    //     };
-    //     $bookBtn.prop('disabled', false);
-    //     $notice.removeClass('visible');
-    //     // visual — mark pill
-    //     $('.booking-slot-pill').removeClass('selected');
-    //     $(this).closest('.booking-slot-pill').addClass('selected');
-    // });
+    /* ── Slot pill selection (optional — just highlights the pill) ── */
+    $(document).on('change', 'input[name="selected_slot"]', function () {
+        selectedSlot = {
+            date:       $(this).data('date'),
+            start_time: $(this).val(),
+            end_time:   $(this).data('end'),
+        };
+        $('.booking-slot-pill').removeClass('selected');
+        $(this).closest('.booking-slot-pill').addClass('selected');
+    });
 
     /* ── AJAX slot check ── */
     $('#checkSlotsBtn').on('click', function () {
@@ -412,9 +382,8 @@
 
         var $btn = $(this).addClass('loadingbar').prop('disabled', true);
 
-        // Reset selection
+        // Reset selected slot when re-checking
         selectedSlot = null;
-        //$bookBtn.prop('disabled', true);
 
         $.ajax({
             url: '/bookings/' + bookingSlug + '/slots',
@@ -451,14 +420,8 @@
         });
     });
 
-    /* ── Book Now: POST to cart only if slot selected ── */
+    /* ── Book Now — seedha POST, koi slot restriction nahi ── */
     $bookBtn.on('click', function () {
-        // if (!selectedSlot) {
-        //     $notice.addClass('visible');
-        //     //$bookBtn.prop('disabled', true);
-        //     return;
-        // }
-
         $bookBtn.addClass('loadingbar').prop('disabled', true);
 
         $.post('/cart/store', {
@@ -466,10 +429,10 @@
             item_id:    bookingId,
             item_name:  'booking_id',
             item_type:  'booking',
-            // Pass slot data — CartController will store in cart meta
-            slot_date:  selectedSlot.date,
-            slot_start: selectedSlot.start_time,
-            slot_end:   selectedSlot.end_time,
+            // Agar slot selected hai toh bhejo, warna empty strings
+            slot_date:  selectedSlot ? selectedSlot.date       : '',
+            slot_start: selectedSlot ? selectedSlot.start_time : '',
+            slot_end:   selectedSlot ? selectedSlot.end_time   : '',
         }, function (result) {
             if (result && result.title) {
                 showToast(result.status || 'success', result.title, result.msg || '');
