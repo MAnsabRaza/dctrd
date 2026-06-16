@@ -115,193 +115,133 @@
                         </div>
                     </div>
 
-                    {{-- ── Booking Modules — plain card, no green border ── --}}
+                    {{-- ── Booking Modules — modern 3-card layout, cancellation below ── --}}
                     @if($cartModules->isNotEmpty())
-                    <div class="bmod-wrap" data-item-key="{{ $itemKey }}">
-                        <div class="bmod-row">
+                        @php
+                            $datePrefix   = "checkout_modules[{$itemKey}][days]";
+                            $timePrefix   = "checkout_modules[{$itemKey}][hours]";
+                            $staffPrefix  = "checkout_modules[{$itemKey}][staff_member]";
+                            $policyPrefix = "checkout_modules[{$itemKey}][cancellation_policy]";
+                            $extrasPrefix = "checkout_modules[{$itemKey}][extra_services]";
+                            $msgPrefix    = "checkout_modules[{$itemKey}][checkout_message]";
+                            $selectedTime = old("checkout_modules.{$itemKey}.hours", $slotStart ?? '');
+                            $selectedStaff = old("checkout_modules.{$itemKey}.staff_member", $authUserName);
+                            $checkInLabel = $oldCheckIn ? \Carbon\Carbon::parse($oldCheckIn)->format('d M Y') : ($slotDate ? \Carbon\Carbon::parse($slotDate)->format('d M Y') : 'Not selected');
+                            $timeLabel = $selectedTime ?: ($slotStart ? $slotStart . ($slotEnd ? ' - ' . $slotEnd : '') : 'Not selected');
+                            $staffLabel = $selectedStaff ?: ($authUserName ?: 'Guest');
+                        @endphp
 
-                            {{-- Date & Time (Days module) --}}
-                            @if($daysModule)
-                                @php
-                                    $prefix     = "checkout_modules[{$itemKey}][days]";
-                                    $perDay     = $daysModule->price_rule['amount'] ?? 0;
-                                    $isRequired = $daysModule->is_required;
-                                @endphp
-                                <div class="bmod-col">
-                                    <div class="bmod-label">
-                                        <x-iconsax-lin-calendar-2 class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                                        {{ $daysModule->translated_label ?? 'Date & Time' }}
-                                        @if($isRequired)<span class="text-danger">*</span>@endif
-                                        @if($perDay)<span class="ml-auto" style="font-size:10px;color:#2563eb;font-weight:700;">{{ handlePrice($perDay) }}/day</span>@endif
+                        <div class="booking-info-shell" data-item-key="{{ $itemKey }}">
+                            <div class="booking-info-grid">
+                                <div class="booking-info-card">
+                                    <div class="booking-info-title">
+                                        {{ $daysModule->translated_label ?? trans('update.check_in_date') ?? 'Check-in Date' }}
+                                        @if($daysModule && $daysModule->is_required)<span class="text-danger">*</span>@endif
                                     </div>
-                                    <div class="d-flex align-items-center gap-6 flex-wrap">
-                                        <input type="date"
-                                            name="{{ $prefix }}[check_in]"
-                                            class="bmod-date-input bmod-cin"
-                                            value="{{ $oldCheckIn }}"
-                                            min="{{ now()->format('Y-m-d') }}"
-                                            {{ $isRequired ? 'required' : '' }}>
-                                        <span class="text-gray-400 font-12">—</span>
-                                        <input type="date"
-                                            name="{{ $prefix }}[check_out]"
-                                            class="bmod-date-input bmod-cout"
-                                            value="{{ $oldCheckOut }}"
-                                            min="{{ now()->format('Y-m-d') }}"
-                                            {{ $isRequired ? 'required' : '' }}>
-                                    </div>
-                                    <div class="bmod-nights-badge mt-5">0 nights</div>
-                                    @error("checkout_modules.{$itemKey}.days.check_in")
-                                        <div class="text-danger" style="font-size:10px;margin-top:2px;">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            @elseif($slotLabel)
-                                {{-- No days module but slot data exists — show read-only --}}
-                                <div class="bmod-col">
-                                    <div class="bmod-label">
-                                        <x-iconsax-lin-calendar-2 class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                                        Date & Time
-                                    </div>
-                                    <div class="bmod-value">{{ $slotLabel }}</div>
-                                </div>
-                            @endif
-
-                            {{-- Hours module --}}
-                            @if($hoursModule)
-                                @php
-                                    $slots     = $hoursModule->config['slots'] ?? [];
-                                    $prefix    = "checkout_modules[{$itemKey}][hours]";
-                                    $perHour   = $hoursModule->price_rule['amount'] ?? 0;
-                                    $isReq     = $hoursModule->is_required;
-                                    $oldSlot   = old("checkout_modules.{$itemKey}.hours", $slotStart ?? '');
-
-                                    // Pre-select slot from slot data if matches
-                                    function fmtSlot12Hr($t) {
-                                        try { return \Carbon\Carbon::createFromFormat('H:i', $t)->format('h:i A'); }
-                                        catch (\Throwable $e) { return $t; }
-                                    }
-                                @endphp
-                                <div class="bmod-col">
-                                    <div class="bmod-label">
-                                        <x-iconsax-lin-clock class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                                        {{ $hoursModule->translated_label ?? 'Time Slot' }}
-                                        @if($isReq)<span class="text-danger">*</span>@endif
-                                        @if($perHour)<span class="ml-auto" style="font-size:10px;color:#2563eb;font-weight:700;">{{ handlePrice($perHour) }}/hr</span>@endif
-                                    </div>
-                                    <select name="{{ $prefix }}"
-                                            class="form-control form-control-sm mt-4"
-                                            style="font-size:12px;padding:3px 6px;border-radius:6px;"
-                                            {{ $isReq ? 'required' : '' }}>
-                                        <option value="">— {{ trans('checkout.select') ?? 'Select' }} —</option>
-                                        @foreach($slots as $slot)
-                                            @php
-                                                try {
-                                                    $sc = \Carbon\Carbon::createFromFormat('H:i', $slot);
-                                                    $ec = $sc->copy()->addHour();
-                                                    $lbl = $sc->format('h:i A') . ' - ' . $ec->format('h:i A');
-                                                } catch (\Throwable $e) { $lbl = $slot; }
-                                            @endphp
-                                            <option value="{{ $slot }}" {{ $oldSlot == $slot ? 'selected' : '' }}>{{ $lbl }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            @endif
-
-                            {{-- Staff Member column: show logged-in user name --}}
-                            @if($staffModule)
-                                @php
-                                    $staffPrefix  = "checkout_modules[{$itemKey}][staff_member]";
-                                    $staffOptions = $staffModule->config['staff'] ?? [];
-                                    $isReqStaff   = $staffModule->is_required;
-                                @endphp
-                                <div class="bmod-col">
-                                    <div class="bmod-label">
-                                        <x-iconsax-lin-profile-2user class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                                        {{ $staffModule->translated_label ?? 'Staff Member' }}
-                                    </div>
-                                    @if(!empty($staffOptions))
-                                        <select name="{{ $staffPrefix }}"
-                                                class="form-control form-control-sm mt-4"
-                                                style="font-size:12px;padding:3px 6px;border-radius:6px;"
-                                                {{ $isReqStaff ? 'required' : '' }}>
-                                            <option value="">— {{ trans('checkout.select_staff') ?? 'Select staff' }} —</option>
-                                            @foreach($staffOptions as $staff)
-                                                <option value="{{ $staff['id'] ?? $staff['name'] }}"
-                                                    {{ old("checkout_modules.{$itemKey}.staff_member") == ($staff['id'] ?? $staff['name']) ? 'selected' : '' }}>
-                                                    {{ $staff['name'] }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    @else
-                                        {{-- No staff options: show logged-in user name as readonly --}}
-                                        <div class="bmod-value mt-4">
-                                            <x-iconsax-lin-profile class="icons text-primary" width="13px" height="13px"/>
-                                            <span>{{ $authUserName }}</span>
+                                    <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:12px;">
+                                        <div class="booking-info-icon">
+                                            <x-iconsax-lin-calendar-2 class="icons" width="16px" height="16px"/>
                                         </div>
-                                        <input type="hidden" name="{{ $staffPrefix }}" value="{{ $authUserName }}">
-                                    @endif
-                                </div>
-                            @elseif($authUserName)
-                                {{-- Always show a staff/guest column with user name even if no staff module --}}
-                                <div class="bmod-col">
-                                    <div class="bmod-value mt-4">
-                                        <x-iconsax-lin-profile class="icons text-primary" width="13px" height="13px"/>
-                                        <span class="font-13 font-weight-600">{{ $authUserName }}</span>
+                                        @if($daysModule)
+                                            <div class="d-flex align-items-center gap-8 flex-wrap" style="width:100%;">
+                                                <input type="date" name="{{ $datePrefix }}[check_in]" class="form-control form-control-sm bmod-date-input bmod-cin" value="{{ $oldCheckIn }}" min="{{ now()->format('Y-m-d') }}" {{ $daysModule->is_required ? 'required' : '' }} style="border-radius:12px;" />
+                                                <span class="text-gray-400 font-12">—</span>
+                                                <input type="date" name="{{ $datePrefix }}[check_out]" class="form-control form-control-sm bmod-date-input bmod-cout" value="{{ $oldCheckOut }}" min="{{ now()->format('Y-m-d') }}" {{ $daysModule->is_required ? 'required' : '' }} style="border-radius:12px;" />
+                                            </div>
+                                            <div class="booking-info-label">{{ $checkInLabel }}</div>
+                                        @else
+                                            <div class="booking-info-value">{{ $slotLabel ?: 'Not selected' }}</div>
+                                        @endif
                                     </div>
                                 </div>
-                            @endif
 
-                            {{-- Cancellation Policy --}}
-                            @php $policyModule = $cartModules->firstWhere('name', 'cancellation_policy'); @endphp
-                            @if($policyModule)
+                                <div class="booking-info-card">
+                                    <div class="booking-info-title">
+                                        {{ $hoursModule->translated_label ?? trans('update.check_in_time') ?? 'Check-in Time' }}
+                                        @if($hoursModule && $hoursModule->is_required)<span class="text-danger">*</span>@endif
+                                    </div>
+                                    <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:12px;">
+                                        <div class="booking-info-icon">
+                                            <x-iconsax-lin-clock class="icons" width="16px" height="16px"/>
+                                        </div>
+                                        @if($hoursModule)
+                                            <select name="{{ $timePrefix }}" class="form-control form-control-sm" style="border-radius:12px;">
+                                                <option value="">— {{ trans('checkout.select') ?? 'Select' }} —</option>
+                                                @foreach($hoursModule->config['slots'] ?? [] as $slot)
+                                                    @php
+                                                        try {
+                                                            $sc = \Carbon\Carbon::createFromFormat('H:i', $slot);
+                                                            $ec = $sc->copy()->addHour();
+                                                            $label = $sc->format('h:i A') . ' - ' . $ec->format('h:i A');
+                                                        } catch (\Throwable $e) {
+                                                            $label = $slot;
+                                                        }
+                                                    @endphp
+                                                    <option value="{{ $slot }}" {{ $selectedTime == $slot ? 'selected' : '' }}>{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                            <div class="booking-info-label">{{ $timeLabel }}</div>
+                                        @else
+                                            <div class="booking-info-value">{{ $timeLabel }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="booking-info-card">
+                                    <div class="booking-info-title">
+                                        {{ $staffModule->translated_label ?? 'Assigned Staff' }}
+                                        @if($staffModule && $staffModule->is_required)<span class="text-danger">*</span>@endif
+                                    </div>
+                                    <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:12px;">
+                                        <div class="booking-info-icon">
+                                            <x-iconsax-lin-profile class="icons" width="16px" height="16px"/>
+                                        </div>
+                                        @if($staffModule)
+                                            @if(!empty($staffModule->config['staff']))
+                                                <select name="{{ $staffPrefix }}" class="form-control form-control-sm" style="border-radius:12px;">
+                                                    <option value="">— {{ trans('checkout.select_staff') ?? 'Select staff' }} —</option>
+                                                    @foreach($staffModule->config['staff'] as $staff)
+                                                        @php $value = $staff['id'] ?? $staff['name']; @endphp
+                                                        <option value="{{ $value }}" {{ $selectedStaff == $value ? 'selected' : '' }}>{{ $staff['name'] }}</option>
+                                                    @endforeach
+                                                </select>
+                                            @else
+                                                <div class="booking-info-value">{{ $authUserName ?: 'Guest' }}</div>
+                                                <input type="hidden" name="{{ $staffPrefix }}" value="{{ $authUserName }}">
+                                            @endif
+                                            <div class="booking-info-label">{{ $staffModule->is_required ? 'Required' : 'Optional' }}</div>
+                                        @else
+                                            <div class="booking-info-value">{{ $staffLabel }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if($policyModule = $cartModules->firstWhere('name', 'cancellation_policy'))
                                 @php
-                                    $policyText   = $policyModule->config['policy_text'] ?? trans('checkout.free_cancellation_hint') ?? 'Free cancellation up to 24 hours before check-in.';
-                                    $policyPrefix = "checkout_modules[{$itemKey}][cancellation_policy]";
+                                    $policyText = $policyModule->config['policy_text'] ?? trans('checkout.free_cancellation_hint') ?? 'Free cancellation up to 24 hours before check-in.';
                                 @endphp
-                                <div class="bmod-col" style="flex-basis:100%;">
-                                    <div class="bmod-label">
-                                        <x-iconsax-lin-shield-tick class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                                        {{ $policyModule->translated_label ?? 'Cancellation Policy' }}
-                                        @if($policyModule->is_required)<span class="text-danger">*</span>@endif
-                                    </div>
-                                    <div class="d-flex align-items-start gap-6 p-8 rounded-8 mt-4"
-                                        style="background:rgba(30,84,255,.05);border:1px solid rgba(30,84,255,.14);">
-                                        <x-iconsax-lin-info-circle class="icons flex-shrink-0" width="12px" height="12px" style="color:#2563eb;margin-top:1px"/>
-                                        <p class="font-11 text-gray-500 mb-0">{{ $policyText }}</p>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-6 mt-8">
-                                        <input type="checkbox" id="cp_agree_{{ $itemKey }}"
-                                            name="{{ $policyPrefix }}" value="1"
-                                            style="width:13px;height:13px;accent-color:#22c55e;"
-                                            {{ old("checkout_modules.{$itemKey}.cancellation_policy") ? 'checked' : '' }}
-                                            {{ $policyModule->is_required ? 'required' : '' }}>
-                                        <label for="cp_agree_{{ $itemKey }}" class="font-11 text-gray-600 mb-0" style="cursor:pointer;">
-                                            {{ trans('cart.i_agree_cancellation_policy') ?? 'I agree to the cancellation policy' }}
-                                        </label>
-                                    </div>
+                                <div class="booking-cancellation-card">
+                                    <label for="cp_agree_{{ $itemKey }}">
+                                        <input type="checkbox" id="cp_agree_{{ $itemKey }}" name="{{ $policyPrefix }}" value="1"
+                                               {{ old("checkout_modules.{$itemKey}.cancellation_policy") ? 'checked' : '' }}
+                                               {{ $policyModule->is_required ? 'required' : '' }}>
+                                        {{ $policyModule->translated_label ?? (trans('checkout.cancellation_policy') ?? 'Cancellation Policy') }}
+                                    </label>
+                                    <div class="booking-cancellation-text">{{ $policyText }}</div>
                                 </div>
                             @endif
 
-                            {{-- Extra Services --}}
-                            @php $extrasModule = $cartModules->firstWhere('name', 'extra_services'); @endphp
-                            @if($extrasModule)
+                            @if($extrasModule = $cartModules->firstWhere('name', 'extra_services'))
                                 @php
                                     $extraOptions = $extrasModule->config['options'] ?? [];
-                                    $extrasPrefix = "checkout_modules[{$itemKey}][extra_services]";
                                 @endphp
-                                <div class="bmod-col" style="flex-basis:100%;">
-                                    <div class="bmod-label">
-                                        <x-iconsax-lin-add-square class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                                        {{ $extrasModule->translated_label ?? 'Extra Services' }}
-                                        @if($extrasModule->is_required)<span class="text-danger">*</span>@endif
-                                    </div>
-                                    <div class="d-flex flex-wrap gap-8 mt-6">
-                                        @foreach($extraOptions as $idx => $opt)
-                                            <label class="d-flex align-items-center gap-6 px-10 py-6 rounded-8"
-                                                style="border:1px solid #e2e8f0;cursor:pointer;font-size:12px;">
-                                                <input type="checkbox" name="{{ $extrasPrefix }}[]"
-                                                    value="{{ $opt['label'] }}"
-                                                    style="accent-color:#22c55e;"
-                                                    {{ in_array($opt['label'], old("checkout_modules.{$itemKey}.extra_services", [])) ? 'checked' : '' }}>
+                                <div class="booking-cancellation-card">
+                                    <div class="booking-info-title">{{ $extrasModule->translated_label ?? 'Extra Services' }}</div>
+                                    <div class="d-flex flex-wrap gap-8 mt-3">
+                                        @foreach($extraOptions as $opt)
+                                            <label class="d-flex align-items-center gap-6 px-10 py-8 rounded-12" style="border:1px solid #e2e8f0;cursor:pointer;font-size:13px;">
+                                                <input type="checkbox" name="{{ $extrasPrefix }}[]" value="{{ $opt['label'] }}" style="accent-color:#22c55e;" {{ in_array($opt['label'], old("checkout_modules.{$itemKey}.extra_services", [])) ? 'checked' : '' }}>
                                                 <span>{{ $opt['label'] }}</span>
                                                 <span class="font-weight-bold text-primary">+{{ handlePrice($opt['price'] ?? 0) }}</span>
                                             </label>
@@ -310,33 +250,20 @@
                                 </div>
                             @endif
 
-                            {{-- Checkout Message --}}
-                            @php $msgModule = $cartModules->firstWhere('name', 'checkout_message'); @endphp
-                            @if($msgModule)
+                            @if($msgModule = $cartModules->firstWhere('name', 'checkout_message'))
                                 @php
-                                    $maxLen    = $msgModule->config['max_length'] ?? 500;
-                                    $ph        = $msgModule->config['placeholder'] ?? (trans('checkout.special_instructions') ?? 'Special instructions...');
-                                    $msgPrefix = "checkout_modules[{$itemKey}][checkout_message]";
+                                    $maxLen = $msgModule->config['max_length'] ?? 500;
+                                    $ph = $msgModule->config['placeholder'] ?? (trans('checkout.special_instructions') ?? 'Special instructions...');
                                 @endphp
-                                <div class="bmod-col" style="flex-basis:100%;">
-                                    <div class="bmod-label">
-                                        <x-iconsax-lin-message-text class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                                        {{ $msgModule->translated_label ?? 'Message' }}
-                                        @if($msgModule->is_required)<span class="text-danger">*</span>@endif
-                                    </div>
-                                    <textarea name="{{ $msgPrefix }}" class="form-control mt-4"
-                                            rows="2" style="font-size:12px;border-radius:6px;"
-                                            placeholder="{{ $ph }}" maxlength="{{ $maxLen }}"
-                                            id="bmod_msg_{{ $itemKey }}"
-                                            {{ $msgModule->is_required ? 'required' : '' }}>{{ old("checkout_modules.{$itemKey}.checkout_message") }}</textarea>
-                                    <div style="font-size:10px;color:#94a3b8;margin-top:2px;">
-                                        <span id="bmod_msgc_{{ $itemKey }}">0</span>/{{ $maxLen }}
+                                <div class="booking-cancellation-card">
+                                    <div class="booking-info-title">{{ $msgModule->translated_label ?? 'Message' }}</div>
+                                    <textarea name="{{ $msgPrefix }}" class="form-control mt-3" rows="3" style="font-size:13px;border-radius:12px;min-height:88px;" placeholder="{{ $ph }}" maxlength="{{ $maxLen }}" id="bmod_msg_{{ $itemKey }}" {{ $msgModule->is_required ? 'required' : '' }}>{{ old("checkout_modules.{$itemKey}.checkout_message") }}</textarea>
+                                    <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
+                                        <span id="bmod_msgc_{{ $itemKey }}">{{ strlen(old("checkout_modules.{$itemKey}.checkout_message")) }}</span>/{{ $maxLen }}
                                     </div>
                                 </div>
                             @endif
-
-                        </div>{{-- .bmod-row --}}
-                    </div>{{-- .bmod-wrap --}}
+                        </div>
                     @endif
 
                 </div>{{-- flex-1 --}}
@@ -396,7 +323,7 @@
         });
 
         /* Nights badge on page load for any pre-filled dates */
-        $('.bmod-wrap').each(function(){
+        $('.booking-info-shell').each(function(){
             var $w = $(this);
             var inV  = $w.find('.bmod-cin').val();
             var outV = $w.find('.bmod-cout').val();

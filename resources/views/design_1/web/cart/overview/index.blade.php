@@ -130,86 +130,90 @@
             box-shadow: 0 12px 24px rgba(17, 123, 255, .18);
         }
 
-        /* Booking modules */
-        .bmod-wrap {
-            margin-top: 12px;
-            background: transparent;
-            border: none;
-            border-radius: 0;
-            overflow: visible;
+        /* Booking info cards */
+        .booking-info-shell {
+            margin-top: 16px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
         }
-        .bmod-row {
+        .booking-info-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 12px;
         }
-        .bmod-col {
-            min-width: 0;
+        .booking-info-card {
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 16px;
-            padding: 14px 16px;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+            padding: 16px;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
         }
-        .bmod-col:last-child { border-right: 1px solid #e2e8f0; }
-        .bmod-label {
+        .booking-info-title {
             font-size: 11px;
-            font-weight: 800;
+            font-weight: 700;
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: .04em;
-            margin-bottom: 5px;
+        }
+        .booking-info-content {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 12px;
         }
-        .bmod-value {
-            font-size: 13px;
-            font-weight: 600;
-            color: #0f172a;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .bmod-date-input {
-            font-size: 13px;
-            font-weight: 600;
-            color: #0f172a;
-            border: 1px solid #dbe4f0;
-            border-radius: 8px;
-            padding: 3px 8px;
-            background: #fff;
-            cursor: pointer;
-            width: 100%;
-            min-width: 0;
-            max-width: 148px;
+        .booking-info-icon {
+            width: 30px;
             height: 30px;
-        }
-        .bmod-date-input:focus { outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
-        .bmod-nights-badge {
+            min-width: 30px;
+            min-height: 30px;
+            background: rgba(34, 197, 94, .1);
+            border-radius: 12px;
             display: inline-flex;
             align-items: center;
-            margin-top: 5px;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: rgba(37,99,235,.08);
-            font-size: 10px;
-            font-weight: 600;
-            color: #2563eb;
+            justify-content: center;
+            color: #22c55e;
         }
-        .bmod-staff-name {
+        .booking-info-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.3;
+        }
+        .booking-info-label {
+            font-size: 13px;
+            color: #475569;
+        }
+        .booking-cancellation-card {
+            margin-top: 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            background: #fff;
+            padding: 16px;
+        }
+        .booking-cancellation-card label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             font-size: 13px;
             font-weight: 600;
             color: #0f172a;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            cursor: pointer;
+        }
+        .booking-cancellation-card .booking-cancellation-text {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
         }
 
         @media (max-width: 991px) {
-            .bmod-row { grid-template-columns: 1fr; }
-            .bmod-col { border-right: none; border-bottom: 1px solid #e2e8f0; }
-            .bmod-col:last-child { border-bottom: none; }
+            .booking-info-grid { grid-template-columns: 1fr; }
         }
     </style>
 @endpush
@@ -367,6 +371,15 @@
         $.ajax({
             url: '/cart/' + cartId + '/delete',
             method: 'GET'
+        }).done(function (res) {
+            $('#cart-item-' + cartId).fadeOut(260, function () {
+                $(this).remove();
+                if ($('.cart-booking-row, .cart-item-card').length === 0) {
+                    location.reload();
+                }
+            });
+            if (res && res.msg) showToast(res.status || 'success', res.title || '', res.msg);
+        }).fail(function (xhr) {
             $btn.removeClass('loadingbar').prop('disabled', false);
             var err = xhr.responseJSON;
             showToast('error', err && err.title ? err.title : 'Error', err && err.msg ? err.msg : 'Could not remove item');
