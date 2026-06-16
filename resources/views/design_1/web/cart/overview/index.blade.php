@@ -172,7 +172,7 @@
 <div class="container py-40">
 
     {{-- Page heading --}}
-    <div class="text-center mb-32">
+    <div class="text-center mb-32 mt-32">
         <h1 class="cart-page-title">{{ trans('public.cart_page_title') ?? 'Cart' }}</h1>
         <p class="cart-page-subtitle">
             {{ handlePrice($calculatePrices['total']) }}

@@ -50,4 +50,5 @@ return [
     'order_summary'=>'Order Summary',
     'secure_payments'=>'Secure Payments',
     'i_agree_cancellation_policy'=>'I agree to the cancellation policy',
+    'for'=>'For',
 ];
