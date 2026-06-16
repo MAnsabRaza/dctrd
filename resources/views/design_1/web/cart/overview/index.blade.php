@@ -109,6 +109,7 @@
             box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
         }
         .booking-info-grid {
+            margin-top: 16px;
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 12px;
