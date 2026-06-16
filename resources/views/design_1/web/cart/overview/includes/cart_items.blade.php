@@ -153,91 +153,111 @@
                                 {{-- DAYS MODULE --}}
                                 @if($daysModule)
                                     <div class="booking-info-card">
-                                        <div class="booking-info-title">
-                                            {{ $daysModule->translated_label ?? trans('update.check_in_date') ?? 'Check-in Date' }}
-                                        </div>
-                                        <div class="booking-info-content">
-                                            <div class="booking-info-icon">
-                                                <x-iconsax-lin-calendar-2 class="icons" width="16px" height="16px" />
-                                            </div>
-                                            <input type="date" name="{{ $datePrefix }}[check_in]"
-                                                class="form-control form-control-sm bmod-date-input bmod-cin" value="{{ $oldCheckIn }}"
-                                                min="{{ now()->format('Y-m-d') }}" style="border-radius:12px;" />
-                                            <!-- <div class="booking-info-label bmod-cin-label">{{ $checkInLabel }}</div> -->
-                                        </div>
-                                        <div class="booking-info-label bmod-cin-label mt-2">
-                                            {{ $checkInLabel }}
-                                        </div>
-                                    </div>
+    <div class="booking-info-title">
+        {{ $daysModule->translated_label ?? trans('update.check_in_date') ?? 'Check-in Date' }}
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;">
+        <div class="booking-info-icon">
+            <x-iconsax-lin-calendar-2 class="icons" width="16px" height="16px" />
+        </div>
+
+        <input type="date"
+               name="{{ $datePrefix }}[check_in]"
+               class="form-control form-control-sm bmod-date-input bmod-cin"
+               value="{{ $oldCheckIn }}"
+               min="{{ now()->format('Y-m-d') }}"
+               style="border-radius:12px;flex:1;">
+    </div>
+
+    <div class="booking-info-label bmod-cin-label"
+         style="margin-top:8px;font-size:13px;color:#64748b;">
+        {{ $checkInLabel }}
+    </div>
+</div>
                                 @endif
 
                                 {{-- HOURS MODULE --}}
                                 @if($hoursModule)
-                                    <div class="booking-info-card">
-                                        <div class="booking-info-title">
-                                            {{ $hoursModule->translated_label ?? trans('update.check_in_time') ?? 'Check-in Time' }}
-                                        </div>
-                                        <div class="booking-info-content">
-                                            <div class="booking-info-icon">
-                                                <x-iconsax-lin-clock class="icons" width="16px" height="16px" />
-                                            </div>
-                                            <select name="{{ $timePrefix }}" class="form-control form-control-sm bmod-time-select"
-                                                style="border-radius:12px;">
-                                                <option value="">— {{ trans('checkout.select') ?? 'Select' }} —</option>
-                                                @foreach($hoursModule->config['slots'] ?? [] as $slot)
-                                                    @php
-                                                        try {
-                                                            $sc = \Carbon\Carbon::createFromFormat('H:i', $slot);
-                                                            $ec = $sc->copy()->addHour();
-                                                            $lbl = $sc->format('h:i A') . ' - ' . $ec->format('h:i A');
-                                                        } catch (\Throwable $e) {
-                                                            $lbl = $slot;
-                                                        }
-                                                    @endphp
-                                                    <option value="{{ $slot }}" {{ $selectedTime == $slot ? 'selected' : '' }}>
-                                                        {{ $lbl }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <!-- <div class="booking-info-label bmod-time-label">{{ $timeLabel }}</div> -->
-                                        </div>
-                                        <div class="booking-info-label bmod-time-label mt-2">
-    {{ $timeLabel }}
+                                  <div class="booking-info-card">
+    <div class="booking-info-title">
+        {{ $hoursModule->translated_label ?? trans('update.check_in_time') ?? 'Check-in Time' }}
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;">
+        <div class="booking-info-icon">
+            <x-iconsax-lin-clock class="icons" width="16px" height="16px" />
+        </div>
+
+        <select name="{{ $timePrefix }}"
+                class="form-control form-control-sm bmod-time-select"
+                style="border-radius:12px;flex:1;">
+            <option value="">— {{ trans('checkout.select') ?? 'Select' }} —</option>
+
+            @foreach($hoursModule->config['slots'] ?? [] as $slot)
+                @php
+                    try {
+                        $sc = \Carbon\Carbon::createFromFormat('H:i', $slot);
+                        $ec = $sc->copy()->addHour();
+                        $lbl = $sc->format('h:i A') . ' - ' . $ec->format('h:i A');
+                    } catch (\Throwable $e) {
+                        $lbl = $slot;
+                    }
+                @endphp
+
+                <option value="{{ $slot }}" {{ $selectedTime == $slot ? 'selected' : '' }}>
+                    {{ $lbl }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+    <div class="booking-info-label bmod-time-label"
+         style="margin-top:8px;font-size:13px;color:#64748b;">
+        {{ $timeLabel }}
+    </div>
 </div>
-                                    </div>
                                 @endif
 
                                 {{-- STAFF MODULE --}}
                                 @if($staffModule)
                                     <div class="booking-info-card">
-                                        <div class="booking-info-title">
-                                            {{ $staffModule->translated_label ?? 'Assigned Staff' }}
-                                        </div>
-                                        <div class="booking-info-content">
-                                            <div class="booking-info-icon">
-                                                <x-iconsax-lin-profile class="icons" width="16px" height="16px" />
-                                            </div>
-                                            @if(!empty($staffModule->config['staff']))
-                                                <select name="{{ $staffPrefix }}" class="form-control form-control-sm"
-                                                    style="border-radius:12px;">
-                                                    <option value="">— {{ trans('checkout.select_staff') ?? 'Select staff' }} —</option>
-                                                    @foreach($staffModule->config['staff'] as $staff)
-                                                        @php $value = $staff['id'] ?? $staff['name']; @endphp
-                                                        <option value="{{ $value }}" {{ $selectedStaff == $value ? 'selected' : '' }}>
-                                                            {{ $staff['name'] }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            @else
-                                                <div class="booking-info-value">{{ $authUserName ?: 'Guest' }}</div>
-                                                <input type="hidden" name="{{ $staffPrefix }}" value="{{ $authUserName }}">
-                                            @endif
-                                            <!-- <div class="booking-info-label">{{ $staffLabel }}</div> -->
-                                        </div>
-                                        <div class="booking-info-label mt-2">
-    {{ $staffLabel }}
+    <div class="booking-info-title">
+        {{ $staffModule->translated_label ?? 'Assigned Staff' }}
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;">
+        <div class="booking-info-icon">
+            <x-iconsax-lin-profile class="icons" width="16px" height="16px" />
+        </div>
+
+        @if(!empty($staffModule->config['staff']))
+            <select name="{{ $staffPrefix }}"
+                    class="form-control form-control-sm"
+                    style="border-radius:12px;flex:1;">
+
+                <option value="">— {{ trans('checkout.select_staff') ?? 'Select staff' }} —</option>
+
+                @foreach($staffModule->config['staff'] as $staff)
+                    @php $value = $staff['id'] ?? $staff['name']; @endphp
+
+                    <option value="{{ $value }}" {{ $selectedStaff == $value ? 'selected' : '' }}>
+                        {{ $staff['name'] }}
+                    </option>
+                @endforeach
+
+            </select>
+        @else
+            <div class="booking-info-value">{{ $authUserName ?: 'Guest' }}</div>
+            <input type="hidden" name="{{ $staffPrefix }}" value="{{ $authUserName }}">
+        @endif
+    </div>
+
+    <div class="booking-info-label"
+         style="margin-top:8px;font-size:13px;color:#64748b;">
+        {{ $staffLabel }}
+    </div>
 </div>
-                                    </div>
                                 @endif
 
                             </div>{{-- .booking-info-grid --}}
