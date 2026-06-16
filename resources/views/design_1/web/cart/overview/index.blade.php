@@ -133,21 +133,25 @@
         /* Booking modules */
         .bmod-wrap {
             margin-top: 12px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            overflow: hidden;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            overflow: visible;
         }
         .bmod-row {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
         }
         .bmod-col {
             min-width: 0;
-            padding: 10px 12px;
-            border-right: 1px solid #e2e8f0;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
         }
-        .bmod-col:last-child { border-right: none; }
+        .bmod-col:last-child { border-right: 1px solid #e2e8f0; }
         .bmod-label {
             font-size: 11px;
             font-weight: 800;
