@@ -17,15 +17,13 @@ class CheckoutModuleService
      *
      * Kisi bhi product/course/booking ke liye enabled modules laata hai.
      * Priority: Entity Override > Org Setting > Default (disabled)
-     * RULE: Sirf is_active = true wale modules show honge.
-     *       is_required ka koi role nahi visibility mein.
      */
     public function getModulesForEntity(
         string $entityType,
         int $entityId,
         int $orgId
     ): Collection {
-        // Step 1: Saare is_active modules laao, order_index se sort karo
+        // Step 1: Saare active modules laao, order_index se sort karo
         $allModules = CheckoutModule::where('is_active', true)
             ->orderBy('order_index', 'asc')
             ->get();
@@ -42,21 +40,22 @@ class CheckoutModuleService
             ->keyBy('module_id'); // [module_id => EntityCheckoutModule]
 
         // Step 4: Har module ko check karo — enabled hai ya nahi
-        // is_required NAHI dekha jaata — sirf is_active (already filtered above)
-        // aur org/entity level enabling
         $enabledModules = $allModules->filter(function ($module) use ($orgEnabledIds, $entityOverrides) {
+            if ($module->is_required) {
+                return true;
+            }
 
             // Entity level override hai toh woh priority pe hai
             if ($entityOverrides->has($module->id)) {
-                return (bool) $entityOverrides[$module->id]->enabled;
+                return $entityOverrides[$module->id]->enabled;
             }
 
             // Org level setting check karo
             if ($orgEnabledIds->has($module->id)) {
-                return (bool) $orgEnabledIds[$module->id];
+                return $orgEnabledIds[$module->id];
             }
 
-            // Default: disabled (org ne enable nahi kiya)
+            // Default: disabled
             return false;
         });
 
@@ -65,6 +64,7 @@ class CheckoutModuleService
             if ($entityOverrides->has($module->id)) {
                 $override = $entityOverrides[$module->id];
                 if (!empty($override->config_override)) {
+                    // Original config ke upar override merge karo
                     $mergedConfig = array_merge(
                         $module->config ?? [],
                         $override->config_override ?? []
@@ -102,31 +102,35 @@ class CheckoutModuleService
 
             switch ($type) {
 
+                // Har din ka hisaab — check_in se check_out tak
                 case 'per_day':
                     if (!empty($data['check_in']) && !empty($data['check_out'])) {
-                        $checkIn   = \Carbon\Carbon::parse($data['check_in']);
-                        $checkOut  = \Carbon\Carbon::parse($data['check_out']);
-                        $days      = max(1, $checkIn->diffInDays($checkOut));
+                        $checkIn  = \Carbon\Carbon::parse($data['check_in']);
+                        $checkOut = \Carbon\Carbon::parse($data['check_out']);
+                        $days     = max(1, $checkIn->diffInDays($checkOut));
                         $basePrice = $priceRule['amount'] ?? 0;
                         $extraTotal += $days * $basePrice;
                     }
                     break;
 
+                // Har ghante ka hisaab
                 case 'per_hour':
-                    $hours      = isset($data['hours_count']) ? (int) $data['hours_count'] : 1;
-                    $basePrice  = $priceRule['amount'] ?? 0;
+                    $hours     = isset($data['hours_count']) ? (int) $data['hours_count'] : 1;
+                    $basePrice = $priceRule['amount'] ?? 0;
                     $extraTotal += $hours * $basePrice;
                     break;
 
+                // Har adult ka alag price
                 case 'per_person':
-                    $adults     = isset($data['adults']) ? (int) $data['adults'] : 0;
-                    $amount     = $priceRule['amount'] ?? 0;
+                    $adults    = isset($data['adults']) ? (int) $data['adults'] : 0;
+                    $amount    = $priceRule['amount'] ?? 0;
                     $extraTotal += $adults * $amount;
                     break;
 
+                // Extra services — selected options ki prices jodo
                 case 'additive':
-                    $config   = $module->config ?? [];
-                    $options  = $config['options'] ?? [];
+                    $config  = $module->config ?? [];
+                    $options = $config['options'] ?? [];
                     $selected = is_array($data) ? $data : [];
 
                     foreach ($options as $index => $option) {
@@ -136,6 +140,7 @@ class CheckoutModuleService
                     }
                     break;
 
+                // Koi extra price nahi (info checkbox, textarea etc.)
                 case 'none':
                 default:
                     break;
@@ -151,22 +156,26 @@ class CheckoutModuleService
      * METHOD 3: saveOrderMeta()
      *
      * Order place hone ke baad module data order_meta table mein save karta hai.
+     * Agar order pehle se exist kare toh audit trail bhi likhta hai.
      */
     public function saveOrderMeta(int $orderId, array $moduleData): void
     {
         foreach ($moduleData as $moduleName => $value) {
             $newValue = json_encode($value);
 
+            // Pehle se koi record hai? Audit ke liye old value chahiye
             $existing = OrderMeta::where('order_id', $orderId)
                 ->where('key', $moduleName)
                 ->first();
             $oldValue = $existing ? $existing->getRawOriginal('value') : null;
 
+            // Save/Update order_meta
             OrderMeta::updateOrCreate(
                 ['order_id' => $orderId, 'key' => $moduleName],
                 ['value'    => $newValue]
             );
 
+            // Agar pehle se record tha toh audit trail likho
             if ($existing && $oldValue !== $newValue) {
                 $changedBy = Auth::id();
 
@@ -192,6 +201,7 @@ class CheckoutModuleService
      * METHOD 4: getOrderMeta()
      *
      * Order ka saved module data wapas laata hai.
+     * Returns: ['days' => [...], 'hours' => '...', ...]
      */
     public function getOrderMeta(int $orderId): array
     {
@@ -199,7 +209,8 @@ class CheckoutModuleService
 
         $result = [];
         foreach ($metas as $meta) {
-            $decoded        = json_decode($meta->value, true);
+            $decoded = json_decode($meta->value, true);
+            // Agar valid JSON nahi toh original string rakhte hain
             $result[$meta->key] = ($decoded !== null) ? $decoded : $meta->value;
         }
 
@@ -212,7 +223,7 @@ class CheckoutModuleService
      * METHOD 5: validateModuleData()
      *
      * Checkout submit hone se pehle user ka data validate karta hai.
-     * NOTE: is_required ki validation bhi hata di — sirf is_active se control hota hai.
+     * Returns: ['valid' => true/false, 'errors' => ['field' => 'message']]
      */
     public function validateModuleData(
         Collection $modules,
@@ -221,25 +232,37 @@ class CheckoutModuleService
         $errors = [];
 
         foreach ($modules as $module) {
-            $name   = $module->name;
-            $data   = $submittedData[$name] ?? null;
+            $name  = $module->name;
+            $data  = $submittedData[$name] ?? null;
             $config = $module->config ?? [];
 
-            // Data diya hi nahi — skip karo (koi field required nahi)
+            // Required module hai aur data khali hai
+            if ($module->is_required && empty($data)) {
+                $errors[$name] = trans('checkout.validation.required', [
+                    'field' => $module->translated_label
+                ]);
+                continue;
+            }
+
+            // Data diya hi nahi — optional hai toh skip
             if (empty($data)) {
                 continue;
             }
 
-            // Input type ke hisaab se validate karo (format check only)
+            // Input type ke hisaab se validate karo
             switch ($module->input_type) {
 
                 case 'date_range':
-                    if (!empty($data['check_in']) && strtotime($data['check_in']) < strtotime('today')) {
+                    if (empty($data['check_in'])) {
+                        $errors[$name . '.check_in'] = trans('checkout.validation.check_in_required');
+                    } elseif (strtotime($data['check_in']) < strtotime('today')) {
                         $errors[$name . '.check_in'] = trans('checkout.validation.check_in_past');
                     }
-                    if (
+
+                    if (empty($data['check_out'])) {
+                        $errors[$name . '.check_out'] = trans('checkout.validation.check_out_required');
+                    } elseif (
                         !empty($data['check_in']) &&
-                        !empty($data['check_out']) &&
                         strtotime($data['check_out']) <= strtotime($data['check_in'])
                     ) {
                         $errors[$name . '.check_out'] = trans('checkout.validation.check_out_before_check_in');
@@ -259,17 +282,20 @@ class CheckoutModuleService
                         'children' => $config['children'] ?? ['min' => 0, 'max' => 10],
                         'rooms'    => $config['rooms']    ?? ['min' => 1, 'max' => 10],
                     ];
+
                     foreach ($fields as $field => $limits) {
                         if (isset($data[$field])) {
                             $val = (int) $data[$field];
                             if ($val < $limits['min']) {
                                 $errors[$name . '.' . $field] = trans('checkout.validation.min_value', [
-                                    'field' => $field, 'min' => $limits['min']
+                                    'field' => $field,
+                                    'min'   => $limits['min']
                                 ]);
                             }
                             if ($val > $limits['max']) {
                                 $errors[$name . '.' . $field] = trans('checkout.validation.max_value', [
-                                    'field' => $field, 'max' => $limits['max']
+                                    'field' => $field,
+                                    'max'   => $limits['max']
                                 ]);
                             }
                         }
@@ -279,6 +305,7 @@ class CheckoutModuleService
                 case 'checkbox_list':
                     $validLabels = collect($config['options'] ?? [])->pluck('label')->toArray();
                     $selected    = is_array($data) ? $data : [];
+
                     foreach ($selected as $item) {
                         if (!in_array($item, $validLabels)) {
                             $errors[$name] = trans('checkout.validation.invalid_option');
@@ -287,15 +314,20 @@ class CheckoutModuleService
                     }
                     break;
 
-                case 'textarea':
-                    $maxLength = $config['max_length'] ?? 500;
-                    if (mb_strlen($data) > $maxLength) {
-                        $errors[$name] = trans('checkout.validation.max_length', ['max' => $maxLength]);
+                case 'info_checkbox':
+                    // Cancellation policy — agree karna zaroori hai agar required hai
+                    if ($module->is_required && empty($data)) {
+                        $errors[$name] = trans('checkout.validation.must_agree_policy');
                     }
                     break;
 
-                // info_checkbox aur baaki — koi validation nahi
-                default:
+                case 'textarea':
+                    $maxLength = $config['max_length'] ?? 500;
+                    if (mb_strlen($data) > $maxLength) {
+                        $errors[$name] = trans('checkout.validation.max_length', [
+                            'max' => $maxLength
+                        ]);
+                    }
                     break;
             }
         }
@@ -313,11 +345,10 @@ class CheckoutModuleService
      *
      * Org/Instructor ke panel mein dikhane ke liye saare modules
      * aur unka enabled/disabled status laata hai.
-     * NOTE: is_required se enabled force NAHI hota — sirf is_active matter karta hai.
      */
     public function getOrgModuleSettings(int $orgId): array
     {
-        // Sirf is_active = true wale modules
+        // Saare active modules
         $allModules = CheckoutModule::where('is_active', true)
             ->orderBy('order_index')
             ->get();
@@ -326,16 +357,17 @@ class CheckoutModuleService
         $orgSettings = OrgCheckoutModule::where('org_id', $orgId)
             ->pluck('enabled', 'module_id'); // [module_id => true/false]
 
+        // Merge karke return karo
         return $allModules->map(function ($module) use ($orgSettings) {
             return [
-                'id'          => $module->id,
-                'name'        => $module->name,
-                'label'       => $module->translated_label,
-                'help_text'   => $module->translated_help_text,
-                'input_type'  => $module->input_type,
-                'order_index' => $module->order_index,
-                // is_required nahi — sirf org ka enabled status
-                'enabled'     => (bool) ($orgSettings[$module->id] ?? false),
+                'id'               => $module->id,
+                'name'             => $module->name,
+                'label'            => $module->translated_label,
+                'help_text'        => $module->translated_help_text,
+                'input_type'       => $module->input_type,
+                'order_index'      => $module->order_index,
+                'is_required'      => $module->is_required,
+                'enabled'          => (bool) ($module->is_required || ($orgSettings[$module->id] ?? false)),
             ];
         })->toArray();
     }
@@ -346,20 +378,20 @@ class CheckoutModuleService
      * METHOD 7: saveOrgModuleSettings()
      *
      * Org/Instructor ki module preferences save karta hai.
-     * NOTE: is_required force-enable NAHI karta ab.
+     * $moduleSettings = ['days' => true, 'hours' => false, ...]
      */
     public function saveOrgModuleSettings(int $orgId, array $moduleSettings): void
     {
         foreach ($moduleSettings as $moduleName => $isEnabled) {
 
+            // Module ka ID dhundo name se
             $module = CheckoutModule::where('name', $moduleName)->first();
 
             if (!$module) {
-                continue;
+                continue; // Unknown module — skip karo
             }
 
-            // Sirf org ki choice — is_required ignore
-            $enabled = (bool) $isEnabled;
+            $enabled = $module->is_required ? true : (bool) $isEnabled;
 
             OrgCheckoutModule::updateOrCreate(
                 [
