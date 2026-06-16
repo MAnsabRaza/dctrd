@@ -46,7 +46,7 @@
         /* Remove button */
         .cart-remove-btn {
             width: 30px; height: 30px; padding: 0; border-radius: 50%;
-            border: 1px solid #e2e8f0; background: #fff;
+            border: 1px solid #e2e8f0; color: #ef4444; background: transparent;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: background .15s, border-color .15s; flex-shrink: 0;
         }
