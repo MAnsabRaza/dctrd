@@ -142,8 +142,8 @@
                                                         <span class="badge badge-light">{{ $booking->category->title }}</span>
                                                     @endif
                                                 </div>
-                                                <a href="{{ route('booking.show', $booking->id) }}" class="btn btn-sm btn-primary mt-8">View Details</a>
-                                            </div>
+                                              <a href="{{ $booking->getUrl() }}" class="btn btn-sm btn-primary mt-8">View Details</a>
+                                             </div>
                                         </div>
                                     </div>
                                 @endforeach
@@ -164,8 +164,8 @@
                                             <div class="card-body">
                                                 <h5 class="card-title font-16 font-weight-bold">{{ $bundle->title }}</h5>
                                                 <p class="card-text font-13 text-muted">{{ Str::limit($bundle->description, 80) }}</p>
-                                                <a href="{{ route('bookingBundle.show', $bundle->id) }}" class="btn btn-sm btn-primary mt-8">View Details</a>
-                                            </div>
+                                               <a href="#" class="btn btn-sm btn-primary mt-8" onclick="alert('Coming Soon');">View Details</a>
+                                              </div>
                                         </div>
                                     </div>
                                 @endforeach
