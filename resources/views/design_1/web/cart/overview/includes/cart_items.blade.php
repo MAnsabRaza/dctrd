@@ -170,13 +170,6 @@
                                                        value="{{ $oldCheckIn }}"
                                                        min="{{ now()->format('Y-m-d') }}"
                                                        style="border-radius:12px;" />
-                                                <span class="text-gray-400 font-12">—</span>
-                                                <input type="date"
-                                                       name="{{ $datePrefix }}[check_out]"
-                                                       class="form-control form-control-sm bmod-date-input bmod-cout"
-                                                       value="{{ $oldCheckOut }}"
-                                                       min="{{ now()->format('Y-m-d') }}"
-                                                       style="border-radius:12px;" />
                                             </div>
                                             <div class="booking-info-label">{{ $checkInLabel }}</div>
                                         </div>
