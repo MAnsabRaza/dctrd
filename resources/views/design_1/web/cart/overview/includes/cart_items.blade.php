@@ -144,7 +144,7 @@
 
                 {{-- BOOKING MODULES --}}
                 @if($activeModules->isNotEmpty())
-                    <div class="booking-info-shell" data-item-key="{{ $itemKey }}">
+                    <div class="" data-item-key="{{ $itemKey }}">
 
                         {{-- TOP ROW: 3-column grid (days, hours, staff) --}}
                         @if($gridModules->isNotEmpty())
