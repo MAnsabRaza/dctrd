@@ -25,8 +25,70 @@
                                             <input type="text" name="search" class="form-control border-0 p-12" value="{{ request()->get('search','') }}" placeholder="{{ trans('home.slider_search_placeholder') }}"/>
                                             <button type="submit" class="btn btn-primary btn-lg">{{ trans('public.search') }}</button>
                                 </div>
+                                                <div class="mt-12">
+                                                    <div class="form-group">
+                                                        <label class="input-label">{{ trans('update.categories') }}</label>
 
-                                        <div class="mt-12">
+                                                        <div class="d-flex align-items-center mb-8 gap-8">
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary js-select-all-cats">Select all</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary js-clear-all-cats">Clear</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary js-toggle-all-cats">Expand/Collapse</button>
+                                                        </div>
+
+                                                        <div class="search-categories p-12 bg-white border rounded" style="max-height:220px;overflow:auto;">
+                                                            <div class="font-12 font-weight-600 mb-8">Course Categories</div>
+                                                            @foreach($categories as $category)
+                                                                <div class="mb-8">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <input type="checkbox" name="categories[]" id="cat{{ $category->id }}" value="{{ $category->id }}" @if(in_array($category->id, request()->get('categories', []))) checked @endif class="js-cat-checkbox mr-8">
+                                                                        <label for="cat{{ $category->id }}">{{ $category->title }}</label>
+                                                                        @if(!empty($category->subCategories) and count($category->subCategories))
+                                                                            <button type="button" class="btn btn-sm btn-link js-toggle-subcats ml-8" data-target="#subcats{{ $category->id }}">Toggle</button>
+                                                                        @endif
+                                                                    </div>
+
+                                                                    @if(!empty($category->subCategories) and count($category->subCategories))
+                                                                        <div id="subcats{{ $category->id }}" class="ml-4 mt-8 subcats-list">
+                                                                            @foreach($category->subCategories as $sub)
+                                                                                <div class="d-flex align-items-center mb-4">
+                                                                                    <input type="checkbox" name="categories[]" id="cat{{ $sub->id }}" value="{{ $sub->id }}" @if(in_array($sub->id, request()->get('categories', []))) checked @endif class="js-cat-checkbox mr-8">
+                                                                                    <label for="cat{{ $sub->id }}">{{ $sub->title }}</label>
+                                                                                </div>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            @endforeach
+
+                                                            @if(!empty($bookingCategories) and count($bookingCategories))
+                                                                <div class="mt-12">
+                                                                    <div class="font-12 font-weight-600 mb-8">Booking Categories</div>
+                                                                    @foreach($bookingCategories as $bcat)
+                                                                        <div class="mb-8">
+                                                                            <div class="d-flex align-items-center">
+                                                                                <input type="checkbox" name="booking_categories[]" id="bcat{{ $bcat->id }}" value="{{ $bcat->id }}" @if(in_array($bcat->id, request()->get('booking_categories', []))) checked @endif class="js-bcat-checkbox mr-8">
+                                                                                <label for="bcat{{ $bcat->id }}">{{ $bcat->title }}</label>
+                                                                                @if(!empty($bcat->children) and count($bcat->children))
+                                                                                    <button type="button" class="btn btn-sm btn-link js-toggle-subcats ml-8" data-target="#bsubcats{{ $bcat->id }}">Toggle</button>
+                                                                                @endif
+                                                                            </div>
+
+                                                                            @if(!empty($bcat->children) and count($bcat->children))
+                                                                                <div id="bsubcats{{ $bcat->id }}" class="ml-4 mt-8 subcats-list">
+                                                                                    @foreach($bcat->children as $bsub)
+                                                                                        <div class="d-flex align-items-center mb-4">
+                                                                                            <input type="checkbox" name="booking_categories[]" id="bcat{{ $bsub->id }}" value="{{ $bsub->id }}" @if(in_array($bsub->id, request()->get('booking_categories', []))) checked @endif class="js-bcat-checkbox mr-8">
+                                                                                            <label for="bcat{{ $bsub->id }}">{{ $bsub->title }}</label>
+                                                                                        </div>
+                                                                                    @endforeach
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
                                             @include('partials._location_picker', [
                                                 'locationModel' => null,
                                                 'addressName' => 'address',
@@ -166,4 +228,35 @@
 @push('scripts_bottom')
 
     <script src="{{ getDesign1ScriptPath("search") }}"></script>
+
+    <script>
+        (function () {
+            // select all / clear / toggle handlers for categories
+            document.addEventListener('click', function (e) {
+                if (!e.target) return;
+
+                if (e.target.matches('.js-select-all-cats')) {
+                    document.querySelectorAll('.js-cat-checkbox').forEach(function (el) { el.checked = true; });
+                    document.querySelectorAll('.js-bcat-checkbox').forEach(function (el) { el.checked = true; });
+                }
+
+                if (e.target.matches('.js-clear-all-cats')) {
+                    document.querySelectorAll('.js-cat-checkbox').forEach(function (el) { el.checked = false; });
+                    document.querySelectorAll('.js-bcat-checkbox').forEach(function (el) { el.checked = false; });
+                }
+
+                if (e.target.matches('.js-toggle-all-cats')) {
+                    document.querySelectorAll('.subcats-list').forEach(function (el) {
+                        el.style.display = (el.style.display === 'none' || getComputedStyle(el).display === 'none') ? 'block' : 'none';
+                    });
+                }
+
+                if (e.target.matches('.js-toggle-subcats')) {
+                    var target = e.target.getAttribute('data-target');
+                    var el = document.querySelector(target);
+                    if (el) el.style.display = (el.style.display === 'none' || getComputedStyle(el).display === 'none') ? 'block' : 'none';
+                }
+            }, false);
+        })();
+    </script>
 @endpush

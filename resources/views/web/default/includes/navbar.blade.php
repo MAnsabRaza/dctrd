@@ -102,6 +102,20 @@
                     </li>
                     @endif
 
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="/bookings">
+                            <i data-feather="calendar" width="20" height="20" class="mr-2"></i>
+                            <span>{{ trans('home.bookings') ?? 'Bookings' }}</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="/organizations">
+                            <i data-feather="users" width="20" height="20" class="mr-2"></i>
+                            <span>{{ trans('home.organizations') ?? 'Organizations' }}</span>
+                        </a>
+                    </li>
+
                     @if(!empty($navbarPages) && count($navbarPages))
                     @foreach($navbarPages as $navbarPage)
                         @if(isset($navbarPage['categories']))

@@ -6,12 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Blog;
 use App\Models\Bundle;
 use App\Models\Product;
+use App\Models\Booking;
+use App\Models\BookingBundle;
 use App\Models\Role;
 use App\Models\UpcomingCourse;
 use App\Models\Webinar;
 use App\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use App\Models\Category;
+use App\Models\BookingCategory;
 
 class SearchController extends Controller
 {
@@ -29,6 +33,9 @@ class SearchController extends Controller
             'resultCount' => 0,
         ];
 
+        // load categories for hierarchical filters (courses + bookings)
+        $data['categories'] = Category::getCategories();
+        $data['bookingCategories'] = BookingCategory::query()->roots()->active()->with('children')->get();
         $search = $request->get('search', null);
 
         if (!empty($search) and strlen($search) >= 3) {
@@ -179,8 +186,37 @@ class SearchController extends Controller
 
         $organizations = $organizationsQuery->limit(20)->get();
 
+        // Bookings
+        $bookingsQuery = Booking::query()->where('status', 'published')
+            ->where(function (Builder $query) use ($search) {
+                $query->where('title', 'like', "%$search%");
+                $query->orWhere('description', 'like', "%$search%");
+            })
+            ->with(['creator', 'category']);
+
+        if ($request->filled(['lat', 'lng', 'radius_km'])) {
+            $bookingsQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
+        }
+
+        $bookingsCount = deepClone($bookingsQuery)->count();
+        if (!$nearbyIsActive) {
+            $bookingsQuery->inRandomOrder();
+        }
+        $bookings = $bookingsQuery->limit(20)->get();
+
+        // Booking Bundles
+        $bookingBundlesQuery = BookingBundle::query()
+            ->where(function (Builder $query) use ($search) {
+                $query->where('title', 'like', "%$search%");
+                $query->orWhere('description', 'like', "%$search%");
+            })
+            ->with(['creator']);
+
+        $bookingBundlesCount = deepClone($bookingBundlesQuery)->count();
+        $bookingBundles = $bookingBundlesQuery->inRandomOrder()->limit(20)->get();
+
         return [
-            'resultCount' => $webinarsCount + $bundlesCount + $upcomingCoursesCount + $productsCount + $postsCount + $usersCount,
+            'resultCount' => $webinarsCount + $bundlesCount + $upcomingCoursesCount + $productsCount + $postsCount + $usersCount + $bookingsCount + $bookingBundlesCount,
             'webinars' => $webinars,
             'bundles' => $bundles,
             'products' => $products,
@@ -188,6 +224,8 @@ class SearchController extends Controller
             'posts' => $posts,
             'instructors' => $instructors,
             'organizations' => $organizations,
+            'bookings' => $bookings ?? collect([]),
+            'bookingBundles' => $bookingBundles ?? collect([]),
         ];
     }
 }
