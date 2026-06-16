@@ -135,7 +135,7 @@
                             <div class="booking-info-grid">
                                 <div class="booking-info-card">
                                     <div class="booking-info-title">
-                                        {{ $daysModule->translated_label ?? trans('update.check_in_date') ?? 'Check-in Date' }}
+                                        {{ trans('update.check_in_date') ?? 'Check-in Date' }}
                                         @if($daysModule && $daysModule->is_required)<span class="text-danger">*</span>@endif
                                     </div>
                                     <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:12px;">
@@ -143,11 +143,7 @@
                                             <x-iconsax-lin-calendar-2 class="icons" width="16px" height="16px"/>
                                         </div>
                                         @if($daysModule)
-                                            <div class="d-flex align-items-center gap-8 flex-wrap" style="width:100%;">
-                                                <input type="date" name="{{ $datePrefix }}[check_in]" class="form-control form-control-sm bmod-date-input bmod-cin" value="{{ $oldCheckIn }}" min="{{ now()->format('Y-m-d') }}" {{ $daysModule->is_required ? 'required' : '' }} style="border-radius:12px;" />
-                                                <span class="text-gray-400 font-12">—</span>
-                                                <input type="date" name="{{ $datePrefix }}[check_out]" class="form-control form-control-sm bmod-date-input bmod-cout" value="{{ $oldCheckOut }}" min="{{ now()->format('Y-m-d') }}" {{ $daysModule->is_required ? 'required' : '' }} style="border-radius:12px;" />
-                                            </div>
+                                            <input type="date" name="{{ $datePrefix }}[check_in]" class="form-control form-control-sm bmod-date-input bmod-cin" value="{{ $oldCheckIn }}" min="{{ now()->format('Y-m-d') }}" {{ $daysModule->is_required ? 'required' : '' }} style="border-radius:12px;width:100%;" />
                                             <div class="booking-info-label">{{ $checkInLabel }}</div>
                                         @else
                                             <div class="booking-info-value">{{ $slotLabel ?: 'Not selected' }}</div>
@@ -180,6 +176,10 @@
                                                     <option value="{{ $slot }}" {{ $selectedTime == $slot ? 'selected' : '' }}>{{ $label }}</option>
                                                 @endforeach
                                             </select>
+                                            <div class="mt-3" style="width:100%;">
+                                                <div class="font-12 text-gray-500 mb-2">{{ trans('update.check_out_date') ?? 'Check-out Date' }}</div>
+                                                <input type="date" name="{{ $datePrefix }}[check_out]" class="form-control form-control-sm bmod-date-input bmod-cout" value="{{ $oldCheckOut }}" min="{{ now()->format('Y-m-d') }}" {{ $daysModule->is_required ? 'required' : '' }} style="border-radius:12px;width:100%;" />
+                                            </div>
                                             <div class="booking-info-label">{{ $timeLabel }}</div>
                                         @else
                                             <div class="booking-info-value">{{ $timeLabel }}</div>
