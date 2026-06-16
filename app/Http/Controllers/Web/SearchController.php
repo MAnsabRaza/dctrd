@@ -64,6 +64,12 @@ class SearchController extends Controller
                 'reviews'
             ]);
 
+        // Filter by selected course categories
+        $selectedCategories = $request->get('categories', []);
+        if (!empty($selectedCategories)) {
+            $webinarsQuery->whereIn('category_id', $selectedCategories);
+        }
+
         if ($request->filled(['lat', 'lng', 'radius_km'])) {
             $webinarsQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
         }
@@ -193,6 +199,12 @@ class SearchController extends Controller
                 $query->orWhere('description', 'like', "%$search%");
             })
             ->with(['creator', 'category']);
+
+        // Filter by selected booking categories
+        $selectedBookingCategories = $request->get('booking_categories', []);
+        if (!empty($selectedBookingCategories)) {
+            $bookingsQuery->whereIn('category_id', $selectedBookingCategories);
+        }
 
         if ($request->filled(['lat', 'lng', 'radius_km'])) {
             $bookingsQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
