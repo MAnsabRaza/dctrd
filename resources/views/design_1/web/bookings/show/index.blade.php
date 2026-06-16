@@ -130,7 +130,7 @@
                             <button type="button"
                                     id="bookingAddToCartBtn"
                                     class="btn btn-primary btn-lg"
-                                    disabled
+                                    
                                     title="Please check and select an available slot first">
                                 <x-iconsax-lin-calendar-2 class="icons text-white" width="24px" height="24px"/>
                                 <span class="ml-4 text-white">Book Now</span>
@@ -390,18 +390,18 @@
     var selectedSlot = null; // { date, start_time, end_time }
 
     /* Enable Book Now only when a slot pill is selected */
-    $(document).on('change', 'input[name="selected_slot"]', function () {
-        selectedSlot = {
-            date:       $(this).data('date'),
-            start_time: $(this).val(),
-            end_time:   $(this).data('end'),
-        };
-        $bookBtn.prop('disabled', false);
-        $notice.removeClass('visible');
-        // visual — mark pill
-        $('.booking-slot-pill').removeClass('selected');
-        $(this).closest('.booking-slot-pill').addClass('selected');
-    });
+    // $(document).on('change', 'input[name="selected_slot"]', function () {
+    //     selectedSlot = {
+    //         date:       $(this).data('date'),
+    //         start_time: $(this).val(),
+    //         end_time:   $(this).data('end'),
+    //     };
+    //     $bookBtn.prop('disabled', false);
+    //     $notice.removeClass('visible');
+    //     // visual — mark pill
+    //     $('.booking-slot-pill').removeClass('selected');
+    //     $(this).closest('.booking-slot-pill').addClass('selected');
+    // });
 
     /* ── AJAX slot check ── */
     $('#checkSlotsBtn').on('click', function () {
@@ -414,7 +414,7 @@
 
         // Reset selection
         selectedSlot = null;
-        $bookBtn.prop('disabled', true);
+        //$bookBtn.prop('disabled', true);
 
         $.ajax({
             url: '/bookings/' + bookingSlug + '/slots',
@@ -453,11 +453,11 @@
 
     /* ── Book Now: POST to cart only if slot selected ── */
     $bookBtn.on('click', function () {
-        if (!selectedSlot) {
-            $notice.addClass('visible');
-            $bookBtn.prop('disabled', true);
-            return;
-        }
+        // if (!selectedSlot) {
+        //     $notice.addClass('visible');
+        //     //$bookBtn.prop('disabled', true);
+        //     return;
+        // }
 
         $bookBtn.addClass('loadingbar').prop('disabled', true);
 

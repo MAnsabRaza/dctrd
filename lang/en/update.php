@@ -4847,4 +4847,6 @@ return [
 'address_line'=>'Address Line',
 'checkout_message_placeholder'=>'Add a message to the seller (optional)',
 'reviewer_message_placeholder'=>'Add a message for the reviewer (optional)',
+'validity_days' => 'Validity Days',
+'usage_limit'=>'Usage Limit'
 ];
