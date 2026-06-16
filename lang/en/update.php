@@ -4848,5 +4848,7 @@ return [
 'checkout_message_placeholder'=>'Add a message to the seller (optional)',
 'reviewer_message_placeholder'=>'Add a message for the reviewer (optional)',
 'validity_days' => 'Validity Days',
-'usage_limit'=>'Usage Limit'
+'usage_limit'=>'Usage Limit',
+'check_in_date'=>'Check-in Date',
+'check_in_time'=>'Check-in Time',
 ];
