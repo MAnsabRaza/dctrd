@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="{{ getDesign1StylePath("product_show") }}">
     <link rel="stylesheet" href="{{ getDesign1StylePath("products_lists") }}">
     <style>
-        /* Slot pills */
         .booking-slot-pill {
             display: inline-flex; align-items: center;
             padding: 6px 14px; border-radius: 8px;
@@ -23,16 +22,27 @@
             color: #2563eb; font-weight: 700;
         }
         .booking-slot-pill input[type="radio"] { display: none; }
+
+        /* Selected slot summary badge */
+        .slot-selected-badge {
+            display: inline-flex; align-items: center; gap-6px;
+            background: #f0fdf4; border: 1px solid #86efac;
+            border-radius: 10px; padding: 8px 14px;
+            font-size: 13px; color: #166534; font-weight: 600;
+            margin-top: 12px;
+        }
     </style>
 @endpush
 
 @section('content')
     <div class="container pb-80 mt-120">
         <div class="row">
+
             {{-- ════ IMAGE ════ --}}
             <div class="col-12 col-lg-6">
                 <div class="product-show-thumbnail-card position-relative bg-gray-100 rounded-24">
-                    <img src="{{ $booking->cover_url }}" alt="{{ $booking->title }}" class="img-cover rounded-24 p-16">
+                    <img src="{{ $booking->cover_url }}" alt="{{ $booking->title }}"
+                         class="img-cover rounded-24 p-16">
                 </div>
             </div>
 
@@ -40,10 +50,9 @@
             <div class="col-12 col-lg-6 mt-32 mt-lg-0">
                 <div class="card-with-mask">
                     <div class="mask-8-white"></div>
-
                     <div class="position-relative bg-white p-16 rounded-24 z-index-2">
 
-                        {{-- Favourite (icon top-right) --}}
+                        {{-- Favourite --}}
                         <div class="position-absolute" style="top:24px;right:24px;z-index:10;">
                             <div class="bookingFavoriteBtn d-flex align-items-center justify-content-center rounded-circle bg-white border border-gray-200"
                                  style="width:42px;height:42px;cursor:pointer;"
@@ -65,7 +74,7 @@
                             @endif
                         </div>
 
-                        {{-- Title + featured --}}
+                        {{-- Title --}}
                         <div class="d-flex align-items-center flex-wrap gap-12 mt-12">
                             <h1 class="course-hero__title font-24 font-weight-bold text-dark text-ellipsis">{{ $booking->title }}</h1>
                             @if($booking->featured)
@@ -86,7 +95,8 @@
                                     'rateCountFont' => 'font-12',
                                 ])
                                 @if(!empty($booking->creator))
-                                    <a href="{{ $booking->creator->getProfileUrl() }}" target="_blank" class="d-flex align-items-center text-gray-500">
+                                    <a href="{{ $booking->creator->getProfileUrl() }}" target="_blank"
+                                       class="d-flex align-items-center text-gray-500">
                                         <x-iconsax-lin-profile class="icons text-gray-500" width="16px" height="16px"/>
                                         <span class="ml-4 font-12 font-weight-bold">{{ truncate($booking->creator->full_name, 15) }}</span>
                                     </a>
@@ -110,13 +120,10 @@
 
                         {{-- Buttons --}}
                         <div class="d-flex align-items-center gap-12 flex-wrap mt-16">
-                            <button type="button"
-                                    id="bookingAddToCartBtn"
-                                    class="btn btn-primary btn-lg">
+                            <button type="button" id="bookingAddToCartBtn" class="btn btn-primary btn-lg">
                                 <x-iconsax-lin-calendar-2 class="icons text-white" width="24px" height="24px"/>
                                 <span class="ml-4 text-white">Book Now</span>
                             </button>
-
                             <button id="bookingFavoriteBtn" type="button"
                                     class="btn btn-outline-secondary btn-lg ml-2 d-flex align-items-center"
                                     data-slug="{{ $booking->slug }}"
@@ -125,6 +132,14 @@
                                 <x-iconsax-bol-heart class="js-full-fav icons text-danger mr-2 {{ (!empty($isFavorited) && $isFavorited) ? '' : 'd-none' }}" width="20px" height="20px"/>
                                 <span class="font-14">{{ $isFavorited ? 'Favorited' : 'Add to favorites' }}</span>
                             </button>
+                        </div>
+
+                        {{-- Selected slot summary (initially hidden) --}}
+                        <div id="selectedSlotSummary" style="display:none;" class="mt-12">
+                            <div class="slot-selected-badge">
+                                <x-iconsax-lin-calendar-2 class="icons" width="14px" height="14px"/>
+                                <span id="selectedSlotText" class="ml-6"></span>
+                            </div>
                         </div>
 
                     </div>
@@ -166,7 +181,7 @@
                         </button>
                     </form>
 
-                    {{-- Slots rendered here dynamically --}}
+                    {{-- Slots container --}}
                     <div class="mt-16" id="slotsContainer">
                         @if(!is_null($availableSlots))
                             <h4 class="font-14 font-weight-bold">Available slots</h4>
@@ -182,7 +197,9 @@
                                         </label>
                                     @endforeach
                                 </div>
-                                <p class="font-12 text-gray-500 mt-8">Select a slot above, then click <strong>Book Now</strong>.</p>
+                                <p class="font-12 text-gray-500 mt-8">
+                                    Select a slot above, then click <strong>Book Now</strong>.
+                                </p>
                             @else
                                 <div class="mt-12 text-gray-500">No slots are available for this date.</div>
                             @endif
@@ -198,25 +215,32 @@
             <div class="product-show-tabs-card position-relative">
                 <div class="product-show-tabs-card__mask"></div>
                 <div class="position-relative product-show-tabs-card__items d-flex align-items-center gap-20 gap-lg-40 bg-white px-20 rounded-12 z-index-2 w-100">
-                    <div class="navbar-item d-flex-center cursor-pointer active" data-tab-toggle data-tab-href="#bookingDescriptionTab">
+                    <div class="navbar-item d-flex-center cursor-pointer active"
+                         data-tab-toggle data-tab-href="#bookingDescriptionTab">
                         <span>{{ trans('public.description') }}</span>
                     </div>
-                    <div class="navbar-item d-flex-center cursor-pointer" data-tab-toggle data-tab-href="#bookingInfoTab">
+                    <div class="navbar-item d-flex-center cursor-pointer"
+                         data-tab-toggle data-tab-href="#bookingInfoTab">
                         <span>Details</span>
                     </div>
-                    <div class="navbar-item d-flex-center cursor-pointer" data-tab-toggle data-tab-href="#bookingReviewsTab">
+                    <div class="navbar-item d-flex-center cursor-pointer"
+                         data-tab-toggle data-tab-href="#bookingReviewsTab">
                         <span>{{ trans('product.reviews') }}</span>
                     </div>
-                    <div class="navbar-item d-flex-center cursor-pointer" data-tab-toggle data-tab-href="#bookingCommentsTab">
+                    <div class="navbar-item d-flex-center cursor-pointer"
+                         data-tab-toggle data-tab-href="#bookingCommentsTab">
                         <span>{{ trans('panel.comments') }}</span>
                     </div>
-                    <div class="navbar-item d-flex-center cursor-pointer" data-tab-toggle data-tab-href="#bookingProviderTab">
+                    <div class="navbar-item d-flex-center cursor-pointer"
+                         data-tab-toggle data-tab-href="#bookingProviderTab">
                         <span>{{ trans('update.provider') }}</span>
                     </div>
                 </div>
             </div>
 
             <div class="custom-tabs-body mt-16">
+
+                {{-- Description --}}
                 <div class="custom-tabs-content active" id="bookingDescriptionTab">
                     <div class="bg-white p-16 rounded-24">
                         <h3 class="font-16">About this booking</h3>
@@ -230,17 +254,18 @@
                     </div>
                 </div>
 
+                {{-- Info --}}
                 <div class="custom-tabs-content" id="bookingInfoTab">
                     <div class="bg-white p-16 rounded-24">
                         <div class="row">
                             @foreach([
-                                'Type'             => $booking->booking_type,
-                                'Capacity'         => $booking->capacity,
-                                'Minimum persons'  => $booking->min_persons,
-                                'Maximum persons'  => $booking->max_persons,
-                                'Duration'         => $booking->duration_minutes ? $booking->duration_minutes.' minutes' : null,
-                                'Address'          => $booking->full_address,
-                                'Instant booking'  => $booking->instant_booking ? 'Yes' : 'No',
+                                'Type'            => $booking->booking_type,
+                                'Capacity'        => $booking->capacity,
+                                'Minimum persons' => $booking->min_persons,
+                                'Maximum persons' => $booking->max_persons,
+                                'Duration'        => $booking->duration_minutes ? $booking->duration_minutes.' minutes' : null,
+                                'Address'         => $booking->full_address,
+                                'Instant booking' => $booking->instant_booking ? 'Yes' : 'No',
                             ] as $label => $value)
                                 @if(!empty($value))
                                     <div class="col-12 col-md-6 mt-16">
@@ -274,6 +299,7 @@
                     </div>
                 </div>
 
+                {{-- Reviews --}}
                 <div class="custom-tabs-content" id="bookingReviewsTab">
                     <div class="bg-white p-16 rounded-24">
                         <h3 class="font-16">{{ trans('product.reviews') }}</h3>
@@ -293,6 +319,7 @@
                     </div>
                 </div>
 
+                {{-- Comments --}}
                 <div class="custom-tabs-content" id="bookingCommentsTab">
                     <div class="bg-white p-16 rounded-24">
                         <h3 class="font-16">{{ trans('panel.comments') }}</h3>
@@ -309,15 +336,19 @@
                     </div>
                 </div>
 
+                {{-- Provider --}}
                 <div class="custom-tabs-content" id="bookingProviderTab">
                     <div class="bg-white p-16 rounded-24">
                         @if(!empty($booking->creator))
                             <div class="d-flex align-items-center">
                                 <a href="{{ $booking->creator->getProfileUrl() }}" target="_blank" class="size-64 rounded-circle">
-                                    <img src="{{ $booking->creator->getAvatar(64) }}" alt="{{ $booking->creator->full_name }}" class="img-cover rounded-circle">
+                                    <img src="{{ $booking->creator->getAvatar(64) }}"
+                                         alt="{{ $booking->creator->full_name }}"
+                                         class="img-cover rounded-circle">
                                 </a>
                                 <div class="ml-12">
-                                    <a href="{{ $booking->creator->getProfileUrl() }}" target="_blank" class="font-16 font-weight-bold text-dark">{{ $booking->creator->full_name }}</a>
+                                    <a href="{{ $booking->creator->getProfileUrl() }}" target="_blank"
+                                       class="font-16 font-weight-bold text-dark">{{ $booking->creator->full_name }}</a>
                                     @if(!empty($booking->creator->bio))
                                         <div class="mt-4 font-12 text-gray-500">{{ $booking->creator->bio }}</div>
                                     @endif
@@ -331,6 +362,7 @@
                         @endif
                     </div>
                 </div>
+
             </div>
         </div>
 
@@ -340,12 +372,13 @@
                 <h2 class="font-16 font-weight-bold">Related bookings</h2>
                 <div class="row">
                     @include('design_1.web.bookings.components.cards.grids.index', [
-                        'bookings' => $relatedBookings,
+                        'bookings'          => $relatedBookings,
                         'gridCardClassName' => 'col-12 col-md-6 col-lg-4 mt-16'
                     ])
                 </div>
             </div>
         @endif
+
     </div>
 @endsection
 
@@ -360,20 +393,67 @@
     var bookingId   = {{ $booking->id }};
     var bookingSlug = '{{ $booking->slug }}';
     var $bookBtn    = $('#bookingAddToCartBtn');
-    var selectedSlot = null; // { date, start_time, end_time } — optional, set when user picks a pill
 
-    /* ── Slot pill selection (optional — just highlights the pill) ── */
+    // Selected slot object — date, start_time, end_time
+    var selectedSlot = null;
+
+    /* ════════════════════════════════════════
+       HELPER: selected slot summary badge update
+    ════════════════════════════════════════ */
+    function updateSlotSummary() {
+        if (selectedSlot && selectedSlot.date && selectedSlot.start_time) {
+            var d     = new Date(selectedSlot.date);
+            var dLbl  = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            var tLbl  = selectedSlot.start_time + (selectedSlot.end_time ? ' - ' + selectedSlot.end_time : '');
+            $('#selectedSlotText').text(dLbl + ' · ' + tLbl);
+            $('#selectedSlotSummary').show();
+        } else {
+            $('#selectedSlotSummary').hide();
+        }
+    }
+
+    /* ════════════════════════════════════════
+       SLOT PILL SELECTION
+       — date input auto-sync + summary badge
+    ════════════════════════════════════════ */
     $(document).on('change', 'input[name="selected_slot"]', function () {
+        var $radio = $(this);
         selectedSlot = {
-            date:       $(this).data('date'),
-            start_time: $(this).val(),
-            end_time:   $(this).data('end'),
+            date:       $radio.data('date'),
+            start_time: $radio.val(),
+            end_time:   $radio.data('end'),
         };
+
+        // Pill highlight
         $('.booking-slot-pill').removeClass('selected');
-        $(this).closest('.booking-slot-pill').addClass('selected');
+        $radio.closest('.booking-slot-pill').addClass('selected');
+
+        // ── Date input ko selected slot ki date se sync karo ──
+        if (selectedSlot.date) {
+            $('#slotDateInput').val(selectedSlot.date);
+        }
+
+        // Summary badge update
+        updateSlotSummary();
     });
 
-    /* ── AJAX slot check ── */
+    /* ════════════════════════════════════════
+       DATE INPUT CHANGE — slot selection reset
+       (agar user date change kare toh purana slot clear ho)
+    ════════════════════════════════════════ */
+    $('#slotDateInput').on('change', function () {
+        // Sirf tab clear karo agar selected slot ki date alag ho
+        if (selectedSlot && selectedSlot.date !== $(this).val()) {
+            selectedSlot = null;
+            $('.booking-slot-pill').removeClass('selected');
+            $('input[name="selected_slot"]').prop('checked', false);
+            updateSlotSummary();
+        }
+    });
+
+    /* ════════════════════════════════════════
+       AJAX SLOT CHECK
+    ════════════════════════════════════════ */
     $('#checkSlotsBtn').on('click', function () {
         var date       = $('#slotDateInput').val();
         var resourceId = $('#slotResourceId').val() || '';
@@ -382,8 +462,9 @@
 
         var $btn = $(this).addClass('loadingbar').prop('disabled', true);
 
-        // Reset selected slot when re-checking
+        // Re-check par purana selection clear karo
         selectedSlot = null;
+        updateSlotSummary();
 
         $.ajax({
             url: '/bookings/' + bookingSlug + '/slots',
@@ -397,13 +478,13 @@
             if (slots.length) {
                 html += '<div class="d-flex align-items-center flex-wrap gap-8 mt-12" id="slotPillsWrap">';
                 slots.forEach(function (slot) {
-                    html += '<label class="booking-slot-pill">' +
-                            '<input type="radio" name="selected_slot"' +
-                            ' value="' + slot.start_time + '"' +
-                            ' data-end="' + slot.end_time + '"' +
-                            ' data-date="' + date + '">' +
-                            slot.start_time + ' - ' + slot.end_time +
-                            '</label>';
+                    html += '<label class="booking-slot-pill">'
+                          + '<input type="radio" name="selected_slot"'
+                          + ' value="' + slot.start_time + '"'
+                          + ' data-end="' + slot.end_time + '"'
+                          + ' data-date="' + date + '">'
+                          + slot.start_time + ' - ' + slot.end_time
+                          + '</label>';
                 });
                 html += '</div>';
                 html += '<p class="font-12 text-gray-500 mt-8">Select a slot above, then click <strong>Book Now</strong>.</p>';
@@ -412,6 +493,7 @@
             }
 
             $('#slotsContainer').html(html);
+
         }).fail(function (xhr) {
             var err = xhr.responseJSON;
             showToast('error', 'Error', err && err.message ? err.message : 'Could not fetch slots');
@@ -420,7 +502,9 @@
         });
     });
 
-    /* ── Book Now — seedha POST, koi slot restriction nahi ── */
+    /* ════════════════════════════════════════
+       BOOK NOW — cart mein add karo
+    ════════════════════════════════════════ */
     $bookBtn.on('click', function () {
         $bookBtn.addClass('loadingbar').prop('disabled', true);
 
@@ -429,7 +513,7 @@
             item_id:    bookingId,
             item_name:  'booking_id',
             item_type:  'booking',
-            // Agar slot selected hai toh bhejo, warna empty strings
+            // Slot selected hai toh bhejo, warna empty strings
             slot_date:  selectedSlot ? selectedSlot.date       : '',
             slot_start: selectedSlot ? selectedSlot.start_time : '',
             slot_end:   selectedSlot ? selectedSlot.end_time   : '',
@@ -457,7 +541,9 @@
         });
     });
 
-    /* ── Favourite toggle ── */
+    /* ════════════════════════════════════════
+       FAVOURITE TOGGLE
+    ════════════════════════════════════════ */
     $('body').on('click', '#bookingFavoriteBtn, .bookingFavoriteBtn', function (e) {
         e.preventDefault(); e.stopPropagation();
         var $btn      = $(this);

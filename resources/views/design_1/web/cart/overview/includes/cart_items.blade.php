@@ -5,7 +5,7 @@
         $itemKey      = $cart->id;
         $cartModules  = $checkoutModulesByCart[$cart->id] ?? collect();
 
-        // ── Sirf is_active = true wale modules ──
+        // Sirf is_active = true wale modules
         $activeModules = $cartModules->filter(fn($m) => $m->is_active);
     @endphp
 
@@ -19,13 +19,13 @@
             $locationStr = collect(array_filter([$city, $country]))->implode(', ');
             $thumbUrl    = $itemInfo['imgPath'] ?? $booking->thumbnail_url ?? '';
 
-            // ── Price ──
+            // Price
             $rawPrice      = (float) ($booking->price ?? 0);
             $discountPrice = !empty($booking->discount_price) ? (float) $booking->discount_price : $rawPrice;
             $hasDiscount   = $discountPrice < $rawPrice;
             $displayPrice  = $discountPrice;
 
-            // ── Slot data from cart meta ──
+            // Slot data from cart meta
             $slotDate  = $cart->meta['slot_date']  ?? null;
             $slotStart = $cart->meta['slot_start'] ?? null;
             $slotEnd   = $cart->meta['slot_end']   ?? null;
@@ -39,26 +39,26 @@
                 }
             }
 
-            // ── Old values ──
+            // Old values
             $oldCheckIn  = old("checkout_modules.{$itemKey}.days.check_in",  $slotDate ?? '');
             $oldCheckOut = old("checkout_modules.{$itemKey}.days.check_out", '');
             $authUserName = auth()->check() ? auth()->user()->full_name : '';
 
-            // ── Active module references ──
+            // Active module references
             $daysModule   = $activeModules->firstWhere('name', 'days');
             $hoursModule  = $activeModules->firstWhere('name', 'hours');
             $staffModule  = $activeModules->firstWhere('name', 'staff_member');
 
-            // ── Top 3 grid modules (only active ones among these 3) ──
+            // Top 3 grid modules
             $gridModules = $activeModules->filter(fn($m) => in_array($m->name, ['days', 'hours', 'staff_member']));
 
-            // ── Bottom section modules (only active ones) ──
+            // Bottom section modules
             $bottomModules = $activeModules->filter(fn($m) => in_array($m->name, [
                 'persons_children', 'extra_services', 'cancellation_policy',
                 'checkout_message', 'reviewer_message'
             ]));
 
-            // ── Prefix helpers ──
+            // Prefix helpers
             $datePrefix   = "checkout_modules[{$itemKey}][days]";
             $timePrefix   = "checkout_modules[{$itemKey}][hours]";
             $staffPrefix  = "checkout_modules[{$itemKey}][staff_member]";
@@ -68,7 +68,7 @@
             $msgPrefix    = "checkout_modules[{$itemKey}][checkout_message]";
             $revPrefix    = "checkout_modules[{$itemKey}][reviewer_message]";
 
-            // ── Display labels ──
+            // Display labels
             $selectedTime  = old("checkout_modules.{$itemKey}.hours", $slotStart ?? '');
             $selectedStaff = old("checkout_modules.{$itemKey}.staff_member", $authUserName);
             $checkInLabel  = $oldCheckIn
@@ -142,14 +142,11 @@
                     </div>
                 </div>
 
-                {{-- ══════════════════════════════════════
-                     BOOKING MODULES — sirf is_active = true
-                     ══════════════════════════════════════ --}}
+                {{-- BOOKING MODULES --}}
                 @if($activeModules->isNotEmpty())
-
                     <div class="booking-info-shell" data-item-key="{{ $itemKey }}">
 
-                        {{-- ── TOP ROW: 3-column grid (days, hours, staff) ── --}}
+                        {{-- TOP ROW: 3-column grid (days, hours, staff) --}}
                         @if($gridModules->isNotEmpty())
                             <div class="booking-info-grid">
 
@@ -159,19 +156,17 @@
                                         <div class="booking-info-title">
                                             {{ $daysModule->translated_label ?? trans('update.check_in_date') ?? 'Check-in Date' }}
                                         </div>
-                                        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:12px;">
+                                        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
                                             <div class="booking-info-icon">
                                                 <x-iconsax-lin-calendar-2 class="icons" width="16px" height="16px"/>
                                             </div>
-                                            <div class="d-flex align-items-center gap-8 flex-wrap" style="width:100%;">
-                                                <input type="date"
-                                                       name="{{ $datePrefix }}[check_in]"
-                                                       class="form-control form-control-sm bmod-date-input bmod-cin"
-                                                       value="{{ $oldCheckIn }}"
-                                                       min="{{ now()->format('Y-m-d') }}"
-                                                       style="border-radius:12px;" />
-                                            </div>
-                                            <div class="booking-info-label">{{ $checkInLabel }}</div>
+                                            <input type="date"
+                                                   name="{{ $datePrefix }}[check_in]"
+                                                   class="form-control form-control-sm bmod-date-input bmod-cin"
+                                                   value="{{ $oldCheckIn }}"
+                                                   min="{{ now()->format('Y-m-d') }}"
+                                                   style="border-radius:12px;" />
+                                            <div class="booking-info-label bmod-cin-label">{{ $checkInLabel }}</div>
                                         </div>
                                     </div>
                                 @endif
@@ -182,28 +177,31 @@
                                         <div class="booking-info-title">
                                             {{ $hoursModule->translated_label ?? trans('update.check_in_time') ?? 'Check-in Time' }}
                                         </div>
-                                        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:12px;">
+                                        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
                                             <div class="booking-info-icon">
                                                 <x-iconsax-lin-clock class="icons" width="16px" height="16px"/>
                                             </div>
-                                            <select name="{{ $timePrefix }}" class="form-control form-control-sm" style="border-radius:12px;">
+                                            <select name="{{ $timePrefix }}"
+                                                    class="form-control form-control-sm bmod-time-select"
+                                                    style="border-radius:12px;">
                                                 <option value="">— {{ trans('checkout.select') ?? 'Select' }} —</option>
                                                 @foreach($hoursModule->config['slots'] ?? [] as $slot)
                                                     @php
                                                         try {
-                                                            $sc    = \Carbon\Carbon::createFromFormat('H:i', $slot);
-                                                            $ec    = $sc->copy()->addHour();
-                                                            $lbl   = $sc->format('h:i A') . ' - ' . $ec->format('h:i A');
+                                                            $sc  = \Carbon\Carbon::createFromFormat('H:i', $slot);
+                                                            $ec  = $sc->copy()->addHour();
+                                                            $lbl = $sc->format('h:i A') . ' - ' . $ec->format('h:i A');
                                                         } catch (\Throwable $e) {
                                                             $lbl = $slot;
                                                         }
                                                     @endphp
-                                                    <option value="{{ $slot }}" {{ $selectedTime == $slot ? 'selected' : '' }}>
+                                                    <option value="{{ $slot }}"
+                                                        {{ $selectedTime == $slot ? 'selected' : '' }}>
                                                         {{ $lbl }}
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <div class="booking-info-label">{{ $timeLabel }}</div>
+                                            <div class="booking-info-label bmod-time-label">{{ $timeLabel }}</div>
                                         </div>
                                     </div>
                                 @endif
@@ -214,16 +212,19 @@
                                         <div class="booking-info-title">
                                             {{ $staffModule->translated_label ?? 'Assigned Staff' }}
                                         </div>
-                                        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:12px;">
+                                        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
                                             <div class="booking-info-icon">
                                                 <x-iconsax-lin-profile class="icons" width="16px" height="16px"/>
                                             </div>
                                             @if(!empty($staffModule->config['staff']))
-                                                <select name="{{ $staffPrefix }}" class="form-control form-control-sm" style="border-radius:12px;">
+                                                <select name="{{ $staffPrefix }}"
+                                                        class="form-control form-control-sm"
+                                                        style="border-radius:12px;">
                                                     <option value="">— {{ trans('checkout.select_staff') ?? 'Select staff' }} —</option>
                                                     @foreach($staffModule->config['staff'] as $staff)
                                                         @php $value = $staff['id'] ?? $staff['name']; @endphp
-                                                        <option value="{{ $value }}" {{ $selectedStaff == $value ? 'selected' : '' }}>
+                                                        <option value="{{ $value }}"
+                                                            {{ $selectedStaff == $value ? 'selected' : '' }}>
                                                             {{ $staff['name'] }}
                                                         </option>
                                                     @endforeach
@@ -239,8 +240,6 @@
 
                             </div>{{-- .booking-info-grid --}}
                         @endif
-
-                        {{-- ── BOTTOM SECTION: baaki active modules ── --}}
 
                         {{-- PERSONS + CHILDREN --}}
                         @if($paxModule = $activeModules->firstWhere('name', 'persons_children'))
@@ -261,6 +260,7 @@
                                     {{ $paxModule->translated_label ?? 'Guests' }}
                                 </div>
                                 <div class="d-flex flex-wrap gap-16">
+
                                     {{-- Adults --}}
                                     <div class="d-flex align-items-center gap-8">
                                         <span class="font-13 text-gray-600">Adults</span>
@@ -283,6 +283,7 @@
                                                     data-max="{{ $adultMax }}">+</button>
                                         </div>
                                     </div>
+
                                     {{-- Children --}}
                                     <div class="d-flex align-items-center gap-8">
                                         <span class="font-13 text-gray-600">Children</span>
@@ -305,6 +306,7 @@
                                                     data-max="{{ $childMax }}">+</button>
                                         </div>
                                     </div>
+
                                     {{-- Rooms --}}
                                     <div class="d-flex align-items-center gap-8">
                                         <span class="font-13 text-gray-600">Rooms</span>
@@ -327,6 +329,7 @@
                                                     data-max="{{ $roomMax }}">+</button>
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
                         @endif
@@ -345,6 +348,8 @@
                                             <input type="checkbox"
                                                    name="{{ $extrasPrefix }}[]"
                                                    value="{{ $opt['label'] }}"
+                                                   data-price="{{ (float)($opt['price'] ?? 0) }}"
+                                                   class="bmod-extra-chk"
                                                    style="accent-color:#22c55e;"
                                                    {{ in_array($opt['label'], old("checkout_modules.{$itemKey}.extra_services", [])) ? 'checked' : '' }}>
                                             <span>{{ $opt['label'] }}</span>
@@ -363,7 +368,9 @@
                                     ?? 'Free cancellation up to 24 hours before check-in.';
                             @endphp
                             <div class="booking-cancellation-card">
-                                <label for="cp_agree_{{ $itemKey }}" class="d-flex align-items-center gap-8" style="cursor:pointer;">
+                                <label for="cp_agree_{{ $itemKey }}"
+                                       class="d-flex align-items-center gap-8"
+                                       style="cursor:pointer;">
                                     <input type="checkbox"
                                            id="cp_agree_{{ $itemKey }}"
                                            name="{{ $policyPrefix }}"
@@ -480,10 +487,11 @@
 @push('scripts_bottom')
 <script>
 (function($){
+
     /* ── Char counter for message fields ── */
     $(document).on('input', '[id^="bmod_msg_"], [id^="bmod_rev_"]', function(){
-        var id  = $(this).attr('id');
-        var key = id.replace('bmod_msg_','').replace('bmod_rev_','');
+        var id     = $(this).attr('id');
+        var key    = id.replace('bmod_msg_','').replace('bmod_rev_','');
         var prefix = id.startsWith('bmod_rev_') ? 'bmod_revc_' : 'bmod_msgc_';
         $('#' + prefix + key).text($(this).val().length);
     });
@@ -496,23 +504,28 @@
         var max      = parseInt($(this).data('max') ?? 99);
         var $input   = $('#' + targetId);
         var current  = parseInt($input.val() ?? 0);
+        if (action === 'inc' && current < max) { $input.val(current + 1); }
+        else if (action === 'dec' && current > min) { $input.val(current - 1); }
+    });
 
-        if (action === 'inc' && current < max) {
-            $input.val(current + 1);
-        } else if (action === 'dec' && current > min) {
-            $input.val(current - 1);
+    /* ── Date input change → update display label ── */
+    $(document).on('change', '.bmod-cin', function(){
+        var $shell = $(this).closest('[data-item-key]');
+        var val    = $(this).val();
+        if (val) {
+            var d   = new Date(val);
+            var lbl = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+            $shell.find('.bmod-cin-label').text(lbl);
+        } else {
+            $shell.find('.bmod-cin-label').text('Not selected');
         }
     });
 
-    /* ── Nights badge on page load for pre-filled dates ── */
-    $('[data-item-key]').each(function(){
-        var $shell = $(this);
-        var inV    = $shell.find('.bmod-cin').val();
-        var outV   = $shell.find('.bmod-cout').val();
-        if (inV && outV) {
-            var nights = Math.max(0, Math.ceil((new Date(outV) - new Date(inV)) / 86400000));
-            $shell.find('.bmod-nights-badge').text(nights + ' nights');
-        }
+    /* ── Time select change → update display label ── */
+    $(document).on('change', '.bmod-time-select', function(){
+        var $shell = $(this).closest('[data-item-key]');
+        var val    = $(this).val();
+        $shell.find('.bmod-time-label').text(val ? $(this).find('option:selected').text() : 'Not selected');
     });
 
 })(jQuery);

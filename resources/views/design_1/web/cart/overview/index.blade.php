@@ -30,9 +30,7 @@
         .cart-booking-row:hover { box-shadow: 0 10px 30px rgba(15,23,42,.06); }
         .cart-booking-thumb {
             width: 70px; height: 70px;
-            border-radius: 16px;
-            overflow: hidden;
-            flex-shrink: 0;
+            border-radius: 16px; overflow: hidden; flex-shrink: 0;
             background: #eefaf1;
             display: flex; align-items: center; justify-content: center;
         }
@@ -40,63 +38,42 @@
 
         /* Generic item card */
         .cart-item-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 14px 16px;
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            margin-bottom: 14px;
-            position: relative;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+            padding: 14px 16px; display: flex; align-items: flex-start;
+            gap: 14px; margin-bottom: 14px; position: relative;
         }
 
         /* Remove button */
         .cart-remove-btn {
-            width: 30px; height: 30px; padding: 0;
-            border-radius: 50%;
-            border: 1px solid #e2e8f0;
-            background: #fff;
+            width: 30px; height: 30px; padding: 0; border-radius: 50%;
+            border: 1px solid #e2e8f0; background: #fff;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            transition: background .15s, border-color .15s;
-            flex-shrink: 0;
+            cursor: pointer; transition: background .15s, border-color .15s; flex-shrink: 0;
         }
         .cart-remove-btn:hover { background: #fee2e2 !important; border-color: #fca5a5 !important; }
         .cart-remove-btn:hover .icons { color: #ef4444 !important; }
 
         /* Summary card */
         .cart-summary-card {
-            background: #fff;
-            border: 1px solid #dbe4f0;
-            border-radius: 22px;
-            padding: 20px 22px;
-            position: sticky;
-            top: 20px;
+            background: #fff; border: 1px solid #dbe4f0; border-radius: 22px;
+            padding: 20px 22px; position: sticky; top: 20px;
             box-shadow: 0 1px 0 rgba(15, 23, 42, .02);
         }
 
         /* Coupon card */
         .cart-coupon-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 16px 18px;
-            margin-bottom: 14px;
+            background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 16px; padding: 16px 18px; margin-bottom: 14px;
         }
 
         /* Location card */
         .cart-location-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 16px 18px;
-            margin-bottom: 14px;
+            background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 16px; padding: 16px 18px; margin-bottom: 14px;
         }
         .cart-location-card__header {
             display: flex; align-items: center;
-            justify-content: space-between;
-            cursor: pointer; user-select: none;
+            justify-content: space-between; cursor: pointer; user-select: none;
         }
         .cart-location-card__title {
             display: flex; align-items: center;
@@ -109,9 +86,7 @@
         .cart-addr-suggestions {
             position: absolute; z-index: 1050;
             width: 100%; max-height: 200px; overflow-y: auto;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
             box-shadow: 0 8px 24px rgba(15,23,42,.1);
             top: calc(100% + 2px); left: 0;
         }
@@ -122,21 +97,15 @@
         .cart-addr-item:hover { background: #f0fdf4; color: #15803d; }
 
         .cart-checkout-btn {
-            height: 48px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 700;
-            width: 100%;
+            height: 48px; border-radius: 12px; font-size: 15px;
+            font-weight: 700; width: 100%;
             box-shadow: 0 12px 24px rgba(17, 123, 255, .18);
         }
 
         /* Booking info cards */
         .booking-info-shell {
-            margin-top: 16px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 18px;
-            padding: 18px;
+            margin-top: 16px; background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 18px; padding: 18px;
             box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
         }
         .booking-info-grid {
@@ -145,71 +114,52 @@
             gap: 12px;
         }
         .booking-info-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 16px;
-            min-height: 110px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 12px;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+            padding: 16px; min-height: 110px;
+            display: flex; flex-direction: column; justify-content: flex-start; gap: 8px;
         }
         .booking-info-title {
-            font-size: 11px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: .04em;
+            font-size: 11px; font-weight: 700; color: #64748b;
+            text-transform: uppercase; letter-spacing: .04em;
         }
         .booking-info-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            display: flex; align-items: center; gap: 12px;
         }
         .booking-info-icon {
-            width: 30px;
-            height: 30px;
-            min-width: 30px;
-            min-height: 30px;
-            background: rgba(34, 197, 94, .1);
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            width: 30px; height: 30px; min-width: 30px; min-height: 30px;
+            background: rgba(34, 197, 94, .1); border-radius: 12px;
+            display: inline-flex; align-items: center; justify-content: center;
             color: #22c55e;
         }
         .booking-info-value {
-            font-size: 14px;
-            font-weight: 700;
-            color: #0f172a;
-            line-height: 1.3;
+            font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.3;
         }
-        .booking-info-label {
-            font-size: 13px;
-            color: #475569;
-        }
+        .booking-info-label { font-size: 13px; color: #475569; }
+
         .booking-cancellation-card {
-            margin-top: 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            background: #fff;
-            padding: 16px;
+            margin-top: 14px; border: 1px solid #e2e8f0;
+            border-radius: 16px; background: #fff; padding: 16px;
         }
         .booking-cancellation-card label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #0f172a;
-            cursor: pointer;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer;
         }
         .booking-cancellation-card .booking-cancellation-text {
-            margin-top: 12px;
-            font-size: 12px;
-            color: #6b7280;
-            line-height: 1.6;
+            margin-top: 12px; font-size: 12px; color: #6b7280; line-height: 1.6;
+        }
+
+        /* Stepper */
+        .bmod-stepper-btn {
+            width: 28px; height: 28px; border-radius: 8px;
+            border: 1px solid #e2e8f0; background: #f8fafc;
+            font-size: 16px; line-height: 1; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: background .15s;
+        }
+        .bmod-stepper-btn:hover { background: #e2e8f0; }
+        .bmod-stepper-input {
+            width: 40px; text-align: center; border: 1px solid #e2e8f0;
+            border-radius: 8px; padding: 4px 0; font-size: 14px; font-weight: 600;
         }
 
         @media (max-width: 991px) {
@@ -232,6 +182,12 @@
         </p>
     </div>
 
+    {{-- Currency symbol hidden (JS ke liye) --}}
+    <span id="cartCurrencySymbol"
+          data-symbol="{{ getCurrencySymbol() ?? '$' }}"
+          data-decimals="{{ getCurrencyDecimals() ?? 2 }}"
+          style="display:none;"></span>
+
     <form action="/cart/checkout" method="POST" id="cartCheckoutForm">
         @csrf
         <input type="hidden" name="discount_id" id="discountIdInput">
@@ -250,12 +206,10 @@
                     <div class="cart-section-label">{{ trans('update.bookings') ?? 'Bookings' }}</div>
                 @endif
 
-                {{-- ── All Cart Items ── --}}
+                {{-- All Cart Items --}}
                 @include('design_1.web.cart.overview.includes.cart_items')
 
-                {{-- ════════════════════════════════
-                     DELIVERY ADDRESS — auto-filled from user DB
-                ════════════════════════════════ --}}
+                {{-- Delivery Address --}}
                 @auth
                 @php $authUser = auth()->user(); @endphp
                 <div class="cart-location-card" id="cartLocationSection">
@@ -269,10 +223,8 @@
                                                      id="cartLocationChevron"
                                                      width="16px" height="16px"/>
                     </div>
-
                     <div class="cart-location-card__body" id="cartLocationBody" style="display:none;">
                         <div class="row">
-                            {{-- Address Line --}}
                             <div class="col-12 mb-14 position-relative">
                                 <div class="form-group mb-0 position-relative">
                                     <label class="form-group-label font-12">{{ trans('update.address') ?? 'Address' }}</label>
@@ -283,8 +235,6 @@
                                     <div class="cart-addr-suggestions d-none" id="cartAddrSuggestions"></div>
                                 </div>
                             </div>
-
-                            {{-- City --}}
                             <div class="col-12 col-md-6 mb-14">
                                 <div class="form-group mb-0">
                                     <label class="form-group-label font-12">{{ trans('update.city') ?? 'City' }}</label>
@@ -293,8 +243,6 @@
                                            value="{{ old('city', $authUser->city ?? '') }}">
                                 </div>
                             </div>
-
-                            {{-- State --}}
                             <div class="col-12 col-md-6 mb-14">
                                 <div class="form-group mb-0">
                                     <label class="form-group-label font-12">{{ trans('update.state') ?? 'State / Province' }}</label>
@@ -303,8 +251,6 @@
                                            value="{{ old('state', $authUser->state ?? '') }}">
                                 </div>
                             </div>
-
-                            {{-- Country --}}
                             <div class="col-12 col-md-6 mb-14">
                                 <div class="form-group mb-0">
                                     <label class="form-group-label font-12">{{ trans('update.country') ?? 'Country' }}</label>
@@ -313,8 +259,6 @@
                                            value="{{ old('country', $authUser->country ?? '') }}">
                                 </div>
                             </div>
-
-                            {{-- Postal Code --}}
                             <div class="col-12 col-md-6 mb-0">
                                 <div class="form-group mb-0">
                                     <label class="form-group-label font-12">{{ trans('update.postal_code') ?? 'Postal Code' }}</label>
@@ -334,7 +278,7 @@
                 {{-- User group discount --}}
                 @include('design_1.web.cart.overview.includes.user_group_discount')
 
-                {{-- Shipping & delivery (physical products) --}}
+                {{-- Shipping & delivery --}}
                 @if(!empty($hasPhysicalProduct) && $hasPhysicalProduct)
                     @include('design_1.web.cart.overview.includes.shipping_and_delivery')
                 @endif
@@ -343,9 +287,9 @@
 
             {{-- ════════ RIGHT COLUMN ════════ --}}
             <div class="col-12 col-lg-4 mt-24 mt-lg-0">
-                    @include('design_1.web.cart.overview.includes.summary', [
-                        'calculatePrices' => $calculatePrices,
-                    ])
+                @include('design_1.web.cart.overview.includes.summary', [
+                    'calculatePrices' => $calculatePrices,
+                ])
             </div>
 
         </div>
@@ -360,7 +304,47 @@
 (function ($) {
     'use strict';
 
-    /* ── Remove cart item ── */
+    /* ════════════════════════════════════════
+       CURRENCY HELPER
+    ════════════════════════════════════════ */
+    var $currEl   = $('#cartCurrencySymbol');
+    var curSym    = $currEl.data('symbol')   || '$';
+    var curDec    = parseInt($currEl.data('decimals') || 2);
+
+    function formatMoney(amount) {
+        return curSym + parseFloat(amount).toFixed(curDec);
+    }
+
+    /* ════════════════════════════════════════
+       EXTRA SERVICES — real-time total update
+    ════════════════════════════════════════ */
+    var baseTotal = parseFloat($('.js-cart-total').data('amount')) || 0;
+
+    function recalcExtras() {
+        var extrasTotal = 0;
+        $('.bmod-extra-chk:checked').each(function () {
+            extrasTotal += parseFloat($(this).data('price')) || 0;
+        });
+
+        // Extras column update
+        $('.js-cart-extras').text(formatMoney(extrasTotal));
+
+        // Total column update
+        var newTotal = baseTotal + extrasTotal;
+        $('.js-cart-total').text(formatMoney(newTotal));
+    }
+
+    // Extra checkbox change
+    $(document).on('change', '.bmod-extra-chk', function () {
+        recalcExtras();
+    });
+
+    // Page load par bhi run karo (old() se pre-checked ke liye)
+    recalcExtras();
+
+    /* ════════════════════════════════════════
+       REMOVE CART ITEM
+    ════════════════════════════════════════ */
     $(document).on('click', '.cart-remove-btn', function () {
         var $btn   = $(this);
         var cartId = $btn.data('cart-id');
@@ -374,24 +358,36 @@
         }).done(function (res) {
             $('#cart-item-' + cartId).fadeOut(260, function () {
                 $(this).remove();
+
+                // Baqi items na rahe toh reload
                 if ($('.cart-booking-row, .cart-item-card').length === 0) {
                     location.reload();
                 }
+
+                // baseTotal update karo (removed item ki price minus)
+                baseTotal = parseFloat($('.js-cart-total').data('amount')) || 0;
+                recalcExtras();
             });
             if (res && res.msg) showToast(res.status || 'success', res.title || '', res.msg);
         }).fail(function (xhr) {
             $btn.removeClass('loadingbar').prop('disabled', false);
             var err = xhr.responseJSON;
-            showToast('error', err && err.title ? err.title : 'Error', err && err.msg ? err.msg : 'Could not remove item');
+            showToast('error',
+                err && err.title ? err.title : 'Error',
+                err && err.msg   ? err.msg   : 'Could not remove item');
         });
     });
 
-    /* ── Coupon: validate on Enter ── */
+    /* ════════════════════════════════════════
+       COUPON: validate on Enter
+    ════════════════════════════════════════ */
     $(document).on('keydown', '#couponCodeInput', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); $('#couponValidateBtn').trigger('click'); }
     });
 
-    /* ── Delivery Address toggle — auto-open if user has data ── */
+    /* ════════════════════════════════════════
+       DELIVERY ADDRESS TOGGLE
+    ════════════════════════════════════════ */
     (function () {
         var toggle  = document.getElementById('cartLocationToggle');
         var body    = document.getElementById('cartLocationBody');
@@ -404,7 +400,7 @@
             if (chevron) chevron.classList.toggle('open', !isOpen);
         });
 
-        // Auto-open if any field pre-filled
+        // Auto-open agar koi field pre-filled hai
         var inputs = body.querySelectorAll('input');
         for (var i = 0; i < inputs.length; i++) {
             if (inputs[i].value && inputs[i].value.trim()) {
@@ -436,14 +432,14 @@
                             el.textContent = item.display_name;
                             el.addEventListener('click', function () {
                                 addrInput.value = item.display_name || addrInput.value;
-                                var city = document.getElementById('cartCity');
-                                var state = document.getElementById('cartState');
+                                var city    = document.getElementById('cartCity');
+                                var state   = document.getElementById('cartState');
                                 var country = document.getElementById('cartCountry');
-                                var postal = document.getElementById('cartPostalCode');
-                                if (city && item.city) city.value = item.city;
-                                if (state && item.state) state.value = item.state;
-                                if (country && item.country) country.value = item.country;
-                                if (postal && item.postal_code) postal.value = item.postal_code;
+                                var postal  = document.getElementById('cartPostalCode');
+                                if (city    && item.city)        city.value    = item.city;
+                                if (state   && item.state)       state.value   = item.state;
+                                if (country && item.country)     country.value = item.country;
+                                if (postal  && item.postal_code) postal.value  = item.postal_code;
                                 suggestions.classList.add('d-none');
                             });
                             suggestions.appendChild(el);
@@ -461,33 +457,13 @@
         });
     })();
 
-    /* ── Nights counter for booking date modules ── */
-    $(document).on('change', '.bmod-cin, .bmod-cout', function () {
-        var $wrap = $(this).closest('[data-item-key]');
-        var key   = $wrap.data('item-key');
-        var inV   = $wrap.find('.bmod-cin').val();
-        var outV  = $wrap.find('.bmod-cout').val();
-        var $badge = $wrap.find('.bmod-nights-badge');
-        if (!inV || !outV) { $badge.text('0 nights'); return; }
-        var inD = new Date(inV), outD = new Date(outV);
-        if (outD <= inD) {
-            var n = new Date(inD); n.setDate(n.getDate() + 1);
-            $wrap.find('.bmod-cout').val(n.getFullYear() + '-' +
-                String(n.getMonth()+1).padStart(2,'0') + '-' +
-                String(n.getDate()).padStart(2,'0'));
-            outD = n;
-        }
-        var nights = Math.max(0, Math.ceil((outD - inD) / 86400000));
-        $badge.text(nights + ' nights');
-    });
-
-    /* ── Checkout Button Handler ── */
+    /* ════════════════════════════════════════
+       CHECKOUT BUTTON
+    ════════════════════════════════════════ */
     $(document).on('click', '.js-cart-checkout', function (e) {
         e.preventDefault();
         var form = document.getElementById('cartCheckoutForm');
-        if (form) {
-            form.submit();
-        }
+        if (form) { form.submit(); }
     });
 
 })(jQuery);
