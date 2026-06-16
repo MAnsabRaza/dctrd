@@ -41,7 +41,7 @@
 
                 // ── Check-in / check-out from old() or module config ──
                 $oldCheckIn  = old("checkout_modules.{$itemKey}.days.check_in",  $slotDate ?? '');
-                $oldCheckOut = old("checkout_modules.{$itemKey}.days.check_out", '');
+                $oldCheckOut = old("checkout_modules.{$itemKey}.days.check_out", $slotEnd ?? '');
 
                 // ── Staff: show logged-in user name ──
                 $authUserName = auth()->check() ? auth()->user()->full_name : '';
