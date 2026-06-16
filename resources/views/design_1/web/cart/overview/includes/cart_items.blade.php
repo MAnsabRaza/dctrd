@@ -1,11 +1,16 @@
 
 
     @foreach($carts as $cart)
-        @php
+            @php
             $cartItemInfo = app(\App\Mixins\Cart\CartItemInfo::class);
             $itemInfo     = $cartItemInfo->getItemInfo($cart);
             $itemKey      = $cart->id;
-            $cartModules  = $checkoutModulesByCart[$cart->id] ?? collect();
+            // Load modules for this cart item then filter out inactive modules
+            $cartModulesRaw = $checkoutModulesByCart[$cart->id] ?? collect();
+            $cartModules = collect($cartModulesRaw)->filter(function($m) {
+                // default to true (keep) if flag not present
+                return data_get($m, 'is_active', true);
+            });
         @endphp
 
         {{-- ════ BOOKING ITEM ════ --}}
