@@ -143,14 +143,14 @@
 
     $checkInLabel = $oldCheckIn
         ? \Carbon\Carbon::parse($oldCheckIn)->format('d M Y')
-        : ($slotDate ? \Carbon\Carbon::parse($slotDate)->format('d M Y') : (trans('checkout.not_selected') ?? 'Not selected'));
+        : ($slotDate ? \Carbon\Carbon::parse($slotDate)->format('d M Y') : (trans('cart.not_selected') ?? 'Not selected'));
 
     $selectedTime = old("checkout_modules.{$itemKey}.hours", $slotStart ?? '');
     $timeLabel    = $selectedTime
-        ?: ($slotStart ? $slotStart . ($slotEnd ? ' - ' . $slotEnd : '') : (trans('checkout.not_selected') ?? 'Not selected'));
+        ?: ($slotStart ? $slotStart . ($slotEnd ? ' - ' . $slotEnd : '') : (trans('cart.not_selected') ?? 'Not selected'));
 
     $selectedStaff = old("checkout_modules.{$itemKey}.staff_member", $authUserName);
-    $staffLabel    = $selectedStaff ?: ($authUserName ?: (trans('checkout.guest') ?? 'Guest'));
+    $staffLabel    = $selectedStaff ?: ($authUserName ?: (trans('cart.guest') ?? 'Guest'));
 
     $showHeader       = $showHeader ?? false;
     $wrapperClassName = $wrapperClassName ?? '';
@@ -163,7 +163,7 @@
 <div class="booking-info-shell {{ $wrapperClassName }}" data-item-key="{{ $itemKey }}">
 
     @if($showHeader)
-        <div class="cart-section-label">{{ trans('checkout.booking_details') ?? 'Booking Details' }}</div>
+        <div class="cart-section-label">{{ trans('cart.booking_details') ?? 'Booking Details' }}</div>
     @endif
 
     {{-- TOP ROW: 3-column grid (days, hours, staff) --}}
@@ -180,7 +180,7 @@
                             @if($daysModule->is_required)<span class="text-danger">*</span>@endif
                         </div>
                         @if($perDay)
-                            <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perDay) }}/{{ trans('checkout.day') ?? 'day' }}</span>
+                            <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perDay) }}/{{ trans('cart.day') ?? 'day' }}</span>
                         @endif
                     </div>
                     <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
@@ -204,7 +204,7 @@
                                {{ $daysModule->is_required ? 'required' : '' }}
                                style="border-radius:12px;">
                         <div class="booking-info-label bmod-cin-label">{{ $checkInLabel }}</div>
-                        <div class="cmod-nights" id="bmod_nights_{{ $itemKey }}">0 {{ trans('checkout.nights') ?? 'nights' }}</div>
+                        <div class="cmod-nights" id="bmod_nights_{{ $itemKey }}">0 {{ trans('cart.nights') ?? 'nights' }}</div>
                     </div>
                     @error("checkout_modules.{$itemKey}.days.check_in")
                         <div class="text-danger font-11 mt-4">{{ $message }}</div>
@@ -225,7 +225,7 @@
                             @if($hoursModule->is_required)<span class="text-danger">*</span>@endif
                         </div>
                         @if($perHour)
-                            <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perHour) }}/{{ trans('checkout.hour') ?? 'hr' }}</span>
+                            <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perHour) }}/{{ trans('cart.hour') ?? 'hr' }}</span>
                         @endif
                     </div>
                     <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
@@ -237,7 +237,7 @@
                                 class="form-control form-control-sm bmod-time-select"
                                 {{ $hoursModule->is_required ? 'required' : '' }}
                                 style="border-radius:12px;">
-                            <option value="">— {{ trans('checkout.select') ?? 'Select' }} —</option>
+                            <option value="">— {{ trans('cart.select') ?? 'Select' }} —</option>
                             @foreach($slots as $slot)
                                 @php
                                     try {
@@ -264,7 +264,7 @@
                 @php $staffOptions = $staffModule->config['staff'] ?? []; @endphp
                 <div class="booking-info-card" data-module-name="staff_member" data-price-type="none">
                     <div class="booking-info-title">
-                        {{ $staffModule->translated_label ?? trans('checkout.staff_member') ?? 'Assigned Staff' }}
+                        {{ $staffModule->translated_label ?? trans('cart.staff_member') ?? 'Assigned Staff' }}
                         @if($staffModule->is_required)<span class="text-danger">*</span>@endif
                     </div>
                     <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
@@ -277,7 +277,7 @@
                                     class="form-control form-control-sm"
                                     {{ $staffModule->is_required ? 'required' : '' }}
                                     style="border-radius:12px;">
-                                <option value="">— {{ trans('checkout.select_staff') ?? 'Select staff' }} —</option>
+                                <option value="">— {{ trans('cart.select_staff') ?? 'Select staff' }} —</option>
                                 @foreach($staffOptions as $staff)
                                     @php $value = $staff['id'] ?? $staff['name']; @endphp
                                     <option value="{{ $value }}" {{ $selectedStaff == $value ? 'selected' : '' }}>{{ $staff['name'] }}</option>
@@ -316,18 +316,18 @@
         <div class="booking-cancellation-card" data-module-name="persons_children" data-price-type="per_person" data-price-amount="{{ $perPerson }}">
             <div class="d-flex align-items-center justify-content-between">
                 <div class="booking-info-title">
-                    {{ $paxModule->translated_label ?? trans('checkout.guests') ?? 'Guests' }}
+                    {{ $paxModule->translated_label ?? trans('cart.guests') ?? 'Guests' }}
                     @if($paxModule->is_required)<span class="text-danger">*</span>@endif
                 </div>
                 @if($perPerson)
-                    <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perPerson) }}/{{ trans('checkout.person') ?? 'person' }}</span>
+                    <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perPerson) }}/{{ trans('cart.person') ?? 'person' }}</span>
                 @endif
             </div>
 
             <div class="d-flex flex-wrap gap-20 mt-12">
                 {{-- Adults --}}
                 <div class="d-flex align-items-center gap-8">
-                    <span class="font-13 text-gray-600">{{ trans('checkout.adults') ?? 'Adults' }}</span>
+                    <span class="font-13 text-gray-600">{{ trans('cart.adults') ?? 'Adults' }}</span>
                     <div class="d-flex align-items-center gap-4">
                         <button type="button" class="bmod-stepper-btn" data-target="pax_adults_{{ $itemKey }}" data-action="dec" data-min="{{ $adultMin }}">−</button>
                         <input type="number" id="pax_adults_{{ $itemKey }}" name="{{ $paxPrefix }}[adults]"
@@ -339,7 +339,7 @@
 
                 {{-- Children --}}
                 <div class="d-flex align-items-center gap-8">
-                    <span class="font-13 text-gray-600">{{ trans('checkout.children') ?? 'Children' }}</span>
+                    <span class="font-13 text-gray-600">{{ trans('cart.children') ?? 'Children' }}</span>
                     <div class="d-flex align-items-center gap-4">
                         <button type="button" class="bmod-stepper-btn" data-target="pax_children_{{ $itemKey }}" data-action="dec" data-min="{{ $childMin }}">−</button>
                         <input type="number" id="pax_children_{{ $itemKey }}" name="{{ $paxPrefix }}[children]"
@@ -351,7 +351,7 @@
 
                 {{-- Rooms --}}
                 <div class="d-flex align-items-center gap-8">
-                    <span class="font-13 text-gray-600">{{ trans('checkout.rooms') ?? 'Rooms' }}</span>
+                    <span class="font-13 text-gray-600">{{ trans('cart.rooms') ?? 'Rooms' }}</span>
                     <div class="d-flex align-items-center gap-4">
                         <button type="button" class="bmod-stepper-btn" data-target="pax_rooms_{{ $itemKey }}" data-action="dec" data-min="{{ $roomMin }}">−</button>
                         <input type="number" id="pax_rooms_{{ $itemKey }}" name="{{ $paxPrefix }}[rooms]"
@@ -372,7 +372,7 @@
         @php $extraOptions = $extrasModule->config['options'] ?? []; @endphp
         <div class="booking-cancellation-card" data-module-name="extra_services" data-price-type="additive">
             <div class="booking-info-title">
-                {{ $extrasModule->translated_label ?? trans('checkout.extra_services') ?? 'Extra Services' }}
+                {{ $extrasModule->translated_label ?? trans('cart.extra_services') ?? 'Extra Services' }}
                 @if($extrasModule->is_required)<span class="text-danger">*</span>@endif
             </div>
             <div class="d-flex flex-wrap gap-8 mt-12">
@@ -401,7 +401,7 @@
     @if($policyModule = $bottomModules->firstWhere('name', 'cancellation_policy'))
         @php
             $policyText = $policyModule->config['policy_text']
-                ?? trans('checkout.free_cancellation_hint')
+                ?? trans('cart.free_cancellation_hint')
                 ?? 'Free cancellation up to 24 hours before check-in.';
         @endphp
         <div class="booking-cancellation-card" data-module-name="cancellation_policy" data-price-type="none">
@@ -413,7 +413,7 @@
                        {{ old("checkout_modules.{$itemKey}.cancellation_policy") ? 'checked' : '' }}
                        {{ $policyModule->is_required ? 'required' : '' }}>
                 <span class="font-13 font-weight-bold">
-                    {{ $policyModule->translated_label ?? trans('checkout.cancellation_policy') ?? 'Cancellation Policy' }}
+                    {{ $policyModule->translated_label ?? trans('cart.cancellation_policy') ?? 'Cancellation Policy' }}
                     @if($policyModule->is_required)<span class="text-danger">*</span>@endif
                 </span>
             </label>
@@ -428,12 +428,12 @@
     @if($msgModule = $bottomModules->firstWhere('name', 'checkout_message'))
         @php
             $maxLen = $msgModule->config['max_length'] ?? 500;
-            $ph     = $msgModule->config['placeholder'] ?? (trans('checkout.special_instructions') ?? 'Special instructions...');
+            $ph     = $msgModule->config['placeholder'] ?? (trans('cart.special_instructions') ?? 'Special instructions...');
             $oldMsg = old("checkout_modules.{$itemKey}.checkout_message", '');
         @endphp
         <div class="booking-cancellation-card" data-module-name="checkout_message" data-price-type="none">
             <div class="booking-info-title">
-                {{ $msgModule->translated_label ?? trans('checkout.message_for_checkout') ?? 'Message for Check-out' }}
+                {{ $msgModule->translated_label ?? trans('cart.message_for_checkout') ?? 'Message for Check-out' }}
                 @if($msgModule->is_required)<span class="text-danger">*</span>@endif
             </div>
             <textarea name="{{ $msgPrefix }}"
@@ -445,7 +445,7 @@
                       id="bmod_msg_{{ $itemKey }}"
                       {{ $msgModule->is_required ? 'required' : '' }}>{{ $oldMsg }}</textarea>
             <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
-                <span id="bmod_msgc_{{ $itemKey }}">{{ strlen($oldMsg) }}</span>/{{ $maxLen }} {{ trans('checkout.characters') ?? 'characters' }}
+                <span id="bmod_msgc_{{ $itemKey }}">{{ strlen($oldMsg) }}</span>/{{ $maxLen }} {{ trans('cart.characters') ?? 'characters' }}
             </div>
             @error("checkout_modules.{$itemKey}.checkout_message")
                 <div class="text-danger font-11 mt-4">{{ $message }}</div>
@@ -457,12 +457,12 @@
     @if($revModule = $bottomModules->firstWhere('name', 'reviewer_message'))
         @php
             $revMaxLen = $revModule->config['max_length'] ?? 500;
-            $revPh     = $revModule->config['placeholder'] ?? (trans('checkout.message_to_reviewer') ?? 'Message to instructor or organizer');
+            $revPh     = $revModule->config['placeholder'] ?? (trans('cart.message_to_reviewer') ?? 'Message to instructor or organizer');
             $oldRev    = old("checkout_modules.{$itemKey}.reviewer_message", '');
         @endphp
         <div class="booking-cancellation-card" data-module-name="reviewer_message" data-price-type="none">
             <div class="booking-info-title">
-                {{ $revModule->translated_label ?? trans('checkout.message_to_reviewer') ?? 'Message to Reviewer' }}
+                {{ $revModule->translated_label ?? trans('cart.message_to_reviewer') ?? 'Message to Reviewer' }}
                 @if($revModule->is_required)<span class="text-danger">*</span>@endif
             </div>
             <textarea name="{{ $revPrefix }}"
@@ -474,7 +474,7 @@
                       id="bmod_rev_{{ $itemKey }}"
                       {{ $revModule->is_required ? 'required' : '' }}>{{ $oldRev }}</textarea>
             <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
-                <span id="bmod_revc_{{ $itemKey }}">{{ strlen($oldRev) }}</span>/{{ $revMaxLen }} {{ trans('checkout.characters') ?? 'characters' }}
+                <span id="bmod_revc_{{ $itemKey }}">{{ strlen($oldRev) }}</span>/{{ $revMaxLen }} {{ trans('cart.characters') ?? 'characters' }}
             </div>
             @error("checkout_modules.{$itemKey}.reviewer_message")
                 <div class="text-danger font-11 mt-4">{{ $message }}</div>
@@ -523,7 +523,7 @@
             var outVal = $cout.val();
 
             if (!inVal || !outVal) {
-                $badge.text('0 {{ trans("checkout.nights") ?? "nights" }}');
+                $badge.text('0 {{ trans("cart.nights") ?? "nights" }}');
                 return;
             }
 
@@ -541,7 +541,7 @@
             }
 
             var nights = Math.max(0, Math.ceil((outDate - inDate) / 86400000));
-            $badge.text(nights + ' {{ trans("checkout.nights") ?? "nights" }}');
+            $badge.text(nights + ' {{ trans("cart.nights") ?? "nights" }}');
         }
 
         $(document).on('change', '.bmod-cin', function () {
@@ -558,7 +558,7 @@
                 var lbl = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 $shell.find('.bmod-cin-label').text(lbl);
             } else {
-                $shell.find('.bmod-cin-label').text('{{ trans("checkout.not_selected") ?? "Not selected" }}');
+                $shell.find('.bmod-cin-label').text('{{ trans("cart.not_selected") ?? "Not selected" }}');
             }
 
             $(document).trigger('checkout:priceUpdate');
@@ -583,7 +583,7 @@
         $(document).on('change', '.bmod-time-select', function () {
             var $shell = $(this).closest('[data-item-key]');
             var val = $(this).val();
-            $shell.find('.bmod-time-label').text(val ? $(this).find('option:selected').text() : '{{ trans("checkout.not_selected") ?? "Not selected" }}');
+            $shell.find('.bmod-time-label').text(val ? $(this).find('option:selected').text() : '{{ trans("cart.not_selected") ?? "Not selected" }}');
             $(document).trigger('checkout:priceUpdate');
         });
 
