@@ -1,31 +1,32 @@
 {{-- resources/views/admin/user/edittab/availability.blade.php --}}
 
 @php
+    use App\Models\OrgAvailabilityRule;
+    use App\Models\OrgAvailabilityRange;
+
     $currentId  = $orgId ?? ($user->id ?? null);
     $rangeTypes = ['custom', 'daily', 'weekly', 'monthly', 'date_range'];
-
-    // Fallback defaults so this partial can render from admin edit page
-    $rule = $rule ?? (object) [
-        'make_all_unavailable_by_default' => false,
-        'product_specific_takes_precedence' => false,
-        'make_all_assets_unavailable_by_default' => false,
-    ];
-    $ranges = $ranges ?? collect();
-    $assets = $assets ?? collect();
-    $assetRanges = $assetRanges ?? collect();
 
     if (!$currentId) {
         throw new \Exception('Availability partial requires orgId or user.id');
     }
 
-    // Admin Dedicated Routes Only
+    $rule = $rule ?? OrgAvailabilityRule::firstOrNew(
+        ['org_id' => $currentId],
+        [
+            'availability_mode'                => 'available_by_default',
+            'product_specific_takes_precedence' => false,
+            'make_all_unavailable_by_default'  => false,
+        ]
+    );
+
+    $ranges = $ranges ?? OrgAvailabilityRange::where('org_id', $currentId)->orderBy('id')->get();
+    $assets = $assets ?? collect();
+    $assetRanges = $assetRanges ?? collect();
+
     $saveRoute    = route('admin.users.availability.save', ['id' => $currentId]);
     $deleteRowUrl = url("admin/users/{$currentId}/availability/row/delete");
 @endphp
-
-@extends('admin.layouts.app')
-
-@section('title', trans('booking.availability_assets'))
 
 @push('styles')
 <style>
@@ -77,35 +78,37 @@
 /* ── UI Sections (Strictly match provided image mockup) ───────── */
 .avail-section {
     background: #fff;
-    padding: 1.5rem 0;
+    padding: 1.5rem 1.5rem;
     margin-bottom: 2rem;
     border-bottom: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 .avail-section:last-of-type {
     border-bottom: none;
 }
 .avail-section-title {
-    font-size: 1.15rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #111827;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.7rem;
+    color: #0f172a;
 }
 .avail-section-desc {
-    font-size: 0.88rem;
-    color: #4b5563;
+    font-size: 0.9rem;
+    color: #475569;
     margin-bottom: 1rem;
-    line-height: 1.6;
+    line-height: 1.7;
 }
 .asset-usecases {
-    font-size: 0.85rem;
-    color: #4b5563;
+    font-size: 0.87rem;
+    color: #475569;
     padding-left: 1.25rem;
     margin-bottom: 1rem;
     line-height: 1.7;
 }
 .avail-save-btn {
-    min-width: 120px;
-    font-size: 0.875rem;
+    min-width: 140px;
+    font-size: 0.9rem;
 }
 #availToast {
     position: fixed;
@@ -117,8 +120,8 @@
 </style>
 @endpush
 
-@section('content')
-<div class="container-fluid py-3" style="max-width:1000px">
+<div class="tab-pane mt-3 fade {{ (request()->get('tab') == 'availability') ? 'active show' : '' }}" id="availability" role="tabpanel" aria-labelledby="availability-tab">
+    <div class="container-fluid py-3" style="max-width:1000px">
 
     {{-- SECTION 1 · Global Availability --}}
     <div class="avail-section">
