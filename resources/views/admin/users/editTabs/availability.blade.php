@@ -1,23 +1,12 @@
 {{-- resources/views/admin/user/edittab/availability.blade.php --}}
-{{-- 
-    Admin Only View:
-      - Admin:   GET /admin/users/{id}/availability
-    Variables Expected from Controller:
-      - $orgId     → int (The ID of the user/organization being edited)
-      - $rule      → OrgAvailabilityRule
-      - $ranges    → Collection<OrgAvailabilityRange>
-      - $assets    → Collection<Asset>
-      - $assetRanges → Collection<OrgAssetAvailabilityRange>
---}}
 
 @php
-    $currentId    = $orgId; // Controller se pass ki gayi User/Org ID
+    $currentId    = $orgId; 
     $rangeTypes   = ['custom', 'daily', 'weekly', 'monthly', 'date_range'];
 
-    // Admin Dedicated Routes
+    // Admin Dedicated Routes Only
     $saveRoute    = route('admin.users.availability.save', ['id' => $currentId]);
     $deleteRowUrl = url("admin/users/{$currentId}/availability/row/delete"); 
-    $addRowUrl    = route('admin.users.availability.addRow', ['id' => $currentId]);
 @endphp
 
 @extends('admin.layouts.app')
@@ -71,7 +60,7 @@
     font-size: 1.1rem;
 }
 
-/* ── UI Sections (As per provided mockup image) ───────────────── */
+/* ── UI Sections (Strictly match provided image mockup) ───────── */
 .avail-section {
     background: #fff;
     padding: 1.5rem 0;
@@ -117,9 +106,7 @@
 @section('content')
 <div class="container-fluid py-3" style="max-width:1000px">
 
-    {{-- ══════════════════════════════════════════════════════════ --}}
-    {{-- SECTION 1 · Global Availability                          --}}
-    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- SECTION 1 · Global Availability --}}
     <div class="avail-section">
         <h2 class="avail-section-title">Global Availability</h2>
         <div class="avail-section-desc">
@@ -132,7 +119,6 @@
             </ol>
         </div>
 
-        {{-- Checkbox 1 --}}
         <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" name="make_all_unavailable_by_default" id="chkMakeAllUnavailable" value="1" {{ $rule->make_all_unavailable_by_default ? 'checked' : '' }}>
             <label class="form-check-label text-muted" for="chkMakeAllUnavailable" style="font-size:0.875rem">
@@ -140,7 +126,6 @@
             </label>
         </div>
 
-        {{-- Checkbox 2 --}}
         <div class="form-check mb-3">
             <input class="form-check-input" type="checkbox" name="product_specific_takes_precedence" id="chkProductPrecedence" value="1" {{ $rule->product_specific_takes_precedence ? 'checked' : '' }}>
             <label class="form-check-label text-muted" for="chkProductPrecedence" style="font-size:0.875rem">
@@ -148,7 +133,6 @@
             </label>
         </div>
 
-        {{-- Global Range Table --}}
         <div class="table-responsive mb-3">
             <table class="table table-bordered avail-table mb-0" id="globalRangeTable">
                 <thead>
@@ -212,9 +196,7 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════════════════════ --}}
-    {{-- SECTION 2 · Asset                                        --}}
-    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- SECTION 2 · Asset --}}
     <div class="avail-section">
         <h2 class="avail-section-title">Asset</h2>
         <div class="avail-section-desc">
@@ -232,7 +214,6 @@
             Refer <a href="#" class="text-primary font-weight-bold">Documentation</a> for further details.
         </div>
 
-        {{-- Assets Base Table --}}
         <div class="table-responsive mb-3">
             <table class="table table-bordered avail-table mb-0" id="assetTable">
                 <thead>
@@ -265,9 +246,7 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════════════════════ --}}
-    {{-- SECTION 3 · Asset Availability                           --}}
-    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- SECTION 3 · Asset Availability --}}
     <div class="avail-section">
         <h2 class="avail-section-title">Asset Availability</h2>
         <div class="avail-section-desc">Define availability for each asset.</div>
@@ -279,7 +258,6 @@
             </label>
         </div>
 
-        {{-- Asset Availability Range Table --}}
         <div class="table-responsive mb-3">
             <table class="table table-bordered avail-table mb-0" id="assetAvailTable">
                 <thead>
@@ -360,7 +338,6 @@
 (function () {
     'use strict';
 
-    // Strictly mapped to Admin endpoints
     const SAVE_URL      = @json($saveRoute);
     const DELETE_BASE   = @json($deleteRowUrl);
     const CSRF          = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
@@ -402,7 +379,7 @@
             if (rowId) {
                 try {
                     const res = await fetch(`${DELETE_BASE}/${rowId}`, {
-                        method: 'POST', // Dynamic group setup requires post/delete sync
+                        method: 'POST',
                         headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
                     });
                     const data = await res.json();
@@ -513,25 +490,6 @@
         }));
     }
 
-    function collectAssets() {
-        return Array.from(document.querySelectorAll('#assetTableBody .asset-name-row')).map(row => ({
-            id       : row.dataset.id ?? '',
-            name     : row.querySelector('.asset-name-input')?.value ?? '',
-            quantity : row.querySelector('input[type=number]')?.value ?? 1,
-        }));
-    }
-
-    function collectAssetRanges() {
-        return Array.from(document.querySelectorAll('#assetAvailTableBody .availability-range-row')).map(row => ({
-            asset_id   : row.querySelector('.asset-id-select')?.value ?? '',
-            range_type : row.querySelector('.range-type-select')?.value ?? 'custom',
-            from_date  : row.querySelector('.from-date-input')?.value ?? '',
-            to_date    : row.querySelector('.to-date-input')?.value ?? '',
-            bookable   : row.querySelector('.bookable-checkbox')?.checked ? 1 : 0,
-        }));
-    }
-
-    // Processing Saves through Unified Admin Endpoint
     async function sendPayload(payload, btnId) {
         setBusy(btnId, true);
         try {
@@ -556,14 +514,6 @@
             product_specific_takes_precedence : document.getElementById('chkProductPrecedence')?.checked ? 1 : 0,
             ranges                            : collectGlobalRanges(),
         }, 'globalSaveBtn');
-    });
-
-    document.getElementById('assetSaveBtn').addEventListener('click', () => {
-        sendPayload({
-            make_all_assets_unavailable_by_default : document.getElementById('chkMakeAllAssetsUnavailable')?.checked ? 1 : 0,
-            assets                                 : collectAssets(),
-            asset_ranges                           : collectAssetRanges(),
-        }, 'assetSaveBtn');
     });
 })();
 </script>
