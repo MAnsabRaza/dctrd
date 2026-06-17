@@ -13,11 +13,18 @@
 --}}
 
 @php
-    $isAdmin      = $isAdmin ?? false;
-    $saveRoute    = $isAdmin
-        ? route('admin.users.availability.save', $orgId)
-        : route('panel.setting.availability.save');
-    $deleteRowUrl = '/panel/setting/availability/row'; // base; append /{id}
+    // Hum assume kar rahe hain ke abhi sirf admin panel chal raha hai
+    $isAdmin      = true; 
+    $currentId    = $orgId ?? null; // Jo ID controller se adminIndex se aa rahi hai
+
+    // Routes ko aapke exact admin definition ke mutabiq set kar diya
+    $saveRoute    = route('admin.users.availability.save', ['id' => $currentId]);
+    
+    // JS mein append karne ke liye base URL: /admin/users/{id}/availability/row/delete
+    $deleteRowUrl = url("admin/users/{$currentId}/availability/row/delete"); 
+    
+    $addRowUrl    = route('admin.users.availability.addRow', ['id' => $currentId]);
+
     $rangeTypes   = ['custom', 'daily', 'weekly', 'monthly', 'date_range'];
 @endphp
 
