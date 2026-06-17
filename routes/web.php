@@ -309,9 +309,21 @@ Route::group(['namespace' => 'Web', 'middleware' => ['check_mobile_app', 'impers
         Route::get('/apply/{webinarSlug}', 'SubscribeController@apply');
     });
 
-    Route::group(['prefix' => 'search'], function () {
-        Route::get('/', 'SearchController@index');
-    });
+   Route::group(['prefix' => 'search'], function () {
+
+    // Main Search Page
+    Route::get('/', 'SearchController@index')
+        ->name('search');
+
+    // AJAX Live Suggestions
+    Route::get('/suggestions', 'SearchController@suggestions')
+        ->name('search.suggestions');
+
+    // AJAX Category Tree
+    Route::get('/category-tree', 'SearchController@categoryTree')
+        ->name('search.category-tree');
+
+});
 
     Route::group(['prefix' => 'tags'], function () {
         Route::get('/{type}/{tag}', 'TagsController@index');

@@ -20,11 +20,10 @@
 @endphp
 <style>
     .cat-dropdown-menu-icon {
-    width: 20px;  /* Adjust width */
-    height: 20px; /* Adjust height */
-    object-fit: contain; /* Ensures the icon fits well */
-}
-
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+    }
 </style>
 
 <div id="navbarVacuum"></div>
@@ -42,7 +41,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <div class="mx-lg-30 d-none d-lg-flex flex-grow-1 navbar-toggle-content " id="navbarContent">
+            <div class="mx-lg-30 d-none d-lg-flex flex-grow-1 navbar-toggle-content" id="navbarContent">
                 <div class="navbar-toggle-header text-right d-lg-none">
                     <button class="btn-transparent" id="navbarClose">
                         <i data-feather="x" width="32" height="32"></i>
@@ -50,6 +49,8 @@
                 </div>
 
                 <ul class="navbar-nav mr-auto d-flex align-items-center">
+
+                    {{-- ── CATEGORIES DROPDOWN ──────────────────────────────────────── --}}
                     @if(!empty($categories) and count($categories))
                     <li class="mr-lg-25">
                         <div class="menu-category">
@@ -66,7 +67,6 @@
                                                         @if(!empty($category->icon))
                                                             <img src="{{ $category->icon }}" class="cat-dropdown-menu-icon mr-10" alt="{{ $category->title }} icon">
                                                         @endif
-
                                                         {{ $category->title }}
                                                     </div>
 
@@ -81,14 +81,13 @@
                                                         @foreach($category->subCategories as $subCategory)
                                                             <li>
                                                                 <div class="d-flex align-items-center">
-                                                                <a href="{{ $subCategory->getUrl() }}">
-                                                                    @if(!empty($subCategory->icon))
-                                                                        <img src="{{ $subCategory->icon }}" class="cat-dropdown-menu-icon mr-10" alt="{{ $subCategory->title }} icon">
-                                                                    @endif
-
-                                                                    {{ $subCategory->title }}
-                                                                </a>
-                                                            </div>
+                                                                    <a href="{{ $subCategory->getUrl() }}">
+                                                                        @if(!empty($subCategory->icon))
+                                                                            <img src="{{ $subCategory->icon }}" class="cat-dropdown-menu-icon mr-10" alt="{{ $subCategory->title }} icon">
+                                                                        @endif
+                                                                        {{ $subCategory->title }}
+                                                                    </a>
+                                                                </div>
                                                             </li>
                                                         @endforeach
                                                     </ul>
@@ -102,91 +101,83 @@
                     </li>
                     @endif
 
-                    <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center" href="/bookings">
-                            <i data-feather="calendar" width="20" height="20" class="mr-2"></i>
-                            <span>{{ trans('home.bookings') ?? 'Bookings' }}</span>
+                    {{-- ── BOOKINGS (NEW) ───────────────────────────────────────────── --}}
+                    <li class="nav-item {{ request()->is('bookings*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ url('/bookings') }}">
+                            {{ trans('home.bookings') ?? 'Bookings' }}
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center" href="/organizations">
-                            <i data-feather="users" width="20" height="20" class="mr-2"></i>
-                            <span>{{ trans('home.organizations') ?? 'Organizations' }}</span>
+                    {{-- ── ORGANIZATIONS (NEW) ─────────────────────────────────────── --}}
+                    <li class="nav-item {{ request()->is('organizations*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ url('/organizations') }}">
+                            {{ trans('home.organizations') ?? 'Organizations' }}
                         </a>
                     </li>
 
+                    {{-- ── DYNAMIC NAVBAR PAGES ─────────────────────────────────────── --}}
                     @if(!empty($navbarPages) && count($navbarPages))
-                    @foreach($navbarPages as $navbarPage)
-                        @if(isset($navbarPage['categories']))
-                            <li class="mr-lg-25">
-                                <div class="menu-category">
-                                    <ul>
-                                        <li class="cursor-pointer user-select-none d-flex xs-categories-toggle">
-                                            <i data-feather="grid" width="20" height="20" class="mr-10 d-none d-lg-block"></i>
-                                            {{ $navbarPage['title'] }}
-        
-                                            <ul class="cat-dropdown-menu">
-                                                @foreach($navbarPage['categories'] as $category)
-                                                    <li>
-                                                        <a href="{{ $category->getUrl() }}" class="{{ (!empty($category->subCategories) and count($category->subCategories)) ? 'js-has-subcategory' : '' }}">
-                                                            <div class="d-flex align-items-center">
-                                                                @if(!empty($category->icon))
-                                                                    <img src="{{ $category->icon }}" class="cat-dropdown-menu-icon mr-10" alt="{{ $category->title }} icon">
+                        @foreach($navbarPages as $navbarPage)
+                            @if(isset($navbarPage['categories']))
+                                <li class="mr-lg-25">
+                                    <div class="menu-category">
+                                        <ul>
+                                            <li class="cursor-pointer user-select-none d-flex xs-categories-toggle">
+                                                <i data-feather="grid" width="20" height="20" class="mr-10 d-none d-lg-block"></i>
+                                                {{ $navbarPage['title'] }}
+
+                                                <ul class="cat-dropdown-menu">
+                                                    @foreach($navbarPage['categories'] as $category)
+                                                        <li>
+                                                            <a href="{{ $category->getUrl() }}" class="{{ (!empty($category->subCategories) and count($category->subCategories)) ? 'js-has-subcategory' : '' }}">
+                                                                <div class="d-flex align-items-center">
+                                                                    @if(!empty($category->icon))
+                                                                        <img src="{{ $category->icon }}" class="cat-dropdown-menu-icon mr-10" alt="{{ $category->title }} icon">
+                                                                    @endif
+                                                                    {{ $category->title }}
+                                                                </div>
+
+                                                                @if(!empty($category->subCategories) and count($category->subCategories))
+                                                                    <i data-feather="chevron-right" width="20" height="20" class="d-none d-lg-inline-block ml-10"></i>
+                                                                    <i data-feather="chevron-down" width="20" height="20" class="d-inline-block d-lg-none"></i>
                                                                 @endif
-        
-                                                                {{ $category->title }}
-                                                            </div>
-        
+                                                            </a>
+
                                                             @if(!empty($category->subCategories) and count($category->subCategories))
-                                                                <i data-feather="chevron-right" width="20" height="20" class="d-none d-lg-inline-block ml-10"></i>
-                                                                <i data-feather="chevron-down" width="20" height="20" class="d-inline-block d-lg-none"></i>
+                                                                <ul class="sub-menu" data-simplebar @if((!empty($isRtl) and $isRtl)) data-simplebar-direction="rtl" @endif>
+                                                                    @foreach($category->subCategories as $subCategory)
+                                                                        <li>
+                                                                            <div class="d-flex align-items-center">
+                                                                                <a href="{{ $subCategory->getUrl() }}">
+                                                                                    @if(!empty($subCategory->icon))
+                                                                                        <img src="{{ $subCategory->icon }}" class="cat-dropdown-menu-icon mr-10" alt="{{ $subCategory->title }} icon">
+                                                                                    @endif
+                                                                                    {{ $subCategory->title }}
+                                                                                </a>
+                                                                            </div>
+                                                                        </li>
+                                                                    @endforeach
+                                                                </ul>
                                                             @endif
-                                                        </a>
-        
-                                                        @if(!empty($category->subCategories) and count($category->subCategories))
-                                                            <ul class="sub-menu" data-simplebar @if((!empty($isRtl) and $isRtl)) data-simplebar-direction="rtl" @endif>
-                                                                @foreach($category->subCategories as $subCategory)
-                                                                    <li>
-                                                                        <div class="d-flex align-items-center">
-                                                                        <a href="{{ $subCategory->getUrl() }}">
-                                                                            @if(!empty($subCategory->icon))
-                                                                                <img src="{{ $subCategory->icon }}" class="cat-dropdown-menu-icon mr-10" alt="{{ $subCategory->title }} icon">
-                                                                            @endif
-        
-                                                                            {{ $subCategory->title }}
-                                                                        </a>
-                                                                    </div>
-                                                                    </li>
-                                                                @endforeach
-                                                            </ul>
-                                                        @endif
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </li>
-                        @else
-                            <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center" href="{{ $navbarPage['link'] }}">
-                                    @if(isset($navbarPage['icon']))
-                                        <i data-feather="{{ $navbarPage['icon'] }}" width="20" height="20" class="mr-2"></i>
-                                    @endif
-                                    <span>{{ $navbarPage['title'] }}</span>
-                                </a>
-                            </li>
-                        @endif
-                    @endforeach
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                            @else
+                                <li class="nav-item {{ request()->is(ltrim(parse_url($navbarPage['link'], PHP_URL_PATH), '/').'*') ? 'active' : '' }}">
+                                    <a class="nav-link" href="{{ $navbarPage['link'] }}">
+                                        @if(isset($navbarPage['icon']))
+                                            <i data-feather="{{ $navbarPage['icon'] }}" width="20" height="20" class="mr-2"></i>
+                                        @endif
+                                        <span>{{ $navbarPage['title'] }}</span>
+                                    </a>
+                                </li>
+                            @endif
+                        @endforeach
                     @endif
-
-
-
-
-
-
-
 
                 </ul>
             </div>
@@ -229,5 +220,4 @@
 
 @push('scripts_bottom')
     <script src="/assets/default/js/parts/navbar.min.js"></script>
-
 @endpush

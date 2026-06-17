@@ -5,198 +5,244 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
 use App\Models\Bundle;
-use App\Models\Product;
-use App\Models\Booking;
 use App\Models\BookingBundle;
+use App\Models\Booking;
+use App\Models\Category;
+use App\Models\BookingCategory;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\UpcomingCourse;
 use App\Models\Webinar;
+use App\Services\AdvancedSearchService;
 use App\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Models\Category;
-use App\Models\BookingCategory;
 
 class SearchController extends Controller
 {
+    public function __construct(
+        protected AdvancedSearchService $searchService
+    ) {}
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Main search page
+    // ─────────────────────────────────────────────────────────────────────────
+
     public function index(Request $request)
     {
-        $seoSettings = getSeoMetas('search');
-        $pageTitle = !empty($seoSettings['title']) ? $seoSettings['title'] : trans('site.search_page_title');
+        $seoSettings    = getSeoMetas('search');
+        $pageTitle      = !empty($seoSettings['title'])       ? $seoSettings['title']       : trans('site.search_page_title');
         $pageDescription = !empty($seoSettings['description']) ? $seoSettings['description'] : trans('site.search_page_title');
-        $pageRobot = getPageRobot('search');
+        $pageRobot      = getPageRobot('search');
 
         $data = [
-            'pageTitle' => $pageTitle,
+            'pageTitle'       => $pageTitle,
             'pageDescription' => $pageDescription,
-            'pageRobot' => $pageRobot,
-            'resultCount' => 0,
+            'pageRobot'       => $pageRobot,
+            'resultCount'     => 0,
+            // Hierarchical category trees for sidebar
+            'categories'         => Category::getCategories(),
+            'bookingCategories'  => BookingCategory::query()
+                                        ->roots()
+                                        ->active()
+                                        ->with('children')
+                                        ->get(),
         ];
 
-        // load categories for hierarchical filters (courses + bookings)
-        $data['categories'] = Category::getCategories();
-        $data['bookingCategories'] = BookingCategory::query()->roots()->active()->with('children')->get();
         $search = $request->get('search', null);
 
-        if (!empty($search) and strlen($search) >= 3) {
+        if (!empty($search) && strlen($search) >= 3) {
             $searchData = $this->getSearchData($search, $request);
-            $data = array_merge($data, $searchData);
+            $data       = array_merge($data, $searchData);
         }
 
         return view('design_1.web.search.index', $data);
     }
 
-    private function getSearchData($search, Request $request)
+    // ─────────────────────────────────────────────────────────────────────────
+    // AJAX: live suggestions (called on keyup, debounced in JS)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function suggestions(Request $request): JsonResponse
+    {
+        $query = trim($request->get('q', ''));
+
+        if (strlen($query) < 2) {
+            return response()->json(['suggestions' => []]);
+        }
+
+        $suggestions = $this->searchService->suggestions($query);
+
+        return response()->json(['suggestions' => $suggestions]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // AJAX: category tree for search dropdown
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function categoryTree(): JsonResponse
+    {
+        $tree = $this->searchService->getCategoryTree();
+        return response()->json($tree);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Internal: build all search result data (same logic as before, kept intact
+    // so existing view continues to work without change).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private function getSearchData(string $search, Request $request): array
     {
         $nearbyIsActive = $request->filled(['lat', 'lng', 'radius_km']);
 
-        $webinarsQuery = Webinar::query()->where('status', 'active')
+        // ── Webinars / Courses ───────────────────────────────────────────────
+        $webinarsQuery = Webinar::query()
+            ->where('status', 'active')
             ->where('private', false)
             ->where('only_for_students', false)
             ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%");
-                $query->orWhereTranslationLike('description', "%$search%");
+                $query->whereTranslationLike('title', "%$search%")
+                      ->orWhereTranslationLike('description', "%$search%");
             })
             ->with([
-                'teacher' => function ($query) {
-                    $query->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings');
-                },
-                'reviews'
+                'teacher' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
+                'reviews',
             ]);
 
-        // Filter by selected course categories
+        // Filter by selected course categories (sidebar checkboxes)
         $selectedCategories = $request->get('categories', []);
         if (!empty($selectedCategories)) {
             $webinarsQuery->whereIn('category_id', $selectedCategories);
         }
 
-        if ($request->filled(['lat', 'lng', 'radius_km'])) {
-            $webinarsQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
+        if ($nearbyIsActive && method_exists(Webinar::class, 'scopeNearby')) {
+            $webinarsQuery->nearby(
+                (float) $request->lat,
+                (float) $request->lng,
+                (float) $request->radius_km
+            );
         }
 
         $webinarsCount = deepClone($webinarsQuery)->count();
         if (!$nearbyIsActive) {
             $webinarsQuery->inRandomOrder();
         }
-
         $webinars = $webinarsQuery->limit(20)->get();
 
-        $bundlesQuery = Bundle::query()->where('status', 'active')
+        // ── Bundles ──────────────────────────────────────────────────────────
+        $bundlesQuery = Bundle::query()
+            ->where('status', 'active')
             ->where('private', false)
             ->where('only_for_students', false)
             ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%");
-                $query->orWhereTranslationLike('description', "%$search%");
+                $query->whereTranslationLike('title', "%$search%")
+                      ->orWhereTranslationLike('description', "%$search%");
             })
             ->with([
-                'teacher' => function ($query) {
-                    $query->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings');
-                },
-                'reviews'
+                'teacher' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
+                'reviews',
             ]);
 
         $bundlesCount = deepClone($bundlesQuery)->count();
-        $bundles = $bundlesQuery
-            ->inRandomOrder()
-            ->limit(20)
-            ->get();
+        $bundles = $bundlesQuery->inRandomOrder()->limit(20)->get();
 
-        $upcomingCoursesQuery = UpcomingCourse::query()->where('status', 'active')
+        // ── Upcoming Courses ─────────────────────────────────────────────────
+        $upcomingCoursesQuery = UpcomingCourse::query()
+            ->where('status', 'active')
             ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%");
-                $query->orWhereTranslationLike('description', "%$search%");
+                $query->whereTranslationLike('title', "%$search%")
+                      ->orWhereTranslationLike('description', "%$search%");
             })
             ->with([
-                'teacher' => function ($query) {
-                    $query->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings');
-                },
+                'teacher' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
             ]);
 
         $upcomingCoursesCount = deepClone($upcomingCoursesQuery)->count();
-        $upcomingCourses = $upcomingCoursesQuery
-            ->inRandomOrder()
-            ->limit(20)
-            ->get();
+        $upcomingCourses = $upcomingCoursesQuery->inRandomOrder()->limit(20)->get();
 
-        $productsQuery = Product::query()->where('status', 'active')
+        // ── Products ─────────────────────────────────────────────────────────
+        $productsQuery = Product::query()
+            ->where('status', 'active')
             ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%");
-                $query->orWhereTranslationLike('summary', "%$search%");
-                $query->orWhereTranslationLike('description', "%$search%");
+                $query->whereTranslationLike('title', "%$search%")
+                      ->orWhereTranslationLike('summary', "%$search%")
+                      ->orWhereTranslationLike('description', "%$search%");
             })
             ->with([
-                'creator' => function ($query) {
-                    $query->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings');
-                }
+                'creator' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
             ]);
 
-        if ($request->filled(['lat', 'lng', 'radius_km'])) {
-            $productsQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
+        if ($nearbyIsActive && method_exists(Product::class, 'scopeNearby')) {
+            $productsQuery->nearby(
+                (float) $request->lat,
+                (float) $request->lng,
+                (float) $request->radius_km
+            );
         }
 
         $productsCount = deepClone($productsQuery)->count();
         if (!$nearbyIsActive) {
             $productsQuery->inRandomOrder();
         }
-
         $products = $productsQuery->limit(20)->get();
 
-        $postsQuery = Blog::query()->where('status', 'publish')
+        // ── Blog Posts ───────────────────────────────────────────────────────
+        $postsQuery = Blog::query()
+            ->where('status', 'publish')
             ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%");
-                $query->orWhereTranslationLike('description', "%$search%");
-                $query->orWhereTranslationLike('content', "%$search%");
+                $query->whereTranslationLike('title', "%$search%")
+                      ->orWhereTranslationLike('description', "%$search%")
+                      ->orWhereTranslationLike('content', "%$search%");
             })
             ->with([
-                'author' => function ($query) {
-                    $query->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings');
-                }
+                'author' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
             ]);
 
         $postsCount = deepClone($postsQuery)->count();
-        $posts = $postsQuery
-            ->inRandomOrder()
-            ->limit(20)
-            ->get();
+        $posts = $postsQuery->inRandomOrder()->limit(20)->get();
 
-        $usersQuery = User::query()->where('status', 'active')
+        // ── Users (instructors + organizations) ──────────────────────────────
+        $usersQuery = User::query()
+            ->where('status', 'active')
             ->where(function (Builder $query) use ($search) {
-                $query->where('full_name', 'like', "%$search%");
-                $query->orWhere('email', 'like', "%$search%");
-                $query->orWhere('mobile', 'like', "%$search%");
+                $query->where('full_name', 'like', "%$search%")
+                      ->orWhere('email', 'like', "%$search%")
+                      ->orWhere('mobile', 'like', "%$search%");
             })
             ->where(function (Builder $query) {
-                $query->where('role_name', Role::$teacher);
-                $query->orWhere('role_name', Role::$organization);
+                $query->where('role_name', Role::$teacher)
+                      ->orWhere('role_name', Role::$organization);
             });
 
-        if ($request->filled(['lat', 'lng', 'radius_km'])) {
-            $usersQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
+        if ($nearbyIsActive && method_exists(User::class, 'scopeNearby')) {
+            $usersQuery->nearby(
+                (float) $request->lat,
+                (float) $request->lng,
+                (float) $request->radius_km
+            );
         }
 
         $usersCount = deepClone($usersQuery)->count();
 
         $instructorsQuery = deepClone($usersQuery)->where('role_name', Role::$teacher);
-
         if (!$nearbyIsActive) {
             $instructorsQuery->inRandomOrder();
         }
-
         $instructors = $instructorsQuery->limit(20)->get();
 
         $organizationsQuery = deepClone($usersQuery)->where('role_name', Role::$organization);
-
         if (!$nearbyIsActive) {
             $organizationsQuery->inRandomOrder();
         }
-
         $organizations = $organizationsQuery->limit(20)->get();
 
-        // Bookings
-        $bookingsQuery = Booking::query()->where('status', 'published')
+        // ── Bookings ─────────────────────────────────────────────────────────
+        $bookingsQuery = Booking::query()
+            ->where('status', 'published')
             ->where(function (Builder $query) use ($search) {
-                $query->where('title', 'like', "%$search%");
-                $query->orWhere('description', 'like', "%$search%");
+                $query->where('title', 'like', "%$search%")
+                      ->orWhere('description', 'like', "%$search%");
             })
             ->with(['creator', 'category']);
 
@@ -206,8 +252,12 @@ class SearchController extends Controller
             $bookingsQuery->whereIn('category_id', $selectedBookingCategories);
         }
 
-        if ($request->filled(['lat', 'lng', 'radius_km'])) {
-            $bookingsQuery->nearby((float) $request->lat, (float) $request->lng, (float) $request->radius_km);
+        if ($nearbyIsActive && method_exists(Booking::class, 'scopeNearby')) {
+            $bookingsQuery->nearby(
+                (float) $request->lat,
+                (float) $request->lng,
+                (float) $request->radius_km
+            );
         }
 
         $bookingsCount = deepClone($bookingsQuery)->count();
@@ -216,11 +266,11 @@ class SearchController extends Controller
         }
         $bookings = $bookingsQuery->limit(20)->get();
 
-        // Booking Bundles
+        // ── Booking Bundles ──────────────────────────────────────────────────
         $bookingBundlesQuery = BookingBundle::query()
             ->where(function (Builder $query) use ($search) {
-                $query->where('title', 'like', "%$search%");
-                $query->orWhere('description', 'like', "%$search%");
+                $query->where('title', 'like', "%$search%")
+                      ->orWhere('description', 'like', "%$search%");
             })
             ->with(['creator']);
 
@@ -228,16 +278,18 @@ class SearchController extends Controller
         $bookingBundles = $bookingBundlesQuery->inRandomOrder()->limit(20)->get();
 
         return [
-            'resultCount' => $webinarsCount + $bundlesCount + $upcomingCoursesCount + $productsCount + $postsCount + $usersCount + $bookingsCount + $bookingBundlesCount,
-            'webinars' => $webinars,
-            'bundles' => $bundles,
-            'products' => $products,
-            'upcomingCourses' => $upcomingCourses,
-            'posts' => $posts,
-            'instructors' => $instructors,
-            'organizations' => $organizations,
-            'bookings' => $bookings ?? collect([]),
-            'bookingBundles' => $bookingBundles ?? collect([]),
+            'resultCount'      => $webinarsCount + $bundlesCount + $upcomingCoursesCount
+                                 + $productsCount + $postsCount + $usersCount
+                                 + $bookingsCount + $bookingBundlesCount,
+            'webinars'         => $webinars,
+            'bundles'          => $bundles,
+            'products'         => $products,
+            'upcomingCourses'  => $upcomingCourses,
+            'posts'            => $posts,
+            'instructors'      => $instructors,
+            'organizations'    => $organizations,
+            'bookings'         => $bookings,
+            'bookingBundles'   => $bookingBundles,
         ];
     }
 }
