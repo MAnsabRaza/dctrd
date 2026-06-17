@@ -1,12 +1,16 @@
 {{-- resources/views/admin/user/edittab/availability.blade.php --}}
 
 @php
-    $currentId    = $orgId; 
-    $rangeTypes   = ['custom', 'daily', 'weekly', 'monthly', 'date_range'];
+    $currentId  = $orgId ?? ($user->id ?? null);
+    $rangeTypes = ['custom', 'daily', 'weekly', 'monthly', 'date_range'];
+
+    if (!$currentId) {
+        throw new \Exception('Availability partial requires orgId or user.id');
+    }
 
     // Admin Dedicated Routes Only
     $saveRoute    = route('admin.users.availability.save', ['id' => $currentId]);
-    $deleteRowUrl = url("admin/users/{$currentId}/availability/row/delete"); 
+    $deleteRowUrl = url("admin/users/{$currentId}/availability/row/delete");
 @endphp
 
 @extends('admin.layouts.app')
