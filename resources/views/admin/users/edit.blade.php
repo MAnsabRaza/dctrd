@@ -308,7 +308,7 @@
 
                                         @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
                                             <li class="nav-item">
-                                                <a class="nav-link" id="availability-tab" data-toggle="tab" href="#availability" role="tab" aria-controls="availability" aria-selected="true">{{ trans('booking.availability_assets') }}</a>
+                                                <a class="nav-link" id="availability-tab" data-toggle="tab" href="#availability" role="tab" aria-controls="availability" aria-selected="true">{{ trans('update.availability_assets') }}</a>
                                             </li>
                                         @endif
 
