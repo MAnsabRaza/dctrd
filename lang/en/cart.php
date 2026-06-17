@@ -81,4 +81,6 @@ return [
     'Extra Services'=>'Extra Services',
 'free_cancellation_hint'=>'Free cancellation until :time before the start of the event.',
 'cancellation_policy'=>'Cancellation Policy',
+'not_selected'=>'Not selected',
+'select'=>'Select',
 ];
