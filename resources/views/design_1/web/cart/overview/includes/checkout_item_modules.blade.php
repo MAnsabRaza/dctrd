@@ -1,437 +1,650 @@
 {{--
-    design_1/web/cart/overview/includes/checkout_modules.blade.php
+    design_1/web/cart/overview/includes/checkout_item_modules.blade.php
 
-    Green-border unified card showing all checkout modules side-by-side.
-    Variables: $cart, $checkoutModules (Collection), $itemKey (string)
+    ══════════════════════════════════════════════════════════════════════
+    MERGED FILE — Styles + Scripts + Template (single source of truth)
+    ══════════════════════════════════════════════════════════════════════
+
+    Previously split across three files:
+      • checkout_item_modules.blade.php    (template / HTML)
+      • _checkout_modules_styles.blade.php (CSS)
+      • _checkout_modules_scripts.blade.php (JS)
+
+    Used by:
+      - cart_items.blade.php          (cart page, booking rows)
+      - booking.blade.php             (cart page, alternate booking card)
+      - checkout page (same partial, no duplication)
+
+    Visual style: 3-column grid (booking-info-card) — matches the
+    cart_items.blade.php look.
+
+    Required variables:
+        $cart              -> the cart row (booking cart item)
+        $checkoutModules   -> Collection of active modules for this item
+        $itemKey           -> string/int, used to namespace field names + ids
+
+    Optional variables:
+        $showHeader        -> bool, show "Booking Details" style header (default false)
+        $wrapperClassName  -> extra class for outer wrapper
 --}}
 
+{{-- ════════════════════════════════════════
+     STYLES  (injected once via @once)
+════════════════════════════════════════ --}}
 @once
-@push('styles_top')
-<style>
-/* ──────────────────────────────────────────
-   Checkout Modules — Unified Green Card
-────────────────────────────────────────── */
-.cmod-card {
-    display: flex; align-items: stretch;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px; overflow: hidden;
-    background: #fff; margin-top: 12px;
-}
-.cmod-col {
-    flex: 1 1 0; min-width: 0;
-    padding: 9px 13px; position: relative;
-}
-.cmod-col + .cmod-col { border-left: 1px solid #e2e8f0; }
-
-.cmod-label {
-    font-size: 11px; font-weight: 700; color: #0f172a;
-    margin-bottom: 5px;
-    display: flex; align-items: center; gap: 4px;
-}
-.cmod-value {
-    display: flex; align-items: center;
-    gap: 5px; font-size: 12px; color: #0f172a; font-weight: 500;
-}
-.cmod-value .icon-green { color: #22c55e; flex-shrink: 0; }
-
-.cmod-date-input {
-    border: none !important; outline: none !important;
-    background: transparent !important;
-    font-size: 12px; color: #0f172a;
-    padding: 0 !important; width: auto; max-width: 118px; cursor: pointer;
-}
-.cmod-date-input::-webkit-calendar-picker-indicator { opacity: .5; cursor: pointer; }
-
-.cmod-staff-select {
-    border: none !important; outline: none !important;
-    background: transparent !important;
-    font-size: 12px; color: #0f172a; padding: 0 !important;
-    cursor: pointer; appearance: none; -webkit-appearance: none; max-width: 160px;
-}
-
-.cmod-nights {
-    display: inline-flex; align-items: center; gap: 3px;
-    margin-top: 5px; padding: 2px 7px; border-radius: 999px;
-    background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
-    font-size: 10px; color: #15803d; font-weight: 500;
-}
-
-.cmod-time-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.cmod-time-pill {
-    padding: 2px 7px; border-radius: 6px; border: 1px solid #e2e8f0;
-    font-size: 11px; color: #334155; cursor: pointer; transition: all .15s;
-    display: inline-flex; align-items: center;
-}
-.cmod-time-pill input[type="radio"] { display: none; }
-.cmod-time-pill:has(input:checked) {
-    border-color: #22c55e; background: rgba(34,197,94,.08);
-    color: #15803d; font-weight: 600;
-}
-
-.cmod-extras { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
-.cmod-extra-row {
-    display: flex; align-items: center;
-    justify-content: space-between; font-size: 11px; cursor: pointer;
-}
-.cmod-extra-row input[type="checkbox"] { margin-right: 4px; accent-color: #22c55e; }
-.cmod-extra-price { color: #2563eb; font-weight: 600; font-size: 11px; }
-
-.cmod-stepper {
-    display: flex; align-items: center;
-    border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; height: 22px;
-}
-.cmod-stepper-btn {
-    width: 20px; height: 22px; border: none; background: #f8fafc;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; color: #0f172a;
-}
-.cmod-stepper-btn:hover { background: #e2e8f0; }
-.cmod-stepper-inp {
-    width: 26px; text-align: center; border: none;
-    border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;
-    font-size: 11px; font-weight: 600; color: #0f172a;
-    background: #fff; padding: 0; height: 22px; -moz-appearance: textfield;
-}
-.cmod-stepper-inp:focus { outline: none; }
-.cmod-stepper-inp::-webkit-outer-spin-button,
-.cmod-stepper-inp::-webkit-inner-spin-button { -webkit-appearance: none; }
-.cmod-stepper-lbl { font-size: 11px; color: #475569; flex: 1; }
-
-.cmod-policy-box {
-    display: flex; align-items: flex-start; gap: 5px;
-    padding: 6px 8px; border-radius: 7px;
-    background: rgba(30,84,255,.05); border: 1px solid rgba(30,84,255,.14);
-    margin-bottom: 6px;
-}
-.cmod-policy-box p { font-size: 10px; color: #475569; margin: 0; line-height: 1.5; }
-
-.cmod-textarea {
-    font-size: 11px; border-radius: 6px; border: 1px solid #e2e8f0;
-    resize: vertical; min-height: 46px; width: 100%; padding: 4px 7px; margin-top: 3px;
-}
-.cmod-textarea:focus {
-    border-color: rgba(34,197,94,.5); outline: none;
-    box-shadow: 0 0 0 2px rgba(34,197,94,.08);
-}
-
-@media (max-width: 640px) {
-    .cmod-card { flex-direction: column; }
-    .cmod-col + .cmod-col { border-left: none; border-top: 1px solid #e2e8f0; }
-}
-</style>
-@endpush
+    @push('styles_top')
+    <style>
+        .booking-info-shell {
+            margin-top: 16px; background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 18px; padding: 18px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
+        }
+        .booking-info-grid {
+            margin-top: 4px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .booking-info-card {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+            padding: 16px; min-height: 110px;
+            display: flex; flex-direction: column; justify-content: flex-start; gap: 8px;
+        }
+        .booking-info-title {
+            font-size: 11px; font-weight: 700; color: #64748b;
+            text-transform: uppercase; letter-spacing: .04em;
+        }
+        .booking-info-content {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .booking-info-icon {
+            width: 30px; height: 30px; min-width: 30px; min-height: 30px;
+            background: rgba(34, 197, 94, .1); border-radius: 12px;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: #22c55e;
+        }
+        .booking-info-value {
+            font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.3;
+        }
+        .booking-info-label { font-size: 13px; color: #475569; }
+        .booking-cancellation-card {
+            margin-top: 14px; border: 1px solid #e2e8f0;
+            border-radius: 16px; background: #fff; padding: 16px;
+        }
+        .booking-cancellation-card label {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer;
+        }
+        .booking-cancellation-card .booking-cancellation-text {
+            margin-top: 12px; font-size: 12px; color: #6b7280; line-height: 1.6;
+        }
+        .cmod-nights {
+            display: inline-flex; align-items: center; gap: 3px;
+            margin-top: 2px; padding: 2px 7px; border-radius: 999px;
+            background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
+            font-size: 10px; color: #15803d; font-weight: 500;
+        }
+        /* Stepper */
+        .bmod-stepper-btn {
+            width: 28px; height: 28px; border-radius: 8px;
+            border: 1px solid #e2e8f0; background: #f8fafc;
+            font-size: 16px; line-height: 1; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: background .15s;
+        }
+        .bmod-stepper-btn:hover { background: #e2e8f0; }
+        .bmod-stepper-input {
+            width: 40px; text-align: center; border: 1px solid #e2e8f0;
+            border-radius: 8px; padding: 4px 0; font-size: 14px; font-weight: 600;
+        }
+        .bmod-date-input { border-radius: 12px; }
+        @media (max-width: 991px) {
+            .booking-info-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    @endpush
 @endonce
 
-<div class="cmod-card">
+{{-- ════════════════════════════════════════
+     PHP SETUP
+════════════════════════════════════════ --}}
+@php
+    $itemKey            = $itemKey ?? ($cart->id ?? '0');
+    $checkoutModules    = $checkoutModules ?? collect();
+    $activeModules      = $checkoutModules->filter(fn($m) => $m->is_active ?? true);
 
-    @foreach($checkoutModules as $module)
-        @php
-            $prefix    = "checkout_modules[{$itemKey}][{$module->name}]";
-            $priceRule = $module->price_rule ?? [];
-        @endphp
+    // Grid modules go in the 3-column top row, everything else stacks below
+    $gridModules   = $activeModules->filter(fn($m) => in_array($m->name, ['days', 'hours', 'staff_member']));
+    $bottomModules = $activeModules->filter(fn($m) => !in_array($m->name, ['days', 'hours', 'staff_member']));
 
-        {{-- ══ DAYS ══ --}}
-        @if($module->name === 'days')
-            @php
-                $perDay = $priceRule['amount'] ?? 0;
-                $oldIn  = old("checkout_modules.{$itemKey}.days.check_in");
-                $oldOut = old("checkout_modules.{$itemKey}.days.check_out");
-            @endphp
-            <div class="cmod-col" id="cmod-days-{{ $itemKey }}"
-                 data-module-name="days" data-price-type="per_day" data-price-amount="{{ $perDay }}">
+    $daysModule  = $activeModules->firstWhere('name', 'days');
+    $hoursModule = $activeModules->firstWhere('name', 'hours');
+    $staffModule = $activeModules->firstWhere('name', 'staff_member');
 
-                <div class="cmod-label">
-                    <x-iconsax-lin-calendar-2 class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                    {{ $module->translated_label ?? trans('checkout.check_in') }}
-                    @if($module->is_required)<span class="text-danger">*</span>@endif
-                    @if($perDay)<span class="ms-auto ml-auto" style="font-size:10px;color:#2563eb;font-weight:700;">{{ handlePrice($perDay) }}/day</span>@endif
-                </div>
+    // Prefix helpers (namespaced per cart item so multiple bookings don't collide)
+    $datePrefix   = "checkout_modules[{$itemKey}][days]";
+    $timePrefix   = "checkout_modules[{$itemKey}][hours]";
+    $staffPrefix  = "checkout_modules[{$itemKey}][staff_member]";
+    $paxPrefix    = "checkout_modules[{$itemKey}][persons_children]";
+    $policyPrefix = "checkout_modules[{$itemKey}][cancellation_policy]";
+    $extrasPrefix = "checkout_modules[{$itemKey}][extra_services]";
+    $msgPrefix    = "checkout_modules[{$itemKey}][checkout_message]";
+    $revPrefix    = "checkout_modules[{$itemKey}][reviewer_message]";
 
-                <div class="cmod-value">
-                    <x-iconsax-lin-calendar-2 class="icons icon-green" width="12px" height="12px"/>
-                    <input type="date" name="{{ $prefix }}[check_in]"
-                           id="cmod_cin_{{ $itemKey }}" class="cmod-date-input"
-                           value="{{ $oldIn }}" min="{{ now()->format('Y-m-d') }}"
-                           {{ $module->is_required ? 'required' : '' }}>
-                    <span class="text-gray-400">—</span>
-                    <input type="date" name="{{ $prefix }}[check_out]"
-                           id="cmod_cout_{{ $itemKey }}" class="cmod-date-input"
-                           value="{{ $oldOut }}" min="{{ now()->format('Y-m-d') }}"
-                           {{ $module->is_required ? 'required' : '' }}>
-                </div>
+    $authUserName = auth()->check() ? auth()->user()->full_name : '';
 
-                <div class="cmod-nights" id="cmod_nights_{{ $itemKey }}">
-                    0 {{ trans('checkout.nights') ?? 'nights' }}
-                </div>
+    $oldCheckIn  = old("checkout_modules.{$itemKey}.days.check_in");
+    $oldCheckOut = old("checkout_modules.{$itemKey}.days.check_out");
 
-                @error("checkout_modules.{$itemKey}.days.check_in")
-                    <div class="text-danger" style="font-size:10px;margin-top:2px;">{{ $message }}</div>
-                @enderror
-            </div>
+    // Fallbacks from cart->meta (slot info captured at "Add to cart" time)
+    $slotDate  = $cart->meta['slot_date']  ?? null;
+    $slotStart = $cart->meta['slot_start'] ?? null;
+    $slotEnd   = $cart->meta['slot_end']   ?? null;
 
-        {{-- ══ HOURS ══ --}}
-        @elseif($module->name === 'hours')
-            @php
-                $slots   = $module->config['slots'] ?? ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
-                $perHour = $priceRule['amount'] ?? 0;
-            @endphp
-            <div class="cmod-col" id="cmod-hours-{{ $itemKey }}"
-                 data-module-name="hours" data-price-type="per_hour" data-price-amount="{{ $perHour }}">
+    $checkInLabel = $oldCheckIn
+        ? \Carbon\Carbon::parse($oldCheckIn)->format('d M Y')
+        : ($slotDate ? \Carbon\Carbon::parse($slotDate)->format('d M Y') : (trans('checkout.not_selected') ?? 'Not selected'));
 
-                <div class="cmod-label">
-                    <x-iconsax-lin-clock class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                    {{ $module->translated_label ?? trans('checkout.time_slot') }}
-                    @if($module->is_required)<span class="text-danger">*</span>@endif
-                    @if($perHour)<span class="ms-auto ml-auto" style="font-size:10px;color:#2563eb;font-weight:700;">{{ handlePrice($perHour) }}/hr</span>@endif
-                </div>
+    $selectedTime = old("checkout_modules.{$itemKey}.hours", $slotStart ?? '');
+    $timeLabel    = $selectedTime
+        ?: ($slotStart ? $slotStart . ($slotEnd ? ' - ' . $slotEnd : '') : (trans('checkout.not_selected') ?? 'Not selected'));
 
-                <div class="cmod-time-pills">
-                    @foreach($slots as $slot)
-                        @php
-                            try {
-                                $s = \Carbon\Carbon::createFromFormat('H:i', $slot);
-                                $lbl = $s->format('h:i A') . ' - ' . $s->copy()->addHour()->format('h:i A');
-                            } catch(\Throwable $e) { $lbl = $slot; }
-                            $sid = 'cmod_slot_' . $itemKey . '_' . str_replace(':', '', $slot);
-                        @endphp
-                        <label class="cmod-time-pill" for="{{ $sid }}">
-                            <input type="radio" name="{{ $prefix }}" value="{{ $slot }}"
-                                   id="{{ $sid }}"
-                                   {{ old("checkout_modules.{$itemKey}.hours") == $slot ? 'checked' : '' }}
-                                   {{ $module->is_required ? 'required' : '' }}>
-                            {{ $lbl }}
-                        </label>
-                    @endforeach
-                </div>
-            </div>
+    $selectedStaff = old("checkout_modules.{$itemKey}.staff_member", $authUserName);
+    $staffLabel    = $selectedStaff ?: ($authUserName ?: (trans('checkout.guest') ?? 'Guest'));
 
-        {{-- ══ STAFF MEMBER ══ --}}
-        @elseif($module->name === 'staff_member')
-            @php $staffOptions = $module->config['staff'] ?? []; @endphp
-            <div class="cmod-col" id="cmod-staff-{{ $itemKey }}"
-                 data-module-name="staff_member" data-price-type="none">
+    $showHeader       = $showHeader ?? false;
+    $wrapperClassName = $wrapperClassName ?? '';
+@endphp
 
-                <div class="cmod-label">
-                    <x-iconsax-lin-profile-2user class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                    {{ $module->translated_label ?? trans('checkout.staff_member') }}
-                    @if($module->is_required)<span class="text-danger">*</span>@endif
-                </div>
+{{-- ════════════════════════════════════════
+     TEMPLATE / HTML
+════════════════════════════════════════ --}}
+@if($activeModules->isNotEmpty())
+<div class="booking-info-shell {{ $wrapperClassName }}" data-item-key="{{ $itemKey }}">
 
-                <div class="cmod-value">
-                    <x-iconsax-lin-tick-circle class="icons icon-green" width="12px" height="12px"/>
-                    <select name="{{ $prefix }}" id="cmod_staff_{{ $itemKey }}"
-                            class="cmod-staff-select"
-                            {{ $module->is_required ? 'required' : '' }}>
-                        <option value="">--- {{ trans('checkout.select_staff') ?? 'Select staff' }} ---</option>
-                        @foreach($staffOptions as $staff)
-                            <option value="{{ $staff['id'] ?? $staff['name'] }}"
-                                {{ old("checkout_modules.{$itemKey}.staff_member") == ($staff['id'] ?? $staff['name']) ? 'selected' : '' }}>
-                                {{ $staff['name'] }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
+    @if($showHeader)
+        <div class="cart-section-label">{{ trans('checkout.booking_details') ?? 'Booking Details' }}</div>
+    @endif
 
-        {{-- ══ PERSONS / CHILDREN / ROOMS ══ --}}
-        @elseif($module->name === 'persons_children')
-            @php
-                $cfg       = $module->config ?? [];
-                $adCfg     = $cfg['adults']   ?? ['min'=>1,'max'=>20];
-                $chCfg     = $cfg['children'] ?? ['min'=>0,'max'=>10];
-                $rmCfg     = $cfg['rooms']    ?? ['min'=>1,'max'=>10];
-                $perPerson = $priceRule['amount'] ?? 0;
-            @endphp
-            <div class="cmod-col" id="cmod-persons-{{ $itemKey }}"
-                 data-module-name="persons_children" data-price-type="per_person" data-price-amount="{{ $perPerson }}">
+    {{-- TOP ROW: 3-column grid (days, hours, staff) --}}
+    @if($gridModules->isNotEmpty())
+        <div class="booking-info-grid">
 
-                <div class="cmod-label">
-                    <x-iconsax-lin-people class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                    {{ $module->translated_label ?? trans('checkout.guests') }}
-                    @if($module->is_required)<span class="text-danger">*</span>@endif
-                    @if($perPerson)<span class="ms-auto ml-auto" style="font-size:10px;color:#2563eb;font-weight:700;">{{ handlePrice($perPerson) }}/person</span>@endif
-                </div>
-
-                @foreach([
-                    ['f'=>'adults',   'l'=> trans('checkout.adults')   ?? 'Adults',   'c'=>$adCfg, 'd'=>$adCfg['min']??1],
-                    ['f'=>'children', 'l'=> trans('checkout.children') ?? 'Children', 'c'=>$chCfg, 'd'=>0],
-                    ['f'=>'rooms',    'l'=> trans('checkout.rooms')    ?? 'Rooms',    'c'=>$rmCfg, 'd'=>$rmCfg['min']??1],
-                ] as $r)
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <span class="cmod-stepper-lbl">{{ $r['l'] }}</span>
-                        <div class="cmod-stepper">
-                            <button type="button" class="cmod-stepper-btn cmod-minus">−</button>
-                            <input type="number" name="{{ $prefix }}[{{ $r['f'] }}]"
-                                   class="cmod-stepper-inp"
-                                   value="{{ old("checkout_modules.{$itemKey}.persons_children.{$r['f']}", $r['d']) }}"
-                                   min="{{ $r['c']['min'] }}" max="{{ $r['c']['max'] }}">
-                            <button type="button" class="cmod-stepper-btn cmod-plus">+</button>
+            {{-- DAYS MODULE --}}
+            @if($daysModule)
+                @php $perDay = $daysModule->price_rule['amount'] ?? 0; @endphp
+                <div class="booking-info-card" data-module-name="days" data-price-type="per_day" data-price-amount="{{ $perDay }}">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="booking-info-title">
+                            {{ $daysModule->translated_label ?? trans('update.check_in_date') ?? 'Check-in Date' }}
+                            @if($daysModule->is_required)<span class="text-danger">*</span>@endif
                         </div>
+                        @if($perDay)
+                            <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perDay) }}/{{ trans('checkout.day') ?? 'day' }}</span>
+                        @endif
                     </div>
+                    <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
+                        <div class="booking-info-icon">
+                            <x-iconsax-lin-calendar-2 class="icons" width="16px" height="16px"/>
+                        </div>
+                        <input type="date"
+                               name="{{ $datePrefix }}[check_in]"
+                               id="bmod_cin_{{ $itemKey }}"
+                               class="form-control form-control-sm bmod-date-input bmod-cin"
+                               value="{{ $oldCheckIn }}"
+                               min="{{ now()->format('Y-m-d') }}"
+                               {{ $daysModule->is_required ? 'required' : '' }}
+                               style="border-radius:12px;">
+                        <input type="date"
+                               name="{{ $datePrefix }}[check_out]"
+                               id="bmod_cout_{{ $itemKey }}"
+                               class="form-control form-control-sm bmod-date-input bmod-cout"
+                               value="{{ $oldCheckOut }}"
+                               min="{{ now()->format('Y-m-d') }}"
+                               {{ $daysModule->is_required ? 'required' : '' }}
+                               style="border-radius:12px;">
+                        <div class="booking-info-label bmod-cin-label">{{ $checkInLabel }}</div>
+                        <div class="cmod-nights" id="bmod_nights_{{ $itemKey }}">0 {{ trans('checkout.nights') ?? 'nights' }}</div>
+                    </div>
+                    @error("checkout_modules.{$itemKey}.days.check_in")
+                        <div class="text-danger font-11 mt-4">{{ $message }}</div>
+                    @enderror
+                </div>
+            @endif
+
+            {{-- HOURS MODULE --}}
+            @if($hoursModule)
+                @php
+                    $slots   = $hoursModule->config['slots'] ?? ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+                    $perHour = $hoursModule->price_rule['amount'] ?? 0;
+                @endphp
+                <div class="booking-info-card" data-module-name="hours" data-price-type="per_hour" data-price-amount="{{ $perHour }}">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="booking-info-title">
+                            {{ $hoursModule->translated_label ?? trans('update.check_in_time') ?? 'Check-in Time' }}
+                            @if($hoursModule->is_required)<span class="text-danger">*</span>@endif
+                        </div>
+                        @if($perHour)
+                            <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perHour) }}/{{ trans('checkout.hour') ?? 'hr' }}</span>
+                        @endif
+                    </div>
+                    <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
+                        <div class="booking-info-icon">
+                            <x-iconsax-lin-clock class="icons" width="16px" height="16px"/>
+                        </div>
+                        <select name="{{ $timePrefix }}"
+                                id="bmod_time_{{ $itemKey }}"
+                                class="form-control form-control-sm bmod-time-select"
+                                {{ $hoursModule->is_required ? 'required' : '' }}
+                                style="border-radius:12px;">
+                            <option value="">— {{ trans('checkout.select') ?? 'Select' }} —</option>
+                            @foreach($slots as $slot)
+                                @php
+                                    try {
+                                        $sc  = \Carbon\Carbon::createFromFormat('H:i', $slot);
+                                        $ec  = $sc->copy()->addHour();
+                                        $lbl = $sc->format('h:i A') . ' - ' . $ec->format('h:i A');
+                                    } catch (\Throwable $e) {
+                                        $lbl = $slot;
+                                    }
+                                @endphp
+                                <option value="{{ $slot }}" {{ $selectedTime == $slot ? 'selected' : '' }}>{{ $lbl }}</option>
+                            @endforeach
+                        </select>
+                        <div class="booking-info-label bmod-time-label">{{ $timeLabel }}</div>
+                    </div>
+                    @error("checkout_modules.{$itemKey}.hours")
+                        <div class="text-danger font-11 mt-4">{{ $message }}</div>
+                    @enderror
+                </div>
+            @endif
+
+            {{-- STAFF MODULE --}}
+            @if($staffModule)
+                @php $staffOptions = $staffModule->config['staff'] ?? []; @endphp
+                <div class="booking-info-card" data-module-name="staff_member" data-price-type="none">
+                    <div class="booking-info-title">
+                        {{ $staffModule->translated_label ?? trans('checkout.staff_member') ?? 'Assigned Staff' }}
+                        @if($staffModule->is_required)<span class="text-danger">*</span>@endif
+                    </div>
+                    <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
+                        <div class="booking-info-icon">
+                            <x-iconsax-lin-profile class="icons" width="16px" height="16px"/>
+                        </div>
+                        @if(!empty($staffOptions))
+                            <select name="{{ $staffPrefix }}"
+                                    id="bmod_staff_{{ $itemKey }}"
+                                    class="form-control form-control-sm"
+                                    {{ $staffModule->is_required ? 'required' : '' }}
+                                    style="border-radius:12px;">
+                                <option value="">— {{ trans('checkout.select_staff') ?? 'Select staff' }} —</option>
+                                @foreach($staffOptions as $staff)
+                                    @php $value = $staff['id'] ?? $staff['name']; @endphp
+                                    <option value="{{ $value }}" {{ $selectedStaff == $value ? 'selected' : '' }}>{{ $staff['name'] }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <div class="booking-info-value">{{ $staffLabel }}</div>
+                            <input type="hidden" name="{{ $staffPrefix }}" value="{{ $selectedStaff }}">
+                        @endif
+                        <div class="booking-info-label">{{ $staffLabel }}</div>
+                    </div>
+                    @error("checkout_modules.{$itemKey}.staff_member")
+                        <div class="text-danger font-11 mt-4">{{ $message }}</div>
+                    @enderror
+                </div>
+            @endif
+
+        </div>{{-- .booking-info-grid --}}
+    @endif
+
+    {{-- PERSONS + CHILDREN + ROOMS --}}
+    @if($paxModule = $bottomModules->firstWhere('name', 'persons_children'))
+        @php
+            $paxConfig   = $paxModule->config ?? [];
+            $adultMin    = $paxConfig['adults']['min']   ?? 1;
+            $adultMax    = $paxConfig['adults']['max']   ?? 20;
+            $childMin    = $paxConfig['children']['min'] ?? 0;
+            $childMax    = $paxConfig['children']['max'] ?? 10;
+            $roomMin     = $paxConfig['rooms']['min']    ?? 1;
+            $roomMax     = $paxConfig['rooms']['max']    ?? 10;
+            $oldAdults   = old("checkout_modules.{$itemKey}.persons_children.adults",   $adultMin);
+            $oldChildren = old("checkout_modules.{$itemKey}.persons_children.children", 0);
+            $oldRooms    = old("checkout_modules.{$itemKey}.persons_children.rooms",    $roomMin);
+            $perPerson   = $paxModule->price_rule['amount'] ?? 0;
+        @endphp
+        <div class="booking-cancellation-card" data-module-name="persons_children" data-price-type="per_person" data-price-amount="{{ $perPerson }}">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="booking-info-title">
+                    {{ $paxModule->translated_label ?? trans('checkout.guests') ?? 'Guests' }}
+                    @if($paxModule->is_required)<span class="text-danger">*</span>@endif
+                </div>
+                @if($perPerson)
+                    <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perPerson) }}/{{ trans('checkout.person') ?? 'person' }}</span>
+                @endif
+            </div>
+
+            <div class="d-flex flex-wrap gap-20 mt-12">
+                {{-- Adults --}}
+                <div class="d-flex align-items-center gap-8">
+                    <span class="font-13 text-gray-600">{{ trans('checkout.adults') ?? 'Adults' }}</span>
+                    <div class="d-flex align-items-center gap-4">
+                        <button type="button" class="bmod-stepper-btn" data-target="pax_adults_{{ $itemKey }}" data-action="dec" data-min="{{ $adultMin }}">−</button>
+                        <input type="number" id="pax_adults_{{ $itemKey }}" name="{{ $paxPrefix }}[adults]"
+                               value="{{ $oldAdults }}" min="{{ $adultMin }}" max="{{ $adultMax }}"
+                               class="bmod-stepper-input" readonly>
+                        <button type="button" class="bmod-stepper-btn" data-target="pax_adults_{{ $itemKey }}" data-action="inc" data-max="{{ $adultMax }}">+</button>
+                    </div>
+                </div>
+
+                {{-- Children --}}
+                <div class="d-flex align-items-center gap-8">
+                    <span class="font-13 text-gray-600">{{ trans('checkout.children') ?? 'Children' }}</span>
+                    <div class="d-flex align-items-center gap-4">
+                        <button type="button" class="bmod-stepper-btn" data-target="pax_children_{{ $itemKey }}" data-action="dec" data-min="{{ $childMin }}">−</button>
+                        <input type="number" id="pax_children_{{ $itemKey }}" name="{{ $paxPrefix }}[children]"
+                               value="{{ $oldChildren }}" min="{{ $childMin }}" max="{{ $childMax }}"
+                               class="bmod-stepper-input" readonly>
+                        <button type="button" class="bmod-stepper-btn" data-target="pax_children_{{ $itemKey }}" data-action="inc" data-max="{{ $childMax }}">+</button>
+                    </div>
+                </div>
+
+                {{-- Rooms --}}
+                <div class="d-flex align-items-center gap-8">
+                    <span class="font-13 text-gray-600">{{ trans('checkout.rooms') ?? 'Rooms' }}</span>
+                    <div class="d-flex align-items-center gap-4">
+                        <button type="button" class="bmod-stepper-btn" data-target="pax_rooms_{{ $itemKey }}" data-action="dec" data-min="{{ $roomMin }}">−</button>
+                        <input type="number" id="pax_rooms_{{ $itemKey }}" name="{{ $paxPrefix }}[rooms]"
+                               value="{{ $oldRooms }}" min="{{ $roomMin }}" max="{{ $roomMax }}"
+                               class="bmod-stepper-input" readonly>
+                        <button type="button" class="bmod-stepper-btn" data-target="pax_rooms_{{ $itemKey }}" data-action="inc" data-max="{{ $roomMax }}">+</button>
+                    </div>
+                </div>
+            </div>
+            @error("checkout_modules.{$itemKey}.persons_children")
+                <div class="text-danger font-11 mt-4">{{ $message }}</div>
+            @enderror
+        </div>
+    @endif
+
+    {{-- EXTRA SERVICES --}}
+    @if($extrasModule = $bottomModules->firstWhere('name', 'extra_services'))
+        @php $extraOptions = $extrasModule->config['options'] ?? []; @endphp
+        <div class="booking-cancellation-card" data-module-name="extra_services" data-price-type="additive">
+            <div class="booking-info-title">
+                {{ $extrasModule->translated_label ?? trans('checkout.extra_services') ?? 'Extra Services' }}
+                @if($extrasModule->is_required)<span class="text-danger">*</span>@endif
+            </div>
+            <div class="d-flex flex-wrap gap-8 mt-12">
+                @foreach($extraOptions as $opt)
+                    <label class="d-flex align-items-center gap-6 px-10 py-8 rounded-12"
+                           style="border:1px solid #e2e8f0;cursor:pointer;font-size:13px;">
+                        <input type="checkbox"
+                               name="{{ $extrasPrefix }}[]"
+                               value="{{ $opt['label'] }}"
+                               data-price="{{ (float)($opt['price'] ?? 0) }}"
+                               class="bmod-extra-chk"
+                               style="accent-color:#22c55e;"
+                               {{ in_array($opt['label'], old("checkout_modules.{$itemKey}.extra_services", [])) ? 'checked' : '' }}>
+                        <span>{{ $opt['label'] }}</span>
+                        <span class="font-weight-bold text-primary">+{{ handlePrice($opt['price'] ?? 0) }}</span>
+                    </label>
                 @endforeach
             </div>
+            @error("checkout_modules.{$itemKey}.extra_services")
+                <div class="text-danger font-11 mt-4">{{ $message }}</div>
+            @enderror
+        </div>
+    @endif
 
-        {{-- ══ CANCELLATION POLICY ══ --}}
-        @elseif($module->name === 'cancellation_policy')
-            @php
-                $policyText = $module->config['policy_text']
-                    ?? trans('checkout.free_cancellation_hint')
-                    ?? 'Free cancellation up to 24 hours before check-in.';
-            @endphp
-            <div class="cmod-col" id="cmod-policy-{{ $itemKey }}"
-                 data-module-name="cancellation_policy" data-price-type="none">
+    {{-- CANCELLATION POLICY --}}
+    @if($policyModule = $bottomModules->firstWhere('name', 'cancellation_policy'))
+        @php
+            $policyText = $policyModule->config['policy_text']
+                ?? trans('checkout.free_cancellation_hint')
+                ?? 'Free cancellation up to 24 hours before check-in.';
+        @endphp
+        <div class="booking-cancellation-card" data-module-name="cancellation_policy" data-price-type="none">
+            <label for="cp_agree_{{ $itemKey }}" class="d-flex align-items-center gap-8" style="cursor:pointer;">
+                <input type="checkbox"
+                       id="cp_agree_{{ $itemKey }}"
+                       name="{{ $policyPrefix }}"
+                       value="1"
+                       {{ old("checkout_modules.{$itemKey}.cancellation_policy") ? 'checked' : '' }}
+                       {{ $policyModule->is_required ? 'required' : '' }}>
+                <span class="font-13 font-weight-bold">
+                    {{ $policyModule->translated_label ?? trans('checkout.cancellation_policy') ?? 'Cancellation Policy' }}
+                    @if($policyModule->is_required)<span class="text-danger">*</span>@endif
+                </span>
+            </label>
+            <div class="booking-cancellation-text mt-6">{{ $policyText }}</div>
+            @error("checkout_modules.{$itemKey}.cancellation_policy")
+                <div class="text-danger font-11 mt-4">{{ $message }}</div>
+            @enderror
+        </div>
+    @endif
 
-                <div class="cmod-label">
-                    <x-iconsax-lin-shield-tick class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                    {{ $module->translated_label ?? trans('checkout.cancellation_policy') }}
-                    @if($module->is_required)<span class="text-danger">*</span>@endif
-                </div>
-
-                <div class="cmod-policy-box">
-                    <x-iconsax-lin-info-circle class="icons flex-shrink-0" width="12px" height="12px" style="color:#2563eb;margin-top:1px"/>
-                    <p>{{ $policyText }}</p>
-                </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <input type="checkbox" id="cmod_cp_{{ $itemKey }}" name="{{ $prefix }}" value="1"
-                           style="width:13px;height:13px;accent-color:#22c55e;"
-                           {{ old("checkout_modules.{$itemKey}.cancellation_policy") ? 'checked' : '' }}
-                           {{ $module->is_required ? 'required' : '' }}>
-                    <label for="cmod_cp_{{ $itemKey }}" style="font-size:10px;color:#475569;cursor:pointer;margin:0;">
-                        {{ trans('checkout.i_agree_cancellation_policy') ?? 'I agree to cancellation policy' }}
-                    </label>
-                </div>
+    {{-- CHECKOUT MESSAGE --}}
+    @if($msgModule = $bottomModules->firstWhere('name', 'checkout_message'))
+        @php
+            $maxLen = $msgModule->config['max_length'] ?? 500;
+            $ph     = $msgModule->config['placeholder'] ?? (trans('checkout.special_instructions') ?? 'Special instructions...');
+            $oldMsg = old("checkout_modules.{$itemKey}.checkout_message", '');
+        @endphp
+        <div class="booking-cancellation-card" data-module-name="checkout_message" data-price-type="none">
+            <div class="booking-info-title">
+                {{ $msgModule->translated_label ?? trans('checkout.message_for_checkout') ?? 'Message for Check-out' }}
+                @if($msgModule->is_required)<span class="text-danger">*</span>@endif
             </div>
-
-        {{-- ══ EXTRA SERVICES ══ --}}
-        @elseif($module->name === 'extra_services')
-            @php $options = $module->config['options'] ?? []; @endphp
-            <div class="cmod-col" id="cmod-extras-{{ $itemKey }}"
-                 data-module-name="extra_services" data-price-type="additive">
-
-                <div class="cmod-label">
-                    <x-iconsax-lin-add-square class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                    {{ $module->translated_label ?? 'Extra Services' }}
-                    @if($module->is_required)<span class="text-danger">*</span>@endif
-                </div>
-
-                <div class="cmod-extras">
-                    @foreach($options as $opt)
-                        <label class="cmod-extra-row">
-                            <input type="checkbox" name="{{ $prefix }}[]"
-                                   value="{{ $opt['label'] }}" class="cmod-extra-chk"
-                                   data-price="{{ $opt['price'] ?? 0 }}"
-                                   {{ in_array($opt['label'], old("checkout_modules.{$itemKey}.extra_services", [])) ? 'checked' : '' }}>
-                            <span style="flex:1;">{{ $opt['label'] }}</span>
-                            <span class="cmod-extra-price">+{{ handlePrice($opt['price'] ?? 0) }}</span>
-                        </label>
-                    @endforeach
-                </div>
+            <textarea name="{{ $msgPrefix }}"
+                      class="form-control mt-3"
+                      rows="3"
+                      style="font-size:13px;border-radius:12px;min-height:88px;"
+                      placeholder="{{ $ph }}"
+                      maxlength="{{ $maxLen }}"
+                      id="bmod_msg_{{ $itemKey }}"
+                      {{ $msgModule->is_required ? 'required' : '' }}>{{ $oldMsg }}</textarea>
+            <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
+                <span id="bmod_msgc_{{ $itemKey }}">{{ strlen($oldMsg) }}</span>/{{ $maxLen }} {{ trans('checkout.characters') ?? 'characters' }}
             </div>
+            @error("checkout_modules.{$itemKey}.checkout_message")
+                <div class="text-danger font-11 mt-4">{{ $message }}</div>
+            @enderror
+        </div>
+    @endif
 
-        {{-- ══ CHECKOUT MESSAGE ══ --}}
-        @elseif($module->name === 'checkout_message')
-            @php
-                $maxLen = $module->config['max_length'] ?? 500;
-                $ph     = $module->config['placeholder'] ?? (trans('checkout.special_instructions') ?? 'Special instructions...');
-            @endphp
-            <div class="cmod-col" id="cmod-msg-{{ $itemKey }}"
-                 data-module-name="checkout_message" data-price-type="none">
-
-                <div class="cmod-label">
-                    <x-iconsax-lin-message-text class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                    {{ $module->translated_label ?? 'Message' }}
-                    @if($module->is_required)<span class="text-danger">*</span>@endif
-                </div>
-
-                <textarea name="{{ $prefix }}" id="cmod_msg_{{ $itemKey }}"
-                          class="cmod-textarea" rows="2"
-                          placeholder="{{ $ph }}" maxlength="{{ $maxLen }}"
-                          {{ $module->is_required ? 'required' : '' }}>{{ old("checkout_modules.{$itemKey}.checkout_message") }}</textarea>
-                <div style="font-size:10px;color:#94a3b8;margin-top:2px;">
-                    <span id="cmod_msgc_{{ $itemKey }}">0</span>/{{ $maxLen }}
-                </div>
+    {{-- REVIEWER MESSAGE --}}
+    @if($revModule = $bottomModules->firstWhere('name', 'reviewer_message'))
+        @php
+            $revMaxLen = $revModule->config['max_length'] ?? 500;
+            $revPh     = $revModule->config['placeholder'] ?? (trans('checkout.message_to_reviewer') ?? 'Message to instructor or organizer');
+            $oldRev    = old("checkout_modules.{$itemKey}.reviewer_message", '');
+        @endphp
+        <div class="booking-cancellation-card" data-module-name="reviewer_message" data-price-type="none">
+            <div class="booking-info-title">
+                {{ $revModule->translated_label ?? trans('checkout.message_to_reviewer') ?? 'Message to Reviewer' }}
+                @if($revModule->is_required)<span class="text-danger">*</span>@endif
             </div>
-
-        {{-- ══ REVIEWER MESSAGE ══ --}}
-        @elseif($module->name === 'reviewer_message')
-            @php
-                $maxLen = $module->config['max_length'] ?? 500;
-                $ph     = $module->config['placeholder'] ?? (trans('checkout.message_to_reviewer') ?? 'Message to reviewer...');
-            @endphp
-            <div class="cmod-col" id="cmod-reviewer-{{ $itemKey }}"
-                 data-module-name="reviewer_message" data-price-type="none">
-
-                <div class="cmod-label">
-                    <x-iconsax-lin-message-text class="icons" width="12px" height="12px" style="color:#94a3b8"/>
-                    {{ $module->translated_label ?? 'Reviewer Message' }}
-                    @if($module->is_required)<span class="text-danger">*</span>@endif
-                </div>
-
-                <textarea name="{{ $prefix }}" id="cmod_reviewer_{{ $itemKey }}"
-                          class="cmod-textarea" rows="2"
-                          placeholder="{{ $ph }}" maxlength="{{ $maxLen }}"
-                          {{ $module->is_required ? 'required' : '' }}>{{ old("checkout_modules.{$itemKey}.reviewer_message") }}</textarea>
-                <div style="font-size:10px;color:#94a3b8;margin-top:2px;">
-                    <span id="cmod_reviewerc_{{ $itemKey }}">0</span>/{{ $maxLen }}
-                </div>
+            <textarea name="{{ $revPrefix }}"
+                      class="form-control mt-3"
+                      rows="3"
+                      style="font-size:13px;border-radius:12px;min-height:88px;"
+                      placeholder="{{ $revPh }}"
+                      maxlength="{{ $revMaxLen }}"
+                      id="bmod_rev_{{ $itemKey }}"
+                      {{ $revModule->is_required ? 'required' : '' }}>{{ $oldRev }}</textarea>
+            <div style="font-size:11px;color:#94a3b8;margin-top:8px;">
+                <span id="bmod_revc_{{ $itemKey }}">{{ strlen($oldRev) }}</span>/{{ $revMaxLen }} {{ trans('checkout.characters') ?? 'characters' }}
             </div>
+            @error("checkout_modules.{$itemKey}.reviewer_message")
+                <div class="text-danger font-11 mt-4">{{ $message }}</div>
+            @enderror
+        </div>
+    @endif
 
-        {{-- ══ FALLBACK ══ --}}
-        @else
-            <div class="cmod-col" data-module-name="{{ $module->name }}" data-price-type="none">
-                <div class="cmod-label">{{ $module->translated_label }}</div>
-                @includeIf('partials.checkout_modules._' . $module->name, ['module' => $module, 'itemId' => $itemKey])
-            </div>
-        @endif
-
+    {{-- FALLBACK for any custom module added via DB (extensible system) --}}
+    @foreach($bottomModules->whereNotIn('name', [
+        'persons_children', 'extra_services', 'cancellation_policy',
+        'checkout_message', 'reviewer_message'
+    ]) as $customModule)
+        <div class="booking-cancellation-card" data-module-name="{{ $customModule->name }}">
+            <div class="booking-info-title">{{ $customModule->translated_label ?? $customModule->name }}</div>
+            @includeIf('partials.checkout_modules._' . $customModule->name, [
+                'module' => $customModule,
+                'itemId' => $itemKey,
+            ])
+        </div>
     @endforeach
-</div>
 
-@push('scripts_bottom')
-<script>
-(function ($) {
+</div>{{-- .booking-info-shell --}}
+@endif
 
-    /* Nights counter */
-    function cmodNights_{{ $itemKey }}() {
-        var inV  = $('#cmod_cin_{{ $itemKey }}').val();
-        var outV = $('#cmod_cout_{{ $itemKey }}').val();
-        var $b   = $('#cmod_nights_{{ $itemKey }}');
-        if (!inV || !outV) { $b.text('0 {{ trans("checkout.nights") ?? "nights" }}'); return; }
-        var inD = new Date(inV), outD = new Date(outV);
-        if (outD <= inD) {
-            var n = new Date(inD); n.setDate(n.getDate()+1);
-            var str = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
-            $('#cmod_cout_{{ $itemKey }}').val(str);
-            outD = n;
+{{-- ════════════════════════════════════════
+     SCRIPTS  (injected once via @once)
+════════════════════════════════════════ --}}
+@once
+    @push('scripts_bottom')
+    <script>
+    (function ($) {
+        'use strict';
+
+        /* ════════════════════════════════════════
+           NIGHTS COUNTER (days module)
+        ════════════════════════════════════════ */
+        function bmodUpdateNights($shell) {
+            var itemKey = $shell.data('item-key');
+            var $cin    = $('#bmod_cin_'  + itemKey);
+            var $cout   = $('#bmod_cout_' + itemKey);
+            var $badge  = $('#bmod_nights_' + itemKey);
+
+            if (!$cin.length || !$cout.length || !$badge.length) return;
+
+            var inVal  = $cin.val();
+            var outVal = $cout.val();
+
+            if (!inVal || !outVal) {
+                $badge.text('0 {{ trans("checkout.nights") ?? "nights" }}');
+                return;
+            }
+
+            var inDate  = new Date(inVal);
+            var outDate = new Date(outVal);
+
+            if (outDate <= inDate) {
+                var nextDay = new Date(inDate);
+                nextDay.setDate(nextDay.getDate() + 1);
+                var yyyy = nextDay.getFullYear();
+                var mm   = String(nextDay.getMonth() + 1).padStart(2, '0');
+                var dd   = String(nextDay.getDate()).padStart(2, '0');
+                $cout.val(yyyy + '-' + mm + '-' + dd);
+                outDate = nextDay;
+            }
+
+            var nights = Math.max(0, Math.ceil((outDate - inDate) / 86400000));
+            $badge.text(nights + ' {{ trans("checkout.nights") ?? "nights" }}');
         }
-        var nights = Math.max(0, Math.ceil((outD - inD) / 86400000));
-        $b.text(nights + ' {{ trans("checkout.nights") ?? "nights" }}');
-        $(document).trigger('checkout:priceUpdate');
-    }
-    $(document).on('change','#cmod_cin_{{ $itemKey }}', function(){
-        var v=$(this).val(); if(v) $('#cmod_cout_{{ $itemKey }}').attr('min',v);
-        cmodNights_{{ $itemKey }}();
-    });
-    $(document).on('change','#cmod_cout_{{ $itemKey }}', cmodNights_{{ $itemKey }});
-    $(document).ready(cmodNights_{{ $itemKey }});
 
-    /* Steppers */
-    $(document).on('click', '.cmod-minus, .cmod-plus', function(e){
-        e.preventDefault();
-        var $i=$(this).closest('.cmod-stepper').find('.cmod-stepper-inp');
-        var v=parseInt($i.val(),10)||0, mn=parseInt($i.attr('min'),10)||0, mx=parseInt($i.attr('max'),10)||999;
-        $i.val($(this).hasClass('cmod-minus')?Math.max(mn,v-1):Math.min(mx,v+1)).trigger('change');
-        $(document).trigger('checkout:priceUpdate');
-    });
+        $(document).on('change', '.bmod-cin', function () {
+            var $shell = $(this).closest('[data-item-key]');
+            var val = $(this).val();
+            if (val) {
+                $(this).closest('.booking-info-card').find('.bmod-cout').attr('min', val);
+            }
+            bmodUpdateNights($shell);
 
-    /* Char counters */
-    $(document).on('input','#cmod_msg_{{ $itemKey }}',function(){$('#cmod_msgc_{{ $itemKey }}').text($(this).val().length);});
-    $(document).on('input','#cmod_reviewer_{{ $itemKey }}',function(){$('#cmod_reviewerc_{{ $itemKey }}').text($(this).val().length);});
+            // Update display label
+            if (val) {
+                var d = new Date(val);
+                var lbl = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                $shell.find('.bmod-cin-label').text(lbl);
+            } else {
+                $shell.find('.bmod-cin-label').text('{{ trans("checkout.not_selected") ?? "Not selected" }}');
+            }
 
-    /* Price triggers */
-    $(document).on('change','.cmod-extra-chk, .cmod-stepper-inp', function(){ $(document).trigger('checkout:priceUpdate'); });
+            $(document).trigger('checkout:priceUpdate');
+        });
 
-})(jQuery);
-</script>
-@endpush
+        $(document).on('change', '.bmod-cout', function () {
+            var $shell = $(this).closest('[data-item-key]');
+            bmodUpdateNights($shell);
+            $(document).trigger('checkout:priceUpdate');
+        });
+
+        // Initial run on page load (for old()/prefilled values)
+        $(function () {
+            $('[data-item-key]').each(function () {
+                bmodUpdateNights($(this));
+            });
+        });
+
+        /* ════════════════════════════════════════
+           TIME SLOT SELECT (hours module)
+        ════════════════════════════════════════ */
+        $(document).on('change', '.bmod-time-select', function () {
+            var $shell = $(this).closest('[data-item-key]');
+            var val = $(this).val();
+            $shell.find('.bmod-time-label').text(val ? $(this).find('option:selected').text() : '{{ trans("checkout.not_selected") ?? "Not selected" }}');
+            $(document).trigger('checkout:priceUpdate');
+        });
+
+        /* ════════════════════════════════════════
+           STAFF SELECT
+        ════════════════════════════════════════ */
+        $(document).on('change', '[id^="bmod_staff_"]', function () {
+            $(document).trigger('checkout:priceUpdate');
+        });
+
+        /* ════════════════════════════════════════
+           STEPPER BUTTONS (persons_children)
+        ════════════════════════════════════════ */
+        $(document).on('click', '.bmod-stepper-btn', function () {
+            var targetId = $(this).data('target');
+            var action   = $(this).data('action');
+            var min      = parseInt($(this).data('min') ?? 0, 10);
+            var max      = parseInt($(this).data('max') ?? 99, 10);
+            var $input   = $('#' + targetId);
+            var current  = parseInt($input.val() ?? 0, 10);
+
+            if (action === 'inc' && current < max) {
+                $input.val(current + 1);
+            } else if (action === 'dec' && current > min) {
+                $input.val(current - 1);
+            }
+
+            $input.trigger('change');
+            $(document).trigger('checkout:priceUpdate');
+        });
+
+        /* ════════════════════════════════════════
+           EXTRA SERVICES CHECKBOXES
+        ════════════════════════════════════════ */
+        $(document).on('change', '.bmod-extra-chk', function () {
+            $(document).trigger('checkout:priceUpdate');
+        });
+
+        /* ════════════════════════════════════════
+           CHARACTER COUNTERS (checkout_message / reviewer_message)
+        ════════════════════════════════════════ */
+        $(document).on('input', '[id^="bmod_msg_"]', function () {
+            var id  = $(this).attr('id');
+            var key = id.replace('bmod_msg_', '');
+            $('#bmod_msgc_' + key).text($(this).val().length);
+        });
+
+        $(document).on('input', '[id^="bmod_rev_"]', function () {
+            var id  = $(this).attr('id');
+            var key = id.replace('bmod_rev_', '');
+            $('#bmod_revc_' + key).text($(this).val().length);
+        });
+
+        /* ════════════════════════════════════════
+           CANCELLATION POLICY CHECKBOX
+        ════════════════════════════════════════ */
+        $(document).on('change', '[id^="cp_agree_"]', function () {
+            $(document).trigger('checkout:priceUpdate');
+        });
+
+    })(jQuery);
+    </script>
+    @endpush
+@endonce

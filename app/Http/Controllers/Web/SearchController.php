@@ -31,19 +31,18 @@ class SearchController extends Controller
 
     public function index(Request $request)
     {
-        $seoSettings    = getSeoMetas('search');
-        $pageTitle      = !empty($seoSettings['title'])       ? $seoSettings['title']       : trans('site.search_page_title');
+        $seoSettings     = getSeoMetas('search');
+        $pageTitle       = !empty($seoSettings['title'])       ? $seoSettings['title']       : trans('site.search_page_title');
         $pageDescription = !empty($seoSettings['description']) ? $seoSettings['description'] : trans('site.search_page_title');
-        $pageRobot      = getPageRobot('search');
+        $pageRobot       = getPageRobot('search');
 
         $data = [
-            'pageTitle'       => $pageTitle,
-            'pageDescription' => $pageDescription,
-            'pageRobot'       => $pageRobot,
-            'resultCount'     => 0,
-            // Hierarchical category trees for sidebar
-            'categories'         => Category::getCategories(),
-            'bookingCategories'  => BookingCategory::query()
+            'pageTitle'         => $pageTitle,
+            'pageDescription'   => $pageDescription,
+            'pageRobot'         => $pageRobot,
+            'resultCount'       => 0,
+            'categories'        => Category::getCategories(),
+            'bookingCategories' => BookingCategory::query()
                                         ->roots()
                                         ->active()
                                         ->with('children')
@@ -52,7 +51,7 @@ class SearchController extends Controller
 
         $search = $request->get('search', null);
 
-        if (!empty($search) && strlen($search) >= 3) {
+        if (!empty($search) && strlen($search) >= 1) {
             $searchData = $this->getSearchData($search, $request);
             $data       = array_merge($data, $searchData);
         }
@@ -61,7 +60,7 @@ class SearchController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // AJAX: live suggestions (called on keyup, debounced in JS)
+    // AJAX: live suggestions
     // ─────────────────────────────────────────────────────────────────────────
 
     public function suggestions(Request $request): JsonResponse
@@ -72,224 +71,308 @@ class SearchController extends Controller
             return response()->json(['suggestions' => []]);
         }
 
-        $suggestions = $this->searchService->suggestions($query);
-
-        return response()->json(['suggestions' => $suggestions]);
+        return response()->json([
+            'suggestions' => $this->searchService->suggestions($query),
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // AJAX: category tree for search dropdown
+    // AJAX: category tree
     // ─────────────────────────────────────────────────────────────────────────
 
     public function categoryTree(): JsonResponse
     {
-        $tree = $this->searchService->getCategoryTree();
-        return response()->json($tree);
+        return response()->json($this->searchService->getCategoryTree());
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Internal: build all search result data (same logic as before, kept intact
-    // so existing view continues to work without change).
-    // ─────────────────────────────────────────────────────────────────────────
+    // =========================================================================
+    // FILTER HELPERS
+    // =========================================================================
+
+    /**
+     * Apply price_min / price_max to any query.
+     */
+    private function applyPriceFilter(Builder $query, Request $request, string $column = 'price'): void
+    {
+        $min = $request->get('price_min');
+        $max = $request->get('price_max');
+
+        if ($min !== null && $min !== '') {
+            $query->where($column, '>=', (float) $min);
+        }
+        if ($max !== null && $max !== '') {
+            $query->where($column, '<=', (float) $max);
+        }
+    }
+
+    /**
+     * Apply minimum rating filter.
+     */
+    private function applyRatingFilter(Builder $query, Request $request, string $column = 'avg_rating'): void
+    {
+        $rating = $request->get('rating');
+        if ($rating !== null && $rating !== '') {
+            $query->where($column, '>=', (float) $rating);
+        }
+    }
+
+    /**
+     * Apply Haversine nearby scope when lat/lng/radius_km are present
+     * AND the model actually has scopeNearby defined.
+     */
+    private function applyNearby(Builder $query, Request $request, string $modelClass): bool
+    {
+        if (
+            $request->filled('lat') &&
+            $request->filled('lng') &&
+            $request->filled('radius_km') &&
+            method_exists($modelClass, 'scopeNearby')
+        ) {
+            $query->nearby(
+                (float) $request->lat,
+                (float) $request->lng,
+                (float) $request->radius_km
+            );
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Apply sort order.
+     * $nearbyApplied  — whether scopeNearby already added a `distance` column.
+     * $priceCol       — name of price column on this model's table.
+     * $ratingCol      — name of rating column on this model's table.
+     */
+    private function applySort(
+        Builder $query,
+        Request $request,
+        bool    $nearbyApplied,
+        string  $priceCol  = 'price',
+        string  $ratingCol = 'avg_rating'
+    ): void {
+        $sort = $request->get('sort', 'relevance');
+
+        switch ($sort) {
+            case 'price_asc':
+                $query->orderBy($priceCol, 'asc');
+                break;
+
+            case 'price_desc':
+                $query->orderBy($priceCol, 'desc');
+                break;
+
+            case 'rating':
+                $query->orderBy($ratingCol, 'desc');
+                break;
+
+            case 'distance':
+                // Only sort by distance when scopeNearby added that column
+                $nearbyApplied
+                    ? $query->orderBy('distance', 'asc')
+                    : $query->inRandomOrder();
+                break;
+
+            case 'relevance':
+            default:
+                if (!$nearbyApplied) {
+                    $query->inRandomOrder();
+                }
+                break;
+        }
+    }
+
+    // =========================================================================
+    // MAIN SEARCH DATA BUILDER
+    // =========================================================================
 
     private function getSearchData(string $search, Request $request): array
     {
-        $nearbyIsActive = $request->filled(['lat', 'lng', 'radius_km']);
+        // ── Shared filter values ─────────────────────────────────────────────
+        $selectedCategories    = array_filter((array) $request->get('categories', []));
+        $selectedBookingCats   = array_filter((array) $request->get('booking_categories', []));
 
         // ── Webinars / Courses ───────────────────────────────────────────────
         $webinarsQuery = Webinar::query()
             ->where('status', 'active')
             ->where('private', false)
             ->where('only_for_students', false)
-            ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%")
-                      ->orWhereTranslationLike('description', "%$search%");
+            ->where(function (Builder $q) use ($search) {
+                $q->whereTranslationLike('title', "%$search%")
+                  ->orWhereTranslationLike('description', "%$search%");
             })
             ->with([
                 'teacher' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
                 'reviews',
             ]);
 
-        // Filter by selected course categories (sidebar checkboxes)
-        $selectedCategories = $request->get('categories', []);
         if (!empty($selectedCategories)) {
             $webinarsQuery->whereIn('category_id', $selectedCategories);
         }
 
-        if ($nearbyIsActive && method_exists(Webinar::class, 'scopeNearby')) {
-            $webinarsQuery->nearby(
-                (float) $request->lat,
-                (float) $request->lng,
-                (float) $request->radius_km
-            );
-        }
+        $this->applyPriceFilter($webinarsQuery, $request, 'price');
+        $this->applyRatingFilter($webinarsQuery, $request, 'avg_rating');
+        $webinarsNearby = $this->applyNearby($webinarsQuery, $request, Webinar::class);
+        $this->applySort($webinarsQuery, $request, $webinarsNearby, 'price', 'avg_rating');
 
-        $webinarsCount = deepClone($webinarsQuery)->count();
-        if (!$nearbyIsActive) {
-            $webinarsQuery->inRandomOrder();
-        }
-        $webinars = $webinarsQuery->limit(20)->get();
+        $webinarsCount = (clone $webinarsQuery)->count();
+        $webinars      = $webinarsQuery->limit(20)->get();
 
-        // ── Bundles ──────────────────────────────────────────────────────────
+        // ── Course Bundles ───────────────────────────────────────────────────
         $bundlesQuery = Bundle::query()
             ->where('status', 'active')
             ->where('private', false)
             ->where('only_for_students', false)
-            ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%")
-                      ->orWhereTranslationLike('description', "%$search%");
+            ->where(function (Builder $q) use ($search) {
+                $q->whereTranslationLike('title', "%$search%")
+                  ->orWhereTranslationLike('description', "%$search%");
             })
             ->with([
                 'teacher' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
                 'reviews',
             ]);
 
-        $bundlesCount = deepClone($bundlesQuery)->count();
-        $bundles = $bundlesQuery->inRandomOrder()->limit(20)->get();
+        $this->applyPriceFilter($bundlesQuery, $request, 'price');
+        $this->applySort($bundlesQuery, $request, false, 'price', 'avg_rating');
+
+        $bundlesCount = (clone $bundlesQuery)->count();
+        $bundles      = $bundlesQuery->limit(20)->get();
 
         // ── Upcoming Courses ─────────────────────────────────────────────────
-        $upcomingCoursesQuery = UpcomingCourse::query()
+        $upcomingQuery = UpcomingCourse::query()
             ->where('status', 'active')
-            ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%")
-                      ->orWhereTranslationLike('description', "%$search%");
+            ->where(function (Builder $q) use ($search) {
+                $q->whereTranslationLike('title', "%$search%")
+                  ->orWhereTranslationLike('description', "%$search%");
             })
             ->with([
                 'teacher' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
             ]);
 
-        $upcomingCoursesCount = deepClone($upcomingCoursesQuery)->count();
-        $upcomingCourses = $upcomingCoursesQuery->inRandomOrder()->limit(20)->get();
+        $this->applyPriceFilter($upcomingQuery, $request, 'price');
+        $this->applySort($upcomingQuery, $request, false, 'price', 'avg_rating');
+
+        $upcomingCount   = (clone $upcomingQuery)->count();
+        $upcomingCourses = $upcomingQuery->limit(20)->get();
 
         // ── Products ─────────────────────────────────────────────────────────
         $productsQuery = Product::query()
             ->where('status', 'active')
-            ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%")
-                      ->orWhereTranslationLike('summary', "%$search%")
-                      ->orWhereTranslationLike('description', "%$search%");
+            ->where(function (Builder $q) use ($search) {
+                $q->whereTranslationLike('title', "%$search%")
+                  ->orWhereTranslationLike('summary', "%$search%")
+                  ->orWhereTranslationLike('description', "%$search%");
             })
             ->with([
                 'creator' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
             ]);
 
-        if ($nearbyIsActive && method_exists(Product::class, 'scopeNearby')) {
-            $productsQuery->nearby(
-                (float) $request->lat,
-                (float) $request->lng,
-                (float) $request->radius_km
-            );
-        }
+        $this->applyPriceFilter($productsQuery, $request, 'price');
+        $productsNearby = $this->applyNearby($productsQuery, $request, Product::class);
+        $this->applySort($productsQuery, $request, $productsNearby, 'price', 'avg_rating');
 
-        $productsCount = deepClone($productsQuery)->count();
-        if (!$nearbyIsActive) {
-            $productsQuery->inRandomOrder();
-        }
-        $products = $productsQuery->limit(20)->get();
+        $productsCount = (clone $productsQuery)->count();
+        $products      = $productsQuery->limit(20)->get();
 
         // ── Blog Posts ───────────────────────────────────────────────────────
         $postsQuery = Blog::query()
             ->where('status', 'publish')
-            ->where(function (Builder $query) use ($search) {
-                $query->whereTranslationLike('title', "%$search%")
-                      ->orWhereTranslationLike('description', "%$search%")
-                      ->orWhereTranslationLike('content', "%$search%");
+            ->where(function (Builder $q) use ($search) {
+                $q->whereTranslationLike('title', "%$search%")
+                  ->orWhereTranslationLike('description', "%$search%")
+                  ->orWhereTranslationLike('content', "%$search%");
             })
             ->with([
                 'author' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
             ]);
 
-        $postsCount = deepClone($postsQuery)->count();
-        $posts = $postsQuery->inRandomOrder()->limit(20)->get();
+        // Posts have no price/rating/nearby — just sort by created_at for relevance
+        $sort = $request->get('sort', 'relevance');
+        if (!in_array($sort, ['price_asc', 'price_desc', 'rating', 'distance'])) {
+            $postsQuery->inRandomOrder();
+        }
 
-        // ── Users (instructors + organizations) ──────────────────────────────
-        $usersQuery = User::query()
+        $postsCount = (clone $postsQuery)->count();
+        $posts      = $postsQuery->limit(20)->get();
+
+        // ── Users: Instructors + Organizations ───────────────────────────────
+        $usersBaseQuery = User::query()
             ->where('status', 'active')
-            ->where(function (Builder $query) use ($search) {
-                $query->where('full_name', 'like', "%$search%")
-                      ->orWhere('email', 'like', "%$search%")
-                      ->orWhere('mobile', 'like', "%$search%");
+            ->where(function (Builder $q) use ($search) {
+                $q->where('full_name', 'like', "%$search%")
+                  ->orWhere('email', 'like', "%$search%")
+                  ->orWhere('mobile', 'like', "%$search%");
             })
-            ->where(function (Builder $query) {
-                $query->where('role_name', Role::$teacher)
-                      ->orWhere('role_name', Role::$organization);
+            ->where(function (Builder $q) {
+                $q->where('role_name', Role::$teacher)
+                  ->orWhere('role_name', Role::$organization);
             });
 
-        if ($nearbyIsActive && method_exists(User::class, 'scopeNearby')) {
-            $usersQuery->nearby(
-                (float) $request->lat,
-                (float) $request->lng,
-                (float) $request->radius_km
-            );
-        }
+        // Rating filter on users
+        $this->applyRatingFilter($usersBaseQuery, $request, 'avg_rating');
+        $usersNearby = $this->applyNearby($usersBaseQuery, $request, User::class);
 
-        $usersCount = deepClone($usersQuery)->count();
-
-        $instructorsQuery = deepClone($usersQuery)->where('role_name', Role::$teacher);
-        if (!$nearbyIsActive) {
-            $instructorsQuery->inRandomOrder();
-        }
+        $instructorsQuery = (clone $usersBaseQuery)->where('role_name', Role::$teacher);
+        $this->applySort($instructorsQuery, $request, $usersNearby, 'price', 'avg_rating');
         $instructors = $instructorsQuery->limit(20)->get();
 
-        $organizationsQuery = deepClone($usersQuery)->where('role_name', Role::$organization);
-        if (!$nearbyIsActive) {
-            $organizationsQuery->inRandomOrder();
-        }
+        $organizationsQuery = (clone $usersBaseQuery)->where('role_name', Role::$organization);
+        $this->applySort($organizationsQuery, $request, $usersNearby, 'price', 'avg_rating');
         $organizations = $organizationsQuery->limit(20)->get();
+
+        $usersCount = $instructors->count() + $organizations->count();
 
         // ── Bookings ─────────────────────────────────────────────────────────
         $bookingsQuery = Booking::query()
             ->where('status', 'published')
-            ->where(function (Builder $query) use ($search) {
-                $query->where('title', 'like', "%$search%")
-                      ->orWhere('description', 'like', "%$search%");
+            ->where(function (Builder $q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                  ->orWhere('description', 'like', "%$search%");
             })
             ->with(['creator', 'category']);
 
-        // Filter by selected booking categories
-        $selectedBookingCategories = $request->get('booking_categories', []);
-        if (!empty($selectedBookingCategories)) {
-            $bookingsQuery->whereIn('category_id', $selectedBookingCategories);
+        if (!empty($selectedBookingCats)) {
+            $bookingsQuery->whereIn('category_id', $selectedBookingCats);
         }
 
-        if ($nearbyIsActive && method_exists(Booking::class, 'scopeNearby')) {
-            $bookingsQuery->nearby(
-                (float) $request->lat,
-                (float) $request->lng,
-                (float) $request->radius_km
-            );
-        }
+        $this->applyPriceFilter($bookingsQuery, $request, 'price');
+        $this->applyRatingFilter($bookingsQuery, $request, 'rating');
+        $bookingsNearby = $this->applyNearby($bookingsQuery, $request, Booking::class);
+        $this->applySort($bookingsQuery, $request, $bookingsNearby, 'price', 'rating');
 
-        $bookingsCount = deepClone($bookingsQuery)->count();
-        if (!$nearbyIsActive) {
-            $bookingsQuery->inRandomOrder();
-        }
-        $bookings = $bookingsQuery->limit(20)->get();
+        $bookingsCount = (clone $bookingsQuery)->count();
+        $bookings      = $bookingsQuery->limit(20)->get();
 
         // ── Booking Bundles ──────────────────────────────────────────────────
         $bookingBundlesQuery = BookingBundle::query()
-            ->where(function (Builder $query) use ($search) {
-                $query->where('title', 'like', "%$search%")
-                      ->orWhere('description', 'like', "%$search%");
+            ->where(function (Builder $q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                  ->orWhere('description', 'like', "%$search%");
             })
             ->with(['creator']);
 
-        $bookingBundlesCount = deepClone($bookingBundlesQuery)->count();
-        $bookingBundles = $bookingBundlesQuery->inRandomOrder()->limit(20)->get();
+        $this->applyPriceFilter($bookingBundlesQuery, $request, 'price');
+        $this->applySort($bookingBundlesQuery, $request, false, 'price', 'avg_rating');
 
-        return [
-            'resultCount'      => $webinarsCount + $bundlesCount + $upcomingCoursesCount
-                                 + $productsCount + $postsCount + $usersCount
-                                 + $bookingsCount + $bookingBundlesCount,
-            'webinars'         => $webinars,
-            'bundles'          => $bundles,
-            'products'         => $products,
-            'upcomingCourses'  => $upcomingCourses,
-            'posts'            => $posts,
-            'instructors'      => $instructors,
-            'organizations'    => $organizations,
-            'bookings'         => $bookings,
-            'bookingBundles'   => $bookingBundles,
-        ];
+        $bookingBundlesCount = (clone $bookingBundlesQuery)->count();
+        $bookingBundles      = $bookingBundlesQuery->limit(20)->get();
+
+        // ── Total count ──────────────────────────────────────────────────────
+        $resultCount = $webinarsCount + $bundlesCount + $upcomingCount
+                     + $productsCount + $postsCount + $usersCount
+                     + $bookingsCount + $bookingBundlesCount;
+
+        return compact(
+            'resultCount',
+            'webinars',
+            'bundles',
+            'upcomingCourses',
+            'products',
+            'posts',
+            'instructors',
+            'organizations',
+            'bookings',
+            'bookingBundles'
+        );
     }
 }

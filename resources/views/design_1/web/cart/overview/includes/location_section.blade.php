@@ -1,11 +1,14 @@
 {{--
-    resources/views/design_1/web/cart/overview/partials/_location_section.blade.php
+    design_1/web/cart/overview/includes/location_section.blade.php
 
-    Renders a collapsible location card ABOVE the coupon section in cart.
+    SINGLE SOURCE OF TRUTH for the collapsible delivery/location card on
+    the cart page. Previously this same set of fields (address_line, city,
+    state, country, postal_code) was ALSO hardcoded inline inside
+    index.blade.php — that inline copy has been removed; index.blade.php
+    now just includes this partial.
+
     Fields: address_line, city, state, country, postal_code
-
-    Include in cart overview index.blade.php ABOVE the coupon row:
-        @include('design_1.web.cart.overview.partials._location_section')
+    Only rendered for authenticated users (wrap with @auth where included).
 --}}
 
 @push('styles_top')
@@ -69,13 +72,17 @@
 </style>
 @endpush
 
+@php
+    $authUser = auth()->user();
+@endphp
+
 <div class="cart-location-card" id="cartLocationSection">
 
     {{-- Header / toggle --}}
     <div class="cart-location-card__header" id="cartLocationToggle">
         <div class="cart-location-card__title">
             <x-iconsax-lin-location class="icons text-primary" width="18px" height="18px"/>
-            <span>{{ trans('update.delivery_address') ?? 'Delivery / Location' }}</span>
+            <span>{{ trans('update.delivery_address') ?? 'Delivery Address' }}</span>
             <span class="font-12 font-weight-400 text-gray-400">({{ trans('public.optional') ?? 'optional' }})</span>
         </div>
         <x-iconsax-lin-arrow-down-2 class="icons text-gray-400 cart-location-card__toggle-icon"
@@ -100,7 +107,7 @@
                            class="form-control"
                            autocomplete="off"
                            placeholder="{{ trans('update.address') ?? 'Start typing address...' }}"
-                           value="{{ old('address_line', auth()->user()->address ?? '') }}">
+                           value="{{ old('address_line', $authUser->address_line ?? $authUser->address ?? '') }}">
                     <div class="cart-addr-suggestions d-none" id="cartAddrSuggestions"></div>
                 </div>
             </div>
@@ -114,7 +121,7 @@
                            id="cartCity"
                            class="form-control"
                            placeholder="{{ trans('update.city') ?? 'City' }}"
-                           value="{{ old('city', auth()->user()->city ?? '') }}">
+                           value="{{ old('city', $authUser->city ?? '') }}">
                 </div>
             </div>
 
@@ -127,7 +134,7 @@
                            id="cartState"
                            class="form-control"
                            placeholder="{{ trans('update.state') ?? 'State' }}"
-                           value="{{ old('state', auth()->user()->state ?? '') }}">
+                           value="{{ old('state', $authUser->state ?? '') }}">
                 </div>
             </div>
 
@@ -140,7 +147,7 @@
                            id="cartCountry"
                            class="form-control"
                            placeholder="{{ trans('update.country') ?? 'Country' }}"
-                           value="{{ old('country', auth()->user()->country ?? '') }}">
+                           value="{{ old('country', $authUser->country ?? '') }}">
                 </div>
             </div>
 
@@ -153,7 +160,7 @@
                            id="cartPostalCode"
                            class="form-control"
                            placeholder="{{ trans('update.postal_code') ?? 'Postal Code' }}"
-                           value="{{ old('postal_code', auth()->user()->postal_code ?? '') }}">
+                           value="{{ old('postal_code', $authUser->postal_code ?? '') }}">
                 </div>
             </div>
 

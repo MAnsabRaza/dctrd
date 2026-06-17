@@ -46,7 +46,7 @@
         /* Remove button */
         .cart-remove-btn {
             width: 30px; height: 30px; padding: 0; border-radius: 50%;
-            border: 1px solid #e2e8f0; color: #ef4444; background: transparent;
+            border: 1px solid #e2e8f0; background: #fff;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: background .15s, border-color .15s; flex-shrink: 0;
         }
@@ -66,118 +66,23 @@
             border-radius: 16px; padding: 16px 18px; margin-bottom: 14px;
         }
 
-        /* Location card */
-        .cart-location-card {
-            background: #fff; border: 1px solid #e2e8f0;
-            border-radius: 16px; padding: 16px 18px; margin-bottom: 14px;
-        }
-        .cart-location-card__header {
-            display: flex; align-items: center;
-            justify-content: space-between; cursor: pointer; user-select: none;
-        }
-        .cart-location-card__title {
-            display: flex; align-items: center;
-            gap: 8px; font-size: 14px; font-weight: 700; color: #0f172a;
-        }
-        .cart-location-card__toggle { transition: transform .2s; }
-        .cart-location-card__toggle.open { transform: rotate(180deg); }
-        .cart-location-card__body { margin-top: 14px; }
-
-        .cart-addr-suggestions {
-            position: absolute; z-index: 1050;
-            width: 100%; max-height: 200px; overflow-y: auto;
-            background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(15,23,42,.1);
-            top: calc(100% + 2px); left: 0;
-        }
-        .cart-addr-item {
-            padding: 8px 12px; font-size: 12px; cursor: pointer;
-            color: #334155; border-bottom: 1px solid #f1f5f9;
-        }
-        .cart-addr-item:hover { background: #f0fdf4; color: #15803d; }
-
         .cart-checkout-btn {
             height: 48px; border-radius: 12px; font-size: 15px;
             font-weight: 700; width: 100%;
             box-shadow: 0 12px 24px rgba(17, 123, 255, .18);
         }
 
-        /* Booking info cards */
-        .booking-info-shell {
-            margin-top: 16px; background: #fff; border: 1px solid #e2e8f0;
-            border-radius: 18px; padding: 18px;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
-        }
-        .booking-info-grid {
-            margin-top: 16px;
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-        }
-        .booking-info-card {
-            background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
-            padding: 16px; min-height: 110px;
-            display: flex; flex-direction: column; justify-content: flex-start; gap: 8px;
-        }
-        .booking-info-title {
-            font-size: 11px; font-weight: 700; color: #64748b;
-            text-transform: uppercase; letter-spacing: .04em;
-        }
-      .booking-info-content{
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-
-.booking-info-icon{
-    flex-shrink:0;
-}
-
-.booking-info-content .form-control{
-    flex:1;
-}
-
-.booking-info-label{
-    margin-top:8px;
-    font-size:13px;
-    color:#64748b;
-}
-        .booking-info-icon {
-            width: 30px; height: 30px; min-width: 30px; min-height: 30px;
-            background: rgba(34, 197, 94, .1); border-radius: 12px;
-            display: inline-flex; align-items: center; justify-content: center;
-            color: #22c55e;
-        }
-        .booking-info-value {
-            font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.3;
-        }
-        .booking-info-label { font-size: 13px; color: #475569; }
-
-        .booking-cancellation-card {
-            margin-top: 14px; border: 1px solid #e2e8f0;
-            border-radius: 16px; background: #fff; padding: 16px;
-        }
-        .booking-cancellation-card label {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer;
-        }
-        .booking-cancellation-card .booking-cancellation-text {
-            margin-top: 12px; font-size: 12px; color: #6b7280; line-height: 1.6;
-        }
-
-        /* Stepper */
-        .bmod-stepper-btn {
-            width: 28px; height: 28px; border-radius: 8px;
-            border: 1px solid #e2e8f0; background: #f8fafc;
-            font-size: 16px; line-height: 1; cursor: pointer;
-            display: inline-flex; align-items: center; justify-content: center;
-            transition: background .15s;
-        }
-        .bmod-stepper-btn:hover { background: #e2e8f0; }
-        .bmod-stepper-input {
-            width: 40px; text-align: center; border: 1px solid #e2e8f0;
-            border-radius: 8px; padding: 4px 0; font-size: 14px; font-weight: 600;
-        }
+        {{--
+            NOTE: Location card styles (.cart-location-card*, .cart-addr-*)
+            and booking module card styles (.booking-info-*,
+            .booking-cancellation-*, .bmod-*) used to be duplicated here.
+            They now live in their own single-source partials:
+              - location_section.blade.php          (pushes its own styles)
+              - _checkout_modules_styles.blade.php   (pushed once from
+                checkout_item_modules.blade.php)
+            so there is exactly one copy of each style block on the page
+            no matter how many times the partials are included.
+        --}}
 
         @media (max-width: 991px) {
             .booking-info-grid { grid-template-columns: 1fr; }
@@ -223,70 +128,19 @@
                     <div class="cart-section-label">{{ trans('update.bookings') ?? 'Bookings' }}</div>
                 @endif
 
-                {{-- All Cart Items --}}
+                {{-- All Cart Items (each booking item internally includes
+                     checkout_item_modules.blade.php for its modules) --}}
                 @include('design_1.web.cart.overview.includes.cart_items')
 
-                {{-- Delivery Address --}}
+                {{--
+                    Delivery Address — single source of truth.
+                    Previously this whole block (address_line/city/state/
+                    country/postal_code + CSS + JS) was hardcoded inline
+                    here AND duplicated again in location_section.blade.php.
+                    Now there is exactly one copy, included here.
+                --}}
                 @auth
-                @php $authUser = auth()->user(); @endphp
-                <div class="cart-location-card" id="cartLocationSection">
-                    <div class="cart-location-card__header" id="cartLocationToggle">
-                        <div class="cart-location-card__title">
-                            <x-iconsax-lin-location class="icons text-primary" width="18px" height="18px"/>
-                            <span>{{ trans('update.delivery_address') ?? 'Delivery Address' }}</span>
-                            <span class="font-12 font-weight-400 text-gray-400">({{ trans('public.optional') ?? 'optional' }})</span>
-                        </div>
-                        <x-iconsax-lin-arrow-down-2 class="icons text-gray-400 cart-location-card__toggle"
-                                                     id="cartLocationChevron"
-                                                     width="16px" height="16px"/>
-                    </div>
-                    <div class="cart-location-card__body" id="cartLocationBody" style="display:none;">
-                        <div class="row">
-                            <div class="col-12 mb-14 position-relative">
-                                <div class="form-group mb-0 position-relative">
-                                    <label class="form-group-label font-12">{{ trans('update.address') ?? 'Address' }}</label>
-                                    <input type="text" name="address_line" id="cartAddressLine"
-                                           class="form-control" autocomplete="off"
-                                           placeholder="{{ trans('update.address') ?? 'Start typing address...' }}"
-                                           value="{{ old('address_line', $authUser->address_line ?? $authUser->address ?? '') }}">
-                                    <div class="cart-addr-suggestions d-none" id="cartAddrSuggestions"></div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-14">
-                                <div class="form-group mb-0">
-                                    <label class="form-group-label font-12">{{ trans('update.city') ?? 'City' }}</label>
-                                    <input type="text" name="city" id="cartCity" class="form-control"
-                                           placeholder="{{ trans('update.city') ?? 'City' }}"
-                                           value="{{ old('city', $authUser->city ?? '') }}">
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-14">
-                                <div class="form-group mb-0">
-                                    <label class="form-group-label font-12">{{ trans('update.state') ?? 'State / Province' }}</label>
-                                    <input type="text" name="state" id="cartState" class="form-control"
-                                           placeholder="{{ trans('update.state') ?? 'State' }}"
-                                           value="{{ old('state', $authUser->state ?? '') }}">
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-14">
-                                <div class="form-group mb-0">
-                                    <label class="form-group-label font-12">{{ trans('update.country') ?? 'Country' }}</label>
-                                    <input type="text" name="country" id="cartCountry" class="form-control"
-                                           placeholder="{{ trans('update.country') ?? 'Country' }}"
-                                           value="{{ old('country', $authUser->country ?? '') }}">
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-0">
-                                <div class="form-group mb-0">
-                                    <label class="form-group-label font-12">{{ trans('update.postal_code') ?? 'Postal Code' }}</label>
-                                    <input type="text" name="postal_code" id="cartPostalCode" class="form-control"
-                                           placeholder="{{ trans('update.postal_code') ?? 'Postal Code' }}"
-                                           value="{{ old('postal_code', $authUser->postal_code ?? '') }}">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    @include('design_1.web.cart.overview.includes.location_section')
                 @endauth
 
                 {{-- Coupon --}}
@@ -324,40 +178,71 @@
     /* ════════════════════════════════════════
        CURRENCY HELPER
     ════════════════════════════════════════ */
-    var $currEl   = $('#cartCurrencySymbol');
-    var curSym    = $currEl.data('symbol')   || '$';
-    var curDec    = parseInt($currEl.data('decimals') || 2);
+    var $currEl = $('#cartCurrencySymbol');
+    var curSym  = $currEl.data('symbol')   || '$';
+    var curDec  = parseInt($currEl.data('decimals') || 2);
 
     function formatMoney(amount) {
         return curSym + parseFloat(amount).toFixed(curDec);
     }
 
     /* ════════════════════════════════════════
-       EXTRA SERVICES — real-time total update
+       MODULE PRICE CALCULATOR
+       Listens to the single 'checkout:priceUpdate' event fired by
+       checkout_item_modules.blade.php's shared script (days, hours,
+       persons_children, extra_services all trigger it). This replaces
+       the old recalcExtras() which ONLY summed extra service checkboxes
+       and silently ignored per-day / per-hour / per-person pricing.
     ════════════════════════════════════════ */
     var baseTotal = parseFloat($('.js-cart-total').data('amount')) || 0;
 
-    function recalcExtras() {
+    function calcModuleExtra($card) {
+        var priceType   = $card.data('price-type');
+        var priceAmount = parseFloat($card.data('price-amount')) || 0;
+
+        switch (priceType) {
+            case 'per_day': {
+                var nightsText = $card.find('[id^="bmod_nights_"]').text();
+                var nights = parseInt(nightsText, 10) || 0;
+                return nights * priceAmount;
+            }
+            case 'per_hour': {
+                var hasSlot = $card.find('.bmod-time-select').val();
+                return hasSlot ? priceAmount : 0;
+            }
+            case 'per_person': {
+                var adults = parseInt($card.find('[id^="pax_adults_"]').val(), 10) || 0;
+                return adults * priceAmount;
+            }
+            case 'additive': {
+                var sum = 0;
+                $card.find('.bmod-extra-chk:checked').each(function () {
+                    sum += parseFloat($(this).data('price')) || 0;
+                });
+                return sum;
+            }
+            default:
+                return 0;
+        }
+    }
+
+    function recalcModuleExtras() {
         var extrasTotal = 0;
-        $('.bmod-extra-chk:checked').each(function () {
-            extrasTotal += parseFloat($(this).data('price')) || 0;
+
+        $('[data-module-name]').each(function () {
+            extrasTotal += calcModuleExtra($(this));
         });
 
-        // Extras column update
         $('.js-cart-extras').text(formatMoney(extrasTotal));
 
-        // Total column update
         var newTotal = baseTotal + extrasTotal;
         $('.js-cart-total').text(formatMoney(newTotal));
     }
 
-    // Extra checkbox change
-    $(document).on('change', '.bmod-extra-chk', function () {
-        recalcExtras();
-    });
+    $(document).on('checkout:priceUpdate', recalcModuleExtras);
 
-    // Page load par bhi run karo (old() se pre-checked ke liye)
-    recalcExtras();
+    // Run once on load (covers old()/pre-filled values)
+    recalcModuleExtras();
 
     /* ════════════════════════════════════════
        REMOVE CART ITEM
@@ -383,7 +268,7 @@
 
                 // baseTotal update karo (removed item ki price minus)
                 baseTotal = parseFloat($('.js-cart-total').data('amount')) || 0;
-                recalcExtras();
+                recalcModuleExtras();
             });
             if (res && res.msg) showToast(res.status || 'success', res.title || '', res.msg);
         }).fail(function (xhr) {
@@ -401,78 +286,6 @@
     $(document).on('keydown', '#couponCodeInput', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); $('#couponValidateBtn').trigger('click'); }
     });
-
-    /* ════════════════════════════════════════
-       DELIVERY ADDRESS TOGGLE
-    ════════════════════════════════════════ */
-    (function () {
-        var toggle  = document.getElementById('cartLocationToggle');
-        var body    = document.getElementById('cartLocationBody');
-        var chevron = document.getElementById('cartLocationChevron');
-        if (!toggle || !body) return;
-
-        toggle.addEventListener('click', function () {
-            var isOpen = body.style.display !== 'none';
-            body.style.display = isOpen ? 'none' : 'block';
-            if (chevron) chevron.classList.toggle('open', !isOpen);
-        });
-
-        // Auto-open agar koi field pre-filled hai
-        var inputs = body.querySelectorAll('input');
-        for (var i = 0; i < inputs.length; i++) {
-            if (inputs[i].value && inputs[i].value.trim()) {
-                body.style.display = 'block';
-                if (chevron) chevron.classList.add('open');
-                break;
-            }
-        }
-
-        /* Address autocomplete */
-        var addrInput   = document.getElementById('cartAddressLine');
-        var suggestions = document.getElementById('cartAddrSuggestions');
-        if (!addrInput || !suggestions) return;
-
-        var debTimer;
-        addrInput.addEventListener('input', function () {
-            clearTimeout(debTimer);
-            debTimer = setTimeout(function () {
-                var q = addrInput.value.trim();
-                if (q.length < 3) { suggestions.classList.add('d-none'); suggestions.innerHTML = ''; return; }
-                fetch('/location/suggestions?q=' + encodeURIComponent(q))
-                    .then(function (r) { return r.json(); })
-                    .then(function (items) {
-                        suggestions.innerHTML = '';
-                        if (!items || !items.length) { suggestions.classList.add('d-none'); return; }
-                        items.forEach(function (item) {
-                            var el = document.createElement('div');
-                            el.className = 'cart-addr-item';
-                            el.textContent = item.display_name;
-                            el.addEventListener('click', function () {
-                                addrInput.value = item.display_name || addrInput.value;
-                                var city    = document.getElementById('cartCity');
-                                var state   = document.getElementById('cartState');
-                                var country = document.getElementById('cartCountry');
-                                var postal  = document.getElementById('cartPostalCode');
-                                if (city    && item.city)        city.value    = item.city;
-                                if (state   && item.state)       state.value   = item.state;
-                                if (country && item.country)     country.value = item.country;
-                                if (postal  && item.postal_code) postal.value  = item.postal_code;
-                                suggestions.classList.add('d-none');
-                            });
-                            suggestions.appendChild(el);
-                        });
-                        suggestions.classList.remove('d-none');
-                    })
-                    .catch(function () { suggestions.classList.add('d-none'); });
-            }, 400);
-        });
-
-        document.addEventListener('click', function (e) {
-            if (e.target !== addrInput && !suggestions.contains(e.target)) {
-                suggestions.classList.add('d-none');
-            }
-        });
-    })();
 
     /* ════════════════════════════════════════
        CHECKOUT BUTTON
