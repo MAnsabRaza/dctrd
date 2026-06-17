@@ -1,40 +1,32 @@
 {{-- resources/views/admin/user/edittab/availability.blade.php --}}
 {{-- 
-    Used by BOTH:
-      - Panel:   GET /panel/setting/availability
+    Admin Only View:
       - Admin:   GET /admin/users/{id}/availability
+    Variables Expected from Controller:
+      - $orgId     → int (The ID of the user/organization being edited)
+      - $rule      → OrgAvailabilityRule
+      - $ranges    → Collection<OrgAvailabilityRange>
+      - $assets    → Collection<Asset>
+      - $assetRanges → Collection<OrgAssetAvailabilityRange>
 --}}
 
 @php
-    // Dynamically check if we are in admin mode or look at controller variable
-    $isAdmin      = $isAdmin ?? false;
-    
-    // Agar admin panel hai to $orgId use hoga, warna logged-in user ki ID
-    $currentId    = $isAdmin ? ($orgId ?? null) : auth()->id(); 
-
-    // Routes configuration based on panel type
-    $saveRoute    = $isAdmin
-        ? route('admin.users.availability.save', ['id' => $currentId])
-        : route('panel.setting.availability.save');
-        
-    $deleteRowUrl = $isAdmin 
-        ? url("admin/users/{$currentId}/availability/row/delete")
-        : url("panel/setting/availability/row/delete"); 
-        
-    $addRowUrl    = $isAdmin
-        ? route('admin.users.availability.addRow', ['id' => $currentId])
-        : route('panel.setting.availability.addRow');
-
+    $currentId    = $orgId; // Controller se pass ki gayi User/Org ID
     $rangeTypes   = ['custom', 'daily', 'weekly', 'monthly', 'date_range'];
+
+    // Admin Dedicated Routes
+    $saveRoute    = route('admin.users.availability.save', ['id' => $currentId]);
+    $deleteRowUrl = url("admin/users/{$currentId}/availability/row/delete"); 
+    $addRowUrl    = route('admin.users.availability.addRow', ['id' => $currentId]);
 @endphp
 
-@extends($isAdmin ? 'admin.layouts.app' : 'panel.layouts.app')
+@extends('admin.layouts.app')
 
 @section('title', trans('booking.availability_assets'))
 
 @push('styles')
 <style>
-/* ── Availability Toggle ───────────────────────────────────────── */
+/* ── Availability Toggle Switch ────────────────────────────────── */
 .availability-toggle {
     display: inline-block;
     width: 44px;
@@ -63,163 +55,120 @@
     left: 23px;
 }
 
-/* ── Table ─────────────────────────────────────────────────────── */
+/* ── Table & Layout Resets ────────────────────────────────────── */
 .avail-table th {
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #374151;
     background: #f9fafb;
-    border-top: none;
 }
 .avail-table td {
     vertical-align: middle;
 }
-.btn-remove-range {
+.btn-remove-range, .btn-remove-asset {
     line-height: 1;
     padding: 0.2rem 0.5rem;
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 
-/* ── Section card ──────────────────────────────────────────────── */
+/* ── UI Sections (As per provided mockup image) ───────────────── */
 .avail-section {
     background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1.5rem;
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+.avail-section:last-of-type {
+    border-bottom: none;
 }
 .avail-section-title {
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 0.3rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
     color: #111827;
 }
 .avail-section-desc {
     font-size: 0.88rem;
-    color: #374151;
-    margin-bottom: 0.1rem;
+    color: #4b5563;
+    margin-bottom: 1rem;
     line-height: 1.6;
 }
-.avail-section-desc ol {
-    margin-bottom: 0.25rem;
-    padding-left: 1.2rem;
-}
-
-/* ── Bullet list for asset use-cases ──────────────────────────── */
 .asset-usecases {
     font-size: 0.85rem;
-    color: #374151;
-    padding-left: 1.1rem;
-    margin-bottom: 0.5rem;
+    color: #4b5563;
+    padding-left: 1.25rem;
+    margin-bottom: 1rem;
     line-height: 1.7;
 }
-
-/* ── Save button ───────────────────────────────────────────────── */
 .avail-save-btn {
-    min-width: 130px;
+    min-width: 120px;
     font-size: 0.875rem;
 }
-
-/* ── Toast ─────────────────────────────────────────────────────── */
 #availToast {
     position: fixed;
     bottom: 1.5rem; right: 1.5rem;
     z-index: 9999;
-    min-width: 260px;
+    min-width: 280px;
     display: none;
-}
-
-/* ── Add row button ────────────────────────────────────────────── */
-.btn-add-row {
-    font-size: 0.85rem;
-    color: #3B82F6;
-    border-color: #3B82F6;
-    padding: 0.25rem 0.85rem;
-}
-.btn-add-row:hover {
-    background: #eff6ff;
-    color: #1d4ed8;
-}
-
-/* ── Asset name input row ──────────────────────────────────────── */
-.asset-name-input {
-    border: none;
-    border-bottom: 1px solid #d1d5db;
-    border-radius: 0;
-    background: transparent;
-    padding-left: 0;
-    font-size: 0.88rem;
-}
-.asset-name-input:focus {
-    outline: none;
-    box-shadow: none;
-    border-bottom-color: #3B82F6;
 }
 </style>
 @endsection
 
 @section('content')
+<div class="container-fluid py-3" style="max-width:1000px">
 
-<div class="container-fluid py-4" style="max-width:960px">
-
-    {{-- SECTION 1 · Global Availability --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- SECTION 1 · Global Availability                          --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
     <div class="avail-section">
-        <p class="avail-section-title">{{ trans('booking.global_availability') }}</p>
-
-        <div class="avail-section-desc mb-2">
-            {{ trans('booking.global_availability_desc') }}<br>
-            {{ trans('booking.global_availability_desc2') }}
-        </div>
-
-        <div class="avail-section-desc mb-3">
-            <ol style="margin-bottom:0">
-                <li>{{ trans('booking.global_availability_rule_1') }}</li>
-                <li>{{ trans('booking.global_availability_rule_2') }}</li>
+        <h2 class="avail-section-title">Global Availability</h2>
+        <div class="avail-section-desc">
+            Define global availability rules here. These will reflect in all the bookable products and can be overridden at a product level.<br>
+            There are two ways you can set the availability rules:<br>
+            <ol class="mt-2 mb-0">
+                <li>All dates are available by default. Create rules to set the time period when you are not available to take bookings.</li>
+                <li class="font-weight-bold">OR</li>
+                <li>Mark all the dates/blocks as unavailable and then set the time period when you are available for bookings.</li>
             </ol>
         </div>
 
+        {{-- Checkbox 1 --}}
         <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox"
-                   name="make_all_unavailable_by_default"
-                   id="chkMakeAllUnavailable"
-                   value="1"
-                   {{ $rule->make_all_unavailable_by_default ? 'checked' : '' }}>
-            <label class="form-check-label" for="chkMakeAllUnavailable" style="font-size:0.875rem">
-                {{ trans('booking.make_all_unavailable_by_default') }}
+            <input class="form-check-input" type="checkbox" name="make_all_unavailable_by_default" id="chkMakeAllUnavailable" value="1" {{ $rule->make_all_unavailable_by_default ? 'checked' : '' }}>
+            <label class="form-check-label text-muted" for="chkMakeAllUnavailable" style="font-size:0.875rem">
+                Make all dates/blocks unavailable by default
             </label>
         </div>
 
+        {{-- Checkbox 2 --}}
         <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox"
-                   name="product_specific_takes_precedence"
-                   id="chkProductPrecedence"
-                   value="1"
-                   {{ $rule->product_specific_takes_precedence ? 'checked' : '' }}>
-            <label class="form-check-label" for="chkProductPrecedence" style="font-size:0.875rem">
-                {{ trans('booking.product_specific_takes_precedence') }}
+            <input class="form-check-input" type="checkbox" name="product_specific_takes_precedence" id="chkProductPrecedence" value="1" {{ $rule->product_specific_takes_precedence ? 'checked' : '' }}>
+            <label class="form-check-label text-muted" for="chkProductPrecedence" style="font-size:0.875rem">
+                Enable this to ensure product-specific availability settings take precedence. Global availability rules will only apply if no product-specific rule exists for a given time slot.
             </label>
         </div>
 
-        <div class="table-responsive mb-2">
+        {{-- Global Range Table --}}
+        <div class="table-responsive mb-3">
             <table class="table table-bordered avail-table mb-0" id="globalRangeTable">
                 <thead>
                     <tr>
-                        <th style="min-width:160px">{{ trans('booking.range_type') }}</th>
-                        <th style="min-width:150px">{{ trans('booking.from_date') }}</th>
-                        <th style="min-width:150px">{{ trans('booking.to_date') }}</th>
-                        <th class="text-center" style="width:110px">{{ trans('booking.bookable') }}</th>
-                        <th class="text-center" style="width:70px"></th>
+                        <th style="width: 25%;">Range Type</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th class="text-center" style="width:120px">Bookable</th>
+                        <th style="width:60px"></th>
                     </tr>
                 </thead>
                 <tbody id="globalRangeTableBody">
                     @foreach($ranges as $i => $range)
                         @php
                             $selType  = $range->range_type ?? 'custom';
-                            $fromDate = $range->from_date ? (\Carbon\Carbon::parse($range->from_date)->format('Y-m-d')) : '';
-                            $toDate   = $range->to_date ? (\Carbon\Carbon::parse($range->to_date)->format('Y-m-d')) : '';
+                            $fromDate = $range->from_date ? \Carbon\Carbon::parse($range->from_date)->format('Y-m-d') : '';
+                            $toDate   = $range->to_date ? \Carbon\Carbon::parse($range->to_date)->format('Y-m-d') : '';
                             $bookable = $range->bookable ?? true;
                         @endphp
-                        <tr class="availability-range-row" data-id="{{ $range->id ?? '' }}">
+                        <tr class="availability-range-row" data-id="{{ $range->id }}">
                             <td>
                                 <select name="ranges[{{ $i }}][range_type]" class="form-control form-control-sm range-type-select">
                                     @foreach($rangeTypes as $rt)
@@ -243,7 +192,7 @@
                                 </label>
                             </td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-danger btn-remove-range" data-id="{{ $range->id ?? '' }}" title="{{ trans('booking.remove') }}">&times;</button>
+                                <button type="button" class="btn btn-sm btn-clean text-danger btn-remove-range" data-id="{{ $range->id }}">&times;</button>
                             </td>
                         </tr>
                     @endforeach
@@ -251,139 +200,153 @@
             </table>
         </div>
 
-        <div class="mb-3">
-            <button type="button" class="btn btn-outline-primary btn-sm btn-add-row" id="btnAddGlobalRange">
-                + {{ trans('booking.add') }}
-            </button>
+        <div class="mb-4">
+            <button type="button" class="btn btn-sm btn-light-primary btn-outline-primary" id="btnAddGlobalRange">+ Add</button>
         </div>
 
         <div>
             <button type="button" class="btn btn-primary btn-sm avail-save-btn" id="globalSaveBtn">
-                <span class="save-label">{{ trans('booking.save_changes') }}</span>
-                <span class="save-spinner d-none">
-                    <span class="spinner-border spinner-border-sm me-1"></span>{{ trans('booking.saving') }}…
-                </span>
+                <span class="save-label">Save changes</span>
+                <span class="save-spinner d-none"><span class="spinner-border spinner-border-sm me-1"></span>Saving…</span>
             </button>
         </div>
     </div>
 
-    {{-- SECTION 2 · Asset --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- SECTION 2 · Asset                                        --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
     <div class="avail-section">
-        <p class="avail-section-title">{{ trans('booking.asset') }}</p>
-        <p class="avail-section-desc mb-1">{{ trans('booking.asset_desc') }}</p>
-        <p class="avail-section-desc mb-1">{{ trans('booking.asset_use_cases_label') }}</p>
-
+        <h2 class="avail-section-title">Asset</h2>
+        <div class="avail-section-desc">
+            Assets are global resources which can be attached either to a single product or to multiple products. Assets have a quantity and availability attached.<br>
+            <strong class="d-block mt-2">Use assets in following cases:</strong>
+        </div>
+        
         <ul class="asset-usecases">
-            <li>{{ trans('booking.asset_use_case_1') }}</li>
-            <li>{{ trans('booking.asset_use_case_2') }}</li>
-            <li>{{ trans('booking.asset_use_case_3') }}</li>
-            <li>{{ trans('booking.asset_use_case_4') }}</li>
+            <li>When Product A is booked, you need product B to be automatically booked for the same time.</li>
+            <li>When you have a staff that handles multiple services. When service A is booked, other services from the same staff are unavailable to book for the same time.</li>
+            <li>When you have multiple staff with varying availability or price.</li>
+            <li>When you have multiple resource types with different quantities, for Eg: types of Kayaks to be chosen by the user to book.</li>
         </ul>
+        <div class="avail-section-desc">
+            Refer <a href="#" class="text-primary font-weight-bold">Documentation</a> for further details.
+        </div>
 
-        <table class="table table-bordered avail-table mb-2" id="assetTable">
-            <thead>
-                <tr>
-                    <th>{{ trans('booking.assets_name') }}</th>
-                    <th style="width:180px">{{ trans('booking.quantity') }}</th>
-                    <th style="width:70px"></th>
-                </tr>
-            </thead>
-            <tbody id="assetTableBody">
-                @forelse($assets ?? [] as $ai => $asset)
-                <tr class="asset-name-row" data-id="{{ $asset->id ?? '' }}">
-                    <td>
-                        <input type="text" name="assets[{{ $ai }}][name]" value="{{ $asset->name ?? '' }}" class="form-control form-control-sm asset-name-input" placeholder="{{ trans('booking.asset_name_placeholder') }}">
-                    </td>
-                    <td>
-                        <input type="number" name="assets[{{ $ai }}][quantity]" value="{{ $asset->quantity ?? 1 }}" min="1" class="form-control form-control-sm">
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-danger btn-remove-asset" data-id="{{ $asset->id ?? '' }}">&times;</button>
-                    </td>
-                </tr>
-                @empty
-                @endforelse
-            </tbody>
-        </table>
+        {{-- Assets Base Table --}}
+        <div class="table-responsive mb-3">
+            <table class="table table-bordered avail-table mb-0" id="assetTable">
+                <thead>
+                    <tr>
+                        <th>Assets Name</th>
+                        <th style="width: 250px;">Quantity</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="assetTableBody">
+                    @foreach($assets ?? [] as $ai => $asset)
+                        <tr class="asset-name-row" data-id="{{ $asset->id }}">
+                            <td>
+                                <input type="text" name="assets[{{ $ai }}][name]" value="{{ $asset->name }}" class="form-control form-control-sm asset-name-input" placeholder="Asset Name">
+                            </td>
+                            <td>
+                                <input type="number" name="assets[{{ $ai }}][quantity]" value="{{ $asset->quantity ?? 1 }}" min="1" class="form-control form-control-sm">
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-clean text-danger btn-remove-asset" data-id="{{ $asset->id }}">&times;</button>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
-        <button type="button" class="btn btn-outline-primary btn-sm btn-add-row" id="btnAddAsset">+ {{ trans('booking.add') }}</button>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddAsset">+ Add</button>
+        </div>
     </div>
 
-    {{-- SECTION 3 · Asset Availability --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- SECTION 3 · Asset Availability                           --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
     <div class="avail-section">
-        <p class="avail-section-title">{{ trans('booking.asset_availability') }}</p>
-        <p class="avail-section-desc mb-2">{{ trans('booking.asset_availability_desc') }}</p>
+        <h2 class="avail-section-title">Asset Availability</h2>
+        <div class="avail-section-desc">Define availability for each asset.</div>
 
         <div class="form-check mb-3">
             <input class="form-check-input" type="checkbox" name="make_all_assets_unavailable_by_default" id="chkMakeAllAssetsUnavailable" value="1" {{ ($rule->make_all_assets_unavailable_by_default ?? false) ? 'checked' : '' }}>
-            <label class="form-check-label" for="chkMakeAllAssetsUnavailable" style="font-size:0.875rem">
-                {{ trans('booking.make_all_assets_unavailable_by_default') }}
+            <label class="form-check-label text-muted" for="chkMakeAllAssetsUnavailable" style="font-size:0.875rem">
+                Make all Assets unavailable by default
             </label>
         </div>
 
-        <table class="table table-bordered avail-table mb-2" id="assetAvailTable">
-            <thead>
-                <tr>
-                    <th style="min-width:140px">{{ trans('booking.asset') }}</th>
-                    <th style="min-width:140px">{{ trans('booking.range_type') }}</th>
-                    <th style="min-width:140px">{{ trans('booking.from_date') }}</th>
-                    <th style="min-width:140px">{{ trans('booking.to_date') }}</th>
-                    <th class="text-center" style="width:110px">{{ trans('booking.bookable') }}</th>
-                    <th style="width:70px"></th>
-                </tr>
-            </thead>
-            <tbody id="assetAvailTableBody">
-                @forelse($assetRanges ?? [] as $ari => $arange)
-                    @php
-                        $selType  = $arange->range_type ?? 'custom';
-                        $fromDate = $arange->from_date ? (\Carbon\Carbon::parse($arange->from_date)->format('Y-m-d')) : '';
-                        $toDate   = $arange->to_date ? (\Carbon\Carbon::parse($arange->to_date)->format('Y-m-d')) : '';
-                        $bookable = $arange->bookable ?? true;
-                        $assetId  = $arange->asset_id ?? '';
-                    @endphp
-                    <tr class="availability-range-row" data-id="{{ $arange->id ?? '' }}">
-                        <td>
-                            <select name="asset_ranges[{{ $ari }}][asset_id]" class="form-control form-control-sm">
-                                <option value="">— {{ trans('booking.select_asset') }} —</option>
-                                @foreach($assets ?? [] as $asset)
-                                    <option value="{{ $asset->id }}" @selected($assetId == $asset->id)>{{ $asset->name }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <select name="asset_ranges[{{ $ari }}][range_type]" class="form-control form-control-sm range-type-select">
-                                @foreach($rangeTypes as $rt)
-                                    <option value="{{ $rt }}" @selected($selType === $rt)>{{ ucfirst(str_replace('_', ' ', $rt)) }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <input type="date" name="asset_ranges[{{ $ari }}][from_date]" value="{{ $fromDate }}" class="form-control form-control-sm from-date-input" required>
-                        </td>
-                        <td>
-                            <input type="date" name="asset_ranges[{{ $ari }}][to_date]" value="{{ $toDate }}" class="form-control form-control-sm to-date-input" required>
-                        </td>
-                        <td class="text-center">
-                            <label class="availability-toggle-label mb-0">
-                                <input type="hidden" name="asset_ranges[{{ $ari }}][bookable]" value="0">
-                                <input type="checkbox" name="asset_ranges[{{ $ari }}][bookable]" value="1" class="bookable-checkbox d-none" @checked($bookable)>
-                                <span class="availability-toggle {{ $bookable ? 'is-on' : '' }}"></span>
-                            </label>
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-danger btn-remove-range" data-id="{{ $arange->id ?? '' }}">&times;</button>
-                        </td>
+        {{-- Asset Availability Range Table --}}
+        <div class="table-responsive mb-3">
+            <table class="table table-bordered avail-table mb-0" id="assetAvailTable">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Asset</th>
+                        <th style="width: 20%;">Range Type</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th class="text-center" style="width:120px">Bookable</th>
+                        <th style="width: 60px;"></th>
                     </tr>
-                @empty
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody id="assetAvailTableBody">
+                    @foreach($assetRanges ?? [] as $ari => $arange)
+                        @php
+                            $selType  = $arange->range_type ?? 'custom';
+                            $fromDate = $arange->from_date ? \Carbon\Carbon::parse($arange->from_date)->format('Y-m-d') : '';
+                            $toDate   = $arange->to_date ? \Carbon\Carbon::parse($arange->to_date)->format('Y-m-d') : '';
+                            $bookable = $arange->bookable ?? true;
+                            $assetId  = $arange->asset_id ?? '';
+                        @endphp
+                        <tr class="availability-range-row" data-id="{{ $arange->id }}">
+                            <td>
+                                <select name="asset_ranges[{{ $ari }}][asset_id]" class="form-control form-control-sm asset-id-select">
+                                    <option value="">— select asset —</option>
+                                    @foreach($assets ?? [] as $asset)
+                                        <option value="{{ $asset->id }}" @selected($assetId == $asset->id)>{{ $asset->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <select name="asset_ranges[{{ $ari }}][range_type]" class="form-control form-control-sm range-type-select">
+                                    @foreach($rangeTypes as $rt)
+                                        <option value="{{ $rt }}" @selected($selType === $rt)>{{ ucfirst(str_replace('_', ' ', $rt)) }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <input type="date" name="asset_ranges[{{ $ari }}][from_date]" value="{{ $fromDate }}" class="form-control form-control-sm from-date-input" required>
+                            </td>
+                            <td>
+                                <input type="date" name="asset_ranges[{{ $ari }}][to_date]" value="{{ $toDate }}" class="form-control form-control-sm to-date-input" required>
+                            </td>
+                            <td class="text-center">
+                                <label class="availability-toggle-label mb-0">
+                                    <input type="hidden" name="asset_ranges[{{ $ari }}][bookable]" value="0">
+                                    <input type="checkbox" name="asset_ranges[{{ $ari }}][bookable]" value="1" class="bookable-checkbox d-none" @checked($bookable)>
+                                    <span class="availability-toggle {{ $bookable ? 'is-on' : '' }}"></span>
+                                </label>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-clean text-danger btn-remove-range" data-id="{{ $arange->id }}">&times;</button>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
-        <button type="button" class="btn btn-outline-primary btn-sm btn-add-row" id="btnAddAssetAvail">+ {{ trans('booking.add') }}</button>
-        <div class="mt-3">
+        <div class="mb-4">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddAssetAvail">+ Add</button>
+        </div>
+
+        <div>
             <button type="button" class="btn btn-primary btn-sm avail-save-btn" id="assetSaveBtn">
-                <span class="save-label">{{ trans('booking.save_changes') }}</span>
-                <span class="save-spinner d-none"><span class="spinner-border spinner-border-sm me-1"></span>{{ trans('booking.saving') }}…</span>
+                <span class="save-label">Save changes</span>
+                <span class="save-spinner d-none"><span class="spinner-border spinner-border-sm me-1"></span>Saving…</span>
             </button>
         </div>
     </div>
@@ -397,6 +360,7 @@
 (function () {
     'use strict';
 
+    // Strictly mapped to Admin endpoints
     const SAVE_URL      = @json($saveRoute);
     const DELETE_BASE   = @json($deleteRowUrl);
     const CSRF          = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
@@ -437,8 +401,8 @@
             const rowId = btn.dataset.id;
             if (rowId) {
                 try {
-                    const res  = await fetch(`${DELETE_BASE}/${rowId}`, {
-                        method: 'DELETE',
+                    const res = await fetch(`${DELETE_BASE}/${rowId}`, {
+                        method: 'POST', // Dynamic group setup requires post/delete sync
                         headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
                     });
                     const data = await res.json();
@@ -469,11 +433,7 @@
         const tr = document.createElement('tr');
         tr.className = 'availability-range-row';
         tr.innerHTML = `
-            <td>
-                <select name="ranges[${idx}][range_type]" class="form-control form-control-sm range-type-select">
-                    ${rtOptions}
-                </select>
-            </td>
+            <td><select name="ranges[${idx}][range_type]" class="form-control form-control-sm range-type-select">${rtOptions}</select></td>
             <td><input type="date" name="ranges[${idx}][from_date]" class="form-control form-control-sm from-date-input" required></td>
             <td><input type="date" name="ranges[${idx}][to_date]" class="form-control form-control-sm to-date-input" required></td>
             <td class="text-center">
@@ -483,22 +443,22 @@
                     <span class="availability-toggle is-on"></span>
                 </label>
             </td>
-            <td class="text-center"><button type="button" class="btn btn-sm btn-danger btn-remove-range" data-id="">&times;</button></td>`;
+            <td class="text-center"><button type="button" class="btn btn-sm btn-clean text-danger btn-remove-range" data-id="">&times;</button></td>`;
         tbody.appendChild(tr);
         bindToggle(tr);
         bindRemoveBtn(tr);
     });
 
-    let assetCounter = {{ isset($assets) ? count($assets) : 0 }};
+    let assetCounter = {{ count($assets ?? []) }};
     document.getElementById('btnAddAsset').addEventListener('click', () => {
         const tbody = document.getElementById('assetTableBody');
         const idx   = assetCounter++;
         const tr    = document.createElement('tr');
         tr.className = 'asset-name-row';
         tr.innerHTML = `
-            <td><input type="text" name="assets[${idx}][name]" class="form-control form-control-sm asset-name-input" placeholder="{{ trans('booking.asset_name_placeholder') }}"></td>
+            <td><input type="text" name="assets[${idx}][name]" class="form-control form-control-sm asset-name-input" placeholder="Asset Name"></td>
             <td><input type="number" name="assets[${idx}][quantity]" value="1" min="1" class="form-control form-control-sm"></td>
-            <td class="text-center"><button type="button" class="btn btn-sm btn-danger btn-remove-asset" data-id="">&times;</button></td>`;
+            <td class="text-center"><button type="button" class="btn btn-sm btn-clean text-danger btn-remove-asset" data-id="">&times;</button></td>`;
         tbody.appendChild(tr);
         tr.querySelector('.btn-remove-asset').addEventListener('click', () => tr.remove());
     });
@@ -507,7 +467,7 @@
         row.querySelector('.btn-remove-asset')?.addEventListener('click', () => row.remove());
     });
 
-    let assetAvailCounter = {{ isset($assetRanges) ? count($assetRanges) : 0 }};
+    let assetAvailCounter = {{ count($assetRanges ?? []) }};
     document.getElementById('btnAddAssetAvail').addEventListener('click', () => {
         const tbody = document.getElementById('assetAvailTableBody');
         const idx   = assetAvailCounter++;
@@ -527,7 +487,7 @@
         const tr = document.createElement('tr');
         tr.className = 'availability-range-row';
         tr.innerHTML = `
-            <td><select name="asset_ranges[${idx}][asset_id]" class="form-control form-control-sm">${assetOptions}</select></td>
+            <td><select name="asset_ranges[${idx}][asset_id]" class="form-control form-control-sm asset-id-select">${assetOptions}</select></td>
             <td><select name="asset_ranges[${idx}][range_type]" class="form-control form-control-sm range-type-select">${rtOptions}</select></td>
             <td><input type="date" name="asset_ranges[${idx}][from_date]" class="form-control form-control-sm from-date-input" required></td>
             <td><input type="date" name="asset_ranges[${idx}][to_date]" class="form-control form-control-sm to-date-input" required></td>
@@ -538,7 +498,7 @@
                     <span class="availability-toggle is-on"></span>
                 </label>
             </td>
-            <td class="text-center"><button type="button" class="btn btn-sm btn-danger btn-remove-range" data-id="">&times;</button></td>`;
+            <td class="text-center"><button type="button" class="btn btn-sm btn-clean text-danger btn-remove-range" data-id="">&times;</button></td>`;
         tbody.appendChild(tr);
         bindToggle(tr);
         bindRemoveBtn(tr);
@@ -553,14 +513,27 @@
         }));
     }
 
-    document.getElementById('globalSaveBtn').addEventListener('click', async () => {
-        setBusy('globalSaveBtn', true);
-        const payload = {
-            availability_mode: 'available_by_default',
-            make_all_unavailable_by_default   : document.getElementById('chkMakeAllUnavailable')?.checked ? 1 : 0,
-            product_specific_takes_precedence : document.getElementById('chkProductPrecedence')?.checked ? 1 : 0,
-            ranges                            : collectGlobalRanges(),
-        };
+    function collectAssets() {
+        return Array.from(document.querySelectorAll('#assetTableBody .asset-name-row')).map(row => ({
+            id       : row.dataset.id ?? '',
+            name     : row.querySelector('.asset-name-input')?.value ?? '',
+            quantity : row.querySelector('input[type=number]')?.value ?? 1,
+        }));
+    }
+
+    function collectAssetRanges() {
+        return Array.from(document.querySelectorAll('#assetAvailTableBody .availability-range-row')).map(row => ({
+            asset_id   : row.querySelector('.asset-id-select')?.value ?? '',
+            range_type : row.querySelector('.range-type-select')?.value ?? 'custom',
+            from_date  : row.querySelector('.from-date-input')?.value ?? '',
+            to_date    : row.querySelector('.to-date-input')?.value ?? '',
+            bookable   : row.querySelector('.bookable-checkbox')?.checked ? 1 : 0,
+        }));
+    }
+
+    // Processing Saves through Unified Admin Endpoint
+    async function sendPayload(payload, btnId) {
+        setBusy(btnId, true);
         try {
             const res = await fetch(SAVE_URL, {
                 method: 'POST',
@@ -572,8 +545,25 @@
         } catch (e) {
             showToast('Save failed', true);
         } finally {
-            setBusy('globalSaveBtn', false);
+            setBusy(btnId, false);
         }
+    }
+
+    document.getElementById('globalSaveBtn').addEventListener('click', () => {
+        sendPayload({
+            availability_mode: 'available_by_default',
+            make_all_unavailable_by_default   : document.getElementById('chkMakeAllUnavailable')?.checked ? 1 : 0,
+            product_specific_takes_precedence : document.getElementById('chkProductPrecedence')?.checked ? 1 : 0,
+            ranges                            : collectGlobalRanges(),
+        }, 'globalSaveBtn');
+    });
+
+    document.getElementById('assetSaveBtn').addEventListener('click', () => {
+        sendPayload({
+            make_all_assets_unavailable_by_default : document.getElementById('chkMakeAllAssetsUnavailable')?.checked ? 1 : 0,
+            assets                                 : collectAssets(),
+            asset_ranges                           : collectAssetRanges(),
+        }, 'assetSaveBtn');
     });
 })();
 </script>
