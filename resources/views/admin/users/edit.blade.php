@@ -306,6 +306,12 @@
                                             <a class="nav-link" id="topics-tab" data-toggle="tab" href="#topics" role="tab" aria-controls="topics" aria-selected="true">{{ trans('update.forum_topics') }}</a>
                                         </li>
 
+                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="availability-tab" data-toggle="tab" href="#availability" role="tab" aria-controls="availability" aria-selected="true">{{ trans('booking.availability_assets') }}</a>
+                                            </li>
+                                        @endif
+
                                         <li class="nav-item">
                                             <a class="nav-link" id="support_tickets-tab" data-toggle="tab" href="#support_tickets" role="tab" aria-controls="support_tickets" aria-selected="true">{{ trans('admin/main.tickets') }}</a>
                                         </li>
@@ -348,6 +354,10 @@
 
                                         @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
                                             @include('admin.users.editTabs.checkout_options')
+                                        @endif
+
+                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
+                                            @include('admin.users.editTabs.availability')
                                         @endif
 
                                         @if(!empty($becomeInstructor))

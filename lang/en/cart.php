@@ -88,4 +88,6 @@ return [
     'section_products' => 'Products',
     'section_courses' => 'Courses',
     'section_course_bundles' => 'Course Bundles',
+    'saving'=>'Saving...',
+    ''
 ];

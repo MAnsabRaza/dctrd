@@ -7,6 +7,7 @@
  * Routes defined here will be loaded by the main admin routes file.
  */
 
+use App\Http\Controllers\Admin\AvailabilitySettingsController;
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
 use App\Http\Controllers\Admin\Booking\BookingBundleController;
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
@@ -225,6 +226,22 @@ Route::post('/users/{id}/checkout-options-update', [UserController::class, 'chec
 Route::group(['prefix' => 'financial/location-sales'], function () {
     Route::get('/city', [SaleController::class, 'salesByCity'])->name('admin.sales.reports.city');
     Route::get('/country', [SaleController::class, 'salesByCountry'])->name('admin.sales.reports.country');
+});
+
+/**
+ * ═════════════════════════════════════════════════════════════════
+ * AVAILABILITY SETTINGS ROUTES (Admin Panel)
+ * ═════════════════════════════════════════════════════════════════
+ */
+Route::group(['prefix' => 'users/{id}/availability'], function () {
+    Route::get('/', [AvailabilitySettingsController::class, 'adminIndex'])
+        ->name('admin.users.availability.index');
+    Route::post('/save', [AvailabilitySettingsController::class, 'adminSave'])
+        ->name('admin.users.availability.save');
+    Route::post('/row/delete/{rowId}', [AvailabilitySettingsController::class, 'deleteRow'])
+        ->name('admin.users.availability.deleteRow');
+    Route::post('/row/add', [AvailabilitySettingsController::class, 'addRow'])
+        ->name('admin.users.availability.addRow');
 });
 
 /**
