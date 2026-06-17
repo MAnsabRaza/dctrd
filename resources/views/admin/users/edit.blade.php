@@ -312,6 +312,12 @@
                                             </li>
                                         @endif
 
+                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="bookingSettings-tab" data-toggle="tab" href="#bookingSettings" role="tab" aria-controls="bookingSettings" aria-selected="true">Booking Settings</a>
+                                            </li>
+                                        @endif
+
                                         <li class="nav-item">
                                             <a class="nav-link" id="support_tickets-tab" data-toggle="tab" href="#support_tickets" role="tab" aria-controls="support_tickets" aria-selected="true">{{ trans('admin/main.tickets') }}</a>
                                         </li>
@@ -358,6 +364,10 @@
 
                                         @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
                                             @include('admin.users.editTabs.availability')
+                                        @endif
+
+                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
+                                            @include('admin.users.editTabs.booking_settings')
                                         @endif
 
                                         @if(!empty($becomeInstructor))

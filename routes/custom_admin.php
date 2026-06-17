@@ -8,6 +8,7 @@
  */
 
 use App\Http\Controllers\Admin\AvailabilitySettingsController;
+use App\Http\Controllers\Admin\BookingCategorySettingsController;
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
 use App\Http\Controllers\Admin\Booking\BookingBundleController;
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
@@ -242,6 +243,13 @@ Route::group(['prefix' => 'users/{id}/availability'], function () {
         ->name('admin.users.availability.deleteRow');
     Route::post('/row/add', [AvailabilitySettingsController::class, 'addRow'])
         ->name('admin.users.availability.addRow');
+});
+
+Route::group(['prefix' => 'users/{id}/booking-settings'], function () {
+    Route::get('/', [BookingCategorySettingsController::class, 'index'])
+        ->name('admin.users.booking_settings.index');
+    Route::post('/save', [BookingCategorySettingsController::class, 'save'])
+        ->name('admin.users.booking_settings.save');
 });
 
 /**
