@@ -293,15 +293,21 @@
                         ];
                         @endphp
 
-                        @foreach($tabDefs as $tabKey => $tabDef)
-                            @if(!empty($$tabDef['var']) && (is_countable($$tabDef['var']) ? count($$tabDef['var']) : 0) > 0)
-                                <button class="btn btn-sm adv-type-tab btn-outline-secondary"
-                                        data-type="{{ $tabKey }}">
-                                    {{ $tabDef['label'] }}
-                                    <span class="badge badge-secondary ml-4">{{ count($$tabDef['var']) }}</span>
-                                </button>
-                            @endif
-                        @endforeach
+                     @foreach($tabDefs as $tabKey => $tabDef)
+
+    @php
+        $items = ${$tabDef['var']} ?? null;
+    @endphp
+
+    @if(!empty($items) && is_countable($items) && count($items) > 0)
+        <button class="btn btn-sm adv-type-tab btn-outline-secondary"
+                data-type="{{ $tabKey }}">
+            {{ $tabDef['label'] }}
+            <span class="badge badge-secondary ml-4">{{ count($items) }}</span>
+        </button>
+    @endif
+
+@endforeach
                     </div>
                 @endif
 
