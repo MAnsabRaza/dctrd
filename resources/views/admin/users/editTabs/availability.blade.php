@@ -348,7 +348,6 @@
 </div>
 
 <div id="availToast" class="alert mb-0" role="alert"></div>
-@endsection
 
 @push('scripts')
 <script>
