@@ -115,7 +115,7 @@
     display: none;
 }
 </style>
-@endsection
+@endpush
 
 @section('content')
 <div class="container-fluid py-3" style="max-width:1000px">
@@ -531,4 +531,4 @@
     });
 })();
 </script>
-@endsection
+@endpush
