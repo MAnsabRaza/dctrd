@@ -272,7 +272,7 @@
                         </div>
 
                         {{-- ── RATING FILTER ────────────────────────────── --}}
-                        <div class="border-top pt-12 mt-12">
+                        <!-- <div class="border-top pt-12 mt-12">
                             <span class="sidebar-section-label">Rating</span>
                             {{-- Hidden field — JS sets this then submits --}}
                             <input type="hidden" name="rating" id="filterRatingValue"
@@ -291,7 +291,7 @@
                                             title="Clear rating">✕</button>
                                 @endif
                             </div>
-                        </div>
+                        </div> -->
 
                         {{-- ── NEARBY FILTER ────────────────────────────── --}}
                         <div class="border-top pt-12 mt-12">
