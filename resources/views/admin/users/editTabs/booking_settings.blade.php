@@ -358,6 +358,33 @@
 
     document.querySelectorAll('.booking-node[data-category-id]').forEach(bindNode);
 
+    function showOuterBookingSettingsTab() {
+        var tabLink = document.getElementById('bookingSettings-tab');
+        var tabPane = document.getElementById('bookingSettings');
+        if (!tabLink || !tabPane) return;
+
+        var tabContainer = tabPane.closest('.tab-content');
+        if (!tabContainer) return;
+
+        var nav = tabLink.closest('.nav');
+        if (nav) {
+            nav.querySelectorAll('.nav-link').forEach(function (link) {
+                link.classList.remove('active');
+            });
+        }
+
+        tabContainer.querySelectorAll(':scope > .tab-pane').forEach(function (pane) {
+            pane.classList.remove('active', 'show');
+        });
+
+        tabLink.classList.add('active');
+        tabPane.classList.add('active', 'show');
+    }
+
+    document.getElementById('bookingSettings-tab')?.addEventListener('click', function () {
+        setTimeout(showOuterBookingSettingsTab, 0);
+    });
+
     async function saveSettings() {
         const categories = Array.from(document.querySelectorAll('.booking-node[data-category-id]')).map(node => {
             const checkbox = node.querySelector('.booking-category-checkbox');
