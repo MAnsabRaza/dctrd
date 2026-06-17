@@ -22,33 +22,33 @@
     $isFlat = isset($rawSettings[0]) || (count($rawSettings) && !is_array(reset($rawSettings)[0] ?? null));
 
     $sectionConfig = [
-        'bookings'        => ['label' => trans('checkout.section_bookings')        ?? 'checkout_section_bookings',  'modules' => ['days','hours','staff_member','persons_children','extra_services','cancellation_policy','checkout_message']],
-        'booking_bundles' => ['label' => trans('checkout.section_booking_bundles') ?? 'checkout_section_booking_bundles', 'modules' => ['days','hours','staff_member','checkout_message']],
-        'products'        => ['label' => trans('checkout.section_products')        ?? 'checkout_section_products',  'modules' => ['days','hours','persons_children','checkout_message']],
-        'product_bundles' => ['label' => trans('checkout.section_product_bundles') ?? 'checkout_section_product_bundles', 'modules' => ['days','hours','staff_member','checkout_message']],
-        'courses'         => ['label' => trans('checkout.section_courses')         ?? 'checkout_section_courses',   'modules' => ['days','hours','staff_member','checkout_message']],
-        'course_bundles'  => ['label' => trans('checkout.section_course_bundles')  ?? 'checkout_section_course_bundles',  'modules' => ['days','hours','staff_member','checkout_message']],
+        'bookings'        => ['label' => trans('cart.section_bookings')        ?? 'checkout_section_bookings',  'modules' => ['days','hours','staff_member','persons_children','extra_services','cancellation_policy','checkout_message']],
+        'booking_bundles' => ['label' => trans('cart.section_booking_bundles') ?? 'checkout_section_booking_bundles', 'modules' => ['days','hours','staff_member','checkout_message']],
+        'products'        => ['label' => trans('cart.section_products')        ?? 'checkout_section_products',  'modules' => ['days','hours','persons_children','checkout_message']],
+        'product_bundles' => ['label' => trans('cart.section_product_bundles') ?? 'checkout_section_product_bundles', 'modules' => ['days','hours','staff_member','checkout_message']],
+        'courses'         => ['label' => trans('cart.section_courses')         ?? 'checkout_section_courses',   'modules' => ['days','hours','staff_member','checkout_message']],
+        'course_bundles'  => ['label' => trans('cart.section_course_bundles')  ?? 'checkout_section_course_bundles',  'modules' => ['days','hours','staff_member','checkout_message']],
     ];
 
     $moduleLabels = [
-        'days'                => trans('checkout.module_days')                ?? 'Select Days',
-        'hours'               => trans('checkout.module_hours')               ?? 'Select Time Slot',
-        'staff_member'        => trans('checkout.module_staff_member')        ?? 'Select Staff Member',
-        'persons_children'    => trans('checkout.module_persons_children')    ?? 'Guests',
-        'extra_services'      => trans('checkout.module_extra_services')      ?? 'Extra Services',
-        'cancellation_policy' => trans('checkout.module_cancellation_policy') ?? 'Cancellation Policy',
-        'checkout_message'    => trans('checkout.module_checkout_message')    ?? 'Message for Check-out',
-        'reviewer_message'    => trans('checkout.module_reviewer_message')    ?? 'Message to Reviewer',
+        'days'                => trans('cart.module_days')                ?? 'Select Days',
+        'hours'               => trans('cart.module_hours')               ?? 'Select Time Slot',
+        'staff_member'        => trans('cart.module_staff_member')        ?? 'Select Staff Member',
+        'persons_children'    => trans('cart.module_persons_children')    ?? 'Guests',
+        'extra_services'      => trans('cart.module_extra_services')      ?? 'Extra Services',
+        'cancellation_policy' => trans('cart.module_cancellation_policy') ?? 'Cancellation Policy',
+        'checkout_message'    => trans('cart.module_checkout_message')    ?? 'Message for Check-out',
+        'reviewer_message'    => trans('cart.module_reviewer_message')    ?? 'Message to Reviewer',
     ];
     $moduleDescs = [
-        'days'                => trans('checkout.module_days_desc')                ?? 'Check-in and check-out dates',
-        'hours'               => trans('checkout.module_hours_desc')               ?? 'Preferred time slot',
-        'staff_member'        => trans('checkout.module_staff_member_desc')        ?? 'Choose preferred staff member',
-        'persons_children'    => trans('checkout.module_persons_children_desc')    ?? 'Number of adults, children and rooms',
-        'extra_services'      => trans('checkout.module_extra_services_desc')      ?? 'Additional services you require',
-        'cancellation_policy' => trans('checkout.module_cancellation_policy_desc') ?? 'Please read and agree to our policy',
-        'checkout_message'    => trans('checkout.module_checkout_message_desc')    ?? 'Any special instructions for your booking',
-        'reviewer_message'    => trans('checkout.module_reviewer_message_desc')    ?? 'Private message to the organizer',
+        'days'                => trans('cart.module_days_desc')                ?? 'Check-in and check-out dates',
+        'hours'               => trans('cart.module_hours_desc')               ?? 'Preferred time slot',
+        'staff_member'        => trans('cart.module_staff_member_desc')        ?? 'Choose preferred staff member',
+        'persons_children'    => trans('cart.module_persons_children_desc')    ?? 'Number of adults, children and rooms',
+        'extra_services'      => trans('cart.module_extra_services_desc')      ?? 'Additional services you require',
+        'cancellation_policy' => trans('cart.module_cancellation_policy_desc') ?? 'Please read and agree to our policy',
+        'checkout_message'    => trans('cart.module_checkout_message_desc')    ?? 'Any special instructions for your booking',
+        'reviewer_message'    => trans('cart.module_reviewer_message_desc')    ?? 'Private message to the organizer',
     ];
 
     $sections = [];
@@ -330,7 +330,7 @@
         @else
             <button type="button" id="co-save-btn" onclick="coSaveSettings()">{{ $submitLabel }}</button>
         @endif
-        <span id="co-save-msg">✓ {{ trans('checkout.saved_successfully') ?? 'Saved successfully!' }}</span>
+        <span id="co-save-msg">✓ {{ trans('cart.saved_successfully') ?? 'Saved successfully!' }}</span>
     </div>
 
     @if($wrapForm)
@@ -375,7 +375,7 @@
         });
 
         var csrf = document.querySelector('meta[name="csrf-token"]');
-        btn.textContent = '{{ trans("checkout.saving") ?? "Saving..." }}';
+        btn.textContent = '{{ trans("cart.saving") ?? "Saving..." }}';
         btn.disabled = true;
         if (msg) msg.style.display = 'none';
 
@@ -398,7 +398,7 @@
             }
         })
         .catch(function () {
-            btn.textContent = '{{ trans("checkout.error_try_again") ?? "Error — try again" }}';
+            btn.textContent = '{{ trans("cart.error_try_again") ?? "Error — try again" }}';
             btn.disabled = false;
         });
     };
@@ -409,7 +409,7 @@
         if (!form) return;
         form.addEventListener('submit', function () {
             var btn = document.getElementById('co-save-btn');
-            if (btn) { btn.textContent = '{{ trans("checkout.saving") ?? "Saving..." }}'; btn.disabled = true; }
+            if (btn) { btn.textContent = '{{ trans("cart.saving") ?? "Saving..." }}'; btn.disabled = true; }
         });
     })();
 
