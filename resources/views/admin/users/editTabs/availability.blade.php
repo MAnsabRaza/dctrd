@@ -28,7 +28,7 @@
     $deleteRowUrl = url("admin/users/{$currentId}/availability/row/delete");
 @endphp
 
-@push('styles')
+@push('styles_bottom')
 <style>
 /* ── Availability Toggle Switch ────────────────────────────────── */
 .availability-toggle {
@@ -349,7 +349,7 @@
 
 <div id="availToast" class="alert mb-0" role="alert"></div>
 
-@push('scripts')
+@push('scripts_bottom')
 <script>
 (function () {
     'use strict';

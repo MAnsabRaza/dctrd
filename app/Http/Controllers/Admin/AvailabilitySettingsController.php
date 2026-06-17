@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
 class AvailabilitySettingsController extends Controller
 {
     // View path exact file ke mutabiq
-    protected string $viewPath = 'admin.user.edittab.availability';
+    protected string $viewPath = 'admin.users.editTabs.availability';
 
     /**
      * Standard User/Instructor Index
