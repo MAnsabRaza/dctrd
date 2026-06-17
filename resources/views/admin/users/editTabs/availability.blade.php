@@ -4,6 +4,16 @@
     $currentId  = $orgId ?? ($user->id ?? null);
     $rangeTypes = ['custom', 'daily', 'weekly', 'monthly', 'date_range'];
 
+    // Fallback defaults so this partial can render from admin edit page
+    $rule = $rule ?? (object) [
+        'make_all_unavailable_by_default' => false,
+        'product_specific_takes_precedence' => false,
+        'make_all_assets_unavailable_by_default' => false,
+    ];
+    $ranges = $ranges ?? collect();
+    $assets = $assets ?? collect();
+    $assetRanges = $assetRanges ?? collect();
+
     if (!$currentId) {
         throw new \Exception('Availability partial requires orgId or user.id');
     }
