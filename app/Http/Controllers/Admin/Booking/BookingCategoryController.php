@@ -45,6 +45,7 @@ class BookingCategoryController extends Controller
 
         BookingCategory::create([
             'parent_id'   => $data['parent_id'] ?? null,
+            'user_id'     => auth()->id(),
             'title'       => $data['title'],
             'subtitle'    => $data['subtitle'] ?? null,
             'slug'        => !empty($data['slug']) ? Str::slug($data['slug']) : Str::slug($data['title']),
@@ -96,6 +97,7 @@ class BookingCategoryController extends Controller
 
         $category->update([
             'parent_id'   => $data['parent_id'] ?? null,
+            'user_id'     => auth()->id(),
             'title'       => $data['title'],
             'subtitle'    => $data['subtitle'] ?? null,
             'slug'        => !empty($data['slug']) ? Str::slug($data['slug']) : Str::slug($data['title']),
