@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BookingCategory;
+use App\Models\UserMeta;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ class BookingCategorySettingsController extends Controller
         ]);
 
         $categories = BookingCategory::query()
-            ->select(['id', 'parent_id', 'status'])
+            ->select(['id', 'parent_id'])
             ->get()
             ->keyBy('id');
 
@@ -58,12 +59,16 @@ class BookingCategorySettingsController extends Controller
             $resolveEnabled((int) $categoryId);
         }
 
-        DB::transaction(function () use ($userId, $categories, $resolved) {
-            foreach ($categories as $categoryId => $category) {
-                BookingCategory::where('id', $categoryId)->update([
-                    'status' => (bool) ($resolved[$categoryId] ?? true),
-                ]);
-            }
+        DB::transaction(function () use ($userId, $resolved) {
+            UserMeta::query()->updateOrCreate(
+                [
+                    'user_id' => $userId,
+                    'name' => 'booking_categories',
+                ],
+                [
+                    'value' => json_encode($resolved),
+                ]
+            );
         });
 
         return response()->json([
@@ -78,17 +83,14 @@ class BookingCategorySettingsController extends Controller
             ->orderBy('order')
             ->get();
 
-        $enabledMap = $categories
-            ->pluck('status', 'id')
-            ->map(fn ($value) => (bool) $value)
-            ->all();
+        $enabledMap = $this->loadUserBookingCategoryMap($userId);
 
         $grouped = $categories->groupBy(fn ($item) => $item->parent_id ?: 0);
 
         $buildNode = function ($category, bool $parentEnabled = true) use (&$buildNode, $grouped, $enabledMap) {
             $rawEnabled = array_key_exists($category->id, $enabledMap)
                 ? (bool) $enabledMap[$category->id]
-                : true;
+                : false;
 
             $effectiveEnabled = $parentEnabled && $rawEnabled;
 
@@ -115,5 +117,21 @@ class BookingCategorySettingsController extends Controller
             'categoryTree' => $roots,
             'saveUrl' => route('admin.users.booking_settings.save', ['id' => $userId]),
         ];
+    }
+
+    private function loadUserBookingCategoryMap(int $userId): array
+    {
+        $meta = UserMeta::query()
+            ->where('user_id', $userId)
+            ->where('name', 'booking_categories')
+            ->value('value');
+
+        if (empty($meta)) {
+            return [];
+        }
+
+        $decoded = json_decode($meta, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 }
