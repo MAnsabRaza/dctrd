@@ -5,17 +5,77 @@
 @push('styles_top')
     <link rel="stylesheet" href="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.css">
     <link rel="stylesheet" href="/assets/vendors/summernote/summernote-bs4.min.css">
+    <style>
+        .booking-admin-form .booking-section {
+            border-top: 1px solid #f1f1f1;
+            padding-top: 18px;
+            margin-top: 26px;
+        }
+
+        .booking-admin-form .booking-section:first-child {
+            border-top: 0;
+            margin-top: 0;
+        }
+
+        .booking-admin-form .booking-section-title {
+            border-left: 5px solid #0d8be8;
+            color: #34395e;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 20px;
+            padding-left: 12px;
+        }
+
+        .booking-admin-form .form-control,
+        .booking-admin-form .select2-container--default .select2-selection--single {
+            border-color: #edf0f5;
+        }
+
+        .booking-admin-form .info-icon {
+            align-items: center;
+            background: #f4f6f9;
+            border-radius: 50%;
+            color: #6777ef;
+            display: inline-flex;
+            font-size: 11px;
+            height: 16px;
+            justify-content: center;
+            margin-left: 5px;
+            width: 16px;
+        }
+
+        .booking-admin-form .add-button {
+            min-width: 42px;
+        }
+
+        .booking-location-panel,
+        .booking-deposit-panel {
+            display: none;
+        }
+
+        .booking-location-panel.is-visible,
+        .booking-deposit-panel.is-visible {
+            display: block;
+        }
+    </style>
 @endpush
 
 @section('content')
+    @php
+        $createActive = ((!empty($errors) && $errors->any()) || !empty($editBooking) || request()->get('tab') == 'create');
+    @endphp
     <section class="section">
         <div class="section-header">
-            <h1>{{ trans('admin/main.booking') }}</h1>
+            <h1>{{ $createActive ? (!empty($editBooking) ? 'Edit Booking' : 'New Booking') : trans('admin/main.booking') }}</h1>
             <div class="section-header-breadcrumb">
                 <div class="breadcrumb-item active">
                     <a href="{{ getAdminPanelUrl() }}">{{ trans('admin/main.dashboard') }}</a>
                 </div>
-                <div class="breadcrumb-item">{{ trans('admin/main.booking') }}</div>
+                <div class="breadcrumb-item">Bookings</div>
+                @if($createActive)
+                    <div class="breadcrumb-item">{{ !empty($editBooking) ? 'Edit' : 'New' }}</div>
+                @endif
             </div>
         </div>
 
@@ -24,10 +84,6 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body">
-
-                            @php
-                                $createActive = ((!empty($errors) && $errors->any()) || !empty($editBooking) || request()->get('tab') == 'create');
-                            @endphp
 
                             <ul class="nav nav-pills" id="bookingTabs" role="tablist">
                                 <li class="nav-item">
@@ -232,8 +288,10 @@
                                 <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}"
                                      id="createTab" role="tabpanel" aria-labelledby="create-tab">
 
+                                    @include('admin.booking.partials.new_booking_form')
+
                                     <form action="{{ getAdminPanelUrl() }}/booking/{{ !empty($editBooking) ? $editBooking->id . '/update' : 'store' }}"
-                                          method="POST">
+                                          method="POST" class="d-none">
                                         {{ csrf_field() }}
 
                                         <div class="row">
@@ -585,6 +643,53 @@
             // ─── Modal close pe href clear karo ─────────────────────────
             $('#deleteModal').on('hidden.bs.modal', function () {
                 $('#deleteConfirmBtn').attr('href', '#');
+            });
+
+            function slugify(value) {
+                return value.toString().toLowerCase()
+                    .trim()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-');
+            }
+
+            $('#newBookingTitle').on('input', function () {
+                var slugInput = $('#newBookingSlug');
+
+                if (!slugInput.val() || slugInput.data('auto-generated')) {
+                    slugInput.val(slugify($(this).val())).data('auto-generated', true);
+                }
+            });
+
+            $('#newBookingSlug').on('input', function () {
+                $(this).data('auto-generated', false);
+            });
+
+            function togglePanel(switchSelector, panelSelector) {
+                var isChecked = $(switchSelector).is(':checked');
+                $(panelSelector).toggleClass('is-visible', isChecked);
+            }
+
+            togglePanel('#newBookingLocationSwitch', '#newBookingLocationPanel');
+            togglePanel('#booking_deposit_enabled', '#bookingDepositPanel');
+
+            $('#newBookingLocationSwitch').on('change', function () {
+                togglePanel('#newBookingLocationSwitch', '#newBookingLocationPanel');
+            });
+
+            $('#booking_deposit_enabled').on('change', function () {
+                togglePanel('#booking_deposit_enabled', '#bookingDepositPanel');
+            });
+
+            $('input[name="tags"]').on('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    var value = $(this).val().trim();
+
+                    if (value && value.slice(-1) !== ',') {
+                        $(this).val(value + ', ');
+                    }
+                }
             });
 
         });

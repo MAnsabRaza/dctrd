@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin\Booking;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingCategory;
+use App\Models\Role;
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class BookingController extends Controller
 {
@@ -33,6 +36,7 @@ class BookingController extends Controller
         $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
         $allCategories = BookingCategory::orderBy('order')->get();
         $userLanguages = $this->getUserLanguages();
+        $instructors   = $this->getInstructors();
 
         return view('admin.booking.booking', [
             'pageTitle'     => trans('admin/main.booking'),
@@ -40,6 +44,7 @@ class BookingController extends Controller
             'categories'    => $categories,
             'allCategories' => $allCategories,
             'userLanguages' => $userLanguages,
+            'instructors'   => $instructors,
         ]);
     }
 
@@ -56,10 +61,15 @@ class BookingController extends Controller
             // price_per — migration mein decimal hai, isliye numeric validate karo
             'price_per'    => 'nullable|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')],
+            'creator_id' => 'nullable|exists:users,id',
+            'tax' => 'nullable|numeric|min:0|max:999.99',
+            'commission' => 'nullable|numeric|min:0|max:999.99',
+            'deposit_amount' => 'nullable|numeric|min:0',
         ]);
 
         $booking = Booking::create([
-            'creator_id'       => auth()->id(),
+            'creator_id'       => $request->creator_id ?: auth()->id(),
             'category_id'      => $request->category_id,
             'title'            => $request->title,
             'language'         => $request->language ?? app()->getLocale(),
@@ -70,6 +80,9 @@ class BookingController extends Controller
             'sub_type'         => $request->sub_type,
             'description'      => $request->description,
             'requirements'     => $request->requirements,
+            'thumbnail'        => $request->thumbnail,
+            'cover'            => $request->cover,
+            'order'            => $request->order ?? 0,
 
             // Pricing
             'price'            => $request->price,
@@ -77,17 +90,34 @@ class BookingController extends Controller
             'price_unit'       => $request->price_unit,         // string — "per night" etc.
             'discount_price'   => $request->discount_price ?: null,
             'currency'         => $request->currency ?? 'USD',
+            'tax'              => $request->tax ?? 0,
+            'commission'       => $request->commission ?? 0,
+            'deposit_enabled'  => $request->boolean('deposit_enabled'),
+            'deposit_amount'   => $request->boolean('deposit_enabled') ? ($request->deposit_amount ?: null) : null,
+            'deposit_type'     => $request->boolean('deposit_enabled') ? $request->deposit_type : null,
 
             // Capacity
             'min_persons'      => $request->min_persons ?? 1,
             'max_persons'      => $request->max_persons ?: null,
+            'max_children'     => $request->max_children ?: null,
+            'children_allowed' => $request->boolean('children_allowed'),
             'capacity'         => $request->capacity ?: null,
 
             // Duration
             'duration_minutes' => $request->duration_minutes ?: null,
+            'buffer_before'    => $request->buffer_before ?? 0,
+            'buffer_after'     => $request->buffer_after ?? 0,
+            'lead_time_hours'  => $request->lead_time_hours ?? 0,
+            'cutoff_time_hours'=> $request->cutoff_time_hours ?? 0,
+            'instant_booking'  => $request->boolean('instant_booking'),
+            'requires_approval'=> $request->boolean('requires_approval'),
+            'allow_reschedule' => $request->boolean('allow_reschedule'),
+            'reschedule_before_hours' => $request->reschedule_before_hours ?? 24,
+            'waitlist_enabled' => $request->boolean('waitlist_enabled'),
+            'inventory'        => $request->inventory ?: null,
 
             // Location
-            'location_enabled' => $request->location_enabled === 'on',
+            'location_enabled' => $request->boolean('location_enabled'),
             'address_line'     => $request->address_line,
             'city'             => $request->city,
             'state'            => $request->state,
@@ -97,10 +127,18 @@ class BookingController extends Controller
             'lng'              => $request->lng ?: null,
 
             // Status
-            'status'           => $request->status === 'published' ? 'published' : 'draft',
-            'featured'         => $request->featured === 'on',
+            'status'           => 'draft',
+            'featured'         => $request->boolean('featured'),
+            'forum_enabled'    => $request->boolean('forum_enabled'),
+            'comments_enabled' => $request->boolean('comments_enabled'),
+            'reviews_enabled'  => $request->boolean('reviews_enabled'),
+            'sales'            => 0,
+            'views'            => 0,
+            'rating'           => 0,
+            'review_count'     => 0,
             'reviewer_message' => $request->reviewer_message ?: null,
-            'checkout_message' => $request->checkout_message ?: null
+            'checkout_message' => $request->checkout_message ?: null,
+            'meta'             => $this->bookingMeta($request),
 
         ]);
 
@@ -120,6 +158,7 @@ class BookingController extends Controller
         $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
         $allCategories = BookingCategory::orderBy('order')->get();
         $userLanguages = $this->getUserLanguages();
+        $instructors   = $this->getInstructors($editBooking->creator_id);
 
         return view('admin.booking.booking', [
             'pageTitle'     => trans('admin/main.edit_booking'),
@@ -128,6 +167,7 @@ class BookingController extends Controller
             'categories'    => $categories,
             'allCategories' => $allCategories,
             'userLanguages' => $userLanguages,
+            'instructors'   => $instructors,
         ]);
     }
 
@@ -145,19 +185,28 @@ class BookingController extends Controller
             'price'          => 'required|numeric|min:0',
             'price_per'      => 'nullable|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
+            'slug'           => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')->ignore($booking->id)],
+            'creator_id'     => 'nullable|exists:users,id',
+            'tax'            => 'nullable|numeric|min:0|max:999.99',
+            'commission'     => 'nullable|numeric|min:0|max:999.99',
+            'deposit_amount' => 'nullable|numeric|min:0',
         ]);
 
         $booking->update([
+            'creator_id'       => $request->creator_id ?: $booking->creator_id,
             'category_id'      => $request->category_id,
             'title'            => $request->title,
             'language'         => $request->language ?? $booking->language,
             'slug'             => $request->slug
                                     ? Str::slug($request->slug)
-                                    : Str::slug($request->title) . '-' . uniqid(),
+                                    : $booking->slug,
             'booking_type'     => $request->booking_type,
             'sub_type'         => $request->sub_type,
             'description'      => $request->description,
             'requirements'     => $request->requirements,
+            'thumbnail'        => $request->thumbnail,
+            'cover'            => $request->cover,
+            'order'            => $request->order ?? 0,
 
             // Pricing
             'price'            => $request->price,
@@ -165,17 +214,34 @@ class BookingController extends Controller
             'price_unit'       => $request->price_unit,
             'discount_price'   => $request->discount_price ?: null,
             'currency'         => $request->currency ?? 'USD',
+            'tax'              => $request->tax ?? 0,
+            'commission'       => $request->commission ?? 0,
+            'deposit_enabled'  => $request->boolean('deposit_enabled'),
+            'deposit_amount'   => $request->boolean('deposit_enabled') ? ($request->deposit_amount ?: null) : null,
+            'deposit_type'     => $request->boolean('deposit_enabled') ? $request->deposit_type : null,
 
             // Capacity
             'min_persons'      => $request->min_persons ?? 1,
             'max_persons'      => $request->max_persons ?: null,
+            'max_children'     => $request->max_children ?: null,
+            'children_allowed' => $request->boolean('children_allowed'),
             'capacity'         => $request->capacity ?: null,
 
             // Duration
             'duration_minutes' => $request->duration_minutes ?: null,
+            'buffer_before'    => $request->buffer_before ?? 0,
+            'buffer_after'     => $request->buffer_after ?? 0,
+            'lead_time_hours'  => $request->lead_time_hours ?? 0,
+            'cutoff_time_hours'=> $request->cutoff_time_hours ?? 0,
+            'instant_booking'  => $request->boolean('instant_booking'),
+            'requires_approval'=> $request->boolean('requires_approval'),
+            'allow_reschedule' => $request->boolean('allow_reschedule'),
+            'reschedule_before_hours' => $request->reschedule_before_hours ?? 24,
+            'waitlist_enabled' => $request->boolean('waitlist_enabled'),
+            'inventory'        => $request->inventory ?: null,
 
             // Location
-            'location_enabled' => $request->location_enabled === 'on',
+            'location_enabled' => $request->boolean('location_enabled'),
             'address_line'     => $request->address_line,
             'city'             => $request->city,
             'state'            => $request->state,
@@ -185,10 +251,14 @@ class BookingController extends Controller
             'lng'              => $request->lng ?: null,
 
             // Status
-            'status'           => $request->status === 'published' ? 'published' : 'draft',
-            'featured'         => $request->featured === 'on',
+            'status'           => 'draft',
+            'featured'         => $request->boolean('featured'),
+            'forum_enabled'    => $request->boolean('forum_enabled'),
+            'comments_enabled' => $request->boolean('comments_enabled'),
+            'reviews_enabled'  => $request->boolean('reviews_enabled'),
             'reviewer_message' => $request->reviewer_message ?: null,
-            'checkout_message' => $request->checkout_message ?: null
+            'checkout_message' => $request->checkout_message ?: null,
+            'meta'             => $this->bookingMeta($request),
         ]);
 
         $this->sendBookingNotification($booking, 'booking_updated');
@@ -231,5 +301,36 @@ class BookingController extends Controller
         }
 
         return [app()->getLocale() => ucfirst(app()->getLocale())];
+    }
+
+    private function bookingMeta(Request $request): array
+    {
+        return [
+            'reward_points' => $request->reward_points,
+            'commission_type' => $request->commission_type ?? 'percent',
+            'seo_meta_description' => $request->seo_meta_description,
+            'tags' => collect(explode(',', (string) $request->tags))
+                ->map(fn ($tag) => trim($tag))
+                ->filter()
+                ->take(10)
+                ->values()
+                ->all(),
+            'time_zone' => $request->time_zone ?? 'America/New_York',
+        ];
+    }
+
+    private function getInstructors(?int $selectedUserId = null)
+    {
+        return User::query()
+            ->select('id', 'full_name', 'role_name')
+            ->where(function ($query) use ($selectedUserId) {
+                $query->whereIn('role_name', [Role::$teacher, Role::$organization]);
+
+                if (!empty($selectedUserId)) {
+                    $query->orWhere('id', $selectedUserId);
+                }
+            })
+            ->orderBy('full_name')
+            ->get();
     }
 }
