@@ -239,7 +239,6 @@
                                         <li class="nav-item">
                                             <a class="nav-link" id="images-tab" data-toggle="tab" href="#images" role="tab" aria-controls="images" aria-selected="true">{{ trans('auth.images') }}</a>
                                         </li>
-                                        </li>
 
                                         <li class="nav-item">
                                             <a class="nav-link" id="financial-tab" data-toggle="tab" href="#financial" role="tab" aria-controls="financial" aria-selected="true">{{ trans('admin/main.financial') }}</a>
@@ -306,11 +305,11 @@
                                             <a class="nav-link" id="topics-tab" data-toggle="tab" href="#topics" role="tab" aria-controls="topics" aria-selected="true">{{ trans('update.forum_topics') }}</a>
                                         </li>
 
-                                          <li class="nav-item">
+                                          @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
+                                            <li class="nav-item">
                                                 <a class="nav-link" id="bookingSettings-tab" data-toggle="tab" href="#bookingSettings" role="tab" aria-controls="bookingSettings" aria-selected="true">Booking Settings</a>
                                             </li>
 
-                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
                                             <li class="nav-item">
                                                 <a class="nav-link" id="availability-tab" data-toggle="tab" href="#availability" role="tab" aria-controls="availability" aria-selected="true">{{ trans('update.availability_assets') }}</a>
                                             </li>
