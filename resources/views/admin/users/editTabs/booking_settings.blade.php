@@ -1,46 +1,53 @@
+{{--
+    resources/views/admin/users/editTabs/booking_settings.blade.php
+    Included from admin/users/edit.blade.php as:
+    @include('admin.users.editTabs.booking_settings')
+    Controller must pass: $categoryTree, $saveUrl
+--}}
 @php
     $categoryTree = $categoryTree ?? [];
-    $saveUrl = $saveUrl ?? '';
+    $saveUrl      = $saveUrl      ?? '';
 @endphp
 
 @push('styles_bottom')
 <style>
+/* ── Shell ─────────────────────────────────────────────────────── */
 .booking-settings-shell {
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 14px;
     padding: 1.25rem;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
-
 .booking-settings-title {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: #0f172a;
-    margin-bottom: .35rem;
+    margin-bottom: .25rem;
 }
-
 .booking-settings-note {
     color: #64748b;
-    font-size: .9rem;
-    line-height: 1.65;
+    font-size: .88rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
 }
 
+/* ── Sub-tabs ──────────────────────────────────────────────────── */
 .booking-subtabs {
     border-bottom: 1px solid #e5e7eb;
     margin-bottom: 1rem;
-    gap: .35rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
 }
-
 .booking-subtabs .nav-link {
     border: 1px solid transparent;
     border-bottom: 0;
     color: #334155;
     font-weight: 600;
-    border-radius: .55rem .55rem 0 0;
-    padding: .55rem .9rem;
+    border-radius: .5rem .5rem 0 0;
+    padding: .5rem .9rem;
+    font-size: .88rem;
 }
-
 .booking-subtabs .nav-link.active {
     color: #0f172a;
     background: #fff;
@@ -48,138 +55,115 @@
     border-bottom-color: #fff;
 }
 
-.booking-section {
-    padding: .25rem 0 0;
-}
-
+/* ── Category grid ─────────────────────────────────────────────── */
 .booking-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1rem;
 }
 
+/* ── Parent card ───────────────────────────────────────────────── */
 .booking-group {
-    border: 1px solid #edf2f7;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: .95rem 1rem 1rem;
-    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    padding: .9rem 1rem 1rem;
+    background: #fff;
 }
-
 .booking-group-head {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: .75rem;
-    margin-bottom: .75rem;
+    gap: .5rem;
+    margin-bottom: .65rem;
+    padding-bottom: .55rem;
+    border-bottom: 1px solid #f1f5f9;
 }
-
 .booking-group-title {
-    font-size: .98rem;
+    font-size: .95rem;
     font-weight: 700;
     color: #0f172a;
     margin: 0;
 }
 
+/* ── Child rows ────────────────────────────────────────────────── */
 .booking-tree {
     display: flex;
     flex-direction: column;
     gap: .4rem;
 }
-
 .booking-node {
     display: flex;
     flex-direction: column;
-    gap: .35rem;
+    gap: .3rem;
 }
-
 .booking-node-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: .75rem;
+    gap: .5rem;
+    padding: .2rem 0;
 }
-
 .booking-node-label {
-    font-size: .92rem;
-    font-weight: 600;
+    font-size: .88rem;
+    font-weight: 500;
     color: #334155;
     margin: 0;
 }
 
+/* ── Grand-children indent ─────────────────────────────────────── */
 .booking-children {
-    margin-left: 1.35rem;
-    padding-left: .85rem;
-    border-left: 1px dashed #dbe4ee;
+    margin-left: 1.2rem;
+    padding-left: .75rem;
+    border-left: 1px dashed #cbd5e1;
     display: flex;
     flex-direction: column;
-    gap: .35rem;
+    gap: .3rem;
 }
 
-.booking-child-label {
-    font-size: .88rem;
-    font-weight: 500;
-}
-
+/* ── Toggle ────────────────────────────────────────────────────── */
 .booking-toggle {
     display: inline-block;
-    width: 44px;
-    height: 24px;
+    width: 40px;
+    height: 22px;
     border-radius: 999px;
     background: #cbd5e1;
     position: relative;
     cursor: pointer;
-    transition: background .2s ease;
-    flex: 0 0 auto;
+    transition: background .2s;
+    flex-shrink: 0;
 }
-
 .booking-toggle::after {
     content: '';
     position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
     border-radius: 50%;
     background: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,.22);
-    transition: left .2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    transition: left .2s;
 }
-
 .booking-toggle.is-on {
-    background: #0d6efd;
+    background: #2563eb;
 }
-
 .booking-toggle.is-on::after {
-    left: 23px;
+    left: 21px;
 }
-
 .booking-toggle.is-disabled {
-    opacity: .45;
+    opacity: .4;
     cursor: not-allowed;
 }
 
-.booking-actions {
-    margin-top: 1rem;
-}
-
-.booking-save-btn {
-    min-width: 132px;
-}
-
-.booking-helper {
-    margin-top: .75rem;
-    font-size: .88rem;
-    color: #475569;
-}
-
+/* ── Empty / placeholder panes ─────────────────────────────────── */
 .booking-empty {
     background: #f8fafc;
     border: 1px dashed #dbe4ee;
     border-radius: 10px;
     padding: 1rem;
     color: #64748b;
+    font-size: .88rem;
 }
 
+/* ── Toast ─────────────────────────────────────────────────────── */
 #bookingSettingsToast {
     position: fixed;
     right: 1.25rem;
@@ -191,36 +175,43 @@
 </style>
 @endpush
 
-<div class="tab-pane mt-3 fade {{ (request()->get('tab') == 'bookingSettings') ? 'active show' : '' }}" id="bookingSettings" role="tabpanel" aria-labelledby="bookingSettings-tab">
+{{-- ── TAB PANE ───────────────────────────────────────────────── --}}
+<div class="tab-pane mt-3 fade {{ (request()->get('tab') == 'bookingSettings') ? 'active show' : '' }}"
+     id="bookingSettings" role="tabpanel" aria-labelledby="bookingSettings-tab">
+
     <div class="booking-settings-shell">
-        <div class="mb-3">
-            <div class="booking-settings-title">Booking Settings</div>
-            <div class="booking-settings-note">
-                Manage which booking categories are visible for this organization or instructor.
-                If we disable an option it wont appear at the Organization/Instructor.
-            </div>
+
+        {{-- Header --}}
+        <div class="booking-settings-title">Booking Settings</div>
+        <div class="booking-settings-note">
+            Manage which booking categories are visible for this organisation or instructor.<br>
+            If a parent category is disabled, all its child categories are also disabled automatically.
         </div>
 
-        <ul class="nav nav-tabs booking-subtabs" id="bookingSettingsTabs" role="tablist">
+        {{-- Sub-tabs --}}
+        <ul class="nav booking-subtabs" id="bookingSettingsTabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" id="bookingBackend-tab" data-toggle="tab" href="#bookingBackendConnection" role="tab" aria-controls="bookingBackendConnection" aria-selected="true">Backend Connection</a>
+                <a class="nav-link active" data-toggle="tab" href="#bsBackend">Backend Connection</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="bookingCrossSelling-tab" data-toggle="tab" href="#bookingCrossSelling" role="tab" aria-controls="bookingCrossSelling" aria-selected="false">Cross Selling</a>
+                <a class="nav-link" data-toggle="tab" href="#bsCross">Cross Selling</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="bookingUpSelling-tab" data-toggle="tab" href="#bookingUpSelling" role="tab" aria-controls="bookingUpSelling" aria-selected="false">Up Selling</a>
+                <a class="nav-link" data-toggle="tab" href="#bsUp">Up Selling</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="bookingCheckout-tab" data-toggle="tab" href="#bookingCheckoutOptions" role="tab" aria-controls="bookingCheckoutOptions" aria-selected="false">Check-out Options</a>
+                <a class="nav-link" data-toggle="tab" href="#bsCheckout">Check-out Options</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="bookingApis-tab" data-toggle="tab" href="#bookingApis" role="tab" aria-controls="bookingApis" aria-selected="false">APIs</a>
+                <a class="nav-link" data-toggle="tab" href="#bsApis">APIs</a>
             </li>
         </ul>
 
         <div class="tab-content">
-            <div class="tab-pane fade show active booking-section" id="bookingBackendConnection" role="tabpanel" aria-labelledby="bookingBackend-tab">
+
+            {{-- ── Backend Connection (categories) ────────────────── --}}
+            <div class="tab-pane fade show active" id="bsBackend" role="tabpanel">
+
                 @if(!empty($categoryTree))
                     <div class="booking-grid" id="bookingCategoryTree">
                         @foreach($categoryTree as $root)
@@ -228,41 +219,39 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="booking-empty">
-                        No booking categories were found in the database.
+                    <div class="booking-empty mt-2">
+                        No booking categories found in the database.
                     </div>
                 @endif
 
-                <div class="booking-helper">
-                    Parent toggle OFF disables all its child categories. Child toggle changes do not affect the parent.
-                </div>
-
-                <div class="booking-actions">
-                    <button type="button" class="btn btn-primary btn-sm booking-save-btn" id="bookingSettingsSaveBtn">
+                <div class="mt-3">
+                    <button type="button" class="btn btn-primary btn-sm" id="bookingSettingsSaveBtn"
+                            style="min-width:120px">
                         <span class="save-label">Save changes</span>
-                        <span class="save-spinner d-none"><span class="spinner-border spinner-border-sm me-1"></span>Saving...</span>
+                        <span class="save-spinner d-none">
+                            <span class="spinner-border spinner-border-sm mr-1"></span>Saving…
+                        </span>
                     </button>
                 </div>
             </div>
 
-            <div class="tab-pane fade booking-section" id="bookingCrossSelling" role="tabpanel" aria-labelledby="bookingCrossSelling-tab">
-                <div class="booking-empty">Cross Selling settings can be connected here later.</div>
+            {{-- placeholder panes --}}
+            <div class="tab-pane fade" id="bsCross">
+                <div class="booking-empty mt-2">Cross Selling — coming soon.</div>
+            </div>
+            <div class="tab-pane fade" id="bsUp">
+                <div class="booking-empty mt-2">Up Selling — coming soon.</div>
+            </div>
+            <div class="tab-pane fade" id="bsCheckout">
+                <div class="booking-empty mt-2">Check-out options managed in the existing checkout settings.</div>
+            </div>
+            <div class="tab-pane fade" id="bsApis">
+                <div class="booking-empty mt-2">API integrations — coming soon.</div>
             </div>
 
-            <div class="tab-pane fade booking-section" id="bookingUpSelling" role="tabpanel" aria-labelledby="bookingUpSelling-tab">
-                <div class="booking-empty">Up Selling settings can be connected here later.</div>
-            </div>
-
-            <div class="tab-pane fade booking-section" id="bookingCheckoutOptions" role="tabpanel" aria-labelledby="bookingCheckout-tab">
-                <div class="booking-empty">Check-out options are managed from the existing checkout settings flow.</div>
-            </div>
-
-            <div class="tab-pane fade booking-section" id="bookingApis" role="tabpanel" aria-labelledby="bookingApis-tab">
-                <div class="booking-empty">API integrations can be added here later.</div>
-            </div>
-        </div>
-    </div>
-</div>
+        </div>{{-- /tab-content --}}
+    </div>{{-- /shell --}}
+</div>{{-- /tab-pane --}}
 
 <div id="bookingSettingsToast" class="alert mb-0" role="alert"></div>
 
@@ -272,215 +261,121 @@
     'use strict';
 
     const SAVE_URL = @json($saveUrl);
-    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-    let saveTimer = null;
-    let isHydrating = true;
+    const CSRF     = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
-    function showToast(message, isError = false) {
-        const toast = document.getElementById('bookingSettingsToast');
-        if (!toast) return;
-
-        toast.className = 'alert mb-0 ' + (isError ? 'alert-danger' : 'alert-success');
-        toast.textContent = message;
-        toast.style.display = 'block';
-
-        setTimeout(() => {
-            toast.style.display = 'none';
-        }, 3500);
+    // ── Toast ───────────────────────────────────────────────────
+    function showToast(msg, isError) {
+        const el = document.getElementById('bookingSettingsToast');
+        if (!el) return;
+        el.className = 'alert mb-0 ' + (isError ? 'alert-danger' : 'alert-success');
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 3500);
     }
 
+    // ── Save busy state ─────────────────────────────────────────
     function setBusy(busy) {
         const btn = document.getElementById('bookingSettingsSaveBtn');
         if (!btn) return;
-
         btn.disabled = busy;
-        btn.querySelector('.save-label')?.classList.toggle('d-none', busy);
-        btn.querySelector('.save-spinner')?.classList.toggle('d-none', !busy);
+        btn.querySelector('.save-label').classList.toggle('d-none', busy);
+        btn.querySelector('.save-spinner').classList.toggle('d-none', !busy);
     }
 
+    // ── Collect all nodes ────────────────────────────────────────
     function collectCategories() {
-        return Array.from(document.querySelectorAll('.booking-node[data-category-id]')).map(node => {
-            const checkbox = node.querySelector('.booking-category-checkbox');
-            return {
-                id: Number(node.dataset.categoryId),
-                enabled: checkbox?.checked ? 1 : 0,
-            };
-        });
+        return Array.from(
+            document.querySelectorAll('#bookingCategoryTree .booking-node[data-category-id]')
+        ).map(node => ({
+            id:      Number(node.dataset.categoryId),
+            enabled: node.querySelector('.booking-category-checkbox')?.checked ? 1 : 0,
+        }));
     }
 
+    // ── Save ─────────────────────────────────────────────────────
     async function saveSettings() {
         setBusy(true);
-
         try {
-            const response = await fetch(SAVE_URL, {
-                method: 'POST',
+            const res  = await fetch(SAVE_URL, {
+                method:  'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': CSRF,
-                    'Accept': 'application/json',
+                    'Content-Type':  'application/json',
+                    'X-CSRF-TOKEN':  CSRF,
+                    'Accept':        'application/json',
                 },
                 body: JSON.stringify({ categories: collectCategories() }),
             });
-
-            const data = await response.json();
-            showToast(data.message ?? 'Saved successfully', !data.success);
-        } catch (error) {
-            showToast('Save failed', true);
+            const data = await res.json();
+            showToast(data.message ?? 'Saved', !data.success);
+        } catch (e) {
+            showToast('Save failed. Please try again.', true);
         } finally {
             setBusy(false);
         }
     }
 
-    function scheduleSave() {
-        if (isHydrating) return;
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(saveSettings, 120);
-    }
+    // ── Disable / enable all descendants ─────────────────────────
+    function setDescendants(node, parentIsOn) {
+        // Direct child nodes inside .booking-tree or .booking-children
+        node.querySelectorAll(':scope > .booking-tree > .booking-node,' +
+                              ':scope > .booking-children > .booking-node').forEach(child => {
+            const chk    = child.querySelector(':scope > .booking-node-row .booking-category-checkbox');
+            const toggle = child.querySelector(':scope > .booking-node-row .booking-toggle');
+            if (!chk || !toggle) return;
 
-    function setDescendantsState(node, enabled) {
-        const childrenWrap = Array.from(node.children).find(child => child.classList?.contains('booking-children'));
-        if (!childrenWrap) return;
-
-        Array.from(childrenWrap.children).forEach(childNode => {
-            if (!childNode.classList?.contains('booking-node')) return;
-
-            const checkbox = childNode.querySelector('.booking-category-checkbox');
-            const toggle = childNode.querySelector('.booking-toggle');
-            if (!checkbox || !toggle) return;
-
-            if (!enabled) {
-                checkbox.dataset.prevChecked = checkbox.checked ? '1' : '0';
-                checkbox.checked = false;
-                checkbox.dataset.locked = '1';
+            if (!parentIsOn) {
+                // Lock child OFF
+                if (!chk.dataset.prevChecked) {
+                    chk.dataset.prevChecked = chk.checked ? '1' : '0';
+                }
+                chk.checked      = false;
+                chk.dataset.locked = '1';
                 toggle.classList.remove('is-on');
                 toggle.classList.add('is-disabled');
-                setDescendantsState(childNode, false);
-                return;
+            } else {
+                // Unlock child — restore previous state
+                chk.dataset.locked = '0';
+                toggle.classList.remove('is-disabled');
+                const prev = chk.dataset.prevChecked;
+                if (prev !== undefined) {
+                    chk.checked = prev === '1';
+                    delete chk.dataset.prevChecked;
+                }
+                toggle.classList.toggle('is-on', chk.checked);
             }
 
-            checkbox.dataset.locked = '0';
-            toggle.classList.remove('is-disabled');
-
-            const prev = checkbox.dataset.prevChecked;
-            if (typeof prev !== 'undefined') {
-                checkbox.checked = prev === '1';
-            }
-
-            toggle.classList.toggle('is-on', checkbox.checked);
-            setDescendantsState(childNode, checkbox.checked);
+            // Recurse into this child's own children
+            setDescendants(child, parentIsOn && chk.checked);
         });
     }
 
-    function getParentNode(node) {
-        const parent = node.parentElement?.closest('.booking-node[data-category-id]');
-        return parent && parent !== node ? parent : null;
-    }
-
-    function setNodeOn(node) {
-        const checkbox = node.querySelector('.booking-category-checkbox');
-        const toggle = node.querySelector('.booking-toggle');
-        if (!checkbox || !toggle) return;
-
-        checkbox.checked = true;
-        checkbox.dataset.prevChecked = '1';
-        checkbox.dataset.locked = '0';
-        toggle.classList.remove('is-disabled');
-        toggle.classList.add('is-on');
-    }
-
-    function enableAncestors(node) {
-        const ancestors = [];
-        let current = getParentNode(node);
-
-        while (current) {
-            ancestors.unshift(current);
-            current = getParentNode(current);
-        }
-
-        ancestors.forEach(ancestor => {
-            setNodeOn(ancestor);
-            setDescendantsState(ancestor, true);
-        });
-    }
-
-    function bindNode(node) {
-        const checkbox = node.querySelector('.booking-category-checkbox');
-        const toggle = node.querySelector('.booking-toggle');
-        if (!checkbox || !toggle) return;
-
-        const syncToggle = () => {
-            toggle.classList.toggle('is-on', checkbox.checked);
-        };
+    // ── Bind a single node's toggle ──────────────────────────────
+    function bindToggle(node) {
+        const toggle = node.querySelector(':scope > .booking-node-row .booking-toggle,'+
+                                         ':scope > .booking-group-head .booking-toggle');
+        const chk    = node.querySelector(':scope > .booking-node-row .booking-category-checkbox,'+
+                                          ':scope > .booking-group-head .booking-category-checkbox');
+        if (!toggle || !chk) return;
 
         toggle.addEventListener('click', () => {
-            const isLocked = checkbox.dataset.locked === '1';
+            if (chk.dataset.locked === '1') return;   // parent is OFF, ignore clicks
 
-            if (isLocked) {
-                enableAncestors(node);
-                checkbox.checked = true;
-                syncToggle();
-                setDescendantsState(node, true);
-                scheduleSave();
-                return;
-            }
+            chk.checked = !chk.checked;
+            toggle.classList.toggle('is-on', chk.checked);
 
-            checkbox.checked = !checkbox.checked;
-            syncToggle();
-            if (checkbox.checked) {
-                enableAncestors(node);
-            }
-            setDescendantsState(node, checkbox.checked);
-            scheduleSave();
+            // Cascade down to children
+            setDescendants(node, chk.checked);
         });
-
-        checkbox.addEventListener('change', () => {
-            syncToggle();
-            if (checkbox.dataset.locked === '1' && checkbox.checked) {
-                enableAncestors(node);
-            }
-            if (checkbox.checked) {
-                enableAncestors(node);
-            }
-            setDescendantsState(node, checkbox.checked);
-            scheduleSave();
-        });
-
-        syncToggle();
-        setDescendantsState(node, checkbox.checked);
     }
 
-    document.querySelectorAll('.booking-node[data-category-id]').forEach(bindNode);
+    // ── Bind all nodes ───────────────────────────────────────────
+    document.querySelectorAll('#bookingCategoryTree .booking-node[data-category-id]')
+            .forEach(bindToggle);
 
-    isHydrating = false;
+    // ── Save button ──────────────────────────────────────────────
+    document.getElementById('bookingSettingsSaveBtn')
+            ?.addEventListener('click', saveSettings);
 
-    function showOuterBookingSettingsTab() {
-        var tabLink = document.getElementById('bookingSettings-tab');
-        var tabPane = document.getElementById('bookingSettings');
-        if (!tabLink || !tabPane) return;
-
-        var tabContainer = tabPane.closest('.tab-content');
-        if (!tabContainer) return;
-
-        var nav = tabLink.closest('.nav');
-        if (nav) {
-            nav.querySelectorAll('.nav-link').forEach(function (link) {
-                link.classList.remove('active');
-            });
-        }
-
-        tabContainer.querySelectorAll(':scope > .tab-pane').forEach(function (pane) {
-            pane.classList.remove('active', 'show');
-        });
-
-        tabLink.classList.add('active');
-        tabPane.classList.add('active', 'show');
-    }
-
-    document.getElementById('bookingSettings-tab')?.addEventListener('click', function () {
-        setTimeout(showOuterBookingSettingsTab, 0);
-    });
-
-    document.getElementById('bookingSettingsSaveBtn')?.addEventListener('click', saveSettings);
 })();
 </script>
 @endpush
