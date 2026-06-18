@@ -349,6 +349,39 @@
         });
     }
 
+    function getParentNode(node) {
+        const parent = node.parentElement?.closest('.booking-node[data-category-id]');
+        return parent && parent !== node ? parent : null;
+    }
+
+    function setNodeOn(node) {
+        const chk = node.querySelector(':scope > .booking-node-row .booking-category-checkbox,'+
+                                      ':scope > .booking-group-head .booking-category-checkbox');
+        const toggle = node.querySelector(':scope > .booking-node-row .booking-toggle,'+
+                                          ':scope > .booking-group-head .booking-toggle');
+        if (!chk || !toggle) return;
+
+        chk.dataset.locked = '0';
+        chk.checked = true;
+        toggle.classList.add('is-on');
+        toggle.classList.remove('is-disabled');
+    }
+
+    function enableAncestors(node) {
+        const ancestors = [];
+        let current = getParentNode(node);
+
+        while (current) {
+            ancestors.unshift(current);
+            current = getParentNode(current);
+        }
+
+        ancestors.forEach(ancestor => {
+            setNodeOn(ancestor);
+            setDescendants(ancestor, true);
+        });
+    }
+
     // ── Bind a single node's toggle ──────────────────────────────
     function bindToggle(node) {
         const toggle = node.querySelector(':scope > .booking-node-row .booking-toggle,'+
@@ -358,10 +391,22 @@
         if (!toggle || !chk) return;
 
         toggle.addEventListener('click', () => {
-            if (chk.dataset.locked === '1') return;   // parent is OFF, ignore clicks
+            if (chk.dataset.locked === '1') {
+                chk.dataset.locked = '0';
+                chk.checked = true;
+                toggle.classList.add('is-on');
+                toggle.classList.remove('is-disabled');
+                enableAncestors(node);
+                setDescendants(node, true);
+                return;
+            }   // parent is OFF, ignore clicks
 
             chk.checked = !chk.checked;
             toggle.classList.toggle('is-on', chk.checked);
+
+            if (chk.checked) {
+                enableAncestors(node);
+            }
 
             // Cascade down to children
             setDescendants(node, chk.checked);
