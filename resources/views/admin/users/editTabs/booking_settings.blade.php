@@ -351,14 +351,14 @@
             if (!enabled) {
                 checkbox.dataset.prevChecked = checkbox.checked ? '1' : '0';
                 checkbox.checked = false;
-                checkbox.disabled = true;
+                checkbox.dataset.locked = '1';
                 toggle.classList.remove('is-on');
                 toggle.classList.add('is-disabled');
                 setDescendantsState(childNode, false);
                 return;
             }
 
-            checkbox.disabled = false;
+            checkbox.dataset.locked = '0';
             toggle.classList.remove('is-disabled');
 
             const prev = checkbox.dataset.prevChecked;
@@ -381,9 +381,9 @@
         const toggle = node.querySelector('.booking-toggle');
         if (!checkbox || !toggle) return;
 
-        checkbox.disabled = false;
         checkbox.checked = true;
         checkbox.dataset.prevChecked = '1';
+        checkbox.dataset.locked = '0';
         toggle.classList.remove('is-disabled');
         toggle.classList.add('is-on');
     }
@@ -413,7 +413,16 @@
         };
 
         toggle.addEventListener('click', () => {
-            if (checkbox.disabled) return;
+            const isLocked = checkbox.dataset.locked === '1';
+
+            if (isLocked) {
+                enableAncestors(node);
+                checkbox.checked = true;
+                syncToggle();
+                setDescendantsState(node, true);
+                scheduleSave();
+                return;
+            }
 
             checkbox.checked = !checkbox.checked;
             syncToggle();
@@ -426,6 +435,9 @@
 
         checkbox.addEventListener('change', () => {
             syncToggle();
+            if (checkbox.dataset.locked === '1' && checkbox.checked) {
+                enableAncestors(node);
+            }
             if (checkbox.checked) {
                 enableAncestors(node);
             }
