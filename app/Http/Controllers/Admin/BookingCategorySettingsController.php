@@ -12,7 +12,13 @@ class BookingCategorySettingsController extends Controller
 {
     public function index(int $userId)
     {
-        return view('admin.users.editTabs.booking_settings', $this->makeViewData($userId));
+        $data = $this->makeViewData($userId);
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json($data);
+        }
+
+        return view('admin.users.editTabs.booking_settings', $data);
     }
 
     public function save(Request $request, int $userId): JsonResponse
@@ -66,7 +72,7 @@ class BookingCategorySettingsController extends Controller
         ]);
     }
 
-    private function makeViewData(int $userId): array
+    public function makeViewData(int $userId): array
     {
         $categories = BookingCategory::query()
             ->select(['id', 'parent_id', 'title', 'status', 'order'])

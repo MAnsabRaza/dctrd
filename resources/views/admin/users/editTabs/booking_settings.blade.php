@@ -1,8 +1,3 @@
-@php
-    $categoryTree = $categoryTree ?? [];
-    $saveUrl = $saveUrl ?? '';
-@endphp
-
 @push('styles_bottom')
 <style>
 .booking-settings-card {
@@ -148,6 +143,16 @@
     font-size: .9rem;
 }
 
+.booking-loading {
+    background: #f8fafc;
+    border: 1px dashed #dbe4ee;
+    border-radius: 10px;
+    padding: 1rem;
+    color: #64748b;
+    font-size: .9rem;
+    text-align: center;
+}
+
 .booking-actions {
     margin-top: 1rem;
 }
@@ -164,40 +169,12 @@
 @endpush
 
 @php
-    if (!function_exists('renderBookingCategoryNode')) {
-        function renderBookingCategoryNode(array $node): string
-        {
-            $enabled = !empty($node['enabled']);
-            $id = (int) ($node['id'] ?? 0);
-            $title = htmlspecialchars($node['title'] ?? '', ENT_QUOTES);
-            $checked = $enabled ? 'checked' : '';
-            $onClass = $enabled ? 'is-on' : '';
-            $ariaPressed = $enabled ? 'true' : 'false';
-
-            $childrenHtml = '';
-            $children = $node['children'] ?? [];
-            if (!empty($children)) {
-                $childRows = '';
-                foreach ($children as $child) {
-                    $childRows .= renderBookingCategoryNode($child);
-                }
-                $childrenHtml = '<div class="booking-children">' . $childRows . '</div>';
-            }
-
-            return <<<HTML
-<div class="booking-node booking-category-card" data-category-id="{$id}">
-    <div class="booking-category-head">
-        <div class="booking-category-title">{$title}</div>
-        <div class="booking-toggle-wrap">
-            <input type="checkbox" class="booking-category-checkbox d-none" data-locked="0" {$checked}>
-            <button type="button" class="booking-toggle {$onClass}" aria-pressed="{$ariaPressed}" aria-label="Toggle category"></button>
-        </div>
-    </div>
-    {$childrenHtml}
-</div>
-HTML;
-        }
-    }
+    // This tab no longer depends on $categoryTree / $saveUrl being passed down
+    // from the parent edit page. It fetches its own data via AJAX from the
+    // BookingCategorySettingsController::index route, the same controller
+    // that already powers the standalone admin.users.booking_settings.index route.
+    $bookingSettingsUserId = $user->id ?? request()->route('id');
+    $bookingSettingsIndexUrl = route('admin.users.booking_settings.index', ['id' => $bookingSettingsUserId]);
 @endphp
 
 <div class="tab-pane mt-3 fade {{ (request()->get('tab') == 'bookingSettings') ? 'active show' : '' }}"
@@ -213,20 +190,19 @@ HTML;
             </div>
         </div>
 
-        @if(!empty($categoryTree))
-            <div class="booking-grid" id="bookingCategoryTree">
-                @foreach($categoryTree as $root)
-                    {!! renderBookingCategoryNode($root) !!}
-                @endforeach
-            </div>
-        @else
-            <div class="booking-empty">
+        <div id="bookingCategoryTreeWrapper">
+            <div class="booking-loading" id="bookingSettingsLoading">Loading booking categories...</div>
+            <div class="booking-grid d-none" id="bookingCategoryTree"></div>
+            <div class="booking-empty d-none" id="bookingSettingsEmpty">
                 No booking categories found.
             </div>
-        @endif
+            <div class="booking-empty d-none" id="bookingSettingsError">
+                Failed to load booking categories. Please refresh and try again.
+            </div>
+        </div>
 
         <div class="booking-actions">
-            <button type="button" class="btn btn-primary btn-sm" id="bookingSettingsSaveBtn" style="min-width: 120px;">
+            <button type="button" class="btn btn-primary btn-sm" id="bookingSettingsSaveBtn" style="min-width: 120px;" disabled>
                 <span class="save-label">Save changes</span>
                 <span class="save-spinner d-none">
                     <span class="spinner-border spinner-border-sm mr-1"></span>
@@ -244,8 +220,16 @@ HTML;
 (function () {
     'use strict';
 
-    const SAVE_URL = @json($saveUrl);
+    const INDEX_URL = @json($bookingSettingsIndexUrl);
     const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    let SAVE_URL = '';
+
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value ?? '';
+        return div.innerHTML;
+    }
 
     function showToast(message, isError) {
         const el = document.getElementById('bookingSettingsToast');
@@ -272,6 +256,33 @@ HTML;
         btn.disabled = busy;
         btn.querySelector('.save-label')?.classList.toggle('d-none', busy);
         btn.querySelector('.save-spinner')?.classList.toggle('d-none', !busy);
+    }
+
+    function buildNodeHtml(node) {
+        const enabled = !!node.enabled;
+        const checked = enabled ? 'checked' : '';
+        const onClass = enabled ? 'is-on' : '';
+        const ariaPressed = enabled ? 'true' : 'false';
+        const title = escapeHtml(node.title);
+
+        let childrenHtml = '';
+        if (Array.isArray(node.children) && node.children.length) {
+            const childRows = node.children.map(buildNodeHtml).join('');
+            childrenHtml = `<div class="booking-children">${childRows}</div>`;
+        }
+
+        return `
+            <div class="booking-node booking-category-card" data-category-id="${node.id}">
+                <div class="booking-category-head">
+                    <div class="booking-category-title">${title}</div>
+                    <div class="booking-toggle-wrap">
+                        <input type="checkbox" class="booking-category-checkbox d-none" data-locked="0" ${checked}>
+                        <button type="button" class="booking-toggle ${onClass}" aria-pressed="${ariaPressed}" aria-label="Toggle category"></button>
+                    </div>
+                </div>
+                ${childrenHtml}
+            </div>
+        `;
     }
 
     function getCheckbox(node) {
@@ -379,7 +390,71 @@ HTML;
             }));
     }
 
+    function attachToggleHandlers() {
+        document.querySelectorAll('#bookingCategoryTree .booking-node[data-category-id]').forEach((node) => {
+            const toggle = getToggle(node);
+            if (!toggle) {
+                return;
+            }
+
+            toggle.addEventListener('click', (event) => {
+                event.preventDefault();
+                toggleNode(node);
+            });
+        });
+    }
+
+    async function loadBookingSettings() {
+        const loadingEl = document.getElementById('bookingSettingsLoading');
+        const treeEl = document.getElementById('bookingCategoryTree');
+        const emptyEl = document.getElementById('bookingSettingsEmpty');
+        const errorEl = document.getElementById('bookingSettingsError');
+
+        try {
+            const response = await fetch(INDEX_URL, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Request failed with status ' + response.status);
+            }
+
+            const data = await response.json();
+
+            SAVE_URL = data.saveUrl || '';
+
+            loadingEl?.classList.add('d-none');
+
+            if (!Array.isArray(data.categoryTree) || data.categoryTree.length === 0) {
+                emptyEl?.classList.remove('d-none');
+                return;
+            }
+
+            treeEl.innerHTML = data.categoryTree.map(buildNodeHtml).join('');
+            treeEl.classList.remove('d-none');
+
+            attachToggleHandlers();
+
+            const saveBtn = document.getElementById('bookingSettingsSaveBtn');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+            }
+        } catch (error) {
+            loadingEl?.classList.add('d-none');
+            errorEl?.classList.remove('d-none');
+        }
+    }
+
     async function saveSettings() {
+        if (!SAVE_URL) {
+            showToast('Booking categories are still loading. Please wait.', true);
+            return;
+        }
+
         setBusy(true);
 
         try {
@@ -408,19 +483,9 @@ HTML;
         }
     }
 
-    document.querySelectorAll('#bookingCategoryTree .booking-node[data-category-id]').forEach((node) => {
-        const toggle = getToggle(node);
-        if (!toggle) {
-            return;
-        }
-
-        toggle.addEventListener('click', (event) => {
-            event.preventDefault();
-            toggleNode(node);
-        });
-    });
-
     document.getElementById('bookingSettingsSaveBtn')?.addEventListener('click', saveSettings);
+
+    loadBookingSettings();
 })();
 </script>
 @endpush
