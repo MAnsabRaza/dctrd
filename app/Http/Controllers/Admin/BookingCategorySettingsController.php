@@ -34,29 +34,20 @@ class BookingCategorySettingsController extends Controller
             ->all();
 
         $resolved = [];
-
-        $resolveEnabled = function (int $categoryId) use (&$resolveEnabled, &$resolved, $submitted, $categories): bool {
-            if (array_key_exists($categoryId, $resolved)) {
-                return $resolved[$categoryId];
-            }
-
-            $category = $categories->get($categoryId);
-            if (!$category) {
-                return false;
-            }
-
-            $parentEnabled = true;
-            if (!empty($category->parent_id)) {
-                $parentEnabled = $resolveEnabled((int) $category->parent_id);
-            }
-
-            $resolved[$categoryId] = $parentEnabled && ($submitted[$categoryId] ?? true);
-
-            return $resolved[$categoryId];
-        };
-
         foreach ($categories as $categoryId => $category) {
-            $resolveEnabled((int) $categoryId);
+            $resolved[$categoryId] = (bool) ($submitted[$categoryId] ?? false);
+        }
+
+        foreach ($resolved as $categoryId => $isEnabled) {
+            if (!$isEnabled) {
+                continue;
+            }
+
+            $parentId = $categories[$categoryId]->parent_id ?? null;
+            while (!empty($parentId)) {
+                $resolved[(int) $parentId] = true;
+                $parentId = $categories[$parentId]->parent_id ?? null;
+            }
         }
 
         DB::transaction(function () use ($userId, $resolved) {

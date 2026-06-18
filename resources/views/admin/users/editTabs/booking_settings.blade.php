@@ -273,6 +273,8 @@
 
     const SAVE_URL = @json($saveUrl);
     const CSRF = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+    let saveTimer = null;
+    let isHydrating = true;
 
     function showToast(message, isError = false) {
         const toast = document.getElementById('bookingSettingsToast');
@@ -294,6 +296,45 @@
         btn.disabled = busy;
         btn.querySelector('.save-label')?.classList.toggle('d-none', busy);
         btn.querySelector('.save-spinner')?.classList.toggle('d-none', !busy);
+    }
+
+    function collectCategories() {
+        return Array.from(document.querySelectorAll('.booking-node[data-category-id]')).map(node => {
+            const checkbox = node.querySelector('.booking-category-checkbox');
+            return {
+                id: Number(node.dataset.categoryId),
+                enabled: checkbox?.checked ? 1 : 0,
+            };
+        });
+    }
+
+    async function saveSettings() {
+        setBusy(true);
+
+        try {
+            const response = await fetch(SAVE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': CSRF,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ categories: collectCategories() }),
+            });
+
+            const data = await response.json();
+            showToast(data.message ?? 'Saved successfully', !data.success);
+        } catch (error) {
+            showToast('Save failed', true);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    function scheduleSave() {
+        if (isHydrating) return;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveSettings, 120);
     }
 
     function setDescendantsState(node, enabled) {
@@ -330,6 +371,38 @@
         });
     }
 
+    function getParentNode(node) {
+        const parent = node.parentElement?.closest('.booking-node[data-category-id]');
+        return parent && parent !== node ? parent : null;
+    }
+
+    function setNodeOn(node) {
+        const checkbox = node.querySelector('.booking-category-checkbox');
+        const toggle = node.querySelector('.booking-toggle');
+        if (!checkbox || !toggle) return;
+
+        checkbox.disabled = false;
+        checkbox.checked = true;
+        checkbox.dataset.prevChecked = '1';
+        toggle.classList.remove('is-disabled');
+        toggle.classList.add('is-on');
+    }
+
+    function enableAncestors(node) {
+        const ancestors = [];
+        let current = getParentNode(node);
+
+        while (current) {
+            ancestors.unshift(current);
+            current = getParentNode(current);
+        }
+
+        ancestors.forEach(ancestor => {
+            setNodeOn(ancestor);
+            setDescendantsState(ancestor, true);
+        });
+    }
+
     function bindNode(node) {
         const checkbox = node.querySelector('.booking-category-checkbox');
         const toggle = node.querySelector('.booking-toggle');
@@ -344,12 +417,20 @@
 
             checkbox.checked = !checkbox.checked;
             syncToggle();
+            if (checkbox.checked) {
+                enableAncestors(node);
+            }
             setDescendantsState(node, checkbox.checked);
+            scheduleSave();
         });
 
         checkbox.addEventListener('change', () => {
             syncToggle();
+            if (checkbox.checked) {
+                enableAncestors(node);
+            }
             setDescendantsState(node, checkbox.checked);
+            scheduleSave();
         });
 
         syncToggle();
@@ -357,8 +438,10 @@
     }
 
     document.querySelectorAll('.booking-node[data-category-id]').forEach(bindNode);
-    
-  function showOuterBookingSettingsTab() {
+
+    isHydrating = false;
+
+    function showOuterBookingSettingsTab() {
         var tabLink = document.getElementById('bookingSettings-tab');
         var tabPane = document.getElementById('bookingSettings');
         if (!tabLink || !tabPane) return;
@@ -384,37 +467,6 @@
     document.getElementById('bookingSettings-tab')?.addEventListener('click', function () {
         setTimeout(showOuterBookingSettingsTab, 0);
     });
-
-    async function saveSettings() {
-        const categories = Array.from(document.querySelectorAll('.booking-node[data-category-id]')).map(node => {
-            const checkbox = node.querySelector('.booking-category-checkbox');
-            return {
-                id: Number(node.dataset.categoryId),
-                enabled: checkbox?.checked ? 1 : 0,
-            };
-        });
-
-        setBusy(true);
-
-        try {
-            const response = await fetch(SAVE_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': CSRF,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ categories }),
-            });
-
-            const data = await response.json();
-            showToast(data.message ?? 'Saved successfully', !data.success);
-        } catch (error) {
-            showToast('Save failed', true);
-        } finally {
-            setBusy(false);
-        }
-    }
 
     document.getElementById('bookingSettingsSaveBtn')?.addEventListener('click', saveSettings);
 })();
