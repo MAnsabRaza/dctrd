@@ -169,12 +169,43 @@
 @endpush
 
 @php
-    // This tab no longer depends on $categoryTree / $saveUrl being passed down
-    // from the parent edit page. It fetches its own data via AJAX from the
-    // BookingCategorySettingsController::index route, the same controller
-    // that already powers the standalone admin.users.booking_settings.index route.
-    $bookingSettingsUserId = $user->id ?? request()->route('id');
+    // Prefer data passed from the parent edit page, but keep a route-based
+    // fallback so the tab still works when opened directly.
+    $bookingSettingsUserId = $bookingSettingsUserId ?? ($orgId ?? ($user->id ?? request()->route('id')));
     $bookingSettingsIndexUrl = route('admin.users.booking_settings.index', ['id' => $bookingSettingsUserId]);
+    $bookingSettingsSaveUrl = $saveUrl ?? route('admin.users.booking_settings.save', ['id' => $bookingSettingsUserId]);
+    $bookingSettingsCategoryTree = $categoryTree ?? [];
+
+    $renderBookingNode = function (array $node) use (&$renderBookingNode) {
+        $enabled = !empty($node['enabled']);
+        $checked = $enabled ? 'checked' : '';
+        $onClass = $enabled ? 'is-on' : '';
+        $ariaPressed = $enabled ? 'true' : 'false';
+        $title = e($node['title'] ?? '');
+
+        $childrenHtml = '';
+        if (!empty($node['children']) && is_array($node['children'])) {
+            $childRows = '';
+            foreach ($node['children'] as $child) {
+                $childRows .= $renderBookingNode($child);
+            }
+
+            $childrenHtml = '<div class="booking-children">' . $childRows . '</div>';
+        }
+
+        return '
+            <div class="booking-node booking-category-card" data-category-id="' . e($node['id'] ?? '') . '">
+                <div class="booking-category-head">
+                    <div class="booking-category-title">' . $title . '</div>
+                    <div class="booking-toggle-wrap">
+                        <input type="checkbox" class="booking-category-checkbox d-none" data-locked="0" ' . $checked . '>
+                        <button type="button" class="booking-toggle ' . $onClass . '" aria-pressed="' . $ariaPressed . '" aria-label="Toggle category"></button>
+                    </div>
+                </div>
+                ' . $childrenHtml . '
+            </div>
+        ';
+    };
 @endphp
 
 <div class="tab-pane mt-3 fade {{ (request()->get('tab') == 'bookingSettings') ? 'active show' : '' }}"
@@ -191,8 +222,14 @@
         </div>
 
         <div id="bookingCategoryTreeWrapper">
-            <div class="booking-loading" id="bookingSettingsLoading">Loading booking categories...</div>
-            <div class="booking-grid d-none" id="bookingCategoryTree"></div>
+            <div class="booking-loading {{ !empty($bookingSettingsCategoryTree) ? 'd-none' : '' }}" id="bookingSettingsLoading">Loading booking categories...</div>
+            <div class="booking-grid {{ empty($bookingSettingsCategoryTree) ? 'd-none' : '' }}" id="bookingCategoryTree">
+                @if(!empty($bookingSettingsCategoryTree))
+                    @foreach($bookingSettingsCategoryTree as $bookingNode)
+                        {!! $renderBookingNode($bookingNode) !!}
+                    @endforeach
+                @endif
+            </div>
             <div class="booking-empty d-none" id="bookingSettingsEmpty">
                 No booking categories found.
             </div>
@@ -221,9 +258,11 @@
     'use strict';
 
     const INDEX_URL = @json($bookingSettingsIndexUrl);
+    const PRELOADED_TREE = @json($bookingSettingsCategoryTree);
+    const PRELOADED_SAVE_URL = @json($bookingSettingsSaveUrl);
     const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
-    let SAVE_URL = '';
+    let SAVE_URL = PRELOADED_SAVE_URL || '';
 
     function escapeHtml(value) {
         const div = document.createElement('div');
@@ -409,6 +448,21 @@
         const treeEl = document.getElementById('bookingCategoryTree');
         const emptyEl = document.getElementById('bookingSettingsEmpty');
         const errorEl = document.getElementById('bookingSettingsError');
+
+        if (Array.isArray(PRELOADED_TREE) && PRELOADED_TREE.length) {
+            loadingEl?.classList.add('d-none');
+            treeEl.innerHTML = PRELOADED_TREE.map(buildNodeHtml).join('');
+            treeEl.classList.remove('d-none');
+
+            attachToggleHandlers();
+
+            const saveBtn = document.getElementById('bookingSettingsSaveBtn');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+            }
+
+            return;
+        }
 
         try {
             const response = await fetch(INDEX_URL, {

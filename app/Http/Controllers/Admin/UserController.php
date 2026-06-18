@@ -662,6 +662,11 @@ class UserController extends Controller
             $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
         }
 
+        $bookingSettingsData = [];
+        if ($user->isOrganization() or $user->isTeacher()) {
+            $bookingSettingsData = app(BookingCategorySettingsController::class)->makeViewData($user->id);
+        }
+
         $data = [
             'pageTitle' => trans('admin/pages/users.edit_page_title'),
             'user' => $user,
@@ -683,7 +688,12 @@ class UserController extends Controller
             'becomeInstructorFormFieldsSubmissions' => $becomeInstructorFormFieldsSubmissions,
             'userLoginHistories' => $userLoginHistories,
             'moduleSettings' => $moduleSettings,
+            'bookingSettingsData' => $bookingSettingsData,
         ];
+
+        if (!empty($bookingSettingsData)) {
+            $data = array_merge($data, $bookingSettingsData);
+        }
 
         // Purchased Classes Data
         $data = array_merge($data, $this->getPurchasedClassesData($user));

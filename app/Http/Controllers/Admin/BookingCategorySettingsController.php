@@ -18,7 +18,7 @@ class BookingCategorySettingsController extends Controller
             return response()->json($data);
         }
 
-        return view('admin.users.editTabs.booking_settings', $data);
+        return view('admin.users.editTabs.booking_settings', $data + ['orgId' => $userId]);
     }
 
     public function save(Request $request, int $userId): JsonResponse
@@ -107,6 +107,7 @@ class BookingCategorySettingsController extends Controller
         return [
             'categoryTree' => $roots,
             'saveUrl' => route('admin.users.booking_settings.save', ['id' => $userId]),
+            'bookingSettingsUserId' => $userId,
         ];
     }
 }
