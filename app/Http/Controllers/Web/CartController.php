@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\ProductOrder;
 use App\Services\CheckoutModuleService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class CartController extends Controller
@@ -701,6 +702,90 @@ class CartController extends Controller
         return $commissionPrice;
     }
 
+    private function getBookingCommissionPrice($booking, $itemPrice, $seller = null)
+    {
+        if (!empty($seller)) {
+            $userCommission = $seller->commissions()->where('source', 'bookings')->first();
+
+            if (!empty($userCommission)) {
+                return $userCommission->calculatePrice($itemPrice);
+            }
+
+            $userGroup = $seller->getUserGroup();
+
+            if (!empty($userGroup)) {
+                $groupCommission = $userGroup->commissions()->where('source', 'bookings')->first();
+
+                if (!empty($groupCommission)) {
+                    return $groupCommission->calculatePrice($itemPrice);
+                }
+            }
+        }
+
+        $commissionSettings = getCommissionSettings();
+        $categoryKey = $this->getBookingCommissionCategoryKey($booking);
+
+        $settingMap = [
+            'real_estate' => ['type' => 'commission_real_estate_type', 'value' => 'commission_real_estate_value', 'default' => 20],
+            'lifestyle' => ['type' => 'commission_lifestyle_type', 'value' => 'commission_lifestyle_value', 'default' => 20],
+            'healthcare' => ['type' => 'commission_healthcare_type', 'value' => 'commission_healthcare_value', 'default' => 20],
+            'automotive' => ['type' => 'commission_automotive_type', 'value' => 'commission_automotive_value', 'default' => 20],
+            'tutoring' => ['type' => 'commission_tutoring_type', 'value' => 'commission_tutoring_value', 'default' => 20],
+            'consulting' => ['type' => 'commission_consulting_type', 'value' => 'commission_consulting_value', 'default' => 30],
+            'default' => ['type' => 'booking_commission_type', 'value' => 'booking_commission_value', 'default' => 30],
+        ];
+
+        $settingKeys = $settingMap[$categoryKey] ?? $settingMap['default'];
+        $type = $commissionSettings[$settingKeys['type']] ?? $commissionSettings['booking_commission_type'] ?? 'percent';
+        $value = $commissionSettings[$settingKeys['value']] ?? $commissionSettings['booking_commission_value'] ?? $settingKeys['default'];
+
+        if ($type == "percent") {
+            return $itemPrice > 0 ? (($itemPrice * (float) $value) / 100) : 0;
+        }
+
+        return (float) $value;
+    }
+
+    private function getBookingCommissionCategoryKey($booking)
+    {
+        $category = optional($booking)->category;
+        $values = [];
+
+        while (!empty($category)) {
+            $values[] = $category->slug;
+            $values[] = $category->title;
+            $category = $category->parent;
+        }
+
+        $categoryText = Str::of(implode(' ', array_filter($values)))->lower()->replace(['_', '&'], ['-', 'and'])->toString();
+
+        if (Str::contains($categoryText, ['real-estate', 'real estate', 'home'])) {
+            return 'real_estate';
+        }
+
+        if (Str::contains($categoryText, ['lifestyle', 'event'])) {
+            return 'lifestyle';
+        }
+
+        if (Str::contains($categoryText, ['healthcare', 'health', 'wellness'])) {
+            return 'healthcare';
+        }
+
+        if (Str::contains($categoryText, ['automotive', 'technical'])) {
+            return 'automotive';
+        }
+
+        if (Str::contains($categoryText, ['tutoring', 'trainer'])) {
+            return 'tutoring';
+        }
+
+        if (Str::contains($categoryText, ['consulting', 'legal', 'finance'])) {
+            return 'consulting';
+        }
+
+        return 'default';
+    }
+
 
     public function handleOrderPrices($cart, $user, $taxIsDifferent = false, $discountCoupon = null)
     {
@@ -767,7 +852,7 @@ class CartController extends Controller
                         ? (($priceWithoutDiscount * $booking->commission) / 100)
                         : 0;
                 } else {
-                    $commissionPrice += $this->getCommissionPrice('bookings', $priceWithoutDiscount, $seller);
+                    $commissionPrice += $this->getBookingCommissionPrice($booking, $priceWithoutDiscount, $seller);
                 }
 
                 $totalDiscount += $discount;

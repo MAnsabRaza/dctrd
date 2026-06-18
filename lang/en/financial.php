@@ -89,4 +89,19 @@ return [
     'purchase' => 'Purchase',
     'payouts_requests' => 'Payout Requests',
 
+    'commission_booking' => 'Booking Commission',
+    'commission_booking_help' => 'Applies as the default commission rate for all bookings.',
+    'commission_real_estate' => 'Real Estate & Home Commission',
+    'commission_real_estate_help' => 'Commission rate for Real Estate & Home bookings (e.g. 20).',
+    'commission_lifestyle' => 'Lifestyle & Events Commission',
+    'commission_lifestyle_help' => 'Commission rate for Lifestyle & Events bookings (e.g. 20).',
+    'commission_healthcare' => 'Healthcare & Wellness Commission',
+    'commission_healthcare_help' => 'Commission rate for Healthcare & Wellness bookings (e.g. 20).',
+    'commission_automotive' => 'Automotive & Technical Commission',
+    'commission_automotive_help' => 'Commission rate for Automotive & Technical bookings (e.g. 20).',
+    'commission_tutoring' => 'Tutoring & Trainers Commission',
+    'commission_tutoring_help' => 'Commission rate for Tutoring & Trainers bookings (e.g. 20).',
+    'commission_consulting' => 'Consulting, Legal & Finance Commission',
+    'commission_consulting_help' => 'Commission rate for Consulting, Legal & Finance bookings (e.g. 30).',
+
 ];

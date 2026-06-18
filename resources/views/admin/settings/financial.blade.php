@@ -88,7 +88,10 @@
                                 @endif
 
                                 @if(request()->get('tab') == "commissions")
-                                    @include('admin.settings.financial.commission',['itemValue' => (!empty($settings) and !empty($settings[\App\Models\Setting::$commissionSettingsName])) ? $settings[\App\Models\Setting::$commissionSettingsName]->value : ''])
+                                    @include('admin.settings.financial.commission',[
+                                        'itemValue' => (!empty($settings) and !empty($settings[\App\Models\Setting::$commissionSettingsName])) ? $settings[\App\Models\Setting::$commissionSettingsName]->value : '',
+                                        'currency' => currencySign(getDefaultCurrency())
+                                    ])
                                 @endif
                             </div>
 
