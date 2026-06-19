@@ -59,54 +59,70 @@
                                         @if(!empty($bookingCategories) && $bookingCategories->count())
                                             <div class="table-responsive">
                                                 <table class="table custom-table font-14">
-                                                    <tr>
-                                                        <th class="text-left">{{ trans('admin/main.title') }}</th>
-                                                        <th class="text-center">{{ trans('admin/main.bookings') }}</th>
-                                                        <th class="text-center">{{ trans('admin/main.status') }}</th>
-                                                        <th>{{ trans('admin/main.action') }}</th>
-                                                    </tr>
-
-                                                    @foreach($bookingCategories as $category)
+                                                    <thead>
                                                         <tr>
-                                                            <td class="text-left">{{ $category->title }}</td>
-                                                            <td class="text-center">{{ $category->bookings_count ?? 0 }}</td>
-                                                            <td class="text-center">
-                                                                @if($category->status)
-                                                                    <span class="badge badge-success">{{ trans('admin/main.active') }}</span>
-                                                                @else
-                                                                    <span class="badge badge-danger">{{ trans('admin/main.inactive') }}</span>
-                                                                @endif
-                                                            </td>
-                                                            <td width="80px">
-                                                                <div class="btn-group dropdown table-actions position-relative">
-                                                                    <button type="button" class="btn-transparent dropdown-toggle" data-toggle="dropdown">
-                                                                        <x-iconsax-lin-more class="icons text-gray-500" width="20px" height="20px"/>
-                                                                    </button>
-
-                                                                    <div class="dropdown-menu dropdown-menu-right">
-                                                                        @can('admin_booking_categories_edit')
-                                                                            <a href="{{ getAdminPanelUrl() }}/booking/categories/{{ $category->id }}/edit"
-                                                                               class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
-                                                                                <x-iconsax-lin-edit-2 class="icons text-gray-500 mr-2" width="18px" height="18px"/>
-                                                                                <span class="text-gray-500 font-14">{{ trans('admin/main.edit') }}</span>
-                                                                            </a>
-                                                                        @endcan
-
-                                                                        @can('admin_booking_categories_delete')
-                                                                            @include('admin.includes.delete_button', [
-                                                                                'url'      => getAdminPanelUrl() . '/booking/categories/' . $category->id . '/delete',
-                                                                                'btnClass' => 'dropdown-item text-danger mb-0 py-3 px-0 font-14',
-                                                                                'btnText'  => trans('admin/main.delete'),
-                                                                                'btnIcon'  => 'trash',
-                                                                                'iconType' => 'lin',
-                                                                                'iconClass'=> 'text-danger mr-2'
-                                                                            ])
-                                                                        @endcan
-                                                                    </div>
-                                                                </div>
-                                                            </td>
+                                                            <th class="text-left" style="width: 50px;">{{ trans('admin/main.icon') }}</th>
+                                                            <th class="text-left">{{ trans('admin/main.title') }}</th>
+                                                            @php
+                                                                $childCategories = \App\Models\BookingCategory::where('parent_id', '!=', null)->select('parent_id')->distinct()->get();
+                                                                $allChildTitles = \App\Models\BookingCategory::whereNotNull('parent_id')->orderBy('title')->get();
+                                                            @endphp
+                                                            @foreach($allChildTitles as $childCat)
+                                                                <th class="text-center">{{ $childCat->title }}</th>
+                                                            @endforeach
+                                                            <th class="text-center">{{ trans('admin/main.action') }}</th>
                                                         </tr>
-                                                    @endforeach
+                                                    </thead>
+                                                    <tbody>
+                                                        @php
+                                                            $parentCategories = \App\Models\BookingCategory::whereNull('parent_id')->orderBy('order')->get();
+                                                        @endphp
+                                                        @foreach($parentCategories as $parent)
+                                                            <tr>
+                                                                <td style="width: 50px;">
+                                                                    @if($parent->icon)
+                                                                        <i class="{{ $parent->icon }}" style="font-size: 20px;"></i>
+                                                                    @else
+                                                                        <span class="badge badge-light">-</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-left font-weight-500">{{ $parent->title }}</td>
+                                                                @foreach($allChildTitles as $childCat)
+                                                                    <td class="text-center">
+                                                                        {{ $parent->children->where('id', $childCat->id)->count() ? $parent->children->where('id', $childCat->id)->first()->bookings_count ?? 0 : 0 }}
+                                                                    </td>
+                                                                @endforeach
+                                                                <td class="text-center" width="80px">
+                                                                    <div class="btn-group dropdown table-actions position-relative">
+                                                                        <button type="button" class="btn-transparent dropdown-toggle" data-toggle="dropdown">
+                                                                            <x-iconsax-lin-more class="icons text-gray-500" width="20px" height="20px"/>
+                                                                        </button>
+
+                                                                        <div class="dropdown-menu dropdown-menu-right">
+                                                                            @can('admin_booking_categories_edit')
+                                                                                <a href="{{ getAdminPanelUrl() }}/booking/categories/{{ $parent->id }}/edit"
+                                                                                   class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
+                                                                                    <x-iconsax-lin-edit-2 class="icons text-gray-500 mr-2" width="18px" height="18px"/>
+                                                                                    <span class="text-gray-500 font-14">{{ trans('admin/main.edit') }}</span>
+                                                                                </a>
+                                                                            @endcan
+
+                                                                            @can('admin_booking_categories_delete')
+                                                                                @include('admin.includes.delete_button', [
+                                                                                    'url'      => getAdminPanelUrl() . '/booking/categories/' . $parent->id . '/delete',
+                                                                                    'btnClass' => 'dropdown-item text-danger mb-0 py-3 px-0 font-14',
+                                                                                    'btnText'  => trans('admin/main.delete'),
+                                                                                    'btnIcon'  => 'trash',
+                                                                                    'iconType' => 'lin',
+                                                                                    'iconClass'=> 'text-danger mr-2'
+                                                                                ])
+                                                                            @endcan
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
                                                 </table>
                                             </div>
                                         @else
