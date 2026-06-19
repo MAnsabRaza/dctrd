@@ -89,6 +89,8 @@ class BookingController extends Controller
             'deposit_amount' => 'nullable|numeric|min:0',
         ]);
 
+        $nextOrder = (Booking::max('order') ?? 0) + 1;
+
         $booking = Booking::create([
             'creator_id'       => $request->creator_id ?: auth()->id(),
             'category_id'      => $request->category_id,
@@ -103,7 +105,7 @@ class BookingController extends Controller
             'requirements'     => $request->requirements,
             'thumbnail'        => $request->thumbnail,
             'cover'            => $request->cover,
-            'order'            => $request->order ?? 0,
+            'order'            => $request->order ?: $nextOrder,
 
             // Pricing
             'price'            => $request->price,
@@ -228,7 +230,7 @@ class BookingController extends Controller
             'requirements'     => $request->requirements,
             'thumbnail'        => $request->thumbnail,
             'cover'            => $request->cover,
-            'order'            => $request->order ?? 0,
+            'order'            => $request->has('order') ? $request->order : $booking->order,
 
             // Pricing
             'price'            => $request->price,

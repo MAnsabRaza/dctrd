@@ -22,6 +22,7 @@
       class="booking-admin-form">
     {{ csrf_field() }}
     <input type="hidden" name="status" value="draft">
+    <input type="hidden" name="creator_id" value="{{ auth()->id() }}">
 
     <div class="booking-section">
         <h3 class="booking-section-title">Basic Information</h3>
@@ -55,14 +56,22 @@
 
                 <div class="form-group d-flex align-items-center">
                     <div class="custom-control custom-switch">
-                        <input type="checkbox" name="location_enabled" id="newBookingLocationSwitch" value="1" class="custom-control-input" {{ $checked('location_enabled', false) }}>
+                        <input type="checkbox" name="location_enabled" id="newBookingLocationSwitch" value="on" class="custom-control-input"
+                               {{ (old('location_enabled') == 'on' || (!empty($booking) && $booking->location_enabled)) ? 'checked' : '' }}
+                               onchange="toggleLocation(this.checked)">
                         <label class="custom-control-label" for="newBookingLocationSwitch"></label>
                     </div>
-                    <label for="newBookingLocationSwitch" class="mb-0 ml-2">Enable Address</label>
+                    <label for="newBookingLocationSwitch" class="mb-0 ml-2">{{ trans('admin/main.enable_location') }}</label>
                 </div>
 
-                <div id="newBookingLocationPanel" class="booking-location-panel mb-3">
-                    <div class="border rounded p-3 text-gray-500">Map and nearby filter appear when address is enabled.</div>
+                <div id="newBookingLocationPanel" class="booking-location-panel mb-3" style="{{ (old('location_enabled') == 'on' || (!empty($booking) && $booking->location_enabled)) ? '' : 'display:none' }}">
+                    @php $locationModel = $booking ?? null; @endphp
+                    @include('partials._location_picker', [
+                        'locationModel' => $locationModel,
+                        'addressName' => 'address_line',
+                        'showAjaxSave' => false,
+                        'pickerId' => 'adminBookingLocationPicker'
+                    ])
                 </div>
 
                 <div class="form-group">
@@ -118,28 +127,6 @@
             </div>
 
             <div class="col-12 col-lg-6">
-                <div class="form-group">
-                    <label class="input-label">Order</label>
-                    <input type="number" name="order" value="{{ $field('order', 0) }}" class="form-control">
-                </div>
-
-                <div class="form-group">
-                    <label class="input-label">Select an Instructor</label>
-                    <div class="input-group">
-                        <select name="creator_id" data-plugin-selectTwo class="form-control">
-                            <option value="">Select an Instructor</option>
-                            @foreach($instructors ?? [] as $instructor)
-                                <option value="{{ $instructor->id }}" {{ $field('creator_id', auth()->id()) == $instructor->id ? 'selected' : '' }}>{{ $instructor->full_name }}</option>
-                            @endforeach
-                        </select>
-                        <div class="input-group-append">
-                            <a href="{{ getAdminPanelUrl('/users/create') }}" class="btn btn-primary add-button"><i class="fa fa-plus"></i></a>
-                        </div>
-                    </div>
-                </div>
-
-           
-
                 <div class="form-group">
                     <label class="input-label">Summary / Requirements</label>
                     <textarea name="requirements" class="form-control" rows="5" placeholder="A brief summary, ideally between 50 and 160 characters">{{ $field('requirements') }}</textarea>
