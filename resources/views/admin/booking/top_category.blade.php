@@ -51,28 +51,25 @@
                                         <div class="table-responsive">
                                             <table class="table custom-table font-14">
                                                 <tr>
-                                                    <th class="text-left">{{ trans('admin/main.image') }}</th>
                                                     <th class="text-left">{{ trans('admin/main.category') }}</th>
                                                     <th>{{ trans('admin/main.action') }}</th>
                                                 </tr>
 
                                                 @foreach($items as $item)
                                                     <tr>
-                                                        <td>
-                                                            @if($item->image)
-                                                                <div class="size-32 rounded-sm">
-                                                                    <img src="{{ asset('storage/' . $item->image) }}" alt="" class="img-cover rounded-16" style="max-width:50px;max-height:50px;">
-                                                                </div>
-                                                            @else
-                                                                <span class="badge badge-secondary">{{ trans('admin/main.no_image') }}</span>
-                                                            @endif
-                                                        </td>
                                                         <td class="text-left">
-                                                            @if($item->category)
-                                                                <strong>{{ $item->category->title }}</strong>
-                                                            @else
-                                                                <span class="text-danger">{{ trans('admin/main.deleted') }}</span>
-                                                            @endif
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="size-32 rounded-sm">
+                                                                    <img src="{{ $item->image }}" alt="" class="img-cover rounded-16">
+                                                                </div>
+                                                                <div class="ml-2">
+                                                                    @if($item->category)
+                                                                        {{ $item->category->title }}
+                                                                    @else
+                                                                        <span class="text-danger">{{ trans('admin/main.deleted') }}</span>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
                                                         </td>
                                                         <td width="80px">
                                                             <div class="btn-group dropdown table-actions position-relative">
