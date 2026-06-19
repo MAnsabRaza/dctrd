@@ -61,6 +61,7 @@ Route::group(['prefix' => 'booking'], function () {
 
     // Booking index, store, edit, update, delete
     Route::get('/', [BookingController::class, 'index']);
+    Route::get('/list', [BookingController::class, 'list']);
     Route::post('/store', [BookingController::class, 'store']);
     Route::get('/{id}/edit', [BookingController::class, 'edit']);
     Route::post('/{id}/update', [BookingController::class, 'update']);

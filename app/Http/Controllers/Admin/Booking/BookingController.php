@@ -17,6 +17,26 @@ class BookingController extends Controller
         $this->authorize('admin_booking');
         removeContentLocale();
 
+        $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
+        $allCategories = BookingCategory::orderBy('order')->get();
+        $userLanguages = $this->getUserLanguages();
+        $instructors   = $this->getInstructors();
+
+        return view('admin.booking.booking', [
+            'pageTitle'       => trans('admin/main.create_booking'),
+            'bookingPageMode' => 'form',
+            'categories'      => $categories,
+            'allCategories'   => $allCategories,
+            'userLanguages'   => $userLanguages,
+            'instructors'     => $instructors,
+        ]);
+    }
+
+    public function list(Request $request)
+    {
+        $this->authorize('admin_booking');
+        removeContentLocale();
+
         $query = Booking::query();
 
         if ($request->get('title'))
@@ -39,12 +59,13 @@ class BookingController extends Controller
         $instructors   = $this->getInstructors();
 
         return view('admin.booking.booking', [
-            'pageTitle'     => trans('admin/main.booking'),
-            'bookings'      => $bookings,
-            'categories'    => $categories,
-            'allCategories' => $allCategories,
-            'userLanguages' => $userLanguages,
-            'instructors'   => $instructors,
+            'pageTitle'       => trans('admin/main.booking_list'),
+            'bookingPageMode' => 'list',
+            'bookings'        => $bookings,
+            'categories'      => $categories,
+            'allCategories'   => $allCategories,
+            'userLanguages'   => $userLanguages,
+            'instructors'     => $instructors,
         ]);
     }
 
@@ -144,7 +165,7 @@ class BookingController extends Controller
 
         $this->sendBookingNotification($booking, 'booking_created');
 
-        return redirect(getAdminPanelUrl('/booking'))
+        return redirect(getAdminPanelUrl('/booking/list'))
             ->with('success', trans('admin/main.created_successfully'));
     }
 
@@ -161,13 +182,14 @@ class BookingController extends Controller
         $instructors   = $this->getInstructors($editBooking->creator_id);
 
         return view('admin.booking.booking', [
-            'pageTitle'     => trans('admin/main.edit_booking'),
-            'bookings'      => $bookings,
-            'editBooking'   => $editBooking,
-            'categories'    => $categories,
-            'allCategories' => $allCategories,
-            'userLanguages' => $userLanguages,
-            'instructors'   => $instructors,
+            'pageTitle'       => trans('admin/main.edit_booking'),
+            'bookingPageMode' => 'form',
+            'bookings'        => $bookings,
+            'editBooking'     => $editBooking,
+            'categories'      => $categories,
+            'allCategories'   => $allCategories,
+            'userLanguages'   => $userLanguages,
+            'instructors'     => $instructors,
         ]);
     }
 
@@ -263,7 +285,7 @@ class BookingController extends Controller
 
         $this->sendBookingNotification($booking, 'booking_updated');
 
-        return redirect(getAdminPanelUrl('/booking'))
+        return redirect(getAdminPanelUrl('/booking/list'))
             ->with('success', trans('admin/main.updated_successfully'));
     }
 
@@ -273,7 +295,7 @@ class BookingController extends Controller
 
         Booking::findOrFail($id)->delete();
 
-        return redirect(getAdminPanelUrl('/booking'))
+        return redirect(getAdminPanelUrl('/booking/list'))
             ->with('success', trans('admin/main.deleted_successfully'));
     }
 

@@ -151,6 +151,13 @@
                     </a>
                 </li>
             @endcan
+            @can('admin_booking')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/list', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/list">
+                        {{ trans('admin/main.booking_list') }}
+                    </a>
+                </li>
+            @endcan
             @can('admin_booking_categories')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/categories*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/categories">

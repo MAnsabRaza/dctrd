@@ -63,18 +63,21 @@
 
 @section('content')
     @php
-        $createActive = ((!empty($errors) && $errors->any()) || !empty($editBooking) || request()->get('tab') == 'create');
+        $bookingPageMode = $bookingPageMode ?? (((!empty($errors) && $errors->any()) || !empty($editBooking) || request()->get('tab') == 'create') ? 'form' : 'list');
+        $isFormPage = $bookingPageMode === 'form';
     @endphp
     <section class="section">
         <div class="section-header">
-            <h1>{{ $createActive ? (!empty($editBooking) ? 'Edit Booking' : 'New Booking') : trans('admin/main.booking') }}</h1>
+            <h1>{{ $isFormPage ? (!empty($editBooking) ? 'Edit Booking' : 'New Booking') : trans('admin/main.booking_list') }}</h1>
             <div class="section-header-breadcrumb">
                 <div class="breadcrumb-item active">
                     <a href="{{ getAdminPanelUrl() }}">{{ trans('admin/main.dashboard') }}</a>
                 </div>
                 <div class="breadcrumb-item">Bookings</div>
-                @if($createActive)
+                @if($isFormPage)
                     <div class="breadcrumb-item">{{ !empty($editBooking) ? 'Edit' : 'New' }}</div>
+                @else
+                    <div class="breadcrumb-item">{{ trans('admin/main.booking_list') }}</div>
                 @endif
             </div>
         </div>
@@ -85,33 +88,16 @@
                     <div class="card">
                         <div class="card-body">
 
-                            <ul class="nav nav-pills" id="bookingTabs" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link {{ $createActive ? '' : 'active' }}"
-                                       id="list-tab" data-toggle="tab" href="#listTab"
-                                       role="tab" aria-controls="listTab" aria-selected="{{ $createActive ? 'false' : 'true' }}">
-                                        <i class="fas fa-list mr-1"></i>
-                                        {{ trans('admin/main.booking_list') }}
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {{ $createActive ? 'active' : '' }}"
-                                       id="create-tab" data-toggle="tab" href="#createTab"
-                                       role="tab" aria-controls="createTab" aria-selected="{{ $createActive ? 'true' : 'false' }}">
+                            @if(!$isFormPage)
+                                <div class="d-flex justify-content-end mb-3">
+                                    <a href="{{ getAdminPanelUrl() }}/booking" class="btn btn-primary">
                                         <i class="fas fa-plus mr-1"></i>
                                         {{ trans('admin/main.create_booking') }}
                                     </a>
-                                </li>
-                            </ul>
-
-                            <div class="tab-content mt-4" id="bookingTabsContent">
-
-                                {{-- ==================== LIST TAB ==================== --}}
-                                <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}"
-                                     id="listTab" role="tabpanel" aria-labelledby="list-tab">
+                                </div>
 
                                     {{-- Search Filters --}}
-                                    <form action="{{ getAdminPanelUrl() }}/booking" method="get" class="mb-4">
+                                    <form action="{{ getAdminPanelUrl() }}/booking/list" method="get" class="mb-4">
                                         <div class="row">
                                             <div class="col-md-4">
                                                 <div class="form-group">
@@ -281,15 +267,11 @@
                                     <div class="text-center mt-3">
                                         {{ $bookings->appends(request()->input())->links() }}
                                     </div>
-                                </div>
-                                {{-- end listTab --}}
+                            @else
 
-                                {{-- ==================== CREATE / EDIT TAB ==================== --}}
-                                <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}"
-                                     id="createTab" role="tabpanel" aria-labelledby="create-tab">
+                                @include('admin.booking.partials.new_booking_form')
 
-                                    @include('admin.booking.partials.new_booking_form')
-
+                                    @if(false)
                                     <form action="{{ getAdminPanelUrl() }}/booking/{{ !empty($editBooking) ? $editBooking->id . '/update' : 'store' }}"
                                           method="POST" class="d-none">
                                         {{ csrf_field() }}
@@ -568,9 +550,8 @@
                                         </button>
 
                                     </form>
-                                </div>{{-- createTab --}}
-
-                            </div>{{-- tab-content --}}
+                                    @endif
+                            @endif
                         </div>{{-- card-body --}}
                     </div>{{-- card --}}
                 </div>
@@ -625,13 +606,6 @@
                     ['insert',['link']],
                     ['view',  ['codeview']]
                 ]
-            });
-
-            // ─── FIX 1: Tab switching — proper Bootstrap tab activation ─
-            // Jab tab link click ho toh Bootstrap tab() call karo
-            $('#bookingTabs a[data-toggle="tab"]').on('click', function (e) {
-                e.preventDefault();
-                $(this).tab('show');
             });
 
             // ─── FIX 2: Delete Modal — anchor href set karo ─────────────
