@@ -161,6 +161,12 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 504], ['name' => 'admin_discount_codes_delete', 'section_group_id' => 500, 'caption' => 'Discount codes delete']);
         Section::updateOrCreate(['id' => 505], ['name' => 'admin_discount_codes_export', 'section_group_id' => 500, 'caption' => 'Discount codes export excel']);
 
+        // Booking Featured 3500 - 3503
+        Section::updateOrCreate(['id' => 3500], ['name' => 'admin_booking_featured', 'caption' => 'Booking Featured']);
+        Section::updateOrCreate(['id' => 3501], ['name' => 'admin_booking_featured_create', 'section_group_id' => 3500, 'caption' => 'Create Booking Featured']);
+        Section::updateOrCreate(['id' => 3502], ['name' => 'admin_booking_featured_edit', 'section_group_id' => 3500, 'caption' => 'Edit Booking Featured']);
+        Section::updateOrCreate(['id' => 3503], ['name' => 'admin_booking_featured_delete', 'section_group_id' => 3500, 'caption' => 'Delete Booking Featured']);
+
         // Groups 550 - 599
         Section::updateOrCreate(['id' => 550], ['name' => 'admin_group', 'caption' => trans('/admin/pages/groups.admin_group')]);
         Section::updateOrCreate(['id' => 551], ['name' => 'admin_group_list', 'section_group_id' => 550, 'caption' => trans('/admin/pages/groups.admin_group_list')]);

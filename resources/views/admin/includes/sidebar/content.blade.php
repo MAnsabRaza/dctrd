@@ -323,6 +323,14 @@
                 </li>
             @endcan
 
+            @can('admin_booking_featured')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/featured*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/featured">
+                        {{ trans('admin/main.booking_featured') ?? 'Booking Featured' }}
+                    </a>
+                </li>
+            @endcan
+
             @foreach($bookingModuleSidebarItems as $moduleKey => $moduleItem)
                 @can($moduleItem['permission'])
                     <li class="{{ request()->is(getAdminPanelUrl('/booking/modules/' . $moduleKey . '*', false)) ? 'active' : '' }}">

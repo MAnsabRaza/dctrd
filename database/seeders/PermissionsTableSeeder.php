@@ -636,5 +636,11 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 200502], ['role_id' => 2, 'section_id' => 502, 'allow' => 1]); // create
         \App\Models\Permission::updateOrCreate(['id' => 200503], ['role_id' => 2, 'section_id' => 503, 'allow' => 1]); // edit
         \App\Models\Permission::updateOrCreate(['id' => 200504], ['role_id' => 2, 'section_id' => 504, 'allow' => 1]); // delete
+
+        // Booking Featured permissions
+        \App\Models\Permission::updateOrCreate(['id' => 203500], ['role_id' => 2, 'section_id' => 3500, 'allow' => 1]); // booking featured list
+        \App\Models\Permission::updateOrCreate(['id' => 203501], ['role_id' => 2, 'section_id' => 3501, 'allow' => 1]); // create
+        \App\Models\Permission::updateOrCreate(['id' => 203502], ['role_id' => 2, 'section_id' => 3502, 'allow' => 1]); // edit
+        \App\Models\Permission::updateOrCreate(['id' => 203503], ['role_id' => 2, 'section_id' => 3503, 'allow' => 1]); // delete
     }
 }

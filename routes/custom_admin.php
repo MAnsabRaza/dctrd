@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\Booking\BookingVariantController;
 use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
 use App\Http\Controllers\Admin\Booking\BookingOrderController;
 use App\Http\Controllers\Admin\Booking\BookingFilterController;
+use App\Http\Controllers\Admin\Booking\BookingFeaturedController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -233,6 +234,16 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/delete', [BookingFilterController::class, 'destroy']);
         Route::get('/by-category/{id}', [BookingFilterController::class, 'getByCategoryId']);
     });
+
+        // Booking Featured (custom controller)
+        Route::group(['prefix' => 'featured'], function () {
+            Route::get('/', [BookingFeaturedController::class, 'index']);
+            Route::get('/create', [BookingFeaturedController::class, 'create']);
+            Route::post('/store', [BookingFeaturedController::class, 'store']);
+            Route::get('/{id}/edit', [BookingFeaturedController::class, 'edit']);
+            Route::post('/{id}/update', [BookingFeaturedController::class, 'update']);
+            Route::get('/{id}/delete', [BookingFeaturedController::class, 'destroy']);
+        });
 
 });
 
