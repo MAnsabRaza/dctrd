@@ -24,18 +24,14 @@
                             @include('admin.includes.alerts.errors')
 
                             <ul class="nav nav-pills" id="topCategoryTab" role="tablist">
-
-                                @if($items->count())
-                                    <li class="nav-item">
-                                        <a class="nav-link {{ (!$errors->any() and !isset($editItem)) ? 'active' : '' }}"
-                                           id="list-tab" data-toggle="tab" href="#list" role="tab" aria-controls="list" aria-selected="true">
-                                            {{ trans('admin/main.list') }}
-                                        </a>
-                                    </li>
-                                @endif
-
                                 <li class="nav-item">
-                                    <a class="nav-link {{ ($errors->any() or isset($editItem)) ? 'active' : ($items->count() ? '' : 'active') }}"
+                                    <a class="nav-link {{ (!$errors->any() and !isset($editItem)) ? 'active' : '' }}"
+                                       id="list-tab" data-toggle="tab" href="#list" role="tab" aria-controls="list" aria-selected="true">
+                                        {{ trans('admin/main.list') }}
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {{ ($errors->any() or isset($editItem)) ? 'active' : '' }}"
                                        id="new-tab" data-toggle="tab" href="#new" role="tab" aria-controls="new" aria-selected="true">
                                         {{ trans('admin/main.add_top_category') }}
                                     </a>
@@ -45,64 +41,65 @@
                             <div class="tab-content" id="topCategoryTabContent">
 
                                 {{-- List Tab --}}
-                                @if($items->count())
-                                    <div class="tab-pane mt-3 fade {{ (!$errors->any() and !isset($editItem)) ? 'active show' : '' }}"
-                                         id="list" role="tabpanel" aria-labelledby="list-tab">
-                                        <div class="table-responsive">
-                                            <table class="table custom-table font-14">
+                                <div class="tab-pane mt-3 fade {{ (!$errors->any() and !isset($editItem)) ? 'active show' : '' }}"
+                                     id="list" role="tabpanel" aria-labelledby="list-tab">
+                                    <div class="table-responsive">
+                                        <table class="table custom-table font-14">
+                                            <tr>
+                                                <th class="text-left">{{ trans('admin/main.category') }}</th>
+                                                <th>{{ trans('admin/main.action') }}</th>
+                                            </tr>
+                                            @forelse($items as $item)
                                                 <tr>
-                                                    <th class="text-left">{{ trans('admin/main.category') }}</th>
-                                                    <th>{{ trans('admin/main.action') }}</th>
+                                                    <td class="text-left">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="size-32 rounded-sm">
+                                                                <img src="{{ $item->image }}" alt="" class="img-cover rounded-16">
+                                                            </div>
+                                                            <div class="ml-2">
+                                                                @if($item->category)
+                                                                    {{ $item->category->title }}
+                                                                @else
+                                                                    <span class="text-danger">{{ trans('admin/main.deleted') }}</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td width="80px">
+                                                        <div class="btn-group dropdown table-actions position-relative">
+                                                            <button type="button" class="btn-transparent dropdown-toggle" data-toggle="dropdown">
+                                                                <x-iconsax-lin-more class="icons text-gray-500" width="20px" height="20px"/>
+                                                            </button>
+                                                            <div class="dropdown-menu dropdown-menu-right">
+                                                                <a href="{{ getAdminPanelUrl() }}/booking/top-categories/{{ $item->id }}/edit"
+                                                                   class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
+                                                                    <x-iconsax-lin-edit-2 class="icons text-gray-500 mr-2" width="18px" height="18px"/>
+                                                                    <span class="text-gray-500 font-14">{{ trans('admin/main.edit') }}</span>
+                                                                </a>
+                                                                @include('admin.includes.delete_button', [
+                                                                    'url'       => getAdminPanelUrl().'/booking/top-categories/'.$item->id.'/delete',
+                                                                    'btnClass'  => 'dropdown-item text-danger mb-0 py-3 px-0 font-14',
+                                                                    'btnText'   => trans('admin/main.delete'),
+                                                                    'btnIcon'   => 'trash',
+                                                                    'iconType'  => 'lin',
+                                                                    'iconClass' => 'text-danger mr-2'
+                                                                ])
+                                                            </div>
+                                                        </div>
+                                                    </td>
                                                 </tr>
-
-                                                @foreach($items as $item)
-                                                    <tr>
-                                                        <td class="text-left">
-                                                            <div class="d-flex align-items-center">
-                                                                <div class="size-32 rounded-sm">
-                                                                    <img src="{{ $item->image }}" alt="" class="img-cover rounded-16">
-                                                                </div>
-                                                                <div class="ml-2">
-                                                                    @if($item->category)
-                                                                        {{ $item->category->title }}
-                                                                    @else
-                                                                        <span class="text-danger">{{ trans('admin/main.deleted') }}</span>
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td width="80px">
-                                                            <div class="btn-group dropdown table-actions position-relative">
-                                                                <button type="button" class="btn-transparent dropdown-toggle" data-toggle="dropdown">
-                                                                    <x-iconsax-lin-more class="icons text-gray-500" width="20px" height="20px"/>
-                                                                </button>
-                                                                <div class="dropdown-menu dropdown-menu-right">
-                                                                    <a href="{{ getAdminPanelUrl() }}/booking/top-categories/{{ $item->id }}/edit"
-                                                                       class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
-                                                                        <x-iconsax-lin-edit-2 class="icons text-gray-500 mr-2" width="18px" height="18px"/>
-                                                                        <span class="text-gray-500 font-14">{{ trans('admin/main.edit') }}</span>
-                                                                    </a>
-                                                                    @include('admin.includes.delete_button', [
-                                                                        'url'       => getAdminPanelUrl().'/booking/top-categories/'.$item->id.'/delete',
-                                                                        'btnClass'  => 'dropdown-item text-danger mb-0 py-3 px-0 font-14',
-                                                                        'btnText'   => trans('admin/main.delete'),
-                                                                        'btnIcon'   => 'trash',
-                                                                        'iconType'  => 'lin',
-                                                                        'iconClass' => 'text-danger mr-2'
-                                                                    ])
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                @endforeach
-                                            </table>
-                                            {{ $items->links() }}
-                                        </div>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="2" class="text-center text-gray-500 py-3">{{ trans('admin/main.no_result') }}</td>
+                                                </tr>
+                                            @endforelse
+                                        </table>
+                                        {{ $items->links() }}
                                     </div>
-                                @endif
+                                </div>
 
                                 {{-- New / Edit Tab --}}
-                                <div class="tab-pane mt-3 fade {{ ($errors->any() or isset($editItem)) ? 'active show' : ($items->count() ? '' : 'active show') }}"
+                                <div class="tab-pane mt-3 fade {{ ($errors->any() or isset($editItem)) ? 'active show' : '' }}"
                                      id="new" role="tabpanel" aria-labelledby="new-tab">
                                     <div class="row">
                                         <div class="col-12 col-md-6">
