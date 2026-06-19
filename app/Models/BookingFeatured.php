@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\User;
 
 class BookingFeatured extends Model
 {
@@ -11,17 +12,17 @@ class BookingFeatured extends Model
 
     protected $table = 'booking_featured';
 
-    protected $fillable = ['booking_id', 'category_id', 'placement', 'starts_at', 'expires_at', 'order', 'status'];
+    protected $fillable = ['language','user_id','booking_id', 'page', 'title', 'description', 'status'];
 
-    protected $casts = ['starts_at' => 'datetime', 'expires_at' => 'datetime', 'status' => 'boolean'];
+    protected $casts = ['status' => 'boolean'];
 
     public function booking()
     {
         return $this->belongsTo(Booking::class, 'booking_id');
     }
 
-    public function category()
+    public function user()
     {
-        return $this->belongsTo(BookingCategory::class, 'category_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 }
