@@ -167,6 +167,18 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3502], ['name' => 'admin_booking_featured_edit', 'section_group_id' => 3500, 'caption' => 'Edit Booking Featured']);
         Section::updateOrCreate(['id' => 3503], ['name' => 'admin_booking_featured_delete', 'section_group_id' => 3500, 'caption' => 'Delete Booking Featured']);
 
+        // Booking Top Categories 3510 - 3513
+        Section::updateOrCreate(['id' => 3510], ['name' => 'admin_booking_top_categories', 'caption' => 'Booking Top Categories']);
+        Section::updateOrCreate(['id' => 3511], ['name' => 'admin_booking_top_categories_create', 'section_group_id' => 3510, 'caption' => 'Create Booking Top Category']);
+        Section::updateOrCreate(['id' => 3512], ['name' => 'admin_booking_top_categories_edit', 'section_group_id' => 3510, 'caption' => 'Edit Booking Top Category']);
+        Section::updateOrCreate(['id' => 3513], ['name' => 'admin_booking_top_categories_delete', 'section_group_id' => 3510, 'caption' => 'Delete Booking Top Category']);
+
+        // Booking Feature Categories 3520 - 3523
+        Section::updateOrCreate(['id' => 3520], ['name' => 'admin_booking_feature_categories', 'caption' => 'Booking Feature Categories']);
+        Section::updateOrCreate(['id' => 3521], ['name' => 'admin_booking_feature_categories_create', 'section_group_id' => 3520, 'caption' => 'Create Booking Feature Category']);
+        Section::updateOrCreate(['id' => 3522], ['name' => 'admin_booking_feature_categories_edit', 'section_group_id' => 3520, 'caption' => 'Edit Booking Feature Category']);
+        Section::updateOrCreate(['id' => 3523], ['name' => 'admin_booking_feature_categories_delete', 'section_group_id' => 3520, 'caption' => 'Delete Booking Feature Category']);
+
         // Groups 550 - 599
         Section::updateOrCreate(['id' => 550], ['name' => 'admin_group', 'caption' => trans('/admin/pages/groups.admin_group')]);
         Section::updateOrCreate(['id' => 551], ['name' => 'admin_group_list', 'section_group_id' => 550, 'caption' => trans('/admin/pages/groups.admin_group_list')]);

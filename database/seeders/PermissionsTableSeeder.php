@@ -642,5 +642,25 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 203501], ['role_id' => 2, 'section_id' => 3501, 'allow' => 1]); // create
         \App\Models\Permission::updateOrCreate(['id' => 203502], ['role_id' => 2, 'section_id' => 3502, 'allow' => 1]); // edit
         \App\Models\Permission::updateOrCreate(['id' => 203503], ['role_id' => 2, 'section_id' => 3503, 'allow' => 1]); // delete
+
+        // Booking Top Categories permissions
+        \App\Models\Permission::updateOrCreate(['id' => 103510], ['role_id' => 1, 'section_id' => 3510, 'allow' => 1]); // super admin
+        \App\Models\Permission::updateOrCreate(['id' => 203510], ['role_id' => 2, 'section_id' => 3510, 'allow' => 1]); // admin list
+        \App\Models\Permission::updateOrCreate(['id' => 103511], ['role_id' => 1, 'section_id' => 3511, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203511], ['role_id' => 2, 'section_id' => 3511, 'allow' => 1]); // create
+        \App\Models\Permission::updateOrCreate(['id' => 103512], ['role_id' => 1, 'section_id' => 3512, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203512], ['role_id' => 2, 'section_id' => 3512, 'allow' => 1]); // edit
+        \App\Models\Permission::updateOrCreate(['id' => 103513], ['role_id' => 1, 'section_id' => 3513, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203513], ['role_id' => 2, 'section_id' => 3513, 'allow' => 1]); // delete
+
+        // Booking Feature Categories permissions
+        \App\Models\Permission::updateOrCreate(['id' => 103520], ['role_id' => 1, 'section_id' => 3520, 'allow' => 1]); // super admin
+        \App\Models\Permission::updateOrCreate(['id' => 203520], ['role_id' => 2, 'section_id' => 3520, 'allow' => 1]); // admin list
+        \App\Models\Permission::updateOrCreate(['id' => 103521], ['role_id' => 1, 'section_id' => 3521, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203521], ['role_id' => 2, 'section_id' => 3521, 'allow' => 1]); // create
+        \App\Models\Permission::updateOrCreate(['id' => 103522], ['role_id' => 1, 'section_id' => 3522, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203522], ['role_id' => 2, 'section_id' => 3522, 'allow' => 1]); // edit
+        \App\Models\Permission::updateOrCreate(['id' => 103523], ['role_id' => 1, 'section_id' => 3523, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203523], ['role_id' => 2, 'section_id' => 3523, 'allow' => 1]); // delete
     }
 }

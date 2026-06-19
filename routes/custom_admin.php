@@ -30,6 +30,8 @@ use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
 use App\Http\Controllers\Admin\Booking\BookingOrderController;
 use App\Http\Controllers\Admin\Booking\BookingFilterController;
 use App\Http\Controllers\Admin\Booking\BookingFeaturedController;
+use App\Http\Controllers\Admin\Booking\BookingTopCategoryController;
+use App\Http\Controllers\Admin\Booking\BookingFeatureCategoryController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -228,6 +230,26 @@ Route::group(['prefix' => 'booking'], function () {
             Route::get('/{id}/edit', [BookingFeaturedController::class, 'edit']);
             Route::post('/{id}/update', [BookingFeaturedController::class, 'update']);
             Route::get('/{id}/delete', [BookingFeaturedController::class, 'destroy']);
+        });
+
+        // Booking Top Categories
+        Route::group(['prefix' => 'top-categories'], function () {
+            Route::get('/', [BookingTopCategoryController::class, 'index']);
+            Route::get('/create', [BookingTopCategoryController::class, 'create']);
+            Route::post('/store', [BookingTopCategoryController::class, 'store']);
+            Route::get('/{id}/edit', [BookingTopCategoryController::class, 'edit']);
+            Route::put('/{id}', [BookingTopCategoryController::class, 'update']);
+            Route::get('/{id}/delete', [BookingTopCategoryController::class, 'destroy']);
+        });
+
+        // Booking Feature Categories
+        Route::group(['prefix' => 'feature-categories'], function () {
+            Route::get('/', [BookingFeatureCategoryController::class, 'index']);
+            Route::get('/create', [BookingFeatureCategoryController::class, 'create']);
+            Route::post('/store', [BookingFeatureCategoryController::class, 'store']);
+            Route::get('/{id}/edit', [BookingFeatureCategoryController::class, 'edit']);
+            Route::put('/{id}', [BookingFeatureCategoryController::class, 'update']);
+            Route::get('/{id}/delete', [BookingFeatureCategoryController::class, 'destroy']);
         });
 
 });
