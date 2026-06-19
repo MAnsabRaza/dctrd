@@ -66,9 +66,11 @@
                                             <select name="category_id" class="form-control">
                                                 @foreach($categories as $category)
                                                     <option value="{{ $category->id }}" @if(!empty($editItem) && $editItem->category_id == $category->id) selected @endif>{{ $category->title }}</option>
-                                                    @foreach($category->subCategories as $sub)
-                                                        <option value="{{ $sub->id }}" @if(!empty($editItem) && $editItem->category_id == $sub->id) selected @endif>-- {{ $sub->title }}</option>
-                                                    @endforeach
+                                                    @if(!empty($category->subCategories) && count($category->subCategories))
+                                                        @foreach($category->subCategories as $sub)
+                                                            <option value="{{ $sub->id }}" @if(!empty($editItem) && $editItem->category_id == $sub->id) selected @endif>-- {{ $sub->title }}</option>
+                                                        @endforeach
+                                                    @endif
                                                 @endforeach
                                             </select>
                                         </div>
