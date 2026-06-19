@@ -299,7 +299,6 @@
                 $bookingModuleSidebarItems = [
                     'filters' => ['permission' => 'admin_booking_filters', 'title' => 'Booking Filters'],
                     'rules' => ['permission' => 'admin_booking_rules', 'title' => 'Booking Rules'],
-                    'discounts' => ['permission' => 'admin_booking_discounts', 'title' => 'Booking Discounts'],
                     'coupons' => ['permission' => 'admin_booking_coupons', 'title' => 'Booking Coupons'],
                     'assets' => ['permission' => 'admin_booking_assets', 'title' => 'Booking Assets'],
                     'reports' => ['permission' => 'admin_booking_reports', 'title' => 'Booking Reports'],
@@ -308,6 +307,14 @@
                     'calendar-integrations' => ['permission' => 'admin_booking_calendar_integrations', 'title' => 'Calendar Integrations'],
                 ];
             @endphp
+
+            @can('admin_booking_discounts')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/discounts*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/discounts">
+                        {{ trans('admin/main.booking_discounts') ?? 'Booking Discounts' }}
+                    </a>
+                </li>
+            @endcan
 
             @foreach($bookingModuleSidebarItems as $moduleKey => $moduleItem)
                 @can($moduleItem['permission'])

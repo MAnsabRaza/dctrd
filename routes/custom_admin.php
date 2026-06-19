@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\Booking\BookingImportController;
 use App\Http\Controllers\Admin\Booking\BookingModuleCrudController;
 use App\Http\Controllers\Admin\Booking\BookingPolicyController;
 use App\Http\Controllers\Admin\Booking\BookingPackageController;
+use App\Http\Controllers\Admin\Booking\BookingDiscountController;
 use App\Http\Controllers\Admin\Booking\BookingRatePlanController;
 use App\Http\Controllers\Admin\Booking\BookingResourceController;
 use App\Http\Controllers\Admin\Booking\BookingReviewController;
@@ -204,6 +205,14 @@ Route::group(['prefix' => 'booking'], function () {
         Route::post('/{id}/update', [BookingCommentController::class,'update']);
         Route::get('/{id}/delete', [BookingCommentController::class,'delete']);
 
+    });
+
+    Route::group(['prefix' => 'discounts'], function () {
+        Route::get('/', [BookingDiscountController::class, 'index']);
+        Route::post('/store', [BookingDiscountController::class, 'store']);
+        Route::get('/{id}/edit', [BookingDiscountController::class, 'edit']);
+        Route::post('/{id}/update', [BookingDiscountController::class, 'update']);
+        Route::get('/{id}/delete', [BookingDiscountController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'modules/{resource}'], function () {
