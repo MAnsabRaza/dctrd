@@ -63,25 +63,14 @@
                                                         <tr>
                                                             <th class="text-left" style="width: 50px;">{{ trans('admin/main.icon') }}</th>
                                                             <th class="text-left">{{ trans('admin/main.title') }}</th>
-                                                            @php
-                                                                // Get all unique child category titles
-                                                                $childTitles = \App\Models\BookingCategory::whereNotNull('parent_id')
-                                                                    ->select('title')
-                                                                    ->distinct()
-                                                                    ->orderBy('title')
-                                                                    ->get();
-                                                            @endphp
-                                                            @foreach($childTitles as $childTitle)
+                                                            @foreach($childTitles ?? [] as $childTitle)
                                                                 <th class="text-center">{{ $childTitle->title }}</th>
                                                             @endforeach
                                                             <th class="text-center">{{ trans('admin/main.action') }}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @php
-                                                            $parentCategories = \App\Models\BookingCategory::whereNull('parent_id')->orderBy('order')->get();
-                                                        @endphp
-                                                        @foreach($parentCategories as $parent)
+                                                        @foreach($bookingCategories ?? [] as $parent)
                                                             <tr>
                                                                 <td style="width: 50px;">
                                                                     @if($parent->icon)
@@ -91,11 +80,11 @@
                                                                     @endif
                                                                 </td>
                                                                 <td class="text-left font-weight-500">{{ $parent->title }}</td>
-                                                                @foreach($childTitles as $childTitle)
+                                                                @foreach($childTitles ?? [] as $childTitle)
                                                                     <td class="text-center">
                                                                         @php
                                                                             // Find child category under this parent with matching title
-                                                                            $childCategory = $parent->children()->where('title', $childTitle->title)->first();
+                                                                            $childCategory = $parent->children->firstWhere('title', $childTitle->title);
                                                                             $bookingCount = $childCategory ? ($childCategory->bookings_count ?? 0) : 0;
                                                                         @endphp
                                                                         {{ $bookingCount }}

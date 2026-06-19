@@ -15,14 +15,28 @@ class BookingCategoryController extends Controller
 
         removeContentLocale();
 
-        $bookingCategories = BookingCategory::withCount('bookings')->orderBy('order')->get();
-        $parentCategories  = BookingCategory::roots()->get();
-        $nextOrder         = (BookingCategory::max('order') ?? 0) + 1;
+        // Get parent categories with their children (including booking counts)
+        $parentCategories = BookingCategory::whereNull('parent_id')
+            ->orderBy('order')
+            ->with(['children' => function($query) {
+                $query->withCount('bookings')->orderBy('title');
+            }])
+            ->get();
+
+        // Get all unique child category titles
+        $childTitles = BookingCategory::whereNotNull('parent_id')
+            ->select('title')
+            ->distinct()
+            ->orderBy('title')
+            ->get();
+
+        $nextOrder = (BookingCategory::max('order') ?? 0) + 1;
 
         $data = [
             'pageTitle'         => trans('admin/main.booking_categories'),
-            'bookingCategories' => $bookingCategories,
+            'bookingCategories' => $parentCategories,
             'parentCategories'  => $parentCategories,
+            'childTitles'       => $childTitles,
             'nextOrder'         => $nextOrder,
         ];
 
