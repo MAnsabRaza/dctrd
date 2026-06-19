@@ -6,15 +6,6 @@
     $checked = function ($name, $default = false) use ($booking) {
         return old($name, !empty($booking) ? (bool) $booking->{$name} : $default) ? 'checked' : '';
     };
-    $bookingTypeGroups = [
-        'Hotel, Events & Lifestyle' => ['travel_accommodation' => 'Travel / Accommodation', 'restaurants_catering' => 'Restaurants, Catering', 'events' => 'Events', 'photography_appearance' => 'Photography / appearance'],
-        'Healthcare & Wellness' => ['doctors' => 'Doctors', 'therapists' => 'Therapists', 'clinics' => 'Clinics', 'beauty' => 'Beauty', 'spa' => 'Spa'],
-        'Home & Estate Services' => ['contractors' => 'Contractors', 'repairs' => 'Repairs', 'cleaning' => 'Cleaning'],
-        'Automotive & Technical' => ['mechanics' => 'Mechanics', 'tech_support' => 'Tech Support', 'it_services' => 'IT Services'],
-        'Tutors & Trainers' => ['tutoring' => 'Tutoring', 'music_lessons' => 'Music Lessons', 'driving_school' => 'Driving School', 'fitness_trainers' => 'Fitness/Trainers'],
-        'Consulting, Legal & Finance' => ['consulting' => 'Consulting', 'legal' => 'Legal', 'accounting' => 'Accounting', 'insurance' => 'Insurance'],
-        'Miscellaneous, Services' => ['miscellaneous_services' => 'Miscellaneous, Services'],
-    ];
 @endphp
 
 <form action="{{ getAdminPanelUrl() }}/booking/{{ !empty($booking) ? $booking->id . '/update' : 'store' }}"
@@ -41,14 +32,13 @@
 
                 <div class="form-group">
                     <label class="input-label">Booking Type <span class="text-danger">*</span></label>
-                    <select name="booking_type" data-plugin-selectTwo class="form-control @error('booking_type') is-invalid @enderror">
+                    <select id="bookingTypeSelect" name="booking_type" data-plugin-selectTwo class="form-control @error('booking_type') is-invalid @enderror">
                         <option value="">Select Booking Service Type</option>
-                        @foreach($bookingTypeGroups as $group => $options)
-                            <optgroup label="{{ $group }}">
-                                @foreach($options as $value => $label)
-                                    <option value="{{ $value }}" {{ $field('booking_type') == $value ? 'selected' : '' }}>{{ $label }}</option>
-                                @endforeach
-                            </optgroup>
+                        @foreach($childCategories ?? [] as $type)
+                            <option value="{{ $type->slug }}" data-parent-id="{{ $type->parent_id }}"
+                                {{ $field('booking_type') == $type->slug || $field('booking_type') == $type->title ? 'selected' : '' }}>
+                                {{ $type->title }}
+                            </option>
                         @endforeach
                     </select>
                     @error('booking_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -206,9 +196,9 @@
         <div class="form-group">
             <label class="input-label">Category</label>
             <div class="input-group">
-                <select name="category_id" data-plugin-selectTwo class="form-control">
+                <select id="bookingCategorySelect" name="category_id" data-plugin-selectTwo class="form-control">
                     <option value="">Select a Category</option>
-                    @foreach($allCategories ?? [] as $cat)
+                    @foreach($parentCategories ?? [] as $cat)
                         <option value="{{ $cat->id }}" {{ $field('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->title }}</option>
                     @endforeach
                 </select>

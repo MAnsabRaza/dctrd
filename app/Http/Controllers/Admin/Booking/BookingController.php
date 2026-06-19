@@ -17,18 +17,43 @@ class BookingController extends Controller
         $this->authorize('admin_booking');
         removeContentLocale();
 
-        $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
+        $parentCategories = BookingCategory::whereNull('parent_id')
+            ->where('status', 1)
+            ->orderBy('order')
+            ->get();
+
+        $childCategories = BookingCategory::whereNotNull('parent_id')
+            ->where('status', 1)
+            ->orderBy('title')
+            ->get();
+
+        $bookingTypes = Booking::query()
+            ->select('booking_type')
+            ->distinct()
+            ->orderBy('booking_type')
+            ->pluck('booking_type');
+
+        $bookingTypeCategoryMap = [];
+        foreach ($parentCategories as $category) {
+            $bookingTypeCategoryMap[Str::slug($category->slug)] = $category->id;
+            $bookingTypeCategoryMap[Str::slug($category->title)] = $category->id;
+        }
+
         $allCategories = BookingCategory::orderBy('order')->get();
         $userLanguages = $this->getUserLanguages();
         $instructors   = $this->getInstructors();
 
         return view('admin.booking.booking', [
-            'pageTitle'       => trans('admin/main.create_booking'),
-            'bookingPageMode' => 'form',
-            'categories'      => $categories,
-            'allCategories'   => $allCategories,
-            'userLanguages'   => $userLanguages,
-            'instructors'     => $instructors,
+            'pageTitle'              => trans('admin/main.create_booking'),
+            'bookingPageMode'        => 'form',
+            'parentCategories'       => $parentCategories,
+            'childCategories'        => $childCategories,
+            'bookingTypes'           => $bookingTypes,
+            'bookingTypeCategoryMap' => $bookingTypeCategoryMap,
+            'categories'             => $parentCategories,
+            'allCategories'          => $allCategories,
+            'userLanguages'          => $userLanguages,
+            'instructors'            => $instructors,
         ]);
     }
 
@@ -178,20 +203,45 @@ class BookingController extends Controller
 
         $editBooking   = Booking::findOrFail($id);
         $bookings      = Booking::orderBy('created_at', 'desc')->paginate(15);
-        $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
+        $parentCategories = BookingCategory::whereNull('parent_id')
+            ->where('status', 1)
+            ->orderBy('order')
+            ->get();
+
+        $childCategories = BookingCategory::whereNotNull('parent_id')
+            ->where('status', 1)
+            ->orderBy('title')
+            ->get();
+
+        $bookingTypes = Booking::query()
+            ->select('booking_type')
+            ->distinct()
+            ->orderBy('booking_type')
+            ->pluck('booking_type');
+
+        $bookingTypeCategoryMap = [];
+        foreach ($parentCategories as $category) {
+            $bookingTypeCategoryMap[Str::slug($category->slug)] = $category->id;
+            $bookingTypeCategoryMap[Str::slug($category->title)] = $category->id;
+        }
+
         $allCategories = BookingCategory::orderBy('order')->get();
         $userLanguages = $this->getUserLanguages();
         $instructors   = $this->getInstructors($editBooking->creator_id);
 
         return view('admin.booking.booking', [
-            'pageTitle'       => trans('admin/main.edit_booking'),
-            'bookingPageMode' => 'form',
-            'bookings'        => $bookings,
-            'editBooking'     => $editBooking,
-            'categories'      => $categories,
-            'allCategories'   => $allCategories,
-            'userLanguages'   => $userLanguages,
-            'instructors'     => $instructors,
+            'pageTitle'              => trans('admin/main.edit_booking'),
+            'bookingPageMode'        => 'form',
+            'bookings'               => $bookings,
+            'editBooking'            => $editBooking,
+            'parentCategories'       => $parentCategories,
+            'childCategories'        => $childCategories,
+            'bookingTypes'           => $bookingTypes,
+            'bookingTypeCategoryMap' => $bookingTypeCategoryMap,
+            'categories'             => $parentCategories,
+            'allCategories'          => $allCategories,
+            'userLanguages'          => $userLanguages,
+            'instructors'            => $instructors,
         ]);
     }
 

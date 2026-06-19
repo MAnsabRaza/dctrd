@@ -657,6 +657,24 @@
                 togglePanel('#booking_deposit_enabled', '#bookingDepositPanel');
             });
 
+            function syncCategoryWithBookingType() {
+                var selectedType = $('#bookingTypeSelect').find('option:selected');
+                var parentId = selectedType.data('parent-id');
+
+                if (parentId) {
+                    var categorySelect = $('#bookingCategorySelect');
+                    categorySelect.val(parentId).trigger('change');
+                    categorySelect.trigger('change.select2');
+                }
+            }
+
+            $('#bookingTypeSelect').on('change', function () {
+                syncCategoryWithBookingType();
+            });
+
+            // Initialize on load if booking type already selected
+            syncCategoryWithBookingType();
+
             $('input[name="tags"]').on('keydown', function (event) {
                 if (event.key === 'Enter') {
                     event.preventDefault();
