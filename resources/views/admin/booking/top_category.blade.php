@@ -129,17 +129,17 @@
 
                                                 <div class="form-group">
                                                     <label class="input-label">{{ trans('public.thumbnail_image') }}</label>
-                                                    <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <button type="button" class="input-group-text admin-file-manager" data-input="top_image" data-preview="holder">
-                                                                <i class="fa fa-upload"></i>
-                                                            </button>
+                                                    @if(isset($editItem) && !empty($editItem->image))
+                                                        <div class="mb-3">
+                                                            <img src="{{ asset('storage/' . $editItem->image) }}" alt="{{ trans('admin/main.thumbnail') }}" class="img-fluid rounded" style="max-width: 200px;" />
                                                         </div>
-                                                        <input type="text" name="image" id="top_image"
-                                                               value="{{ isset($editItem) ? $editItem->image : old('image') }}"
-                                                               class="form-control @error('image') is-invalid @enderror"/>
-                                                        <div class="invalid-feedback">@error('image') {{ $message }} @enderror</div>
-                                                    </div>
+                                                    @endif
+                                                    <input type="file" name="image" id="top_image"
+                                                           class="form-control @error('image') is-invalid @enderror"
+                                                           accept="image/*" />
+                                                    @error('image')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
                                                 </div>
 
                                                 <div class="text-right mt-4">

@@ -52,7 +52,7 @@ class BookingTopCategoryController extends Controller
 
         $this->validate($request, [
             'category_id' => 'required|exists:booking_categories,id',
-             'image' => 'required',
+            'image' => 'required|image',
         ]);
 
         $data = $request->only(['category_id']);
@@ -93,7 +93,7 @@ class BookingTopCategoryController extends Controller
 
         $this->validate($request, [
             'category_id' => 'required|exists:booking_categories,id',
-             'image' => 'required',
+            'image' => 'nullable|image',
         ]);
 
         $item = BookingTopCategory::findOrFail($id);
