@@ -225,6 +225,7 @@ return [
     'resource' => 'Resource',
     'admin_booking_favorite' => 'Booking Favorites',
 'admin_booking_comment' => 'Booking Comments',
+'manage_all_items'=>'Manage All Items',
 
 //discount
 'booking_discounts'=>'Booking Discounts',

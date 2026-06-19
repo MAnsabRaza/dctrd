@@ -19,7 +19,7 @@ class BookingFilterController extends Controller
             ->paginate(10);
 
         $categories = BookingCategory::where('parent_id', null)
-            ->with('subCategories')
+            ->with('booking_categories')
             ->get();
 
         return view('admin.booking.booking_filter', [
