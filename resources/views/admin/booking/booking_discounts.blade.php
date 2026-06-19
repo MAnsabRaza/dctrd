@@ -73,7 +73,6 @@
                                         <tr>
                                             <th>{{ trans('admin/main.title') }}</th>
                                             <th class="text-left">{{ trans('admin/main.booking') }}</th>
-                                            <th>{{ trans('admin/main.bundle') }}</th>
                                             <th>{{ trans('admin/main.percentage') }}</th>
                                             <th>{{ trans('admin/main.starts_at') }}</th>
                                             <th>{{ trans('admin/main.expires_at') }}</th>
@@ -88,7 +87,6 @@
                                                 <td class="text-left">
                                                     <span class="text-dark">{{ optional($discount->booking)->title ?? '-' }}</span>
                                                 </td>
-                                                <td>{{ optional($discount->bundle)->title ?? '-' }}</td>
                                                 <td>{{ $discount->amount ? $discount->amount . '%' : '-' }}</td>
                                                 <td class="font-12">{{ !empty($discount->starts_at) ? date('Y/m/d H:i:s', strtotime($discount->starts_at)) : '-' }}</td>
                                                 <td class="font-12">{{ !empty($discount->expires_at) ? date('Y/m/d H:i:s', strtotime($discount->expires_at)) : '-' }}</td>
@@ -118,7 +116,12 @@
                                                         </button>
                                                         <div class="dropdown-menu dropdown-menu-right">
                                                             @can('admin_booking_discounts_edit')
-                                                                <a href="#discount-form" onclick="editDiscount({{ $discount->id }})" class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
+                                                                {{-- Normal link to the controller's edit($id) route.
+                                                                     This causes a full page reload, but the controller already
+                                                                     fetches $editItem and the Blade above already auto-selects
+                                                                     the "form" tab and pre-fills every field via old()/$editItem.
+                                                                     No AJAX or extra JS is required for this to work correctly. --}}
+                                                                <a href="{{ getAdminPanelUrl('/booking/discounts/' . $discount->id . '/edit') }}" class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
                                                                     <i class="fa fa-edit text-gray-500 mr-2"></i>
                                                                     <span class="text-gray-500 font-14">{{ trans('admin/main.edit') }}</span>
                                                                 </a>
@@ -176,7 +179,7 @@
                                         @error('booking_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
 
-                                    <div class="form-group">
+                                    <!-- <div class="form-group">
                                         <label>{{ trans('admin/main.bundle') }}</label>
                                         <select name="bundle_id" class="form-control select2" data-placeholder="Select Bundle (optional)">
                                             <option></option>
@@ -184,7 +187,7 @@
                                                 <option value="{{ $bundle->id }}" {{ old('bundle_id', $editItem->bundle_id ?? '') == $bundle->id ? 'selected' : '' }}>{{ $bundle->title }}</option>
                                             @endforeach
                                         </select>
-                                    </div>
+                                    </div> -->
 
                                     <div class="form-group">
                                         <label>{{ trans('admin/main.discount_percentage') }}</label>
@@ -241,7 +244,7 @@
                                     <div class="mt-4">
                                         <button class="btn btn-primary">{{ trans('admin/main.submit') }}</button>
                                         @if(!empty($editItem))
-                                            <a href="#discount-list" onclick="switchTab(event, 'list')" class="btn btn-secondary ml-2">{{ trans('admin/main.cancel') }}</a>
+                                            <a href="{{ getAdminPanelUrl('/booking/discounts') }}" class="btn btn-secondary ml-2">{{ trans('admin/main.cancel') }}</a>
                                         @endif
                                     </div>
                                 </form>
@@ -262,18 +265,28 @@
             $('.select2').select2({ width: '100%' });
         });
 
+        // Pure client-side tab switch — used only by "Add New",
+        // since both panes already exist in the DOM and no server data is needed.
+        function switchTab(event, tab) {
+            if (event) event.preventDefault();
+
+            document.querySelectorAll('#discountTabsContent .tab-pane').forEach(function (pane) {
+                pane.classList.remove('active');
+            });
+
+            document.getElementById(tab === 'list' ? 'discount-list' : 'discount-form').classList.add('active');
+        }
+
         function applyFilters() {
             const search = document.getElementById('searchInput').value;
             const fromDate = document.getElementById('fromDate').value;
             const toDate = document.getElementById('toDate').value;
-            
-            // Build query string
+
             let params = new URLSearchParams();
             if (search) params.append('search', search);
             if (fromDate) params.append('from_date', fromDate);
             if (toDate) params.append('to_date', toDate);
-            
-            // Redirect with filters
+
             window.location.href = '{{ getAdminPanelUrl('/booking/discounts') }}' + (params.toString() ? '?' + params.toString() : '');
         }
     </script>

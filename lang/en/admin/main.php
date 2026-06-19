@@ -226,6 +226,13 @@ return [
     'admin_booking_favorite' => 'Booking Favorites',
 'admin_booking_comment' => 'Booking Comments',
 
+//discount
+'booking_discounts'=>'Booking Discounts',
+'bundle'=>'Bundle',
+'starts_at'=>'Starts At',
+'expires_at'=>'Expiers At',
+'expired'=>'Expired',
+
     //Booking
     'booking' => 'Booking',
     
