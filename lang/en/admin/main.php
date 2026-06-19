@@ -226,7 +226,7 @@ return [
     'admin_booking_favorite' => 'Booking Favorites',
 'admin_booking_comment' => 'Booking Comments',
 'manage_all_items'=>'Manage All Items',
-'booking_filters'=>'booking_filters',
+'booking_filters'=>'Booking Filters',
 'options'=>'Options',
 
 //discount
