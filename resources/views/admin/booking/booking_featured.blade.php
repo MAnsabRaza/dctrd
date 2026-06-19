@@ -60,17 +60,9 @@
                                             <label class="input-label">{{ trans('public.category') }}</label>
                                             <select name="category_id" class="form-control">
                                                 <option value="">{{ trans('admin/main.all') }}</option>
-                                                @foreach($categories ?? [] as $category)
-                                                    @if(!empty($category->subCategories) && count($category->subCategories))
-                                                        <optgroup label="{{ $category->title }}">
-                                                            @foreach($category->subCategories as $subCategory)
-                                                                <option value="{{ $subCategory->id }}" {{ request()->get('category_id') == $subCategory->id ? 'selected' : '' }}>{{ $subCategory->title }}</option>
-                                                            @endforeach
-                                                        </optgroup>
-                                                    @else
-                                                        <option value="{{ $category->id }}" {{ request()->get('category_id') == $category->id ? 'selected' : '' }}>{{ $category->title }}</option>
-                                                    @endif
-                                                @endforeach
+                                                @foreach($bookings ?? [] as $id => $title)
+                                                            <option value="{{ $id }}" @if(old('booking_id', $editItem->booking_id ?? '') == $id) selected @endif>{{ $title }}</option>
+                                                        @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -93,16 +85,7 @@
                                 <a href="{{ getAdminPanelUrl('/booking/featured/create') }}" class="btn btn-primary">{{ trans('admin/main.add_new') }}</a>
                             @endcan
                         </div>
-                        <div class="card-header">
-                            <ul class="nav nav-tabs card-header-tabs" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link {{ $activeTab === 'list' ? 'active' : '' }}" href="{{ getAdminPanelUrl('/booking/featured') }}">{{ trans('admin/main.list') }}</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {{ $activeTab === 'new' ? 'active' : '' }}" href="{{ getAdminPanelUrl('/booking/featured/create') }}">{{ !empty($editItem) ? trans('admin/main.edit') : trans('admin/main.new') }}</a>
-                                </li>
-                            </ul>
-                        </div>
+                     
 
                         <div class="card-body">
                             <div class="tab-content">
