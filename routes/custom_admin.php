@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\Booking\BookingSpecificationValueController;
 use App\Http\Controllers\Admin\Booking\BookingVariantController;
 use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
 use App\Http\Controllers\Admin\Booking\BookingOrderController;
+use App\Http\Controllers\Admin\Booking\BookingFilterController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -221,6 +222,16 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/edit', [BookingModuleCrudController::class, 'edit']);
         Route::post('/{id}/update', [BookingModuleCrudController::class, 'update']);
         Route::get('/{id}/delete', [BookingModuleCrudController::class, 'delete']);
+    });
+
+    // Booking Filters (custom dedicated controller)
+    Route::group(['prefix' => 'filters'], function () {
+        Route::get('/', [BookingFilterController::class, 'index']);
+        Route::post('/store', [BookingFilterController::class, 'store']);
+        Route::get('/{id}/edit', [BookingFilterController::class, 'edit']);
+        Route::post('/{id}/update', [BookingFilterController::class, 'update']);
+        Route::get('/{id}/delete', [BookingFilterController::class, 'destroy']);
+        Route::get('/by-category/{id}', [BookingFilterController::class, 'getByCategoryId']);
     });
 
 });

@@ -9,12 +9,17 @@ class BookingFilter extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['category_id', 'title', 'type', 'options', 'is_required', 'status', 'order'];
+    protected $fillable = ['category_id', 'title', 'language', 'status', 'order'];
 
-    protected $casts = ['options' => 'array', 'is_required' => 'boolean', 'status' => 'boolean'];
+    protected $casts = ['status' => 'boolean'];
 
     public function category()
     {
         return $this->belongsTo(BookingCategory::class, 'category_id');
+    }
+
+    public function options()
+    {
+        return $this->hasMany(BookingFilterOption::class, 'filter_id');
     }
 }
