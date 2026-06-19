@@ -228,6 +228,9 @@ return [
 'manage_all_items'=>'Manage All Items',
 'booking_filters'=>'Booking Filters',
 'options'=>'Options',
+'booking_featured'=>'Booking Featured',
+'choose'=>'Choose',
+'home'=>'Home',
 
 //discount
 'booking_discounts'=>'Booking Discounts',

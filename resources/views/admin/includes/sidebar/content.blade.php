@@ -301,7 +301,7 @@
                     'coupons' => ['permission' => 'admin_booking_coupons', 'title' => 'Booking Coupons'],
                     'assets' => ['permission' => 'admin_booking_assets', 'title' => 'Booking Assets'],
                     'reports' => ['permission' => 'admin_booking_reports', 'title' => 'Booking Reports'],
-                    'featured' => ['permission' => 'admin_booking_featured', 'title' => 'Featured Bookings'],
+                    // 'featured' => ['permission' => 'admin_booking_featured', 'title' => 'Featured Bookings'],
                     'waitlists' => ['permission' => 'admin_booking_waitlists', 'title' => 'Booking Waitlists'],
                     'calendar-integrations' => ['permission' => 'admin_booking_calendar_integrations', 'title' => 'Calendar Integrations'],
                 ];
