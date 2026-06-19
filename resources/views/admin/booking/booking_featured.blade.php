@@ -19,8 +19,6 @@
             <div class="row">
                 <div class="col-12">
 
-                    {{-- Filter bar: only relevant to the List tab, so it is now wrapped
-                         and will NOT render at all while the "New"/"Edit" tab is active. --}}
                     @if($activeTab === 'list')
                         <section class="card mb-4">
                             <div class="card-body">
@@ -55,14 +53,15 @@
                                         </div>
                                     </div>
 
+                                    {{-- ✅ FIX: Category ki jagah Bookings ki list show ho --}}
                                     <div class="col-12 col-md-3">
                                         <div class="form-group">
-                                            <label class="input-label">{{ trans('public.category') }}</label>
+                                            <label class="input-label">{{ trans('admin/main.booking') }}</label>
                                             <select name="category_id" class="form-control">
                                                 <option value="">{{ trans('admin/main.all') }}</option>
                                                 @foreach($bookings ?? [] as $id => $title)
-                                                            <option value="{{ $id }}" @if(old('booking_id', $editItem->booking_id ?? '') == $id) selected @endif>{{ $title }}</option>
-                                                        @endforeach
+                                                    <option value="{{ $id }}" {{ request()->get('category_id') == $id ? 'selected' : '' }}>{{ $title }}</option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -85,7 +84,6 @@
                                 <a href="{{ getAdminPanelUrl('/booking/featured/create') }}" class="btn btn-primary">{{ trans('admin/main.add_new') }}</a>
                             @endcan
                         </div>
-                     
 
                         <div class="card-body">
                             <div class="tab-content">

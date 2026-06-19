@@ -232,6 +232,8 @@ return [
 'choose'=>'Choose',
 'home'=>'Home',
 'home_categories'=>'Home Categories',
+'edit_booking_featured'=>'Edit Booking Featured',
+'new_booking_featured'=>'New Booking Featured',
 
 //discount
 'booking_discounts'=>'Booking Discounts',

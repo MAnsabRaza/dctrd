@@ -48,12 +48,13 @@ class BookingFeaturedController extends Controller
         $items = $query->orderBy('id', 'desc')->paginate(10);
         $items->appends($request->query());
 
-        $categories = BookingCategory::whereNull('parent_id')->get();
+        // ✅ FIX: Filter mein bookings ki list pass karo (id => title)
+        $bookings = Booking::orderBy('title')->pluck('title', 'id');
 
         return view('admin.booking.booking_featured', [
             'pageTitle' => trans('admin/main.booking_featured'),
-            'items' => $items,
-            'categories' => $categories,
+            'items'     => $items,
+            'bookings'  => $bookings,
         ]);
     }
 
@@ -62,14 +63,12 @@ class BookingFeaturedController extends Controller
         $this->authorize('admin_booking_featured_create');
 
         $bookings = Booking::orderBy('id', 'desc')->pluck('title', 'id');
-        $categories = BookingCategory::whereNull('parent_id')->get();
-        $items = BookingFeatured::with(['booking', 'user'])->orderBy('id', 'desc')->paginate(10);
+        $items    = BookingFeatured::with(['booking', 'user'])->orderBy('id', 'desc')->paginate(10);
 
         return view('admin.booking.booking_featured', [
             'pageTitle' => trans('admin/main.new_booking_featured'),
-            'bookings' => $bookings,
-            'categories' => $categories,
-            'items' => $items,
+            'bookings'  => $bookings,
+            'items'     => $items,
             'activeTab' => 'new',
         ]);
     }
@@ -80,34 +79,34 @@ class BookingFeaturedController extends Controller
 
         $this->validate($request, [
             'booking_id' => 'required|exists:bookings,id',
-            'title' => 'required|string|max:255',
-            'page' => 'required|string',
+            'title'      => 'required|string|max:255',
+            'page'       => 'required|string',
         ]);
 
-        $data = $request->only(['language', 'booking_id', 'page', 'title', 'description', 'status']);
+        $data            = $request->only(['language', 'booking_id', 'page', 'title', 'description', 'status']);
         $data['user_id'] = auth()->id();
-        $data['status'] = !empty($data['status']);
+        $data['status']  = !empty($data['status']);
 
         BookingFeatured::create($data);
 
-        return back()->with('success', trans('admin/main.created_successfully'));
+        // ✅ FIX: Save hone ke baad list par redirect
+        return redirect(getAdminPanelUrl() . '/booking/featured')
+            ->with('success', trans('admin/main.created_successfully'));
     }
 
     public function edit($id)
     {
         $this->authorize('admin_booking_featured_edit');
 
-        $item = BookingFeatured::findOrFail($id);
+        $item     = BookingFeatured::findOrFail($id);
         $bookings = Booking::orderBy('id', 'desc')->pluck('title', 'id');
-        $categories = BookingCategory::whereNull('parent_id')->get();
-        $items = BookingFeatured::with(['booking', 'user'])->orderBy('id', 'desc')->paginate(10);
+        $items    = BookingFeatured::with(['booking', 'user'])->orderBy('id', 'desc')->paginate(10);
 
         return view('admin.booking.booking_featured', [
             'pageTitle' => trans('admin/main.edit_booking_featured'),
-            'editItem' => $item,
-            'bookings' => $bookings,
-            'categories' => $categories,
-            'items' => $items,
+            'editItem'  => $item,
+            'bookings'  => $bookings,
+            'items'     => $items,
             'activeTab' => 'new',
         ]);
     }
@@ -118,19 +117,21 @@ class BookingFeaturedController extends Controller
 
         $this->validate($request, [
             'booking_id' => 'required|exists:bookings,id',
-            'title' => 'required|string|max:255',
-            'page' => 'required|string',
+            'title'      => 'required|string|max:255',
+            'page'       => 'required|string',
         ]);
 
         $item = BookingFeatured::findOrFail($id);
 
-        $data = $request->only(['language', 'booking_id', 'page', 'title', 'description', 'status']);
+        $data            = $request->only(['language', 'booking_id', 'page', 'title', 'description', 'status']);
         $data['user_id'] = auth()->id();
-        $data['status'] = !empty($data['status']);
+        $data['status']  = !empty($data['status']);
 
         $item->update($data);
 
-        return redirect(getAdminPanelUrl().'/booking/featured')->with('success', trans('admin/main.updated_successfully'));
+        // ✅ Already theek tha - list par redirect
+        return redirect(getAdminPanelUrl() . '/booking/featured')
+            ->with('success', trans('admin/main.updated_successfully'));
     }
 
     public function destroy($id)
