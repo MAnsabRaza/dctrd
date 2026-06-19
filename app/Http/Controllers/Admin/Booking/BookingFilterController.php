@@ -18,9 +18,7 @@ class BookingFilterController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(10);
 
-        $categories = BookingCategory::where('parent_id', null)
-            ->with('booking_categories')
-            ->get();
+        $categories = BookingCategory::where('parent_id', null)->get();
 
         return view('admin.booking.booking_filter', [
             'pageTitle' => trans('admin/main.booking_filters'),
