@@ -16,12 +16,14 @@ class BookingCategoryController extends Controller
         removeContentLocale();
 
         $bookingCategories = BookingCategory::withCount('bookings')->orderBy('order')->get();
-        $allCategories     = BookingCategory::orderBy('order')->get();
+        $parentCategories  = BookingCategory::roots()->get();
+        $nextOrder         = (BookingCategory::max('order') ?? 0) + 1;
 
         $data = [
             'pageTitle'         => trans('admin/main.booking_categories'),
             'bookingCategories' => $bookingCategories,
-            'allCategories'     => $allCategories,
+            'parentCategories'  => $parentCategories,
+            'nextOrder'         => $nextOrder,
         ];
 
         return view('admin.booking.categories', $data);
@@ -42,6 +44,7 @@ class BookingCategoryController extends Controller
         ]);
 
         $data = $request->all();
+        $nextOrder = (BookingCategory::max('order') ?? 0) + 1;
 
         BookingCategory::create([
             'parent_id'   => $data['parent_id'] ?? null,
@@ -51,7 +54,7 @@ class BookingCategoryController extends Controller
             'slug'        => !empty($data['slug']) ? Str::slug($data['slug']) : Str::slug($data['title']),
             'description' => $data['description'] ?? null,
             'icon'        => $data['icon'] ?? null,
-            'order'       => $data['order'] ?? 0,
+            'order'       => !empty($data['order']) ? $data['order'] : $nextOrder,
             'status'      => isset($data['status']) && $data['status'] === 'on',
         ]);
 
@@ -65,12 +68,14 @@ class BookingCategoryController extends Controller
 
         $editCategory = BookingCategory::findOrFail($id);
         $bookingCategories = BookingCategory::withCount('bookings')->orderBy('order')->get();
-        $allCategories     = BookingCategory::orderBy('order')->get();
+        $parentCategories  = BookingCategory::roots()->get();
+        $nextOrder         = (BookingCategory::max('order') ?? 0) + 1;
 
         $data = [
             'pageTitle'         => trans('admin/main.booking_categories'),
             'bookingCategories' => $bookingCategories,
-            'allCategories'     => $allCategories,
+            'parentCategories'  => $parentCategories,
+            'nextOrder'         => $nextOrder,
             'editCategory'      => $editCategory,
         ];
 
@@ -103,7 +108,7 @@ class BookingCategoryController extends Controller
             'slug'        => !empty($data['slug']) ? Str::slug($data['slug']) : Str::slug($data['title']),
             'description' => $data['description'] ?? null,
             'icon'        => $data['icon'] ?? null,
-            'order'       => $data['order'] ?? 0,
+            'order'       => !empty($data['order']) ? $data['order'] : $category->order,
             'status'      => isset($data['status']) && $data['status'] === 'on',
         ]);
 

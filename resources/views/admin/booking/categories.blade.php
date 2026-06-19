@@ -150,17 +150,6 @@
                                                     </div>
 
                                                     <div class="form-group">
-                                                        <label>{{ trans('admin/main.url') }}</label>
-                                                        <input type="text" name="slug"
-                                                               class="form-control @error('slug') is-invalid @enderror"
-                                                               value="{{ !empty($editCategory) ? $editCategory->slug : old('slug') }}"/>
-                                                        <div class="text-gray-500 text-small mt-1">{{ trans('update.category_url_hint') }}</div>
-                                                        @error('slug')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
-                                                        @enderror
-                                                    </div>
-
-                                                    <div class="form-group">
                                                         <label>{{ trans('admin/main.description') }}</label>
                                                         <textarea name="description" rows="4"
                                                                   class="form-control @error('description') is-invalid @enderror"
@@ -192,7 +181,8 @@
                                                         <label>{{ trans('admin/main.order') }}</label>
                                                         <input type="number" name="order" min="0"
                                                                class="form-control @error('order') is-invalid @enderror"
-                                                               value="{{ !empty($editCategory) ? $editCategory->order : old('order', 0) }}"/>
+                                                               value="{{ !empty($editCategory) ? $editCategory->order : old('order', $nextOrder ?? 0) }}"/>
+                                                        <div class="text-gray-500 text-small mt-1">Auto-generated as {{ $nextOrder ?? 0 }} if left empty</div>
                                                         @error('order')
                                                             <div class="invalid-feedback">{{ $message }}</div>
                                                         @enderror
@@ -202,7 +192,7 @@
                                                         <label class="input-label">{{ trans('admin/main.parent_category') }}</label>
                                                         <select name="parent_id" class="form-control">
                                                             <option value="">{{ trans('admin/main.no_parent') }}</option>
-                                                            @foreach($allCategories as $cat)
+                                                            @foreach($parentCategories ?? [] as $cat)
                                                                 @if(empty($editCategory) || $editCategory->id !== $cat->id)
                                                                     <option value="{{ $cat->id }}"
                                                                         {{ (!empty($editCategory) && $editCategory->parent_id == $cat->id) ? 'selected' : '' }}>
