@@ -110,21 +110,21 @@
             @can('admin_store_top_categories')
                 <li class="{{ (request()->is(getAdminPanelUrl('/store/top-categories', false))) ? 'active' : '' }}">
                     <a class="nav-link"
-                        href="{{ getAdminPanelUrl("/store/top-categories") }}">{{ trans('update.top_categories') }}</a>
+                        href="{{ getAdminPanelUrl() }}/store/top-categories">{{ trans('update.top_categories') }}</a>
                 </li>
             @endcan
 
             @can('admin_store_featured_products')
                 <li class="{{ (request()->is(getAdminPanelUrl('/store/featured-products', false))) ? 'active' : '' }}">
                     <a class="nav-link"
-                        href="{{ getAdminPanelUrl("/store/featured-products") }}">{{ trans('update.featured_products') }}</a>
+                        href="{{ getAdminPanelUrl() }}/store/featured-products">{{ trans('update.featured_products') }}</a>
                 </li>
             @endcan
 
             @can('admin_store_featured_categories')
                 <li class="{{ (request()->is(getAdminPanelUrl('/store/featured-categories', false))) ? 'active' : '' }}">
                     <a class="nav-link"
-                        href="{{ getAdminPanelUrl("/store/featured-categories") }}">{{ trans('update.featured_categories') }}</a>
+                        href="{{ getAdminPanelUrl() }}/store/featured-categories">{{ trans('update.featured_categories') }}</a>
                 </li>
             @endcan
 
@@ -594,7 +594,7 @@
 
 @can('admin_content_delete_requests_lists')
     <li class="nav-item {{ (request()->is(getAdminPanelUrl('/content-delete-requests*', false))) ? 'active' : '' }}">
-        <a href="{{ getAdminPanelUrl("/content-delete-requests") }}" class="nav-link">
+        <a href="{{ getAdminPanelUrl() }}/content-delete-requests" class="nav-link">
             <x-iconsax-bul-video-remove class="icons" width="24px" height="24px" />
             <span>{{ trans('update.content_delete_requests') }}</span>
         </a>

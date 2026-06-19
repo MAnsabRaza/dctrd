@@ -234,6 +234,8 @@ return [
 'home_categories'=>'Home Categories',
 'edit_booking_featured'=>'Edit Booking Featured',
 'new_booking_featured'=>'New Booking Featured',
+'booking_top_categories'=>'Top Category',
+'booking_feature_categories'=>'Feature Category',
 
 //discount
 'booking_discounts'=>'Booking Discounts',
