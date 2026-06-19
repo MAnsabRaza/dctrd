@@ -86,7 +86,7 @@
                             <div class="tab-pane fade {{ (isset($activeTab) and $activeTab == 'new') ? 'show active' : '' }}" 
                                  id="new" role="tabpanel" aria-labelledby="new-tab">
                                 <form method="post" 
-                                      action="@if(isset($item)){{ getAdminPanelUrl() }}/booking/top-categories/{{ $item->id }}@else{{ getAdminPanelUrl() }}/booking/top-categories@endif"
+                                      action="{{ isset($item) ? getAdminPanelUrl().'/booking/top-categories/'.$item->id : getAdminPanelUrl().'/booking/top-categories' }}"
                                       enctype="multipart/form-data">
                                     @csrf
                                     @if(isset($item))
