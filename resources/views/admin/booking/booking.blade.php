@@ -643,6 +643,7 @@
             function togglePanel(switchSelector, panelSelector) {
                 var isChecked = $(switchSelector).is(':checked');
                 $(panelSelector).toggleClass('is-visible', isChecked);
+                $(panelSelector).css('display', isChecked ? '' : 'none');
             }
 
             togglePanel('#newBookingLocationSwitch', '#newBookingLocationPanel');
@@ -671,7 +672,10 @@
 
         // ─── Location fields toggle ──────────────────────────────────────
         function toggleLocation(show) {
-            document.getElementById('locationFields').style.display = show ? '' : 'none';
+            var panel = document.getElementById('newBookingLocationPanel') || document.getElementById('locationFields');
+            if (panel) {
+                panel.style.display = show ? '' : 'none';
+            }
         }
     </script>
 @endpush
