@@ -5,7 +5,7 @@
 @endpush
 
 @section('content')
-@php $activeTab = !empty($editItem) ? 'new' : 'list'; @endphp
+@php $activeTab = $activeTab ?? ((!empty($editItem) || old('title') || old('booking_id') || old('page')) ? 'new' : 'list'); @endphp
     <section class="section">
         <div class="section-header">
             <h1>{{ $pageTitle ?? trans('admin/main.booking_featured') }}</h1>
@@ -14,7 +14,76 @@
         <div class="section-body">
             <div class="row">
                 <div class="col-12">
+                    <section class="card mb-4">
+                        <div class="card-body">
+                            <form action="{{ getAdminPanelUrl('/booking/featured') }}" method="get" class="row align-items-end">
+                                <div class="col-12 col-md-3">
+                                    <div class="form-group">
+                                        <label class="input-label">{{ trans('admin/main.page') }}</label>
+                                        <select name="page" class="form-control">
+                                            <option value="">{{ trans('admin/main.select_page') }}</option>
+                                            <option value="home" {{ request()->get('page') == 'home' ? 'selected' : '' }}>{{ trans('admin/main.home') }}</option>
+                                            <option value="home_categories" {{ request()->get('page') == 'home_categories' ? 'selected' : '' }}>{{ trans('admin/main.home_categories') }}</option>
+                                            <option value="categories" {{ request()->get('page') == 'categories' ? 'selected' : '' }}>{{ trans('admin/main.categories') }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-2">
+                                    <div class="form-group">
+                                        <label class="input-label">{{ trans('admin/main.status') }}</label>
+                                        <select name="status" class="form-control">
+                                            <option value="">{{ trans('admin/main.status') }}</option>
+                                            <option value="active" {{ request()->get('status') == 'active' ? 'selected' : '' }}>{{ trans('admin/main.active') }}</option>
+                                            <option value="inactive" {{ request()->get('status') == 'inactive' ? 'selected' : '' }}>{{ trans('admin/main.inactive') }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-3">
+                                    <div class="form-group">
+                                        <label class="input-label">{{ trans('admin/main.booking_title') }}</label>
+                                        <input type="text" name="booking_title" value="{{ request()->get('booking_title') }}" class="form-control" placeholder="{{ trans('admin/main.search') }}" />
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-3">
+                                    <div class="form-group">
+                                        <label class="input-label">{{ trans('public.category') }}</label>
+                                        <select name="category_id" class="form-control">
+                                            <option value="">{{ trans('admin/main.all') }}</option>
+                                            @foreach($categories ?? [] as $category)
+                                                @if(!empty($category->subCategories) && count($category->subCategories))
+                                                    <optgroup label="{{ $category->title }}">
+                                                        @foreach($category->subCategories as $subCategory)
+                                                            <option value="{{ $subCategory->id }}" {{ request()->get('category_id') == $subCategory->id ? 'selected' : '' }}>{{ $subCategory->title }}</option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @else
+                                                    <option value="{{ $category->id }}" {{ request()->get('category_id') == $category->id ? 'selected' : '' }}>{{ $category->title }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-1">
+                                    <button type="submit" class="btn btn-primary btn-block">{{ trans('admin/main.show_results') }}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+
                     <div class="card">
+                        <div class="card-header justify-content-between">
+                            <div>
+                                <h5 class="font-14 mb-0">{{ $pageTitle ?? trans('admin/main.booking_featured') }}</h5>
+                                <p class="font-12 mt-2 mb-0 text-gray-500">{{ trans('update.manage_all_items_in_a_single_place') }}</p>
+                            </div>
+                            @can('admin_booking_featured_create')
+                                <a href="{{ getAdminPanelUrl('/booking/featured/create') }}" class="btn btn-primary">{{ trans('admin/main.add_new') }}</a>
+                            @endcan
+                        </div>
                         <div class="card-header">
                             <ul class="nav nav-tabs card-header-tabs" role="tablist">
                                 <li class="nav-item">

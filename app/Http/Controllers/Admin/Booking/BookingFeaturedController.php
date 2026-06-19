@@ -4,22 +4,56 @@ namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\BookingCategory;
 use App\Models\BookingFeatured;
 use Illuminate\Http\Request;
 
 class BookingFeaturedController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('admin_booking_featured');
 
-        $items = BookingFeatured::with(['booking', 'user'])
-            ->orderBy('id', 'desc')
-            ->paginate(10);
+        $query = BookingFeatured::with(['booking', 'user']);
+
+        if ($request->filled('page')) {
+            $query->where('page', $request->get('page'));
+        }
+
+        if ($request->filled('status')) {
+            if ($request->get('status') === 'active') {
+                $query->where('status', true);
+            } elseif ($request->get('status') === 'inactive') {
+                $query->where('status', false);
+            }
+        }
+
+        if ($request->filled('booking_title')) {
+            $search = $request->get('booking_title');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhereHas('booking', function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('category_id')) {
+            $categoryId = $request->get('category_id');
+            $query->whereHas('booking', function ($q) use ($categoryId) {
+                $q->where('category_id', $categoryId);
+            });
+        }
+
+        $items = $query->orderBy('id', 'desc')->paginate(10);
+        $items->appends($request->query());
+
+        $categories = BookingCategory::whereNull('parent_id')->get();
 
         return view('admin.booking.booking_featured', [
             'pageTitle' => trans('admin/main.booking_featured'),
             'items' => $items,
+            'categories' => $categories,
         ]);
     }
 
@@ -28,10 +62,15 @@ class BookingFeaturedController extends Controller
         $this->authorize('admin_booking_featured_create');
 
         $bookings = Booking::orderBy('id', 'desc')->pluck('title', 'id');
+        $categories = BookingCategory::whereNull('parent_id')->get();
+        $items = BookingFeatured::with(['booking', 'user'])->orderBy('id', 'desc')->paginate(10);
 
         return view('admin.booking.booking_featured', [
             'pageTitle' => trans('admin/main.new_booking_featured'),
             'bookings' => $bookings,
+            'categories' => $categories,
+            'items' => $items,
+            'activeTab' => 'new',
         ]);
     }
 
@@ -60,11 +99,16 @@ class BookingFeaturedController extends Controller
 
         $item = BookingFeatured::findOrFail($id);
         $bookings = Booking::orderBy('id', 'desc')->pluck('title', 'id');
+        $categories = BookingCategory::whereNull('parent_id')->get();
+        $items = BookingFeatured::with(['booking', 'user'])->orderBy('id', 'desc')->paginate(10);
 
         return view('admin.booking.booking_featured', [
             'pageTitle' => trans('admin/main.edit_booking_featured'),
             'editItem' => $item,
             'bookings' => $bookings,
+            'categories' => $categories,
+            'items' => $items,
+            'activeTab' => 'new',
         ]);
     }
 
