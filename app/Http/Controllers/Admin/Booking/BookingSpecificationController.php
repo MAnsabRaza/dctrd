@@ -44,6 +44,7 @@ class BookingSpecificationController extends Controller
         $validated = $request->validate([
             'title'        => 'required|string|max:255',
             'type'         => 'required|in:textbox,multi_value',
+            'icon'         => 'nullable|string|max:500',
             'values'       => 'nullable|array',
             'values.*'     => 'nullable|string|max:255',
             'category_ids' => 'nullable|array',
@@ -111,6 +112,7 @@ class BookingSpecificationController extends Controller
         $validated = $request->validate([
             'title'          => 'required|string|max:255',
             'type'           => 'required|in:textbox,multi_value',
+            'icon'           => 'nullable|string|max:500',
             'values'         => 'nullable|array',
             'values.*'       => 'nullable|string|max:255',
             'category_ids'   => 'nullable|array',

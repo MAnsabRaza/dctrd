@@ -14,6 +14,7 @@ class BookingSpecification extends Model
     protected $fillable = [
         'title',
         'type',
+        'icon',
         'status',
         'sort_order',
     ];
