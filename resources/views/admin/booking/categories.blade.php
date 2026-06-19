@@ -63,8 +63,8 @@
                                                         <tr>
                                                             <th class="text-left" style="width: 50px;">{{ trans('admin/main.icon') }}</th>
                                                             <th class="text-left">{{ trans('admin/main.title') }}</th>
-                                                            @foreach($childTitles ?? [] as $childTitle)
-                                                                <th class="text-center">{{ $childTitle->title }}</th>
+                                                            @foreach($bookingTypes ?? [] as $type)
+                                                                <th class="text-center">{{ $type }}</th>
                                                             @endforeach
                                                             <th class="text-center">{{ trans('admin/main.action') }}</th>
                                                         </tr>
@@ -80,14 +80,9 @@
                                                                     @endif
                                                                 </td>
                                                                 <td class="text-left font-weight-500">{{ $parent->title }}</td>
-                                                                @foreach($childTitles ?? [] as $childTitle)
+                                                                @foreach($bookingTypes ?? [] as $type)
                                                                     <td class="text-center">
-                                                                        @php
-                                                                            // Find child category under this parent with matching title
-                                                                            $childCategory = $parent->children->firstWhere('title', $childTitle->title);
-                                                                            $bookingCount = $childCategory ? ($childCategory->bookings_count ?? 0) : 0;
-                                                                        @endphp
-                                                                        {{ $bookingCount }}
+                                                                        {{ $parent->getSelfAndChildBookingsCount($type) }}
                                                                     </td>
                                                                 @endforeach
                                                                 <td class="text-center" width="80px">

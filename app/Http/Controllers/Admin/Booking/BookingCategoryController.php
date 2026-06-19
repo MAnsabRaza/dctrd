@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\BookingCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -15,28 +16,24 @@ class BookingCategoryController extends Controller
 
         removeContentLocale();
 
-        // Get parent categories with their children (including booking counts)
-        $parentCategories = BookingCategory::whereNull('parent_id')
+        $bookingCategories = BookingCategory::whereNull('parent_id')
+            ->with('children')
             ->orderBy('order')
-            ->with(['children' => function($query) {
-                $query->withCount('bookings')->orderBy('title');
-            }])
             ->get();
 
-        // Get all unique child category titles
-        $childTitles = BookingCategory::whereNotNull('parent_id')
-            ->select('title')
+        $bookingTypes = Booking::select('booking_type')
             ->distinct()
-            ->orderBy('title')
-            ->get();
+            ->orderBy('booking_type')
+            ->pluck('booking_type')
+            ->toArray();
 
         $nextOrder = (BookingCategory::max('order') ?? 0) + 1;
 
         $data = [
             'pageTitle'         => trans('admin/main.booking_categories'),
-            'bookingCategories' => $parentCategories,
-            'parentCategories'  => $parentCategories,
-            'childTitles'       => $childTitles,
+            'bookingCategories' => $bookingCategories,
+            'parentCategories'  => $bookingCategories,
+            'bookingTypes'      => $bookingTypes,
             'nextOrder'         => $nextOrder,
         ];
 
@@ -81,7 +78,15 @@ class BookingCategoryController extends Controller
         $this->authorize('admin_booking_categories_edit');
 
         $editCategory = BookingCategory::findOrFail($id);
-        $bookingCategories = BookingCategory::withCount('bookings')->orderBy('order')->get();
+        $bookingCategories = BookingCategory::whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
+        $bookingTypes = Booking::select('booking_type')
+            ->distinct()
+            ->orderBy('booking_type')
+            ->pluck('booking_type')
+            ->toArray();
         $parentCategories  = BookingCategory::roots()->get();
         $nextOrder         = (BookingCategory::max('order') ?? 0) + 1;
 
@@ -89,6 +94,7 @@ class BookingCategoryController extends Controller
             'pageTitle'         => trans('admin/main.booking_categories'),
             'bookingCategories' => $bookingCategories,
             'parentCategories'  => $parentCategories,
+            'bookingTypes'      => $bookingTypes,
             'nextOrder'         => $nextOrder,
             'editCategory'      => $editCategory,
         ];

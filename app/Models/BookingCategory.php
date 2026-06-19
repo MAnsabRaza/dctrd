@@ -38,7 +38,21 @@ class BookingCategory extends Model
     {
         return $this->hasMany(Booking::class, 'category_id');
     }
-     public function scopeRoots($query)
+
+    public function getSelfAndChildBookingsCount($bookingType = null)
+    {
+        $ids = array_merge([$this->id], $this->children->pluck('id')->toArray());
+
+        $query = Booking::whereIn('category_id', $ids);
+
+        if (!empty($bookingType)) {
+            $query->where('booking_type', $bookingType);
+        }
+
+        return $query->count();
+    }
+
+    public function scopeRoots($query)
     {
         return $query->whereNull('parent_id')->orderBy('order');
     }
