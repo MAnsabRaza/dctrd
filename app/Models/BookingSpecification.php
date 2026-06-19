@@ -14,13 +14,11 @@ class BookingSpecification extends Model
     protected $fillable = [
         'title',
         'type',
-        'values',
         'status',
         'sort_order',
     ];
 
     protected $casts = [
-        'values'     => 'array',
         'status'     => 'boolean',
         'sort_order' => 'integer',
     ];

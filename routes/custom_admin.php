@@ -12,7 +12,6 @@ use App\Http\Controllers\Admin\BookingCategorySettingsController;
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
 use App\Http\Controllers\Admin\Booking\BookingBundleController;
 use App\Http\Controllers\Admin\Booking\BookingCategoryController;
-use App\Http\Controllers\Admin\Booking\BookingCategorySpecificationController;
 use App\Http\Controllers\Admin\Booking\BookingCommentController;
 use App\Http\Controllers\Admin\Booking\BookingController;
 use App\Http\Controllers\Admin\Booking\BookingFavoriteController;
@@ -26,7 +25,6 @@ use App\Http\Controllers\Admin\Booking\BookingResourceController;
 use App\Http\Controllers\Admin\Booking\BookingReviewController;
 use App\Http\Controllers\Admin\Booking\BookingSeasonController;
 use App\Http\Controllers\Admin\Booking\BookingSpecificationController;
-use App\Http\Controllers\Admin\Booking\BookingSpecificationValueController;
 use App\Http\Controllers\Admin\Booking\BookingVariantController;
 use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
 use App\Http\Controllers\Admin\Booking\BookingOrderController;
@@ -145,20 +143,7 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/delete', [BookingSpecificationController::class, 'delete']);
     });
 
-    Route::group(['prefix' => 'specificationValue'], function () {
-        Route::get('/', [BookingSpecificationValueController::class, 'index']);
-        Route::post('/store', [BookingSpecificationValueController::class, 'store']);
-        Route::get('/{id}/edit', [BookingSpecificationValueController::class, 'edit']);
-        Route::post('/{id}/update', [BookingSpecificationValueController::class, 'update']);
-        Route::get('/{id}/delete', [BookingSpecificationValueController::class, 'delete']);
-    });
-    Route::group(['prefix' => 'categorySpecification'], function () {
-        Route::get('/', [BookingCategorySpecificationController::class, 'index']);
-        Route::post('/store', [BookingCategorySpecificationController::class, 'store']);
-        Route::get('/{id}/edit', [BookingCategorySpecificationController::class, 'edit']);
-        Route::post('/{id}/update', [BookingCategorySpecificationController::class, 'update']);
-        Route::get('/{id}/delete', [BookingCategorySpecificationController::class, 'delete']);
-    });
+    // specificationValue and categorySpecification routes consolidated into specification group
 
     Route::group(['prefix' => 'bundle'], function () {
         Route::get('/', [BookingBundleController::class, 'index']);

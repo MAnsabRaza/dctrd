@@ -76,9 +76,9 @@
                                                                 <span class="badge badge-info">{{ ucfirst(str_replace('_', ' ', $spec->type)) }}</span>
                                                             </td>
                                                             <td class="text-center">
-                                                                @if($spec->type === 'multi_value' && !empty($spec->values))
-                                                                    @foreach($spec->values as $val)
-                                                                        <span class="badge badge-secondary mr-1">{{ $val }}</span>
+                                                                @if($spec->type === 'multi_value' && $spec->bookingValues->count())
+                                                                    @foreach($spec->bookingValues as $bv)
+                                                                        <span class="badge badge-secondary mr-1">{{ $bv->value }}</span>
                                                                     @endforeach
                                                                 @else
                                                                     <span class="text-muted">—</span>
@@ -180,9 +180,15 @@
                                                     </label>
                                                     <div id="values-wrapper">
                                                         @php
-                                                            $existingValues = !empty($editSpecification)
-                                                                ? ($editSpecification->values ?? [''])
-                                                                : (old('values') ?? ['']);
+                                                            $existingValues = [];
+                                                            if (!empty($editSpecification)) {
+                                                                $existingValues = $editSpecification->bookingValues->pluck('value')->toArray();
+                                                            } else {
+                                                                $existingValues = old('values') ?? [''];
+                                                            }
+                                                            if (empty($existingValues)) {
+                                                                $existingValues = [''];
+                                                            }
                                                         @endphp
                                                         @foreach($existingValues as $i => $val)
                                                             <div class="input-group mb-2 value-row">
@@ -213,18 +219,33 @@
                                                         $selectedCats = !empty($editSpecification)
                                                             ? $editSpecification->categories->pluck('id')->toArray()
                                                             : (old('category_ids') ?? []);
+                                                        $parents = $categories->filter(fn($c) => empty($c->parent_id) || $c->parent_id == 0);
                                                     @endphp
-                                                    <select name="category_ids[]" class="form-control @error('category_ids') is-invalid @enderror"
-                                                            multiple style="height: 120px;">
-                                                        @foreach($categories as $cat)
-                                                            <option value="{{ $cat->id }}"
-                                                                {{ in_array($cat->id, $selectedCats) ? 'selected' : '' }}>
-                                                                {{ $cat->title }}
-                                                            </option>
+
+                                                    <div class="mb-2">
+                                                        @foreach($parents as $parent)
+                                                            <div class="mt-2">
+                                                                <strong class="d-block">{{ $parent->title }}</strong>
+                                                                @php $children = $categories->where('parent_id', $parent->id); @endphp
+                                                                <div class="pl-3">
+                                                                    @if($children->count())
+                                                                        @foreach($children as $child)
+                                                                            <div class="custom-control custom-checkbox d-inline-block mr-3">
+                                                                                <input type="checkbox" name="category_ids[]" value="{{ $child->id }}" id="cat_{{ $child->id }}" class="custom-control-input" {{ in_array($child->id, $selectedCats) ? 'checked' : '' }}>
+                                                                                <label class="custom-control-label" for="cat_{{ $child->id }}">{{ $child->title }}</label>
+                                                                            </div>
+                                                                        @endforeach
+                                                                    @else
+                                                                        <div class="custom-control custom-checkbox d-inline-block mr-3">
+                                                                            <input type="checkbox" name="category_ids[]" value="{{ $parent->id }}" id="cat_{{ $parent->id }}" class="custom-control-input" {{ in_array($parent->id, $selectedCats) ? 'checked' : '' }}>
+                                                                            <label class="custom-control-label" for="cat_{{ $parent->id }}">{{ $parent->title }}</label>
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
                                                         @endforeach
-                                                    </select>
-                                                    <small class="text-muted">Ctrl/Cmd + Click for multiple selection</small>
-                                                    @error('category_ids')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                    </div>
+                                                    @error('category_ids')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                                                 </div>
 
                                                 {{-- Sort Order --}}

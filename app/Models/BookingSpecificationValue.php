@@ -12,20 +12,13 @@ class BookingSpecificationValue extends Model
     protected $table = 'booking_specification_values';
 
     protected $fillable = [
-        'booking_id',
         'specification_id',
         'value',
     ];
 
     protected $casts = [
-        'booking_id'       => 'integer',
         'specification_id' => 'integer',
     ];
-
-    public function booking()
-    {
-        return $this->belongsTo(Booking::class, 'booking_id');
-    }
 
     public function specification()
     {
