@@ -315,6 +315,22 @@
                 </li>
             @endcan
 
+            @can('admin_booking_top_categories')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/top-categories*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/top-categories">
+                        {{ trans('admin/main.booking_top_categories') ?? 'Booking Top Categories' }}
+                    </a>
+                </li>
+            @endcan
+
+            @can('admin_booking_feature_categories')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/feature-categories*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/feature-categories">
+                        {{ trans('admin/main.booking_feature_categories') ?? 'Booking Feature Categories' }}
+                    </a>
+                </li>
+            @endcan
+
             @foreach($bookingModuleSidebarItems as $moduleKey => $moduleItem)
                 @can($moduleItem['permission'])
                     <li class="{{ request()->is(getAdminPanelUrl('/booking/modules/' . $moduleKey . '*', false)) ? 'active' : '' }}">
