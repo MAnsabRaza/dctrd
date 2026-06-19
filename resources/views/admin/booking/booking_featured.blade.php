@@ -74,7 +74,7 @@
                         </section>
                     @endif
 
-                    <div class="card">
+                    <div class="card mt-3">
                         <div class="card-header justify-content-between">
                             <div>
                                 <h5 class="font-14 mb-0">{{ $pageTitle ?? trans('admin/main.booking_featured') }}</h5>
@@ -112,14 +112,33 @@
                                                                 {{ $item->status ? trans('admin/main.active') : trans('admin/main.inactive') }}
                                                             </span>
                                                         </td>
-                                                        <td>
+                                                         <td width="80px">
+                                                    <div class="btn-group dropdown table-actions position-relative">
+                                                        <button type="button" class="btn-transparent dropdown-toggle" data-toggle="dropdown">
+                                                            <i class="fa fa-ellipsis-v text-gray-500"></i>
+                                                        </button>
+                                                        <div class="dropdown-menu dropdown-menu-right">
                                                             @can('admin_booking_featured_edit')
-                                                                <a href="{{ getAdminPanelUrl('/booking/featured/'.$item->id.'/edit') }}" class="btn btn-sm btn-primary">{{ trans('admin/main.edit') }}</a>
+                                                                {{-- Normal link to the controller's edit($id) route.
+                                                                     This causes a full page reload, but the controller already
+                                                                     fetches $editItem and the Blade above already auto-selects
+                                                                     the "form" tab and pre-fills every field via old()/$editItem.
+                                                                     No AJAX or extra JS is required for this to work correctly. --}}
+                                                                <a href="{{ getAdminPanelUrl('/booking/featured/' . $item->id . '/edit') }}" class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
+                                                                    <i class="fa fa-edit text-gray-500 mr-2"></i>
+                                                                    <span class="text-gray-500 font-14">{{ trans('admin/main.edit') }}</span>
+                                                                </a>
                                                             @endcan
                                                             @can('admin_booking_featured_delete')
-                                                                <a href="{{ getAdminPanelUrl('/booking/featured/'.$item->id.'/delete') }}" class="btn btn-sm btn-danger" onclick="return confirm('{{ trans('admin/main.delete_confirm_msg') }}');">{{ trans('admin/main.delete') }}</a>
+                                                                <a href="{{ getAdminPanelUrl('/booking/featured/' . $item->id . '/delete') }}" class="dropdown-item text-danger mb-0 py-3 px-0 font-14" onclick="return confirm('{{ trans('admin/main.delete_confirm_msg') }}');">
+                                                                    <i class="fa fa-trash text-danger mr-2"></i>
+                                                                    <span>{{ trans('admin/main.delete') }}</span>
+                                                                </a>
                                                             @endcan
-                                                        </td>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                      
                                                     </tr>
                                                 @empty
                                                     <tr>
