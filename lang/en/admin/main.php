@@ -243,6 +243,8 @@ return [
 'starts_at'=>'Starts At',
 'expires_at'=>'Expiers At',
 'expired'=>'Expired',
+'add_top_categories'=>'Add Top Categories',
+'add_feature_categories'=>'Add Feature Categories',
 
     //Booking
     'booking' => 'Booking',
