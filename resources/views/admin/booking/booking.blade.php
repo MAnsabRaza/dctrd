@@ -447,16 +447,17 @@
                                                            value="{{ !empty($editBooking) ? $editBooking->price_unit : old('price_unit') }}"
                                                            placeholder="e.g. per night, per adult">
                                                 </div>
+                                                 <div class="form-group">
+                                                    <label class="input-label">{{ trans('admin/main.checkout_message') }}</label>
+                                                    <textarea name="checkout_message" class="form-control"
+                                                           placeholder="Checkout message">{{ !empty($editBooking) ? $editBooking->checkout_message : old('checkout_message') }}</textarea>
+                                                </div>
                                                      <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.reviewer_message') }}</label>
                                                     <textarea name="reviewer_message" class="form-control"
                                                            placeholder="Reviewer message">{{ !empty($editBooking) ? $editBooking->reviewer_message : old('reviewer_message') }}</textarea>
                                                 </div>
-                                                     <div class="form-group">
-                                                    <label class="input-label">{{ trans('admin/main.checkout_message') }}</label>
-                                                    <textarea name="checkout_message" class="form-control"
-                                                           placeholder="Checkout message">{{ !empty($editBooking) ? $editBooking->checkout_message : old('checkout_message') }}</textarea>
-                                                </div>
+                                                    
 
                                             </div>{{-- col-md-6 left --}}
 

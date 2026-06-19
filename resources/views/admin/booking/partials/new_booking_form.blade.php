@@ -79,12 +79,7 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-12 col-md-6">
-                        <div class="form-group">
-                            <label class="input-label">Reward Points</label>
-                            <input type="number" name="reward_points" min="0" value="{{ old('reward_points', $meta['reward_points'] ?? '') }}" class="form-control">
-                        </div>
-                    </div>
+                 
                     <div class="col-12 col-md-6">
                         <div class="form-group">
                             <label class="input-label">Tax</label>
@@ -93,20 +88,7 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="input-label">Commission</label>
-                    <div class="row">
-                        <div class="col-5">
-                            <select name="commission_type" class="form-control">
-                                <option value="percent" {{ old('commission_type', $meta['commission_type'] ?? 'percent') == 'percent' ? 'selected' : '' }}>Percent</option>
-                                <option value="fixed" {{ old('commission_type', $meta['commission_type'] ?? '') == 'fixed' ? 'selected' : '' }}>Fixed</option>
-                            </select>
-                        </div>
-                        <div class="col-7">
-                            <input type="number" name="commission" step="0.01" min="0" value="{{ $field('commission', '0.00') }}" class="form-control" placeholder="0.00">
-                        </div>
-                    </div>
-                </div>
+             
 
                 <div class="form-group">
                     <label class="input-label">Thumbnail / Featured Image</label>
@@ -156,10 +138,7 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="input-label">SEO Meta Description</label>
-                    <input type="text" name="seo_meta_description" value="{{ old('seo_meta_description', $meta['seo_meta_description'] ?? '') }}" class="form-control">
-                </div>
+           
 
                 <div class="form-group">
                     <label class="input-label">Summary / Requirements</label>
@@ -188,8 +167,7 @@
             <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Cutoff Time (hours)</label><input type="number" name="cutoff_time_hours" min="0" value="{{ $field('cutoff_time_hours', 0) }}" class="form-control"></div></div>
             <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Reschedule Before (hours)</label><input type="number" name="reschedule_before_hours" min="0" value="{{ $field('reschedule_before_hours', 24) }}" class="form-control"></div></div>
             <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Inventory</label><input type="number" name="inventory" min="0" value="{{ $field('inventory') }}" class="form-control" placeholder="Leave blank for unlimited"></div></div>
-            <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Time Zone</label><select name="time_zone" data-plugin-selectTwo class="form-control">@foreach(['America/New_York','Asia/Karachi','UTC','Europe/London','Asia/Dubai'] as $tz)<option value="{{ $tz }}" {{ old('time_zone', $meta['time_zone'] ?? 'America/New_York') == $tz ? 'selected' : '' }}>{{ $tz }}</option>@endforeach</select></div></div>
-        </div>
+               </div>
 
         <div class="row">
             @foreach([
@@ -214,11 +192,7 @@
                 </div>
             @endforeach
         </div>
-        <div class="text-gray-500 text-small mb-3">Check this if booking requires admin approval/confirmation.</div>
-        <div class="form-group">
-            <label class="input-label">Checkout Message</label>
-            <textarea name="checkout_message" class="form-control" rows="4">{{ $field('checkout_message') }}</textarea>
-        </div>
+       
     </div>
 
     <div class="booking-section">
@@ -241,10 +215,7 @@
 
     <div class="booking-section">
         <h3 class="booking-section-title">Additional Information</h3>
-        <div class="form-group">
-            <label class="input-label">Tags</label>
-            <input type="text" name="tags" value="{{ $tags }}" class="form-control" placeholder="Type tag name and press Enter. Max 10.">
-        </div>
+       
         <div class="form-group">
             <label class="input-label">Category</label>
             <div class="input-group">
@@ -261,7 +232,13 @@
         </div>
     </div>
 
+     
     <div class="booking-section">
+        <div class="text-gray-500 text-small mb-3">Check this if booking requires admin approval/confirmation.</div>
+        <div class="form-group">
+            <label class="input-label">Checkout Message</label>
+            <textarea name="checkout_message" class="form-control" rows="4">{{ $field('checkout_message') }}</textarea>
+        </div>
         <h3 class="booking-section-title">Message to Reviewer</h3>
         <textarea name="reviewer_message" rows="7" class="form-control" placeholder="Message for the reviewer...">{{ $field('reviewer_message') }}</textarea>
     </div>
