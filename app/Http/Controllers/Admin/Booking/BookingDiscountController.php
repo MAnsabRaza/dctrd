@@ -15,9 +15,24 @@ class BookingDiscountController extends Controller
         $this->authorize('admin_booking_discounts');
         removeContentLocale();
 
-        $items = BookingDiscount::with(['booking', 'bundle'])
-            ->latest('id')
-            ->paginate(20);
+        $query = BookingDiscount::with(['booking', 'bundle']);
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where('title', 'like', '%' . $search . '%');
+        }
+
+        // Date range filter
+        if ($request->filled('from_date')) {
+            $query->whereDate('expires_at', '>=', $request->get('from_date'));
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('expires_at', '<=', $request->get('to_date'));
+        }
+
+        $items = $query->latest('id')->paginate(20);
 
         $bookings = Booking::query()
             ->orderByDesc('id')

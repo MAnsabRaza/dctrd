@@ -1,6 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
+@php $activeTab = !empty($editItem) ? 'form' : 'list'; @endphp
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
         <div>
@@ -20,7 +21,6 @@
     </div>
 
     <div class="section-body">
-        @php $activeTab = !empty($editItem) ? 'form' : 'list'; @endphp
         <div class="row">
             <div class="col-12">
                 <div class="card">
