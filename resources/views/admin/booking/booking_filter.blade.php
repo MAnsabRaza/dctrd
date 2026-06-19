@@ -1,5 +1,9 @@
 @extends('admin.layouts.app')
 
+@push('styles_top')
+    <link href="/assets/default/vendors/sortable/jquery-ui.min.css" rel="stylesheet"/>
+@endpush
+
 @section('content')
     <section class="section">
         <div class="section-header">
@@ -61,52 +65,105 @@
                                     <form action="{{ !empty($editItem) ? getAdminPanelUrl('/booking/filters/'.$editItem->id.'/update') : getAdminPanelUrl('/booking/filters/store') }}" method="post">
                                         {{ csrf_field() }}
 
+                                        @if(!empty(getGeneralSettings('content_translate')))
+                                            <div class="form-group">
+                                                <label class="input-label">{{ trans('auth.language') }}</label>
+                                                <select name="language" class="form-control {{ !empty($editItem) ? 'js-edit-content-locale' : '' }}">
+                                                    @foreach($userLanguages as $lang => $language)
+                                                        <option value="{{ $lang }}" @if(mb_strtolower(request()->get('locale', app()->getLocale())) == mb_strtolower($lang)) selected @endif>{{ $language }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @error('language')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        @else
+                                            <input type="hidden" name="language" value="{{ getDefaultLocale() }}">
+                                        @endif
+
                                         <div class="form-group">
                                             <label>{{ trans('admin/main.category') }}</label>
-                                            <select name="category_id" class="form-control">
+                                            <select name="category_id" class="form-control @error('category_id') is-invalid @enderror">
+                                                <option {{ !empty($trend) ? '' : 'selected' }} disabled>{{ trans('admin/main.choose_category') }}</option>
+
                                                 @foreach($categories as $category)
-                                                    <option value="{{ $category->id }}" @if(!empty($editItem) && $editItem->category_id == $category->id) selected @endif>{{ $category->title }}</option>
-                                                    @if(!empty($category->subCategories) && count($category->subCategories))
-                                                        @foreach($category->subCategories as $sub)
-                                                            <option value="{{ $sub->id }}" @if(!empty($editItem) && $editItem->category_id == $sub->id) selected @endif>-- {{ $sub->title }}</option>
-                                                        @endforeach
+                                                    @if(!empty($category->subCategories) and count($category->subCategories))
+                                                        <optgroup label="{{  $category->title }}">
+                                                            @foreach($category->subCategories as $subCategory)
+                                                                <option value="{{ $subCategory->id }}" @if(!empty($editItem) and $editItem->category_id == $subCategory->id) selected="selected" @endif>{{ $subCategory->title }}</option>
+                                                            @endforeach
+                                                        </optgroup>
+                                                    @else
+                                                        <option value="{{ $category->id }}" class="font-weight-bold" @if(!empty($editItem) and $editItem->category_id == $category->id) selected="selected" @endif>{{ $category->title }}</option>
                                                     @endif
                                                 @endforeach
                                             </select>
+                                            @error('category_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
                                         </div>
 
                                         <div class="form-group">
                                             <label>{{ trans('admin/main.title') }}</label>
-                                            <input type="text" name="title" class="form-control" value="{{ $editItem->title ?? old('title') }}">
+                                            <input type="text" name="title" class="form-control  @error('title') is-invalid @enderror" value="{{ !empty($editItem) ? $editItem->title : old('title') }}" placeholder="{{ trans('admin/main.choose_title') }}"/>
+                                            @error('title')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
                                         </div>
 
-                                        <div id="optionsWrapper">
-                                            <label>{{ trans('admin/main.options') }}</label>
-                                            @php
-                                                $existing = $filterOptions ?? [];
-                                            @endphp
-                                            <div id="optionRows">
-                                                @if(!empty($existing) && count($existing))
-                                                    @foreach($existing as $opt)
-                                                        <div class="input-group mb-2 option-row">
-                                                            <input type="text" name="sub_filters[][name]" class="form-control" value="{{ $opt->name }}">
-                                                            <div class="input-group-append">
-                                                                <button type="button" class="btn btn-danger js-remove-option">{{ trans('admin/main.delete') }}</button>
+                                        <div id="filterOptions" class="ml-1">
+                                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                                <strong class="d-block">{{ trans('admin/main.add_options') }}</strong>
+
+                                                <button type="button" class="btn btn-success add-btn "><i class="fa fa-plus"></i> {{ trans('admin/main.add') }}</button>
+                                            </div>
+
+                                            <ul class="draggable-lists list-group">
+                                                @if(!empty($filterOptions))
+                                                    @foreach($filterOptions as $key => $filterOption)
+
+                                                        <li class="form-group list-group">
+
+                                                            <div class="input-group">
+                                                                <div class="input-group-prepend">
+                                                                    <div class="input-group-text cursor-pointer move-icon">
+                                                                        <i class="fa fa-arrows-alt"></i>
+                                                                    </div>
+                                                                </div>
+
+                                                                <input type="text" name="sub_filters[{{ $filterOption->id }}][name]" class="form-control w-auto flex-grow-1" value="{{ $filterOption->name }}" placeholder="{{ trans('admin/main.choose_title') }}"/>
+
+                                                                <div class="input-group-append">
+                                                                    <button type="button" class="btn remove-btn btn-danger"><i class="fa fa-times"></i></button>
+                                                                </div>
                                                             </div>
-                                                        </div>
+                                                        </li>
                                                     @endforeach
                                                 @endif
-                                            </div>
+                                            </ul>
 
-                                            <div class="text-right mt-2">
-                                                <button type="button" class="btn btn-primary js-add-option">{{ trans('admin/main.add_new') }}</button>
-                                            </div>
                                         </div>
 
-                                        <div class="form-group mt-3 text-right">
-                                            <button class="btn btn-success">{{ trans('admin/main.submit') }}</button>
+                                        <div class="text-right mt-4">
+                                            <button class="btn btn-primary">{{ trans('admin/main.submit') }}</button>
                                         </div>
                                     </form>
+
+                                    <li class="form-group main-row list-group d-none">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <div class="input-group-text cursor-pointer move-icon">
+                                                    <i class="fa fa-arrows-alt"></i>
+                                                </div>
+                                            </div>
+
+                                            <input type="text" name="sub_filters[record][name]" class="form-control w-auto flex-grow-1" placeholder="{{ trans('admin/main.choose_title') }}"/>
+
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn remove-btn btn-danger"><i class="fa fa-times"></i></button>
+                                            </div>
+                                        </div>
+                                    </li>
                                 </div>
                             </div>
                         </div>
@@ -118,21 +175,27 @@
 @endsection
 
 @push('scripts_bottom')
-<script>
-document.addEventListener('click', function (e) {
-    if (e.target.closest('.js-add-option')) {
-        const wrapper = document.getElementById('optionRows');
-        if (!wrapper) return;
-        const row = document.createElement('div');
-        row.className = 'input-group mb-2 option-row';
-        row.innerHTML = '<input type="text" name="sub_filters[][name]" class="form-control" placeholder="Option name"><div class="input-group-append"><button type="button" class="btn btn-danger js-remove-option">'+("{{ trans('admin/main.delete') }}")+'</button></div>';
-        wrapper.appendChild(row);
-    }
+    <script src="/assets/default/vendors/sortable/jquery-ui.min.js"></script>
+    <script src="/assets/admin/js/parts/filters.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // init add/remove buttons for the draggable list
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('.add-btn')) {
+                    const mainRow = document.querySelector('.main-row');
+                    const list = document.querySelector('.draggable-lists');
+                    if (!mainRow || !list) return;
+                    const clone = mainRow.cloneNode(true);
+                    clone.classList.remove('d-none', 'main-row');
+                    clone.querySelectorAll('input').forEach(i => i.value = '');
+                    list.appendChild(clone);
+                }
 
-    if (e.target.closest('.js-remove-option')) {
-        const row = e.target.closest('.option-row');
-        if (row) row.remove();
-    }
-});
-</script>
+                if (e.target.closest('.remove-btn')) {
+                    const row = e.target.closest('.list-group');
+                    if (row && !row.classList.contains('main-row')) row.remove();
+                }
+            });
+        });
+    </script>
 @endpush

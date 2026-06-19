@@ -53,7 +53,6 @@ class BookingFilterController extends Controller
 
         $filter = BookingFilter::findOrFail($id);
         $categories = BookingCategory::where('parent_id', null)
-            ->with('subCategories')
             ->get();
 
         $filterOptions = BookingFilterOption::where('filter_id', $filter->id)
