@@ -6,52 +6,52 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
-    {
-        Schema::table('booking_featured', function (Blueprint $table) {
+   
+public function up()
+{
+    // First remove old columns
+    Schema::table('booking_featured', function (Blueprint $table) {
 
-            // Foreign Key remove first
-            $table->dropForeign(['category_id']);
+        $table->dropForeign(['category_id']);
 
-            // Remove old columns
-            $table->dropColumn([
-                'category_id',
-                'placement',
-                'starts_at',
-                'expires_at',
-                'order',
-            ]);
+        $table->dropColumn([
+            'category_id',
+            'placement',
+            'starts_at',
+            'expires_at',
+            'order',
+            'status'
+        ]);
+    });
 
-            // Change status field
-            $table->dropColumn('status');
+    // Then add new columns
+    Schema::table('booking_featured', function (Blueprint $table) {
 
-            // New fields
-            $table->string('language', 10)->default('en')->after('booking_id');
+        $table->string('language', 10)->default('en')->after('booking_id');
 
-            $table->unsignedInteger('user_id')->nullable()->after('language');
+        $table->unsignedInteger('user_id')->nullable()->after('language');
 
-            $table->string('title')->after('user_id');
+        $table->string('title')->after('user_id');
 
-            $table->enum('status', [
-                'pending',
-                'published'
-            ])->default('pending')->after('title');
+        $table->enum('status', [
+            'pending',
+            'published'
+        ])->default('pending');
 
-            $table->enum('page', [
-                'home_categories',
-                'home',
-                'categories'
-            ])->default('home')->after('status');
+        $table->enum('page', [
+            'home_categories',
+            'home',
+            'categories'
+        ])->default('home');
 
-            $table->text('description')->nullable()->after('page');
+        $table->text('description')->nullable();
 
-            // Foreign Key
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
-                ->nullOnDelete();
-        });
-    }
+        $table->foreign('user_id')
+            ->references('id')
+            ->on('users')
+            ->nullOnDelete();
+    });
+}
 
     public function down()
     {
