@@ -11,5 +11,5 @@ class BookingFilterOption extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = ['filter_id', 'name', 'order'];
+    protected $fillable = ['filter_id', 'name'];
 }

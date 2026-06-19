@@ -52,8 +52,16 @@ class BookingFilterController extends Controller
         $this->authorize('admin_booking_filters_edit');
 
         $filter = BookingFilter::findOrFail($id);
-        $categories = BookingCategory::where('parent_id', null)
-            ->get();
+
+        // NOTE: the view below is shared between index() and edit() (same Blade file,
+        // tab-based). The "List" tab always renders @foreach($filters as $filter),
+        // regardless of which tab is active, so $filters MUST be passed here too —
+        // this was the root cause of "Undefined variable $filters".
+        $filters = BookingFilter::with(['category', 'options'])
+            ->orderBy('id', 'desc')
+            ->paginate(10);
+
+        $categories = BookingCategory::where('parent_id', null)->get();
 
         $filterOptions = BookingFilterOption::where('filter_id', $filter->id)
             ->orderBy('id', 'asc')
@@ -62,6 +70,7 @@ class BookingFilterController extends Controller
         return view('admin.booking.booking_filter', [
             'pageTitle' => trans('admin/main.edit_booking_filter'),
             'editItem' => $filter,
+            'filters' => $filters,
             'categories' => $categories,
             'filterOptions' => $filterOptions,
         ]);
@@ -109,25 +118,21 @@ class BookingFilterController extends Controller
         if (empty($subFilters) || !count($subFilters)) {
             return;
         }
-
-        $order = 1;
         foreach ($subFilters as $row) {
             if (empty($row['name'])) continue;
 
             BookingFilterOption::create([
                 'filter_id' => $filter->id,
                 'name' => $row['name'],
-                'order' => $order,
             ]);
 
-            $order++;
         }
     }
 
     public function getByCategoryId($categoryId)
     {
         $filters = BookingFilter::where('category_id', $categoryId)
-            ->with(['options' => function ($q) { $q->orderBy('order', 'asc'); }])
+            ->with(['options' => function ($q) { $q->orderBy('id', 'asc'); }])
             ->get();
 
         return response()->json(['filters' => $filters], 200);
