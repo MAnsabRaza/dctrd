@@ -245,6 +245,9 @@ return [
 'expired'=>'Expired',
 'add_top_category'=>'Add Top Category',
 'add_feature_category'=>'Add Feature Category',
+'created_successfully '=>'Created Successfully.',
+'edit_booking_feature_category'=>'Edit Booking Feature Category',
+'edit_booking_top_category'=>'Edit Booking Top Category',
 
     //Booking
     'booking' => 'Booking',

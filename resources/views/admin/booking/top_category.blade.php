@@ -104,9 +104,12 @@
                                     <div class="row">
                                         <div class="col-12 col-md-6">
                                             <form method="post"
-                                                  action="{{ isset($editItem) ? getAdminPanelUrl().'/booking/top-categories/'.$editItem->id.'/update' : getAdminPanelUrl().'/booking/top-categories/store' }}"
+                                                  action="{{ isset($editItem) ? getAdminPanelUrl().'/booking/top-categories/'.$editItem->id : getAdminPanelUrl().'/booking/top-categories/store' }}"
                                                   enctype="multipart/form-data">
                                                 @csrf
+                                                @if(isset($editItem))
+                                                    @method('PUT')
+                                                @endif
 
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.category') }}</label>

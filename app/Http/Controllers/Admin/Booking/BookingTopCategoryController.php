@@ -80,7 +80,7 @@ class BookingTopCategoryController extends Controller
 
         return view('admin.booking.top_category', [
             'pageTitle' => trans('admin/main.edit_booking_top_category'),
-            'item'      => $item,
+            'editItem'  => $item,
             'categories' => $categories,
             'items'      => $items,
             'activeTab'  => 'new',
@@ -128,6 +128,7 @@ class BookingTopCategoryController extends Controller
 
         $item->delete();
 
-        return back()->with('success', trans('admin/main.deleted_successfully'));
+        return redirect(getAdminPanelUrl() . '/booking/top-categories')
+            ->with('success', trans('admin/main.deleted_successfully'));
     }
 }
