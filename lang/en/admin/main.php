@@ -231,6 +231,7 @@ return [
 'booking_featured'=>'Booking Featured',
 'choose'=>'Choose',
 'home'=>'Home',
+'home_categories'=>'Home Categories',
 
 //discount
 'booking_discounts'=>'Booking Discounts',

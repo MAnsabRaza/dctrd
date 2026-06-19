@@ -97,16 +97,6 @@
                                                 </div>
 
                                                 <div class="form-group">
-                                                    <label class="input-label">{{ trans('admin/main.user') }}</label>
-                                                    <select name="user_id" class="form-control">
-                                                        <option value="">-</option>
-                                                        @foreach($users ?? [] as $id => $name)
-                                                            <option value="{{ $id }}" @if(!empty($editItem) && $editItem->user_id == $id) selected @endif>{{ $name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-
-                                                <div class="form-group">
                                                     <label class="input-label">{{ trans('admin/main.title') }}</label>
                                                     <input type="text" name="title" class="form-control" value="{{ old('title', $editItem->title ?? '') }}" required />
                                                 </div>

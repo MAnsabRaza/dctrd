@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin\Booking;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingFeatured;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class BookingFeaturedController extends Controller
@@ -29,12 +28,10 @@ class BookingFeaturedController extends Controller
         $this->authorize('admin_booking_featured_create');
 
         $bookings = Booking::orderBy('id', 'desc')->pluck('title', 'id');
-        $users = User::orderBy('id', 'desc')->pluck('full_name', 'id');
 
         return view('admin.booking.booking_featured', [
             'pageTitle' => trans('admin/main.new_booking_featured'),
             'bookings' => $bookings,
-            'users' => $users,
         ]);
     }
 
@@ -48,7 +45,8 @@ class BookingFeaturedController extends Controller
             'page' => 'required|string',
         ]);
 
-        $data = $request->only(['language', 'user_id', 'booking_id', 'page', 'title', 'description', 'status']);
+        $data = $request->only(['language', 'booking_id', 'page', 'title', 'description', 'status']);
+        $data['user_id'] = auth()->id();
         $data['status'] = !empty($data['status']);
 
         BookingFeatured::create($data);
@@ -62,13 +60,11 @@ class BookingFeaturedController extends Controller
 
         $item = BookingFeatured::findOrFail($id);
         $bookings = Booking::orderBy('id', 'desc')->pluck('title', 'id');
-        $users = User::orderBy('id', 'desc')->pluck('full_name', 'id');
 
         return view('admin.booking.booking_featured', [
             'pageTitle' => trans('admin/main.edit_booking_featured'),
             'editItem' => $item,
             'bookings' => $bookings,
-            'users' => $users,
         ]);
     }
 
@@ -84,7 +80,8 @@ class BookingFeaturedController extends Controller
 
         $item = BookingFeatured::findOrFail($id);
 
-        $data = $request->only(['language', 'user_id', 'booking_id', 'page', 'title', 'description', 'status']);
+        $data = $request->only(['language', 'booking_id', 'page', 'title', 'description', 'status']);
+        $data['user_id'] = auth()->id();
         $data['status'] = !empty($data['status']);
 
         $item->update($data);
