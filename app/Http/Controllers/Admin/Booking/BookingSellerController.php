@@ -39,7 +39,7 @@ class BookingSellerController extends Controller
         // Fetch all top-level (parent) booking categories for dynamic columns
         // Adjust the query below to match your Category model's scope/filter for bookings
         $parentCategories = Category::whereNull('parent_id')
-            ->where('status', 'active')
+            ->where('status', '1') // Assuming '1' means active
             ->orderBy('id', 'asc')
             ->get();
 
