@@ -183,7 +183,7 @@ return [
     'edit_blog' => 'Edit Blog Post',
     'comments_section' => 'Enable Comments',
 
-    'booking_rate_plan' => 'Booking Rate Plans',
+    'booking_rate_plan' => 'Rate Plans',
     'select_booking'=>'Select Booking',
     'rate_plans' => 'Rate Plans',
     'create_rate_plan' => 'New Rate Plan',
@@ -204,7 +204,7 @@ return [
     'per_night' => 'Per Night',
     //booking season
 
-    'admin_booking_season' => 'Booking Seasons',
+    'admin_booking_season' => 'Seasons',
     'create_booking_season' => 'Create Season',
     'booking_season_created_successfully' => 'Season created successfully.',
     'booking_season_updated_successfully' => 'Season updated successfully.',
@@ -215,7 +215,7 @@ return [
     'modifier_type' => 'Modifier Type',
 
     //booking availability
-    'admin_booking_availability' => 'Booking Availability',
+    'admin_booking_availability' => 'Availability',
     'create_booking_availability' => 'Create Booking Availability',
     'is_available' => 'Is Available',
     'slots_available' => 'Slots Available',
@@ -223,10 +223,10 @@ return [
     'close_reason' => 'Close Reason',
     'close_reason_placeholder' => 'e.g. Holiday, Maintenance',
     'resource' => 'Resource',
-    'admin_booking_favorite' => 'Booking Favorites',
-'admin_booking_comment' => 'Booking Comments',
+    'admin_booking_favorite' => 'Favorites',
+'admin_booking_comment' => 'Comments',
 'manage_all_items'=>'Manage All Items',
-'booking_filters'=>'Booking Filters',
+'booking_filters'=>'Filters',
 'options'=>'Options',
 'booking_featured'=>'Booking Featured',
 'choose'=>'Choose',
@@ -235,10 +235,10 @@ return [
 'edit_booking_featured'=>'Edit Booking Featured',
 'new_booking_featured'=>'New Booking Featured',
 'booking_top_categories'=>'Top Category',
-'booking_feature_categories'=>'Feature Category',
+'booking_feature_categories'=>'Feature Categories',
 
 //discount
-'booking_discounts'=>'Booking Discounts',
+'booking_discounts'=>'Discounts',
 'bundle'=>'Bundle',
 'starts_at'=>'Starts At',
 'expires_at'=>'Expiers At',
@@ -252,18 +252,20 @@ return [
 'in-house-bookings' => 'In House Bookings',
 'confirmed'=>'Confirmed',
 'completed'=>'Completed',
+//sidebar 
+'new_booking'=>'New Booking',
 
     //Booking
     'booking' => 'Booking',
     
     'bookings' => 'Bookings',
-    'booking_list' => 'Booking List',
+    'booking_list' => 'Booking',
     'create_booking' => 'Create Booking',
     'booking_created_successfully' => 'Booking created successfully.',
     'booking_updated_successfully' => 'Booking updated successfully.',
     'booking_deleted_successfully' => 'Booking deleted successfully.',
     //booking category
-    'booking_categories' => 'Booking Categories',
+    'booking_categories' => 'Categories',
     'create_booking_category' => 'New Booking Category',
     'parent_category' => 'Parent Category',
     'no_parent' => 'No Parent (Root)',
@@ -272,7 +274,7 @@ return [
     'category_deleted_successfully' => 'Category deleted successfully.',
 
     //booking resource
-    'booking_resources' => 'Booking Resources',
+    'booking_resources' => 'Resources',
     'create_booking_resources' => 'New Booking Resources',
     'booking_resources_created_successfully' => 'Booking Resources created successfully.',
     'booking_resources_updated_successfully' => 'Booking Resources updated successfully.',
@@ -311,7 +313,7 @@ return [
     'booking_id' => 'Booking',
 
     //booking policy
-    'admin_booking_polices' => 'Booking Policies',
+    'admin_booking_polices' => 'Policies',
     'create_booking_policy' => 'Create Policy',
     'booking_policy_created_successfully' => 'Policy created successfully.',
     'booking_policy_updated_successfully' => 'Policy updated successfully.',
@@ -329,7 +331,7 @@ return [
     'balance_due_days_before' => 'Balance Due Before (Days)',
     'policy_text' => 'Policy Text',
     // ── Booking Variants 
-    'admin_booking_variants' => 'Booking Variants',
+    'admin_booking_variants' => 'Variants',
     'create_booking_variant' => 'Create Variant',
     'booking_variant_created_successfully' => 'Variant created successfully.',
     'booking_variant_updated_successfully' => 'Variant updated successfully.',
@@ -339,19 +341,20 @@ return [
     'affects_availability' => 'Affects Availability',
 
     //booking bundles
-    'admin_booking_bundle' => 'Booking Bundles',
+    'admin_booking_packages'=>'Packages',
+    'admin_booking_bundle' => 'Bundles',
     'create_booking_bundle' => 'Create Bundle',
     'booking_bundle_created_successfully' => 'Bundle created successfully.',
     'booking_bundle_updated_successfully' => 'Bundle updated successfully.',
     'booking_bundle_deleted_successfully' => 'Bundle deleted successfully.',
-    'admin_booking_orders' => 'Booking Orders',
+    'admin_booking_orders' => 'Orders',
     'create_booking_order' => 'Create Booking Order',
     'booking_order_created_successfully' => 'Booking order created successfully.',
     'booking_order_updated_successfully' => 'Booking order updated successfully.',
     'booking_order_deleted_successfully' => 'Booking order deleted successfully.',
 
     //booking import
-    'admin_booking_imports' => 'Booking Imports',
+    'admin_booking_imports' =>'Imports',
     'booking_imports' => 'Booking Imports',
     'csv_format_note' => 'CSV Format Note',
     'import_bookings' => 'Import Booking',
@@ -369,7 +372,7 @@ return [
     //booking order
 
     'booking_orders' => 'Booking Orders',
-    'admin_booking_time_slots' => 'Booking Time Slots',
+    'admin_booking_time_slots' => 'Time Slots',
     'create_time_slot' => 'Create Time Slot',
     'edit_time_slot' => 'Edit Time Slot',
     'update_time_slot' => 'Update Time Slot',
@@ -386,7 +389,7 @@ return [
     'order_number' => 'Order Number',
     'total_price' => 'Total Price',
     // Specifications
-    'admin_booking_specification' => 'Booking Specifications',
+    'admin_booking_specification' => 'Specifications',
     'create_booking_specification' => 'Create Specification',
     'booking_specification_created_successfully' => 'Specification created successfully.',
     'booking_specification_updated_successfully' => 'Specification updated successfully.',
@@ -431,7 +434,7 @@ return [
     'write_comment' => 'Write your comment...',
     'write_reply' => 'Write your reply...',
     'last_replied' => 'Last Replied',
-    'admin_booking_review'=>'Booking Review',
+    'admin_booking_review'=>'Review',
     'booking_review_created_successfully' => 'Review created successfully.',
     'booking_review_updated_successfully' => 'Review updated successfully.',
     'booking_review_deleted_successfully' => 'Review deleted successfully.',
