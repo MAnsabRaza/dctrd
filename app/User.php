@@ -358,6 +358,10 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Models\Product', 'creator_id', 'id');
     }
+      public function bookings()
+    {
+        return $this->hasMany('App\Models\Booking', 'creator_id', 'id');
+    }
 
     public function events()
     {

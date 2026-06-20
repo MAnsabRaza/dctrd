@@ -4854,4 +4854,5 @@ return [
 'availability_assets' => 'Availability Assets',
 'in-house-bookings'=>'In House Bookings',
 'in-house-booking-orders'=>'In House Booking Orders',
+'booking_sellers'=>'Booking Sellers',
 ];
