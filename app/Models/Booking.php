@@ -311,6 +311,9 @@ class Booking extends Model
         )->withPivot(['quantity', 'sort_order'])->withTimestamps();
     }
 
+    public function orders(){
+        return $this->hasMany(BookingOrder::class, 'booking_id');
+    }
     public function packageItems()
     {
         return $this->hasMany(BookingPackageItem::class, 'booking_id');
