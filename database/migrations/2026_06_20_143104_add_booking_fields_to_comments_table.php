@@ -10,25 +10,28 @@ return new class extends Migration
     {
         Schema::table('comments', function (Blueprint $table) {
 
-            // booking_id (depends on bookings table type - usually BIGINT, so keep BIGINT safe)
-            $table->unsignedBigInteger('booking_id')
-                  ->nullable()
-                  ->after('product_id');
+            if (!Schema::hasColumn('comments', 'booking_id')) {
+                $table->unsignedBigInteger('booking_id')->nullable()->after('product_id');
+            }
 
-            // FIX: booking_reviews.id is INT UNSIGNED
-            $table->unsignedInteger('booking_review_id')
-                  ->nullable()
-                  ->after('product_review_id');
+            if (!Schema::hasColumn('comments', 'booking_review_id')) {
+                $table->unsignedInteger('booking_review_id')->nullable()->after('product_review_id');
+            }
 
-            $table->foreign('booking_id')
-                  ->references('id')
-                  ->on('bookings')
-                  ->onDelete('cascade');
+            // add FK only if columns exist
+            if (Schema::hasColumn('comments', 'booking_id')) {
+                $table->foreign('booking_id')
+                      ->references('id')
+                      ->on('bookings')
+                      ->onDelete('cascade');
+            }
 
-            $table->foreign('booking_review_id')
-                  ->references('id')
-                  ->on('booking_reviews')
-                  ->onDelete('cascade');
+            if (Schema::hasColumn('comments', 'booking_review_id')) {
+                $table->foreign('booking_review_id')
+                      ->references('id')
+                      ->on('booking_reviews')
+                      ->onDelete('cascade');
+            }
         });
     }
 
@@ -36,10 +39,15 @@ return new class extends Migration
     {
         Schema::table('comments', function (Blueprint $table) {
 
-            $table->dropForeign(['booking_id']);
-            $table->dropForeign(['booking_review_id']);
+            if (Schema::hasColumn('comments', 'booking_id')) {
+                $table->dropForeign(['booking_id']);
+                $table->dropColumn('booking_id');
+            }
 
-            $table->dropColumn(['booking_id', 'booking_review_id']);
+            if (Schema::hasColumn('comments', 'booking_review_id')) {
+                $table->dropForeign(['booking_review_id']);
+                $table->dropColumn('booking_review_id');
+            }
         });
     }
 };
