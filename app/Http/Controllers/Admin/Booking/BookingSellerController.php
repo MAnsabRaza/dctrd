@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\User;
 use App\Models\Group;
 use App\Models\GroupUser;
+use App\Models\Category;
 
 /**
  * Controller to list booking sellers and their bookings in admin panel
@@ -21,7 +22,8 @@ class BookingSellerController extends Controller
 
         $query = $this->handleFilters($request, $query);
 
-        $users = $query->withCount('bookings')
+        $users = $query
+            ->withCount('bookings')
             ->with(['bookings' => function ($q) {
                 $q->with(['category' => function ($c) {
                     $c->with('parent');
@@ -34,14 +36,40 @@ class BookingSellerController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Fetch all top-level (parent) booking categories for dynamic columns
+        // Adjust the query below to match your Category model's scope/filter for bookings
+        $parentCategories = Category::whereNull('parent_id')
+            ->where('status', 'active')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        // For each user build a per-parent-category booking count map
         foreach ($users as $user) {
             $user->total_bookings = $user->bookings->count();
+
+            $categoryMap = [];
+            foreach ($parentCategories as $parent) {
+                $count = $user->bookings->filter(function ($booking) use ($parent) {
+                    $cat = $booking->category;
+                    if (!$cat) return false;
+                    // Direct match: booking category IS the parent
+                    if ($cat->id === $parent->id) return true;
+                    // Child match: booking category's parent is this parent
+                    if ($cat->parent_id === $parent->id) return true;
+                    return false;
+                })->count();
+
+                $categoryMap[$parent->id] = $count;
+            }
+
+            $user->category_booking_counts = $categoryMap;
         }
 
         $data = [
-            'pageTitle' => trans('update.booking_sellers'),
-            'users' => $users,
-            'userGroups' => $userGroups,
+            'pageTitle'        => trans('update.booking_sellers'),
+            'users'            => $users,
+            'userGroups'       => $userGroups,
+            'parentCategories' => $parentCategories,
         ];
 
         return view('admin.booking.seller', $data);
@@ -50,7 +78,7 @@ class BookingSellerController extends Controller
     private function handleFilters(Request $request, $query)
     {
         $full_name = $request->get('full_name');
-        $group_id = $request->get('group_id');
+        $group_id  = $request->get('group_id');
         $role_name = $request->get('role_name');
 
         if (!empty($full_name)) {
@@ -59,7 +87,6 @@ class BookingSellerController extends Controller
 
         if (!empty($group_id)) {
             $userIds = GroupUser::where('group_id', $group_id)->pluck('user_id')->toArray();
-
             $query->whereIn('id', $userIds);
         }
 
@@ -69,5 +96,4 @@ class BookingSellerController extends Controller
 
         return $query;
     }
-
 }
