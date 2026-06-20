@@ -253,6 +253,14 @@
     </li>
 @endcan
 
+@can('admin_booking_sellers')
+    <li class="{{ request()->is(getAdminPanelUrl('/booking/sellers', false)) ? 'active' : '' }}">
+        <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/sellers">
+            {{ trans('update.booking_sellers') ?? 'Booking Sellers' }}
+        </a>
+    </li>
+@endcan
+
             @can('admin_booking_time_slots')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/time-slot*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/time-slot">

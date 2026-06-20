@@ -670,5 +670,13 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 203522], ['role_id' => 2, 'section_id' => 3522, 'allow' => 1]); // edit
         \App\Models\Permission::updateOrCreate(['id' => 103523], ['role_id' => 1, 'section_id' => 3523, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 203523], ['role_id' => 2, 'section_id' => 3523, 'allow' => 1]); // delete
+
+        // Booking Sellers permissions
+        \App\Models\Permission::updateOrCreate(['id' => 103610], ['role_id' => 1, 'section_id' => 3610, 'allow' => 1]); // super admin
+        \App\Models\Permission::updateOrCreate(['id' => 203610], ['role_id' => 2, 'section_id' => 3610, 'allow' => 1]); // admin list
+        \App\Models\Permission::updateOrCreate(['id' => 103611], ['role_id' => 1, 'section_id' => 3611, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203611], ['role_id' => 2, 'section_id' => 3611, 'allow' => 1]); // list
+        \App\Models\Permission::updateOrCreate(['id' => 103612], ['role_id' => 1, 'section_id' => 3612, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203612], ['role_id' => 2, 'section_id' => 3612, 'allow' => 1]); // view
     }
 }

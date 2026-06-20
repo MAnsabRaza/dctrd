@@ -829,6 +829,11 @@ Section::updateOrCreate(['id' => 3603], ['name' => 'admin_booking_orders_invoice
 Section::updateOrCreate(['id' => 3604], ['name' => 'admin_booking_orders_refund', 'section_group_id' => 3240, 'caption' => 'Booking Orders - Refund']);
 Section::updateOrCreate(['id' => 3605], ['name' => 'admin_booking_orders_export', 'section_group_id' => 3240, 'caption' => 'Booking Orders - Export']);
 
+    // Booking sellers
+    Section::updateOrCreate(['id' => 3610], ['name' => 'admin_booking_sellers', 'section_group_id' => 3240, 'caption' => 'Booking Sellers']);
+    Section::updateOrCreate(['id' => 3611], ['name' => 'admin_booking_sellers_list', 'section_group_id' => 3610, 'caption' => 'Booking Sellers List']);
+    Section::updateOrCreate(['id' => 3612], ['name' => 'admin_booking_sellers_view', 'section_group_id' => 3610, 'caption' => 'Booking Sellers View']);
+
         Section::updateOrCreate(
             ['id' => 3332],
             [

@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\Booking\BookingSpecificationController;
 use App\Http\Controllers\Admin\Booking\BookingVariantController;
 use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
 use App\Http\Controllers\Admin\Booking\BookingOrderController;
+use App\Http\Controllers\Admin\Booking\BookingSellerController;
 use App\Http\Controllers\Admin\Booking\BookingFilterController;
 use App\Http\Controllers\Admin\Booking\BookingFeaturedController;
 use App\Http\Controllers\Admin\Booking\BookingTopCategoryController;
@@ -138,6 +139,9 @@ Route::group(['prefix' => 'booking'], function () {
     Route::get('/{id}/invoice', [BookingOrderController::class, 'invoice']);
     Route::get('/{id}/refund', [BookingOrderController::class, 'refund']);
 });
+    
+    // Booking sellers list
+    Route::get('/sellers', [BookingSellerController::class, 'index']);
     // ✅ CORRECT
     Route::group(['prefix' => 'specification'], function () {
         Route::get('/', [BookingSpecificationController::class, 'index']);
