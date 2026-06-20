@@ -119,12 +119,18 @@ class BookingController extends Controller
                     $qu->whereIn('status', ['confirmed', 'completed']);
                 },
             ])
-            // booking_income = sum of quantity * booking price for confirmed/completed orders
-            ->withSum([
-                'orders as booking_income' => function ($qu) {
-                    $qu->whereIn('status', ['confirmed', 'completed']);
-                },
-            ], 'total_amount');
+            // booking_income = sum of sales.total_amount for confirmed/completed orders.
+            // NOTE: total_amount lives on the `sales` table (not booking_orders), linked
+            // via booking_orders.sale_id -> sales.id — same pattern as ProductsController.
+            ->addSelect(['booking_income' => BookingOrder::query()
+                ->selectRaw('coalesce(sum(sales.total_amount), 0)')
+                ->join('sales', function ($join) {
+                    $join->on('sales.id', '=', 'booking_orders.sale_id')
+                        ->whereNull('sales.refund_at');
+                })
+                ->whereColumn('booking_orders.booking_id', 'bookings.id')
+                ->whereIn('booking_orders.status', ['confirmed', 'completed'])
+            ]);
 
         $bookings        = $query->paginate(15);
         $categories      = BookingCategory::where('status', 1)->orderBy('order')->get();
@@ -178,11 +184,16 @@ class BookingController extends Controller
                     $qu->whereIn('status', ['confirmed', 'completed']);
                 },
             ])
-            ->withSum([
-                'orders as booking_income' => function ($qu) {
-                    $qu->whereIn('status', ['confirmed', 'completed']);
-                },
-            ], 'total_amount')
+            // booking_income via sales table (sale_id link) — same as buildBookingListView()
+            ->addSelect(['booking_income' => BookingOrder::query()
+                ->selectRaw('coalesce(sum(sales.total_amount), 0)')
+                ->join('sales', function ($join) {
+                    $join->on('sales.id', '=', 'booking_orders.sale_id')
+                        ->whereNull('sales.refund_at');
+                })
+                ->whereColumn('booking_orders.booking_id', 'bookings.id')
+                ->whereIn('booking_orders.status', ['confirmed', 'completed'])
+            ])
             ->get();
 
         return Excel::download(new BookingsExport($bookings), 'bookings.xlsx');
@@ -515,6 +526,10 @@ class BookingController extends Controller
 
     /**
      * Query filters — sort cases now use booking_orders instead of booking_order_items.
+     *
+     * total_amount lives on the `sales` table (not booking_orders), linked via
+     * booking_orders.sale_id -> sales.id — same join pattern ProductsController
+     * uses for its income_asc / income_desc sorts.
      */
     private function handleFilters($query, Request $request)
     {
@@ -583,7 +598,11 @@ class BookingController extends Controller
                         $join->on('bookings.id', '=', 'booking_orders.booking_id')
                              ->whereIn('booking_orders.status', ['confirmed', 'completed']);
                     })
-                    ->select('bookings.*', DB::raw('coalesce(sum(booking_orders.total_amount), 0) as income_amount'))
+                    ->leftJoin('sales', function ($join) {
+                        $join->on('sales.id', '=', 'booking_orders.sale_id')
+                            ->whereNull('sales.refund_at');
+                    })
+                    ->select('bookings.*', DB::raw('coalesce(sum(sales.total_amount), 0) as income_amount'))
                     ->groupBy('bookings.id')
                     ->orderBy('income_amount', 'asc');
                 break;
@@ -593,7 +612,11 @@ class BookingController extends Controller
                         $join->on('bookings.id', '=', 'booking_orders.booking_id')
                              ->whereIn('booking_orders.status', ['confirmed', 'completed']);
                     })
-                    ->select('bookings.*', DB::raw('coalesce(sum(booking_orders.total_amount), 0) as income_amount'))
+                    ->leftJoin('sales', function ($join) {
+                        $join->on('sales.id', '=', 'booking_orders.sale_id')
+                            ->whereNull('sales.refund_at');
+                    })
+                    ->select('bookings.*', DB::raw('coalesce(sum(sales.total_amount), 0) as income_amount'))
                     ->groupBy('bookings.id')
                     ->orderBy('income_amount', 'desc');
                 break;

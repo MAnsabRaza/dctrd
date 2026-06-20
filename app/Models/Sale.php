@@ -92,6 +92,9 @@ class Sale extends Model
     {
         return $this->belongsTo('App\Models\ProductOrder', 'product_order_id', 'id');
     }
+    public function bookingOrder(){
+        return $this->belongsTo('App\Models\BookingOrder', 'booking_order_id', 'id');
+    }
 
     public function gift()
     {
