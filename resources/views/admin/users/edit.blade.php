@@ -155,7 +155,7 @@
                                         @endif
 
                                         {{-- Booking stats: Enrolled Bookings and Published Bookings --}}
-                                        <div class="col-6 mb-3">
+                                        <!-- <div class="col-6 mb-3">
                                             <div class="d-flex align-items-center">
                                                 <x-iconsax-bul-calendar class="icons mb-3 mr-3 text-gray-500" width="26px" height="26px"/>
                                                 <div class="flex-grow-1">
@@ -163,7 +163,7 @@
                                                     <span class="font-16 font-weight-bold d-block">{{ \App\Models\BookingOrderItem::whereHas('order', function($q) use($user) { $q->where('user_id', $user->id); })->whereNotNull('booking_id')->count() }}</span>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> -->
 
                                         <div class="col-6 mb-3">
                                             <div class="d-flex align-items-center">
