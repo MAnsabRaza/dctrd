@@ -14,15 +14,13 @@ return new class extends Migration
     public function up()
     {
        Schema::table('comments', function (Blueprint $table) {
+if (!Schema::hasColumn('comments', 'booking_id')) {
+    $table->unsignedBigInteger('booking_id')->nullable();
+}
 
-    $table->unsignedBigInteger('booking_id')
-          ->nullable()
-          ->after('product_id');
-
-    // FIXED TYPE
-    $table->unsignedInteger('booking_review_id')
-          ->nullable()
-          ->after('product_review_id');
+if (!Schema::hasColumn('comments', 'booking_review_id')) {
+    $table->unsignedInteger('booking_review_id')->nullable();
+}
 
     // Foreign Keys
     $table->foreign('booking_id')
