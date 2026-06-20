@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin\Booking;
 
 use App\Exports\BookingsExport;
@@ -21,7 +22,7 @@ class BookingController extends Controller
         $this->authorize('admin_booking');
         removeContentLocale();
 
-          $productCategories = BookingCategory::query()
+        $productCategories = BookingCategory::query()
             ->whereNull('parent_id')
             ->with('children')
             ->orderBy('order')
@@ -45,7 +46,7 @@ class BookingController extends Controller
 
         $bookingTypeCategoryMap = [];
         foreach ($parentCategories as $category) {
-            $bookingTypeCategoryMap[Str::slug($category->slug)] = $category->id;
+            $bookingTypeCategoryMap[Str::slug($category->slug)]  = $category->id;
             $bookingTypeCategoryMap[Str::slug($category->title)] = $category->id;
         }
 
@@ -82,10 +83,7 @@ class BookingController extends Controller
         return $this->buildBookingListView($request, true);
     }
 
-    /**
-     * Shared logic for both the normal booking list and the in-house booking list.
-     * Mirrors ProductsController::index() / inHouseProducts() pattern.
-     */
+    // ── Shared list builder ───────────────────────────────────────────
     private function buildBookingListView(Request $request, bool $inHouseOnly)
     {
         removeContentLocale();
@@ -115,16 +113,18 @@ class BookingController extends Controller
                     $qu->select('id', 'full_name');
                 },
             ])
+            // sales_count = confirmed/completed orders count for this booking
             ->withCount([
-                'orderItems as sales_count' => function ($qu) {
-                    $qu->whereNotIn('status', ['cancelled', 'pending']);
+                'orders as sales_count' => function ($qu) {
+                    $qu->whereIn('status', ['confirmed', 'completed']);
                 },
             ])
+            // booking_income = sum of quantity * booking price for confirmed/completed orders
             ->withSum([
-                'orderItems as booking_income' => function ($qu) {
-                    $qu->whereNotIn('status', ['cancelled', 'pending']);
+                'orders as booking_income' => function ($qu) {
+                    $qu->whereIn('status', ['confirmed', 'completed']);
                 },
-            ], 'total_price');
+            ], 'total_amount');
 
         $bookings        = $query->paginate(15);
         $categories      = BookingCategory::where('status', 1)->orderBy('order')->get();
@@ -134,7 +134,9 @@ class BookingController extends Controller
         $selectedSellers = $this->getSelectedSellers($request);
 
         $data = [
-            'pageTitle'         => $inHouseOnly ? trans('update.in-house-bookings') : trans('admin/main.booking_list'),
+            'pageTitle'         => $inHouseOnly
+                                    ? trans('update.in-house-bookings')
+                                    : trans('admin/main.booking_list'),
             'bookingPageMode'   => 'list',
             'inHouseBookings'   => $inHouseOnly,
             'bookings'          => $bookings,
@@ -149,6 +151,7 @@ class BookingController extends Controller
         return view('admin.booking.booking', array_merge($data, $topStatData));
     }
 
+    // ── Export Excel ──────────────────────────────────────────────────
     public function exportExcel(Request $request)
     {
         $this->authorize('admin_booking');
@@ -171,37 +174,37 @@ class BookingController extends Controller
                 },
             ])
             ->withCount([
-                'orderItems as sales_count' => function ($qu) {
-                    $qu->whereNotIn('status', ['cancelled', 'pending']);
+                'orders as sales_count' => function ($qu) {
+                    $qu->whereIn('status', ['confirmed', 'completed']);
                 },
             ])
             ->withSum([
-                'orderItems as booking_income' => function ($qu) {
-                    $qu->whereNotIn('status', ['cancelled', 'pending']);
+                'orders as booking_income' => function ($qu) {
+                    $qu->whereIn('status', ['confirmed', 'completed']);
                 },
-            ], 'total_price')
+            ], 'total_amount')
             ->get();
 
         return Excel::download(new BookingsExport($bookings), 'bookings.xlsx');
     }
 
+    // ── Store ─────────────────────────────────────────────────────────
     public function store(Request $request)
     {
         $this->authorize('admin_booking_create');
 
         $this->validate($request, [
-            'title'        => 'required|string|max:255',
-            'category_id'  => 'nullable|exists:booking_categories,id',
-            'language'     => 'nullable|string|max:10',
-            'booking_type' => 'required|string|max:255',
-            'price'        => 'required|numeric|min:0',
-            // price_per — migration mein decimal hai, isliye numeric validate karo
-            'price_per'    => 'nullable|numeric|min:0',
+            'title'          => 'required|string|max:255',
+            'category_id'    => 'nullable|exists:booking_categories,id',
+            'language'       => 'nullable|string|max:10',
+            'booking_type'   => 'required|string|max:255',
+            'price'          => 'required|numeric|min:0',
+            'price_per'      => 'nullable|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')],
-            'creator_id' => 'nullable|exists:users,id',
-            'tax' => 'nullable|numeric|min:0|max:999.99',
-            'commission' => 'nullable|numeric|min:0|max:999.99',
+            'slug'           => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')],
+            'creator_id'     => 'nullable|exists:users,id',
+            'tax'            => 'nullable|numeric|min:0|max:999.99',
+            'commission'     => 'nullable|numeric|min:0|max:999.99',
             'deposit_amount' => 'nullable|numeric|min:0',
         ]);
 
@@ -225,8 +228,8 @@ class BookingController extends Controller
 
             // Pricing
             'price'            => $request->price,
-            'price_per'        => $request->price_per ?: null,  // decimal — null agar empty
-            'price_unit'       => $request->price_unit,         // string — "per night" etc.
+            'price_per'        => $request->price_per ?: null,
+            'price_unit'       => $request->price_unit,
             'discount_price'   => $request->discount_price ?: null,
             'currency'         => $request->currency ?? 'USD',
             'tax'              => $request->tax ?? 0,
@@ -243,17 +246,17 @@ class BookingController extends Controller
             'capacity'         => $request->capacity ?: null,
 
             // Duration
-            'duration_minutes' => $request->duration_minutes ?: null,
-            'buffer_before'    => $request->buffer_before ?? 0,
-            'buffer_after'     => $request->buffer_after ?? 0,
-            'lead_time_hours'  => $request->lead_time_hours ?? 0,
-            'cutoff_time_hours'=> $request->cutoff_time_hours ?? 0,
-            'instant_booking'  => $request->boolean('instant_booking'),
-            'requires_approval'=> $request->boolean('requires_approval'),
-            'allow_reschedule' => $request->boolean('allow_reschedule'),
+            'duration_minutes'        => $request->duration_minutes ?: null,
+            'buffer_before'           => $request->buffer_before ?? 0,
+            'buffer_after'            => $request->buffer_after ?? 0,
+            'lead_time_hours'         => $request->lead_time_hours ?? 0,
+            'cutoff_time_hours'       => $request->cutoff_time_hours ?? 0,
+            'instant_booking'         => $request->boolean('instant_booking'),
+            'requires_approval'       => $request->boolean('requires_approval'),
+            'allow_reschedule'        => $request->boolean('allow_reschedule'),
             'reschedule_before_hours' => $request->reschedule_before_hours ?? 24,
-            'waitlist_enabled' => $request->boolean('waitlist_enabled'),
-            'inventory'        => $request->inventory ?: null,
+            'waitlist_enabled'        => $request->boolean('waitlist_enabled'),
+            'inventory'               => $request->inventory ?: null,
 
             // Location
             'location_enabled' => $request->boolean('location_enabled'),
@@ -265,7 +268,7 @@ class BookingController extends Controller
             'lat'              => $request->lat ?: null,
             'lng'              => $request->lng ?: null,
 
-            // Status
+            // Status & misc
             'status'           => 'draft',
             'featured'         => $request->boolean('featured'),
             'forum_enabled'    => $request->boolean('forum_enabled'),
@@ -278,7 +281,6 @@ class BookingController extends Controller
             'reviewer_message' => $request->reviewer_message ?: null,
             'checkout_message' => $request->checkout_message ?: null,
             'meta'             => $this->bookingMeta($request),
-
         ]);
 
         $this->sendBookingNotification($booking, 'booking_created');
@@ -287,13 +289,15 @@ class BookingController extends Controller
             ->with('success', trans('admin/main.created_successfully'));
     }
 
+    // ── Edit ──────────────────────────────────────────────────────────
     public function edit($id)
     {
         $this->authorize('admin_booking_edit');
         removeContentLocale();
 
-        $editBooking   = Booking::findOrFail($id);
-        $bookings      = Booking::orderBy('created_at', 'desc')->paginate(15);
+        $editBooking = Booking::findOrFail($id);
+        $bookings    = Booking::orderBy('created_at', 'desc')->paginate(15);
+
         $parentCategories = BookingCategory::whereNull('parent_id')
             ->where('status', 1)
             ->orderBy('order')
@@ -312,7 +316,7 @@ class BookingController extends Controller
 
         $bookingTypeCategoryMap = [];
         foreach ($parentCategories as $category) {
-            $bookingTypeCategoryMap[Str::slug($category->slug)] = $category->id;
+            $bookingTypeCategoryMap[Str::slug($category->slug)]  = $category->id;
             $bookingTypeCategoryMap[Str::slug($category->title)] = $category->id;
         }
 
@@ -336,6 +340,7 @@ class BookingController extends Controller
         ]);
     }
 
+    // ── Update ────────────────────────────────────────────────────────
     public function update(Request $request, $id)
     {
         $this->authorize('admin_booking_edit');
@@ -393,17 +398,17 @@ class BookingController extends Controller
             'capacity'         => $request->capacity ?: null,
 
             // Duration
-            'duration_minutes' => $request->duration_minutes ?: null,
-            'buffer_before'    => $request->buffer_before ?? 0,
-            'buffer_after'     => $request->buffer_after ?? 0,
-            'lead_time_hours'  => $request->lead_time_hours ?? 0,
-            'cutoff_time_hours'=> $request->cutoff_time_hours ?? 0,
-            'instant_booking'  => $request->boolean('instant_booking'),
-            'requires_approval'=> $request->boolean('requires_approval'),
-            'allow_reschedule' => $request->boolean('allow_reschedule'),
+            'duration_minutes'        => $request->duration_minutes ?: null,
+            'buffer_before'           => $request->buffer_before ?? 0,
+            'buffer_after'            => $request->buffer_after ?? 0,
+            'lead_time_hours'         => $request->lead_time_hours ?? 0,
+            'cutoff_time_hours'       => $request->cutoff_time_hours ?? 0,
+            'instant_booking'         => $request->boolean('instant_booking'),
+            'requires_approval'       => $request->boolean('requires_approval'),
+            'allow_reschedule'        => $request->boolean('allow_reschedule'),
             'reschedule_before_hours' => $request->reschedule_before_hours ?? 24,
-            'waitlist_enabled' => $request->boolean('waitlist_enabled'),
-            'inventory'        => $request->inventory ?: null,
+            'waitlist_enabled'        => $request->boolean('waitlist_enabled'),
+            'inventory'               => $request->inventory ?: null,
 
             // Location
             'location_enabled' => $request->boolean('location_enabled'),
@@ -415,7 +420,7 @@ class BookingController extends Controller
             'lat'              => $request->lat ?: null,
             'lng'              => $request->lng ?: null,
 
-            // Status
+            // Status & misc
             'status'           => 'draft',
             'featured'         => $request->boolean('featured'),
             'forum_enabled'    => $request->boolean('forum_enabled'),
@@ -432,6 +437,7 @@ class BookingController extends Controller
             ->with('success', trans('admin/main.updated_successfully'));
     }
 
+    // ── Delete ────────────────────────────────────────────────────────
     public function delete($id)
     {
         $this->authorize('admin_booking_delete');
@@ -442,12 +448,14 @@ class BookingController extends Controller
             ->with('success', trans('admin/main.deleted_successfully'));
     }
 
+    // ── Private helpers ───────────────────────────────────────────────
+
     private function sendBookingNotification(Booking $booking, string $template): void
     {
         $notifyOptions = [
-            '[c.title]' => $booking->title,
+            '[c.title]'    => $booking->title,
             '[item_title]' => $booking->title,
-            '[u.name]' => optional(auth()->user())->full_name,
+            '[u.name]'     => optional(auth()->user())->full_name,
         ];
 
         sendNotification($template, $notifyOptions, 1);
@@ -457,49 +465,67 @@ class BookingController extends Controller
         }
     }
 
+    /**
+     * Top-of-page stats — uses booking_orders only.
+     *
+     * booking_orders columns used:
+     *   booking_id  — which booking this order is for
+     *   seller_id   — seller (creator) of the booking
+     *   buyer_id    — customer who placed the order
+     *   status      — confirmed / completed / cancelled / pending
+     */
     private function getTopPageStats($query): array
     {
+        // Total bookings count
         $totalBookings = deepClone($query)->count();
-        $totalBookingSales = deepClone($query)
-            ->join('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
-            ->whereNotIn('booking_order_items.status', ['cancelled', 'pending'])
-            ->count('booking_order_items.id');
 
+        // Pluck IDs of bookings in this query scope
+        $bookingIds = deepClone($query)->pluck('bookings.id');
+
+        // Total sales = confirmed/completed orders count
+        $totalBookingSales = 0;
+        $totalCustomers    = 0;
+
+        if ($bookingIds->count()) {
+            $totalBookingSales = BookingOrder::whereIn('booking_id', $bookingIds)
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->count();
+
+            // Unique customers (buyer_id) across those orders
+            $totalCustomers = BookingOrder::whereIn('booking_id', $bookingIds)
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->whereNotNull('buyer_id')
+                ->distinct('buyer_id')
+                ->count('buyer_id');
+        }
+
+        // Total unique sellers (creators) in this booking scope
         $totalSellers = deepClone($query)
             ->whereNotNull('creator_id')
             ->distinct('creator_id')
             ->count('creator_id');
 
-        $bookingIds = deepClone($query)->pluck('id');
-        $totalCustomers = 0;
-
-        if ($bookingIds->count()) {
-            $totalCustomers = BookingOrder::query()
-                ->join('booking_order_items', 'booking_orders.id', '=', 'booking_order_items.order_id')
-                ->whereIn('booking_order_items.booking_id', $bookingIds)
-                ->whereNotIn('booking_order_items.status', ['cancelled', 'pending'])
-                ->distinct('booking_orders.user_id')
-                ->count('booking_orders.user_id');
-        }
-
         return [
-            'totalBookings' => $totalBookings,
-            'totalBookingSales' => $totalBookingSales,
-            'totalBookingSellers' => $totalSellers,
+            'totalBookings'         => $totalBookings,
+            'totalBookingSales'     => $totalBookingSales,
+            'totalBookingSellers'   => $totalSellers,
             'totalBookingCustomers' => $totalCustomers,
         ];
     }
 
+    /**
+     * Query filters — sort cases now use booking_orders instead of booking_order_items.
+     */
     private function handleFilters($query, Request $request)
     {
-        $from = $request->get('from', null);
-        $to = $request->get('to', null);
-        $title = $request->get('title', null);
-        $creatorIds = $request->get('creator_ids', null);
-        $categoryId = $request->get('category_id', null);
+        $from        = $request->get('from', null);
+        $to          = $request->get('to', null);
+        $title       = $request->get('title', null);
+        $creatorIds  = $request->get('creator_ids', null);
+        $categoryId  = $request->get('category_id', null);
         $bookingType = $request->get('booking_type', null);
-        $status = $request->get('status', null);
-        $sort = $request->get('sort', null);
+        $status      = $request->get('status', null);
+        $sort        = $request->get('sort', null);
 
         $query = fromAndToDateFilter($from, $to, $query, 'created_at');
 
@@ -507,7 +533,7 @@ class BookingController extends Controller
             $query->where('title', 'like', '%' . $title . '%');
         }
 
-        if (!empty($creatorIds) and is_array($creatorIds) and count($creatorIds)) {
+        if (!empty($creatorIds) && is_array($creatorIds) && count($creatorIds)) {
             $query->whereIn('creator_id', $creatorIds);
         }
 
@@ -525,44 +551,65 @@ class BookingController extends Controller
 
         switch ($sort) {
             case 'sales_asc':
-                $query->leftJoin('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
-                    ->select('bookings.*', DB::raw('count(booking_order_items.id) as order_items_count'))
+                $query->leftJoin('booking_orders', function ($join) {
+                        $join->on('bookings.id', '=', 'booking_orders.booking_id')
+                             ->whereIn('booking_orders.status', ['confirmed', 'completed']);
+                    })
+                    ->select('bookings.*', DB::raw('count(booking_orders.id) as orders_count'))
                     ->groupBy('bookings.id')
-                    ->orderBy('order_items_count', 'asc');
+                    ->orderBy('orders_count', 'asc');
                 break;
+
             case 'sales_desc':
-                $query->leftJoin('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
-                    ->select('bookings.*', DB::raw('count(booking_order_items.id) as order_items_count'))
+                $query->leftJoin('booking_orders', function ($join) {
+                        $join->on('bookings.id', '=', 'booking_orders.booking_id')
+                             ->whereIn('booking_orders.status', ['confirmed', 'completed']);
+                    })
+                    ->select('bookings.*', DB::raw('count(booking_orders.id) as orders_count'))
                     ->groupBy('bookings.id')
-                    ->orderBy('order_items_count', 'desc');
+                    ->orderBy('orders_count', 'desc');
                 break;
+
             case 'price_asc':
                 $query->orderBy('price', 'asc');
                 break;
+
             case 'price_desc':
                 $query->orderBy('price', 'desc');
                 break;
+
             case 'income_asc':
-                $query->leftJoin('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
-                    ->select('bookings.*', DB::raw('coalesce(sum(booking_order_items.total_price), 0) as income_amount'))
+                $query->leftJoin('booking_orders', function ($join) {
+                        $join->on('bookings.id', '=', 'booking_orders.booking_id')
+                             ->whereIn('booking_orders.status', ['confirmed', 'completed']);
+                    })
+                    ->select('bookings.*', DB::raw('coalesce(sum(booking_orders.total_amount), 0) as income_amount'))
                     ->groupBy('bookings.id')
                     ->orderBy('income_amount', 'asc');
                 break;
+
             case 'income_desc':
-                $query->leftJoin('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
-                    ->select('bookings.*', DB::raw('coalesce(sum(booking_order_items.total_price), 0) as income_amount'))
+                $query->leftJoin('booking_orders', function ($join) {
+                        $join->on('bookings.id', '=', 'booking_orders.booking_id')
+                             ->whereIn('booking_orders.status', ['confirmed', 'completed']);
+                    })
+                    ->select('bookings.*', DB::raw('coalesce(sum(booking_orders.total_amount), 0) as income_amount'))
                     ->groupBy('bookings.id')
                     ->orderBy('income_amount', 'desc');
                 break;
+
             case 'created_at_asc':
                 $query->orderBy('bookings.created_at', 'asc');
                 break;
+
             case 'updated_at_asc':
                 $query->orderBy('bookings.updated_at', 'asc');
                 break;
+
             case 'updated_at_desc':
                 $query->orderBy('bookings.updated_at', 'desc');
                 break;
+
             case 'created_at_desc':
             default:
                 $query->orderBy('bookings.created_at', 'desc');
@@ -576,7 +623,7 @@ class BookingController extends Controller
     {
         $creatorIds = $request->get('creator_ids', []);
 
-        if (empty($creatorIds) or !is_array($creatorIds)) {
+        if (empty($creatorIds) || !is_array($creatorIds)) {
             return collect();
         }
 
@@ -590,7 +637,7 @@ class BookingController extends Controller
     {
         $userLanguages = getGeneralSettings('user_languages');
 
-        if (!empty($userLanguages) and is_array($userLanguages)) {
+        if (!empty($userLanguages) && is_array($userLanguages)) {
             return getLanguages($userLanguages);
         }
 
@@ -600,16 +647,16 @@ class BookingController extends Controller
     private function bookingMeta(Request $request): array
     {
         return [
-            'reward_points' => $request->reward_points,
-            'commission_type' => $request->commission_type ?? 'percent',
+            'reward_points'        => $request->reward_points,
+            'commission_type'      => $request->commission_type ?? 'percent',
             'seo_meta_description' => $request->seo_meta_description,
-            'tags' => collect(explode(',', (string) $request->tags))
-                ->map(fn ($tag) => trim($tag))
-                ->filter()
-                ->take(10)
-                ->values()
-                ->all(),
-            'time_zone' => $request->time_zone ?? 'America/New_York',
+            'tags'                 => collect(explode(',', (string) $request->tags))
+                                        ->map(fn ($tag) => trim($tag))
+                                        ->filter()
+                                        ->take(10)
+                                        ->values()
+                                        ->all(),
+            'time_zone'            => $request->time_zone ?? 'America/New_York',
         ];
     }
 

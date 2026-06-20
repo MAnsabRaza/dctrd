@@ -4857,4 +4857,5 @@ return [
 'booking_sellers'=>'Booking Sellers',
 'total_bookings'=>'Total Bookings',
 'view_bookings'=>'View Bookings',
+'admin_booking_reviews_list_title'=>'Booking Reviews',
 ];
