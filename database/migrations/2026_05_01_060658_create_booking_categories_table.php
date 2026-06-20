@@ -22,6 +22,7 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->integer('order')->default(0);
             $table->boolean('status')->default(true);
+            $table->softDeletes();
             $table->timestamps();
             $table->foreign('parent_id')
                 ->references('id')

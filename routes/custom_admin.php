@@ -238,8 +238,8 @@ Route::group(['prefix' => 'booking'], function () {
             Route::get('/create', [BookingTopCategoryController::class, 'create']);
             Route::post('/store', [BookingTopCategoryController::class, 'store']);
             Route::get('/{id}/edit', [BookingTopCategoryController::class, 'edit']);
-            Route::put('/{id}', [BookingTopCategoryController::class, 'update']);
-            Route::get('/{id}/delete', [BookingTopCategoryController::class, 'destroy']);
+            Route::post('/{id}/update', [BookingTopCategoryController::class, 'update']);
+            Route::get('/{id}/delete', [BookingTopCategoryController::class, 'delete']);
         });
 
         // Booking Feature Categories

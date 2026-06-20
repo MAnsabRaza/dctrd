@@ -9,40 +9,51 @@ use Illuminate\Http\Request;
 
 class BookingTopCategoryController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $this->authorize('admin_booking_top_categories');
+        removeContentLocale();
 
-        $query = BookingTopCategory::with('category');
+        $featuredCategories = BookingTopCategory::query()
+            ->with('category')
+            ->latest()
+            ->get();
 
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->get('category_id'));
-        }
+        $productCategories = BookingCategory::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
 
-        $items = $query->orderBy('id', 'desc')->paginate(10);
-        $items->appends($request->query());
+        $data = [
+            'pageTitle' => trans('update.top_categories'),
+            'featuredCategories' => $featuredCategories,
+            'productCategories' => $productCategories,
+        ];
 
-        $categories = BookingCategory::orderBy('title')->pluck('title', 'id');
-
-        return view('admin.booking.top_category', [
-            'pageTitle' => trans('admin/main.booking_top_categories'),
-            'items'     => $items,
-            'categories' => $categories,
-        ]);
+        return view('admin.booking.top_category', $data);
     }
 
     public function create()
     {
         $this->authorize('admin_booking_top_categories_create');
 
-        $categories = BookingCategory::orderBy('title')->pluck('title', 'id');
-        $items = BookingTopCategory::with('category')->orderBy('id', 'desc')->paginate(10);
+        $featuredCategories = BookingTopCategory::query()
+            ->with('category')
+            ->latest()
+            ->get();
+
+        $productCategories = BookingCategory::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
 
         return view('admin.booking.top_category', [
-            'pageTitle' => trans('admin/main.new_booking_top_category'),
-            'categories' => $categories,
-            'items'      => $items,
-            'activeTab'  => 'new',
+            'pageTitle' => trans('update.add_top_category'),
+            'featuredCategories' => $featuredCategories,
+            'productCategories' => $productCategories,
+            'activeTab' => 'new',
         ]);
     }
 
@@ -52,83 +63,114 @@ class BookingTopCategoryController extends Controller
 
         $this->validate($request, [
             'category_id' => 'required|exists:booking_categories,id',
-            'image' => 'required|image',
+            'image' => 'required|string|max:255',
         ]);
 
-        $data = $request->only(['category_id']);
+        $data = $request->all();
 
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $filename = 'top_category_' . time() . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('public/booking/top_categories', $filename);
-            $data['image'] = 'booking/top_categories/' . $filename;
+        $check = BookingTopCategory::query()->where('category_id', $data['category_id'])->first();
+
+        if (!empty($check)) {
+            return redirect()->back()->withErrors([
+                'category_id' => trans('update.featured_category_exists'),
+            ]);
         }
 
-        BookingTopCategory::create($data);
+        BookingTopCategory::query()->create([
+            'category_id' => $data['category_id'],
+            'image' => $data['image'],
+        ]);
 
-        return redirect(getAdminPanelUrl() . '/booking/top-categories')
-            ->with('success', trans('admin/main.created_successfully'));
+        $toastData = [
+            'title' => trans('public.request_success'),
+            'msg' => trans('update.featured_category_created_successful'),
+            'status' => 'success'
+        ];
+        return redirect(getAdminPanelUrl("/booking/top-categories"))->with(['toast' => $toastData]);
     }
 
     public function edit($id)
     {
         $this->authorize('admin_booking_top_categories_edit');
 
-        $item = BookingTopCategory::findOrFail($id);
-        $categories = BookingCategory::orderBy('title')->pluck('title', 'id');
-        $items = BookingTopCategory::with('category')->orderBy('id', 'desc')->paginate(10);
+        $editFeaturedCategory = BookingTopCategory::query()->findOrFail($id);
 
-        return view('admin.booking.top_category', [
-            'pageTitle' => trans('admin/main.edit_booking_top_category'),
-            'editItem'  => $item,
-            'categories' => $categories,
-            'items'      => $items,
-            'activeTab'  => 'new',
-        ]);
+        $featuredCategories = BookingTopCategory::query()
+            ->with('category')
+            ->latest()
+            ->get();
+
+        $productCategories = BookingCategory::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
+
+        $data = [
+            'pageTitle' => trans('update.top_categories'),
+            'editFeaturedCategory' => $editFeaturedCategory,
+            'featuredCategories' => $featuredCategories,
+            'productCategories' => $productCategories,
+            'activeTab' => 'new',
+        ];
+
+        return view('admin.booking.top_category', $data);
     }
 
     public function update(Request $request, $id)
     {
         $this->authorize('admin_booking_top_categories_edit');
 
+        $featuredCategory = BookingTopCategory::query()->findOrFail($id);
+
         $this->validate($request, [
             'category_id' => 'required|exists:booking_categories,id',
-            'image' => 'nullable|image',
+            'image' => 'required|string|max:255',
         ]);
 
-        $item = BookingTopCategory::findOrFail($id);
-        $data = $request->only(['category_id']);
+        $data = $request->all();
 
-        if ($request->hasFile('image')) {
-            if ($item->image && file_exists(storage_path('app/public/' . $item->image))) {
-                unlink(storage_path('app/public/' . $item->image));
-            }
-            
-            $image = $request->file('image');
-            $filename = 'top_category_' . time() . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('public/booking/top_categories', $filename);
-            $data['image'] = 'booking/top_categories/' . $filename;
+        $check = BookingTopCategory::query()->where('id', '!=', $featuredCategory->id)
+            ->where('category_id', $data['category_id'])
+            ->first();
+
+        if (!empty($check)) {
+            return redirect()->back()->withErrors([
+                'category_id' => trans('update.featured_category_exists'),
+            ]);
         }
 
-        $item->update($data);
+        $featuredCategory->update([
+            'category_id' => $data['category_id'],
+            'image' => $data['image'],
+        ]);
 
-        return redirect(getAdminPanelUrl() . '/booking/top-categories')
-            ->with('success', trans('admin/main.updated_successfully'));
+        $toastData = [
+            'title' => trans('public.request_success'),
+            'msg' => trans('update.featured_category_updated_successful'),
+            'status' => 'success'
+        ];
+        return redirect(getAdminPanelUrl("/booking/top-categories"))->with(['toast' => $toastData]);
+    }
+
+    public function delete($id)
+    {
+        $this->authorize('admin_booking_top_categories_delete');
+
+        $featuredCategory = BookingTopCategory::query()->findOrFail($id);
+
+        $featuredCategory->delete();
+
+        $toastData = [
+            'title' => trans('public.request_success'),
+            'msg' => trans('update.featured_category_deleted_successful'),
+            'status' => 'success'
+        ];
+        return redirect(getAdminPanelUrl("/booking/top-categories"))->with(['toast' => $toastData]);
     }
 
     public function destroy($id)
     {
-        $this->authorize('admin_booking_top_categories_delete');
-
-        $item = BookingTopCategory::findOrFail($id);
-
-        if ($item->image && file_exists(storage_path('app/public/' . $item->image))) {
-            unlink(storage_path('app/public/' . $item->image));
-        }
-
-        $item->delete();
-
-        return redirect(getAdminPanelUrl() . '/booking/top-categories')
-            ->with('success', trans('admin/main.deleted_successfully'));
+        return $this->delete($id);
     }
 }

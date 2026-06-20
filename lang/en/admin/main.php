@@ -248,6 +248,7 @@ return [
 'created_successfully '=>'Created Successfully.',
 'edit_booking_feature_category'=>'Edit Booking Feature Category',
 'edit_booking_top_category'=>'Edit Booking Top Category',
+'update_successfully'=>'Updated Successfully.',
 
     //Booking
     'booking' => 'Booking',

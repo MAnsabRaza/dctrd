@@ -15,9 +15,9 @@ return new class extends Migration
     {
         Schema::create('booking_top_categories', function (Blueprint $table) {
             $table->id();
-              $table->unsignedBigInteger('category_id')->nullable(); // category BIGINT hai
-             $table->string('image')->nullable();
-             
+            $table->unsignedBigInteger('category_id')->nullable()->unique();
+            $table->string('image')->nullable();
+
             $table->foreign('category_id')
                 ->references('id')
                 ->on('booking_categories')
