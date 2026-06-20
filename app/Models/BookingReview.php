@@ -12,67 +12,45 @@ class BookingReview extends Model
     protected $table = 'booking_reviews';
 
     protected $fillable = [
-        'customer_id',
         'booking_id',
-        'order_id',
-        'rating',
-        'comment',
-        'value_rating',
-        'delivery_rating',
-        'seller_rating',
+        'creator_id',
+        'product_quality',
+        'purchase_worth',
+        'delivery_quality',
+        'seller_quality',
+        'rates',
+        'description',
         'status',
-        'reply',
-        'replied_at'
+        'created_at'
     ];
 
     protected $casts = [
-        'rating' => 'integer',
-        'value_rating' => 'integer',
-        'delivery_rating' => 'integer',
-        'seller_rating' => 'integer',
-        'replied_at' => 'datetime',
+        'booking_id' => 'integer',
+        'creator_id' => 'integer',
+        'product_quality' => 'integer',
+        'purchase_worth' => 'integer',
+        'delivery_quality' => 'integer',
+        'seller_quality' => 'integer',
+        'rates' => 'float',
+        'description' => 'string',
+        'status' => 'string',
+        'created_at' => 'timestamp',
     ];
 
     // ─── Relationships ───────────────────────────────────────
 
-    public function booking()
+    public function bookings()
     {
-        return $this->belongsTo(Booking::class, 'booking_id');
+        return $this->belongsTo('App\Models\Booking', 'booking_id', 'id');
     }
 
-    public function order()
+    public function creator()
     {
-        return $this->belongsTo(Order::class, 'order_id');
+        return $this->belongsTo('App\User', 'creator_id', 'id');
     }
 
-    public function customer()
+    public function comments()
     {
-        return $this->belongsTo(User::class, 'customer_id');
-    }
-
-    // ─── Scopes ──────────────────────────────────────────────
-
-    public function scopeActive($query)
-    {
-        return $query->where('status', 'active');
-    }
-
-    public function scopePending($query)
-    {
-        return $query->where('status', 'pending');
-    }
-
-    // ─── Accessors ───────────────────────────────────────────
-
-    public function getAverageRatingAttribute()
-    {
-        $ratings = array_filter([
-            $this->rating,
-            $this->value_rating,
-            $this->delivery_rating,
-            $this->seller_rating,
-        ]);
-
-        return count($ratings) ? round(array_sum($ratings) / count($ratings), 1) : 0;
+        return $this->hasMany('App\Models\Comment', 'product_review_id', 'id');
     }
 }
