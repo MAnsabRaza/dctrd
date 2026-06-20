@@ -248,8 +248,8 @@ Route::group(['prefix' => 'booking'], function () {
             Route::get('/create', [BookingFeatureCategoryController::class, 'create']);
             Route::post('/store', [BookingFeatureCategoryController::class, 'store']);
             Route::get('/{id}/edit', [BookingFeatureCategoryController::class, 'edit']);
-            Route::put('/{id}', [BookingFeatureCategoryController::class, 'update']);
-            Route::get('/{id}/delete', [BookingFeatureCategoryController::class, 'destroy']);
+            Route::post('/{id}/update', [BookingFeatureCategoryController::class, 'update']);
+            Route::get('/{id}/delete', [BookingFeatureCategoryController::class, 'delete']);
         });
 
 });

@@ -9,40 +9,51 @@ use Illuminate\Http\Request;
 
 class BookingFeatureCategoryController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $this->authorize('admin_booking_feature_categories');
+        removeContentLocale();
 
-        $query = BookingFeatureCategory::with('category');
+        $featuredCategories = BookingFeatureCategory::query()
+            ->with('category')
+            ->latest()
+            ->get();
 
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->get('category_id'));
-        }
+        $productCategories = BookingCategory::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
 
-        $items = $query->orderBy('id', 'desc')->paginate(10);
-        $items->appends($request->query());
+        $data = [
+            'pageTitle' => 'Booking Feature Categories',
+            'featuredCategories' => $featuredCategories,
+            'productCategories' => $productCategories,
+        ];
 
-        $categories = BookingCategory::orderBy('title')->pluck('title', 'id');
-
-        return view('admin.booking.feature_category', [
-            'pageTitle' => trans('admin/main.booking_feature_categories'),
-            'items'     => $items,
-            'categories' => $categories,
-        ]);
+        return view('admin.booking.feature_category', $data);
     }
 
     public function create()
     {
         $this->authorize('admin_booking_feature_categories_create');
 
-        $categories = BookingCategory::orderBy('title')->pluck('title', 'id');
-        $items = BookingFeatureCategory::with('category')->orderBy('id', 'desc')->paginate(10);
+        $featuredCategories = BookingFeatureCategory::query()
+            ->with('category')
+            ->latest()
+            ->get();
+
+        $productCategories = BookingCategory::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
 
         return view('admin.booking.feature_category', [
-            'pageTitle' => trans('admin/main.new_booking_feature_category'),
-            'categories' => $categories,
-            'items'      => $items,
-            'activeTab'  => 'new',
+            'pageTitle' => 'Add Booking Feature Category',
+            'featuredCategories' => $featuredCategories,
+            'productCategories' => $productCategories,
+            'activeTab' => 'new',
         ]);
     }
 
@@ -52,83 +63,114 @@ class BookingFeatureCategoryController extends Controller
 
         $this->validate($request, [
             'category_id' => 'required|exists:booking_categories,id',
-            'image' => 'required|image',
+            'image' => 'required|string|max:255',
         ]);
 
-        $data = $request->only(['category_id']);
+        $data = $request->all();
 
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $filename = 'feature_category_' . time() . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('public/booking/feature_categories', $filename);
-            $data['image'] = 'booking/feature_categories/' . $filename;
+        $check = BookingFeatureCategory::query()->where('category_id', $data['category_id'])->first();
+
+        if (!empty($check)) {
+            return redirect()->back()->withErrors([
+                'category_id' => trans('update.featured_category_exists'),
+            ]);
         }
 
-        BookingFeatureCategory::create($data);
+        BookingFeatureCategory::query()->create([
+            'category_id' => $data['category_id'],
+            'image' => $data['image'],
+        ]);
 
-        return redirect(getAdminPanelUrl() . '/booking/feature-categories')
-            ->with('success', trans('admin/main.created_successfully'));
+        $toastData = [
+            'title' => trans('public.request_success'),
+            'msg' => trans('update.featured_category_created_successful'),
+            'status' => 'success'
+        ];
+        return redirect(getAdminPanelUrl("/booking/feature-categories"))->with(['toast' => $toastData]);
     }
 
     public function edit($id)
     {
         $this->authorize('admin_booking_feature_categories_edit');
 
-        $item = BookingFeatureCategory::findOrFail($id);
-        $categories = BookingCategory::orderBy('title')->pluck('title', 'id');
-        $items = BookingFeatureCategory::with('category')->orderBy('id', 'desc')->paginate(10);
+        $editFeaturedCategory = BookingFeatureCategory::query()->findOrFail($id);
 
-        return view('admin.booking.feature_category', [
-            'pageTitle' => trans('admin/main.edit_booking_feature_category'),
-            'editItem'  => $item,
-            'categories' => $categories,
-            'items'      => $items,
-            'activeTab'  => 'new',
-        ]);
+        $featuredCategories = BookingFeatureCategory::query()
+            ->with('category')
+            ->latest()
+            ->get();
+
+        $productCategories = BookingCategory::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
+
+        $data = [
+            'pageTitle' => 'Edit Booking Feature Category',
+            'editFeaturedCategory' => $editFeaturedCategory,
+            'featuredCategories' => $featuredCategories,
+            'productCategories' => $productCategories,
+            'activeTab' => 'new',
+        ];
+
+        return view('admin.booking.feature_category', $data);
     }
 
     public function update(Request $request, $id)
     {
         $this->authorize('admin_booking_feature_categories_edit');
 
+        $featuredCategory = BookingFeatureCategory::query()->findOrFail($id);
+
         $this->validate($request, [
             'category_id' => 'required|exists:booking_categories,id',
-            'image' => 'nullable|image',
+            'image' => 'required|string|max:255',
         ]);
 
-        $item = BookingFeatureCategory::findOrFail($id);
-        $data = $request->only(['category_id']);
+        $data = $request->all();
 
-        if ($request->hasFile('image')) {
-            if ($item->image && file_exists(storage_path('app/public/' . $item->image))) {
-                unlink(storage_path('app/public/' . $item->image));
-            }
-            
-            $image = $request->file('image');
-            $filename = 'feature_category_' . time() . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('public/booking/feature_categories', $filename);
-            $data['image'] = 'booking/feature_categories/' . $filename;
+        $check = BookingFeatureCategory::query()->where('id', '!=', $featuredCategory->id)
+            ->where('category_id', $data['category_id'])
+            ->first();
+
+        if (!empty($check)) {
+            return redirect()->back()->withErrors([
+                'category_id' => trans('update.featured_category_exists'),
+            ]);
         }
 
-        $item->update($data);
+        $featuredCategory->update([
+            'category_id' => $data['category_id'],
+            'image' => $data['image'],
+        ]);
 
-        return redirect(getAdminPanelUrl() . '/booking/feature-categories')
-            ->with('success', trans('admin/main.updated_successfully'));
+        $toastData = [
+            'title' => trans('public.request_success'),
+            'msg' => trans('update.featured_category_updated_successful'),
+            'status' => 'success'
+        ];
+        return redirect(getAdminPanelUrl("/booking/feature-categories"))->with(['toast' => $toastData]);
+    }
+
+    public function delete($id)
+    {
+        $this->authorize('admin_booking_feature_categories_delete');
+
+        $featuredCategory = BookingFeatureCategory::query()->findOrFail($id);
+
+        $featuredCategory->delete();
+
+        $toastData = [
+            'title' => trans('public.request_success'),
+            'msg' => trans('update.featured_category_deleted_successful'),
+            'status' => 'success'
+        ];
+        return redirect(getAdminPanelUrl("/booking/feature-categories"))->with(['toast' => $toastData]);
     }
 
     public function destroy($id)
     {
-        $this->authorize('admin_booking_feature_categories_delete');
-
-        $item = BookingFeatureCategory::findOrFail($id);
-
-        if ($item->image && file_exists(storage_path('app/public/' . $item->image))) {
-            unlink(storage_path('app/public/' . $item->image));
-        }
-
-        $item->delete();
-
-        return redirect(getAdminPanelUrl() . '/booking/feature-categories')
-            ->with('success', trans('admin/main.deleted_successfully'));
+        return $this->delete($id);
     }
 }
