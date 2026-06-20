@@ -173,6 +173,20 @@
                                         </select>
                                     </div>
                                 </div>
+                            @elseif($page == 'bookings')
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="input-label">{{ trans('update.bookings') }}</label>
+                                        <select name="booking_ids[]" multiple="multiple" class="form-control search-booking-select2 " data-placeholder="Search bookings">
+
+                                            @if(!empty($bookings) and $bookings->count() > 0)
+                                                @foreach($bookings as $booking)
+                                                    <option value="{{ $booking->id }}" selected>{{ $booking->title }}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+                                </div>
                             @endif
 
 
@@ -222,6 +236,8 @@
                                             <th class="text-left">{{ trans('update.product') }}</th>
                                         @elseif($page == 'events')
                                             <th class="text-left">{{ trans('update.event') }}</th>
+                                        @elseif($page == 'bookings')
+                                            <th class="text-left">{{ trans('update.booking') }}</th>
                                         @endif
                                         <th>{{ trans('admin/main.type') }}</th>
                                         <th>{{ trans('admin/main.status') }}</th>

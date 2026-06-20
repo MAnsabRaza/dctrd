@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Api\WebinarReview;
 use App\Models\Blog;
+use App\Models\Booking;
 use App\Models\Bundle;
 use App\Models\Comment;
 use App\Models\CommentReport;
@@ -38,6 +39,9 @@ class CommentsController extends Controller
         } else if ($page == 'products') {
             $this->item = 'product';
             $this->item_column = 'product_id';
+        } else if ($page == 'bookings') {
+            $this->item = 'booking';
+            $this->item_column = 'booking_id';
         } else if ($page == 'reviews') {
             $this->item = 'review';
             $this->item_column = 'review_id';
@@ -66,7 +70,7 @@ class CommentsController extends Controller
 
         $query = $this->filters($query, $request);
         $comments = $query->with([
-            $this->item, // webinar or blog relation
+            $this->item, // webinar, product, booking or blog relation
             'user' => function ($query) {
                 $query->select('id', 'full_name');
             }
@@ -90,6 +94,7 @@ class CommentsController extends Controller
         $product_ids = $request->get('product_ids');
         $bundle_ids = $request->get('bundle_ids');
         $event_ids = $request->get('event_ids');
+        $booking_ids = $request->get('booking_ids');
 
         if (!empty($user_ids)) {
             $data['users'] = User::select('id', 'full_name')->whereIn('id', $user_ids)->get();
@@ -115,6 +120,10 @@ class CommentsController extends Controller
             $data['events'] = Event::select('id')->whereIn('id', $event_ids)->get();
         }
 
+        if (!empty($booking_ids)) {
+            $data['bookings'] = Booking::select('id')->whereIn('id', $booking_ids)->get();
+        }
+
         return view('admin.comments.comments', $data);
     }
 
@@ -127,6 +136,7 @@ class CommentsController extends Controller
         $post_ids = $request->get('post_ids', null);
         $product_ids = $request->get('product_ids', null);
         $bundle_ids = $request->get('bundle_ids');
+        $booking_ids = $request->get('booking_ids', null);
         $status = $request->get('status', null);
 
         if (!empty($title)) {
@@ -159,6 +169,10 @@ class CommentsController extends Controller
 
         if (!empty($bundle_ids)) {
             $query->whereIn('bundle_id', $bundle_ids);
+        }
+
+        if (!empty($booking_ids)) {
+            $query->whereIn('booking_id', $booking_ids);
         }
 
         if (!empty($status) and in_array($status, ['active', 'pending'])) {
@@ -210,6 +224,15 @@ class CommentsController extends Controller
                     '[u.name]' => $commentedUser->full_name
                 ];
                 sendNotification('product_new_comment', $notifyOptions, $product->creator_id);
+            } elseif ($comment->status == 'active' and !empty($comment->booking_id)) {
+                $booking = $comment->booking;
+                $commentedUser = $comment->user;
+
+                $notifyOptions = [
+                    '[c.title]' => $booking->title,
+                    '[u.name]' => $commentedUser->full_name
+                ];
+                sendNotification('booking_new_comment', $notifyOptions, $booking->creator_id);
             }
         }
 
