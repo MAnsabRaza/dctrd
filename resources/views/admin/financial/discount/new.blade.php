@@ -98,6 +98,36 @@
                                     </select>
                                 </div>
 
+                                                             <div class="form-group js-booking-input {{ (empty($discount) or $discount->source != \App\Models\Discount::$discountSourceBooking) ? 'd-none' : '' }}">
+                                    <label class="input-label">{{ trans('update.bookings') }}</label>
+                                    <select name="booking_ids[]" multiple="multiple" class="form-control search-booking-select2 " data-placeholder="{{ trans('update.search_booking') }}">
+
+                                        @if(!empty($discount) and !empty($discount->discountBookings))
+                                            @foreach($discount->discountBookings as $discountBooking)
+                                                @if(!empty($discountBooking->booking))
+                                                    <option value="{{ $discountBooking->booking->id }}" selected>{{ $discountBooking->booking->title }}</option>
+                                                @endif
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+
+                                {{-- Booking Bundle source input --}}
+                                <div class="form-group js-booking_bundle-input {{ (empty($discount) or $discount->source != \App\Models\Discount::$discountSourceBookingBundle) ? 'd-none' : '' }}">
+                                    <label class="input-label">{{ trans('update.booking_bundles') }}</label>
+                                    <select name="booking_bundle_ids[]" multiple="multiple" class="form-control search-booking-bundle-select2 " data-placeholder="{{ trans('update.search_booking_bundle') }}">
+
+                                        @if(!empty($discount) and !empty($discount->discountBookingBundles))
+                                            @foreach($discount->discountBookingBundles as $discountBookingBundle)
+                                                @if(!empty($discountBookingBundle->bookingBundle))
+                                                    <option value="{{ $discountBookingBundle->bookingBundle->id }}" selected>{{ $discountBookingBundle->bookingBundle->title }}</option>
+                                                @endif
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+
+
                                 <div class="form-group js-meeting_package-input {{ (!empty($discount) and $discount->source == \App\Models\Discount::$discountSourceMeetingPackage) ? '' : 'd-none' }}">
                                     <label class="input-label">{{ trans('update.meeting_package') }}</label>
                                     <select name="meeting_package_ids[]" multiple="multiple" class="form-control search-meeting-package-select2 " data-placeholder="{{ trans('update.meeting_package') }}">

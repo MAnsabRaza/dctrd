@@ -19,8 +19,12 @@ class Discount extends Model
     static $discountSourceMeeting = 'meeting';
     static $discountSourceProduct = 'product';
     static $discountSourceBundle = 'bundle';
+    static $discountSourceBooking = 'booking';
+    static $discountSourceBookingBundle = 'booking_bundle';
     static $discountSourceEvent = 'event';
     static $discountSourceMeetingPackage = 'meeting_package';
+
+    sta
 
     static $discountTypes = ['percentage', 'fixed_amount'];
     static $discountTypePercentage = 'percentage';
@@ -155,6 +159,20 @@ class Discount extends Model
                 return trans('update.discount_code_is_for_meetings_error');
             }
         }
+        elseif ($this->source == self::$discountSourceBooking) {
+            $bookingCount = array_filter($carts->pluck('booking_id')->toArray());
+ 
+            if (empty($bookingCount) or count($bookingCount) < 1) {
+                return trans('update.discount_code_is_for_bookings_error');
+            }
+        }
+        elseif ($this->source == self::$discountSourceBookingBundle) {
+            $bookingBundleCount = array_filter($carts->pluck('booking_bundle_id')->toArray());
+ 
+            if (empty($bookingBundleCount) or count($bookingBundleCount) < 1) {
+                return trans('update.discount_code_is_for_booking_bundles_error');
+            }
+        }
 
         if ($this->source == self::$discountSourceCourse and count($this->discountCourses)) {
             $discountWebinarsIds = $this->discountCourses()->pluck('course_id')->toArray();
@@ -237,6 +255,36 @@ class Discount extends Model
 
             if (!$hasSpecialProducts) {
                 return trans('update.your_coupon_is_valid_for_another_products_type');
+            }
+        }
+         if ($this->source == self::$discountSourceBooking and count($this->discountBookings)) {
+            $discountBookingsIds = $this->discountBookings()->pluck('booking_id')->toArray();
+            $hasSpecialBookings = false;
+ 
+            foreach ($carts as $cart) {
+                $booking = $cart->booking;
+                if (!empty($booking) and in_array($booking->id, $discountBookingsIds)) {
+                    $hasSpecialBookings = true;
+                }
+            }
+ 
+            if (!$hasSpecialBookings) {
+                return trans('update.your_coupon_is_valid_for_another_booking');
+            }
+        }
+         if ($this->source == self::$discountSourceBookingBundle and count($this->discountBookingBundles)) {
+            $discountBookingBundlesIds = $this->discountBookingBundles()->pluck('booking_bundle_id')->toArray();
+            $hasSpecialBookingBundles = false;
+ 
+            foreach ($carts as $cart) {
+                $bookingBundle = $cart->bookingBundle;
+                if (!empty($bookingBundle) and in_array($bookingBundle->id, $discountBookingBundlesIds)) {
+                    $hasSpecialBookingBundles = true;
+                }
+            }
+ 
+            if (!$hasSpecialBookingBundles) {
+                return trans('update.your_coupon_is_valid_for_another_booking_bundle');
             }
         }
 
