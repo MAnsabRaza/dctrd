@@ -13,26 +13,28 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('comments', function (Blueprint $table) {
-             $table->unsignedBigInteger('booking_id')
-                  ->nullable()
-                  ->after('product_id');
+       Schema::table('comments', function (Blueprint $table) {
 
-            $table->unsignedBigInteger('booking_review_id')
-                  ->nullable()
-                  ->after('product_review_id');
+    $table->unsignedBigInteger('booking_id')
+          ->nullable()
+          ->after('product_id');
 
-            // Foreign Keys
-            $table->foreign('booking_id')
-                  ->references('id')
-                  ->on('bookings')
-                  ->onDelete('cascade');
+    // FIXED TYPE
+    $table->unsignedInteger('booking_review_id')
+          ->nullable()
+          ->after('product_review_id');
 
-            $table->foreign('booking_review_id')
-                  ->references('id')
-                  ->on('booking_reviews')
-                  ->onDelete('cascade');
-        });
+    // Foreign Keys
+    $table->foreign('booking_id')
+          ->references('id')
+          ->on('bookings')
+          ->onDelete('cascade');
+
+    $table->foreign('booking_review_id')
+          ->references('id')
+          ->on('booking_reviews')
+          ->onDelete('cascade');
+});
     }
 
     /**
