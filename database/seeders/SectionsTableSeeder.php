@@ -367,7 +367,8 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 1454], ['name' => 'admin_blog_comments_reports', 'section_group_id' => 1450, 'caption' => 'Blog Comments reports']);
         Section::updateOrCreate(['id' => 1455], ['name' => 'admin_report_reasons', 'section_group_id' => 1450, 'caption' => 'Reports reasons']);
         Section::updateOrCreate(['id' => 1456], ['name' => 'admin_product_comments_reports', 'section_group_id' => 1450, 'caption' => 'Products Comments reports']);
-        Section::updateOrCreate(['id' => 1457], ['name' => 'admin_forum_topic_post_reports', 'section_group_id' => 1450, 'caption' => 'Forum Topic Posts Reports']);
+        Section::updateOrCreate(['id' => 1457], ['name' => 'admin_booking_comments_reports', 'section_group_id' => 1450, 'caption' => 'Bookings Comments reports']);
+        Section::updateOrCreate(['id' => 1458], ['name' => 'admin_forum_topic_post_reports', 'section_group_id' => 1450, 'caption' => 'Forum Topic Posts Reports']);
 
         // Additional Pages 1500 - 1549
         Section::updateOrCreate(['id' => 1500], ['name' => 'admin_additional_pages', 'caption' => 'Additional Pages']);

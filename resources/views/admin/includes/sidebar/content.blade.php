@@ -217,7 +217,7 @@
                 </li>
             @endcan
 
-            @can('admin_booking_comments')
+            <!-- @can('admin_booking_comments')
                 <li class="{{ (request()->is(getAdminPanelUrl('/comments/bookings*', false)) and !request()->is(getAdminPanelUrl('/comments/bookings/reports', false))) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/comments/bookings">{{ trans('admin/main.comments') }}</a>
                 </li>
@@ -228,7 +228,7 @@
                     <a class="nav-link"
                         href="{{ getAdminPanelUrl() }}/comments/bookings/reports">{{ trans('admin/main.comments_reports') }}</a>
                 </li>
-            @endcan
+            @endcan -->
 
             @can('admin_booking_review')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/review*', false)) ? 'active' : '' }}">
