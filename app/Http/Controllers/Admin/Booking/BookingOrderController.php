@@ -192,7 +192,7 @@ class BookingOrderController extends Controller
             'order' => $order,
         ];
 
-        return view('admin.booking.order', $data);
+        return view('admin.booking.invoice', $data);
     }
 
     public function exportExcel(Request $request)

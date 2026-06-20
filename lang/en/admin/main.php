@@ -250,6 +250,8 @@ return [
 'edit_booking_top_category'=>'Edit Booking Top Category',
 'update_successfully'=>'Updated Successfully.',
 'in-house-bookings' => 'In House Bookings',
+'confirmed'=>'Confirmed',
+'completed'=>'Completed',
 
     //Booking
     'booking' => 'Booking',
