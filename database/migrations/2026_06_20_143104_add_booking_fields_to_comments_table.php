@@ -6,43 +6,36 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
     {
-       Schema::table('comments', function (Blueprint $table) {
-if (!Schema::hasColumn('comments', 'booking_id')) {
-    $table->unsignedBigInteger('booking_id')->nullable();
-}
+        Schema::table('comments', function (Blueprint $table) {
 
-if (!Schema::hasColumn('comments', 'booking_review_id')) {
-    $table->unsignedInteger('booking_review_id')->nullable();
-}
+            // booking_id (depends on bookings table type - usually BIGINT, so keep BIGINT safe)
+            $table->unsignedBigInteger('booking_id')
+                  ->nullable()
+                  ->after('product_id');
 
-    // Foreign Keys
-    $table->foreign('booking_id')
-          ->references('id')
-          ->on('bookings')
-          ->onDelete('cascade');
+            // FIX: booking_reviews.id is INT UNSIGNED
+            $table->unsignedInteger('booking_review_id')
+                  ->nullable()
+                  ->after('product_review_id');
 
-    $table->foreign('booking_review_id')
-          ->references('id')
-          ->on('booking_reviews')
-          ->onDelete('cascade');
-});
+            $table->foreign('booking_id')
+                  ->references('id')
+                  ->on('bookings')
+                  ->onDelete('cascade');
+
+            $table->foreign('booking_review_id')
+                  ->references('id')
+                  ->on('booking_reviews')
+                  ->onDelete('cascade');
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
-         Schema::table('comments', function (Blueprint $table) {
+        Schema::table('comments', function (Blueprint $table) {
+
             $table->dropForeign(['booking_id']);
             $table->dropForeign(['booking_review_id']);
 
