@@ -678,6 +678,12 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 103523], ['role_id' => 1, 'section_id' => 3523, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 203523], ['role_id' => 2, 'section_id' => 3523, 'allow' => 1]); // delete
 
+        // Booking Content Settings permissions
+        \App\Models\Permission::updateOrCreate(['id' => 103530], ['role_id' => 1, 'section_id' => 3530, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203530], ['role_id' => 2, 'section_id' => 3530, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 103531], ['role_id' => 1, 'section_id' => 3531, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 203531], ['role_id' => 2, 'section_id' => 3531, 'allow' => 1]);
+
         // Booking Sellers permissions
         \App\Models\Permission::updateOrCreate(['id' => 103610], ['role_id' => 1, 'section_id' => 3610, 'allow' => 1]); // super admin
         \App\Models\Permission::updateOrCreate(['id' => 203610], ['role_id' => 2, 'section_id' => 3610, 'allow' => 1]); // admin list

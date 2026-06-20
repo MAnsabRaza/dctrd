@@ -354,6 +354,22 @@
                 </li>
             @endcan
 
+            @can('admin_booking_featured_bookings')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/featured-bookings*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/featured-bookings">
+                        Featured Bookings
+                    </a>
+                </li>
+            @endcan
+
+            @can('admin_booking_settings')
+                <li class="{{ request()->is(getAdminPanelUrl('/booking/settings*', false)) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/settings">
+                        {{ trans('admin/main.settings') }}
+                    </a>
+                </li>
+            @endcan
+
             @foreach($bookingModuleSidebarItems as $moduleKey => $moduleItem)
                 @can($moduleItem['permission'])
                     <li class="{{ request()->is(getAdminPanelUrl('/booking/modules/' . $moduleKey . '*', false)) ? 'active' : '' }}">

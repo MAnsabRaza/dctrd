@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\Booking\BookingTimeSlotController;
 use App\Http\Controllers\Admin\Booking\BookingOrderController;
 use App\Http\Controllers\Admin\Booking\BookingSellerController;
 use App\Http\Controllers\Admin\Booking\BookingFilterController;
+use App\Http\Controllers\Admin\Booking\BookingContentSettingsController;
 use App\Http\Controllers\Admin\Booking\BookingFeaturedController;
 use App\Http\Controllers\Admin\Booking\BookingTopCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingFeatureCategoryController;
@@ -256,6 +257,12 @@ Route::group(['prefix' => 'booking'], function () {
             Route::post('/{id}/update', [BookingFeatureCategoryController::class, 'update']);
             Route::get('/{id}/delete', [BookingFeatureCategoryController::class, 'delete']);
         });
+
+        Route::get('/featured-bookings', [BookingContentSettingsController::class, 'featuredBookings']);
+        Route::post('/featured-bookings', [BookingContentSettingsController::class, 'storeFeaturedBookings']);
+
+        Route::get('/settings', [BookingContentSettingsController::class, 'settings']);
+        Route::post('/settings', [BookingContentSettingsController::class, 'storeSettings']);
 
 });
 

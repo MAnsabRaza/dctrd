@@ -179,6 +179,10 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3522], ['name' => 'admin_booking_feature_categories_edit', 'section_group_id' => 3520, 'caption' => 'Edit Booking Feature Category']);
         Section::updateOrCreate(['id' => 3523], ['name' => 'admin_booking_feature_categories_delete', 'section_group_id' => 3520, 'caption' => 'Delete Booking Feature Category']);
 
+        // Booking Content Settings 3530 - 3531
+        Section::updateOrCreate(['id' => 3530], ['name' => 'admin_booking_featured_bookings', 'caption' => 'Featured Bookings Settings']);
+        Section::updateOrCreate(['id' => 3531], ['name' => 'admin_booking_settings', 'caption' => 'Booking Settings']);
+
         // Groups 550 - 599
         Section::updateOrCreate(['id' => 550], ['name' => 'admin_group', 'caption' => trans('/admin/pages/groups.admin_group')]);
         Section::updateOrCreate(['id' => 551], ['name' => 'admin_group_list', 'section_group_id' => 550, 'caption' => trans('/admin/pages/groups.admin_group_list')]);

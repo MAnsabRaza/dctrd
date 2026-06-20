@@ -38,7 +38,7 @@ class Setting extends Model implements TranslatableContract
         $othersPersonalization, $installmentsSettings, $installmentsTermsSettings, $registrationBonusSettings, $registrationBonusTermsSettings, $statisticsSettings,
         $maintenanceSettings, $restrictionSettings, $generalOptions, $giftsGeneralSettings, $aiContentsSettings, $certificateSettings, $abandonedCartSettings, $smsChannelsSettings,
         $commissionSettings, $instructorFinderSettings, $becomeInstructorSettings, $forumsHomepageSettings, $forumsHomepageRevolverSettings, $forumsCtaSectionSettings, $forumsGeneralSettings, $forumsImagesSettings, $guarantyTextSettings, $contentReviewInformationSettings, $blogFeaturedContentsSettings,
-        $storeFeaturedProductsSettings, $userDashboardDataSettings, $mobileAppGeneralSettings, $attendanceSettings, $eventsSettings, $meetingPackagesSettings;
+        $storeFeaturedProductsSettings, $bookingSettings, $bookingFeaturedBookingsSettings, $userDashboardDataSettings, $mobileAppGeneralSettings, $attendanceSettings, $eventsSettings, $meetingPackagesSettings;
 
     // settings name , Using these keys, values are taken from the settings table
     static $seoMetasName = 'seo_metas';
@@ -99,6 +99,8 @@ class Setting extends Model implements TranslatableContract
     static $forumsCtaSectionSettingsName = 'forum_cta_section_settings';
     static $blogFeaturedContentsSettingsName = 'blog_featured_contents_settings';
     static $storeFeaturedProductsSettingsName = 'store_featured_products_settings';
+    static $bookingSettingsName = 'booking_settings';
+    static $bookingFeaturedBookingsSettingsName = 'booking_featured_bookings_settings';
     static $userDashboardDataSettingsName = 'user_dashboard_data';
     static $mobileAppGeneralSettingsName = 'mobile_app_general_settings';
     static $attendanceSettingsName = 'attendances_settings';
@@ -532,6 +534,16 @@ class Setting extends Model implements TranslatableContract
     static function getStoreFeaturedProductsSettings($key = null)
     {
         return self::getSetting(self::$storeFeaturedProductsSettings, self::$storeFeaturedProductsSettingsName, $key);
+    }
+
+    static function getBookingSettings($key = null)
+    {
+        return self::getSetting(self::$bookingSettings, self::$bookingSettingsName, $key);
+    }
+
+    static function getBookingFeaturedBookingsSettings($key = null)
+    {
+        return self::getSetting(self::$bookingFeaturedBookingsSettings, self::$bookingFeaturedBookingsSettingsName, $key);
     }
 
     static function getUserDashboardDataSettings($key = null)
