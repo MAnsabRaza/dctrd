@@ -705,7 +705,7 @@ class UserController extends Controller
         $data = array_merge($data, $this->getPurchasedProductsData($user));
 
         // Purchased Booking Data
-        $data = array_merge($data, $this->getPurchasedBookingsData($user));
+       // $data = array_merge($data, $this->getPurchasedBookingsData($user));
 
         if (auth()->user()->can('admin_forum_topics_lists')) {
             $data['topics'] = ForumTopic::where('creator_id', $user->id)
@@ -935,41 +935,41 @@ class UserController extends Controller
         ];
     }
 
-    private function getPurchasedBookingsData($user): array
-    {
-        $bookingOrders = BookingOrder::query()
-            ->where('user_id', $user->id)
-            ->with(['items.booking.creator', 'items.bundle.creator'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+    // private function getPurchasedBookingsData($user): array
+    // {
+    //     $bookingOrders = BookingOrder::query()
+    //         ->where('user_id', $user->id)
+    //         ->with(['items.booking.creator', 'items.bundle.creator'])
+    //         ->orderBy('created_at', 'desc')
+    //         ->get();
 
-        $purchasedBookingItems = $bookingOrders
-            ->flatMap(fn($order) => $order->items->map(function ($item) use ($order) {
-                $item->setRelation('order', $order);
-                return $item;
-            }))
-            ->where('item_type', 'booking');
+    //     $purchasedBookingItems = $bookingOrders
+    //         ->flatMap(fn($order) => $order->items->map(function ($item) use ($order) {
+    //             $item->setRelation('order', $order);
+    //             return $item;
+    //         }))
+    //         ->where('item_type', 'booking');
 
-        $purchasedBookingBundleItems = $bookingOrders
-            ->flatMap(fn($order) => $order->items->map(function ($item) use ($order) {
-                $item->setRelation('order', $order);
-                return $item;
-            }))
-            ->where('item_type', 'bundle');
+    //     $purchasedBookingBundleItems = $bookingOrders
+    //         ->flatMap(fn($order) => $order->items->map(function ($item) use ($order) {
+    //             $item->setRelation('order', $order);
+    //             return $item;
+    //         }))
+    //         ->where('item_type', 'bundle');
 
-        return [
-            'availableBookings' => Booking::query()
-                ->where('status', 'published')
-                ->orderBy('title')
-                ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']),
-            'availableBookingBundles' => BookingBundle::query()
-                ->where('status', 'published')
-                ->orderBy('title')
-                ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']),
-            'purchasedBookingItems' => $purchasedBookingItems,
-            'purchasedBookingBundleItems' => $purchasedBookingBundleItems,
-        ];
-    }
+    //     return [
+    //         'availableBookings' => Booking::query()
+    //             ->where('status', 'published')
+    //             ->orderBy('title')
+    //             ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']),
+    //         'availableBookingBundles' => BookingBundle::query()
+    //             ->where('status', 'published')
+    //             ->orderBy('title')
+    //             ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']),
+    //         'purchasedBookingItems' => $purchasedBookingItems,
+    //         'purchasedBookingBundleItems' => $purchasedBookingBundleItems,
+    //     ];
+    // }
 
     public function update(Request $request, $id)
     {
