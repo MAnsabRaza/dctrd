@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
+use App\Models\BookingCategory;
 use Illuminate\Http\Request;
 use App\User;
 use App\Models\Group;
@@ -38,7 +39,7 @@ class BookingSellerController extends Controller
 
         // Fetch all top-level (parent) booking categories for dynamic columns
         // Adjust the query below to match your Category model's scope/filter for bookings
-        $parentCategories = Category::whereNull('parent_id')
+        $parentCategories = BookingCategory::whereNull('parent_id')
             ->where('status', '1') // Assuming '1' means active
             ->orderBy('id', 'asc')
             ->get();
