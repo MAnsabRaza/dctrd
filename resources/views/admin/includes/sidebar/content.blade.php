@@ -276,13 +276,13 @@
                 </li>
             @endcan
 
-            @can('admin_booking_review')
-                <li class="{{ request()->is(getAdminPanelUrl('/booking/review*', false)) ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/review">
-                        {{ trans('admin/main.admin_booking_review') }}
-                    </a>
-                </li>
-            @endcan
+         @can('admin_booking_review')
+    <li class="{{ request()->is(getAdminPanelUrl('/booking/review*', false)) ? 'active' : '' }}">
+        <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/review">
+            {{ trans('admin/main.admin_booking_review') }}
+        </a>
+    </li>
+@endcan
 
             @can('admin_booking_favorite')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/favorite*', false)) ? 'active' : '' }}">

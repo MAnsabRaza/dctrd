@@ -805,6 +805,36 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3322], ['name' => 'admin_booking_review_edit', 'group' => 'admin_booking']);
         Section::updateOrCreate(['id' => 3323], ['name' => 'admin_booking_review_delete', 'group' => 'admin_booking']);
 
+        Section::updateOrCreate(['id' => 3700], [
+    'name'             => 'admin_booking_review',
+    'section_group_id' => 3240,
+    'caption'          => 'Booking Reviews',
+]);
+ 
+Section::updateOrCreate(['id' => 3701], [
+    'name'             => 'admin_booking_review_status_toggle',
+    'section_group_id' => 3240,
+    'caption'          => 'Booking Review Toggle Status',
+]);
+ 
+Section::updateOrCreate(['id' => 3702], [
+    'name'             => 'admin_booking_review_detail_show',
+    'section_group_id' => 3240,
+    'caption'          => 'Booking Review Detail Show',
+]);
+ 
+Section::updateOrCreate(['id' => 3703], [
+    'name'             => 'admin_booking_reviews_reply',
+    'section_group_id' => 3240,
+    'caption'          => 'Booking Review Reply',
+]);
+ 
+Section::updateOrCreate(['id' => 3704], [
+    'name'             => 'admin_booking_review_delete',
+    'section_group_id' => 3240,
+    'caption'          => 'Booking Review Delete',
+]);
+
         Section::updateOrCreate(
             ['id' => 3330],
             [

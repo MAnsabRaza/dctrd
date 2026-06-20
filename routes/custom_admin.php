@@ -176,13 +176,12 @@ Route::group(['prefix' => 'booking'], function () {
         Route::get('/{id}/delete', [BookingImportController::class, 'delete']);
         Route::get('/sample', [BookingImportController::class, 'downloadSample']);
     });
-    Route::group(['prefix' => 'review'], function () {
-        Route::get('/', [BookingReviewController::class, 'index']);
-        Route::post('/store', [BookingReviewController::class, 'store']);
-        Route::get('/{id}/edit', [BookingReviewController::class, 'edit']);
-        Route::post('/{id}/update', [BookingReviewController::class, 'update']);
-        Route::get('/{id}/delete', [BookingReviewController::class, 'delete']);
-    });
+   Route::group(['prefix' => 'review'], function () {
+    Route::get('/',                              [BookingReviewController::class, 'index']);
+    Route::get('/{id}/toggleStatus',            [BookingReviewController::class, 'toggleStatus']);
+    Route::get('/{id}/reply',                   [BookingReviewController::class, 'reply']);
+    Route::get('/{id}/delete',                  [BookingReviewController::class, 'delete']);
+});
 
     Route::group(['prefix' => 'favorite'], function () {
         Route::get('/', [BookingFavoriteController::class,'index']);

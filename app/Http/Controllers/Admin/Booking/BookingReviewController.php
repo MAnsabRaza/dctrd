@@ -4,177 +4,126 @@ namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingOrder;
 use App\Models\BookingReview;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class BookingReviewController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('admin_booking_review');
 
-        removeContentLocale();
+        $query = BookingReview::query();
 
-        $reviews  = BookingReview::with(['booking', 'customer', 'order'])
-                        ->orderBy('id', 'desc')
-                        ->paginate(20);
+        $totalReviews        = deepClone($query)->count();
+        $publishedReviews    = deepClone($query)->where('status', 'active')->count();
+        $ratesAverage        = deepClone($query)->avg('rates');
+        $bookingsWithoutReview = Booking::where('status', 'active')
+            ->whereDoesntHave('reviews')
+            ->count();
 
-        $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
+        $query = $this->filters($query, $request);
 
-        $orders = BookingOrder::with('items.booking')
-                        ->orderBy('id', 'desc')
-                        ->get(['id', 'order_number', 'user_id', 'status']);
+        $reviews = $query->orderBy('created_at', 'desc')
+            ->with([
+                'bookings' => function ($query) {
+                    $query->select('id', 'slug', 'title');
+                },
+                'creator' => function ($query) {
+                    $query->select('id', 'full_name');
+                },
+            ])
+            ->withCount('comments')
+            ->paginate(10);
 
-        return view('admin.booking.review', [
-            'pageTitle'  => trans('admin/main.admin_booking_review'),
-            'reviews'    => $reviews,
-            'bookings'   => $bookings,
-            'orders'     => $orders,
-            'editReview' => null,
-        ]);
-    }
+        $data = [
+            'pageTitle'            => trans('update.admin_booking_reviews_list_title'),
+            'totalReviews'         => $totalReviews,
+            'publishedReviews'     => $publishedReviews,
+            'ratesAverage'         => round($ratesAverage, 2),
+            'bookingsWithoutReview'=> $bookingsWithoutReview,
+            'reviews'              => $reviews,
+        ];
 
-    public function store(Request $request)
-    {
-        $this->authorize('admin_booking_review_create');
-
-        $this->validate($request, [
-            'booking_id'      => 'required|exists:bookings,id',
-            'order_id'        => 'required|exists:booking_orders,id',
-            'rating'          => 'required|integer|min:1|max:5',
-            'comment'         => 'required|string|max:2000',
-            'value_rating'    => 'nullable|integer|min:1|max:5',
-            'delivery_rating' => 'nullable|integer|min:1|max:5',
-            'seller_rating'   => 'nullable|integer|min:1|max:5',
-            'status'          => 'required|in:pending,active,rejected',
-            'reply'           => 'nullable|string|max:2000',
-        ]);
-
-        // Unique check: one review per customer per order
-        $alreadyExists = BookingReview::where('order_id', $request->order_id)
-                                      ->where('customer_id', Auth::id())
-                                      ->exists();
-
-        if ($alreadyExists) {
-            return back()->withInput()->withErrors([
-                'order_id' => 'A review for this order already exists.',
-            ]);
+        $booking_ids = $request->get('booking_ids');
+        if (!empty($booking_ids)) {
+            $data['bookings'] = Booking::select('id', 'title')->whereIn('id', $booking_ids)->get();
         }
 
-        $review = BookingReview::create([
-            'booking_id'      => $request->booking_id,
-            'order_id'        => $request->order_id,
-            'customer_id'     => Auth::id(),
-            'rating'          => $request->rating,
-            'comment'         => $request->comment,
-            'value_rating'    => $request->value_rating,
-            'delivery_rating' => $request->delivery_rating,
-            'seller_rating'   => $request->seller_rating,
-            'status'          => $request->status,
-            'reply'           => $request->reply,
-            'replied_at'      => $request->filled('reply') ? now() : null,
-        ]);
+        return view('admin.booking.reviews.list', $data);
+    }
 
-        if ($review->status === 'active') {
-            $this->sendReviewNotification($review);
+    private function filters($query, $request)
+    {
+        $from        = $request->get('from', null);
+        $to          = $request->get('to', null);
+        $search      = $request->get('search', null);
+        $booking_ids = $request->get('booking_ids');
+        $status      = $request->get('status', null);
+
+        $query = fromAndToDateFilter($from, $to, $query, 'created_at');
+
+        if (!empty($search)) {
+            $query->where('description', 'like', "%$search%");
         }
 
-        return redirect(getAdminPanelUrl('/booking/review'))
-            ->with('success', trans('admin/main.booking_review_created_successfully'));
+        if (!empty($booking_ids)) {
+            $query->whereIn('booking_id', $booking_ids);
+        }
+
+        if (!empty($status)) {
+            $query->where('status', $status);
+        }
+
+        return $query;
     }
 
-    public function edit($id)
+    public function toggleStatus($id)
     {
-        $this->authorize('admin_booking_review_edit');
+        $this->authorize('admin_booking_review_status_toggle');
 
-        $editReview = BookingReview::with(['booking', 'customer', 'order'])->findOrFail($id);
-
-        $reviews  = BookingReview::with(['booking', 'customer', 'order'])
-                        ->orderBy('id', 'desc')
-                        ->paginate(20);
-
-        $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
-
-        $orders = BookingOrder::with('items.booking')
-                        ->orderBy('id', 'desc')
-                        ->get(['id', 'order_number', 'user_id', 'status']);
-
-        return view('admin.booking.review', [
-            'pageTitle'  => trans('admin/main.admin_booking_review'),
-            'reviews'    => $reviews,
-            'editReview' => $editReview,
-            'bookings'   => $bookings,
-            'orders'     => $orders,
-        ]);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $this->authorize('admin_booking_review_edit');
-
-        $review    = BookingReview::findOrFail($id);
-        $wasActive = $review->status === 'active';
-
-        // ✅ All fields are now editable
-        $this->validate($request, [
-            'rating'          => 'required|integer|min:1|max:5',
-            'comment'         => 'required|string|max:2000',
-            'value_rating'    => 'nullable|integer|min:1|max:5',
-            'delivery_rating' => 'nullable|integer|min:1|max:5',
-            'seller_rating'   => 'nullable|integer|min:1|max:5',
-            'status'          => 'required|in:pending,active,rejected',
-            'reply'           => 'nullable|string|max:2000',
-        ]);
-
-        $replyChanged = $request->filled('reply') && $request->reply !== $review->reply;
+        $review = BookingReview::findOrFail($id);
 
         $review->update([
-            'rating'          => $request->rating,
-            'comment'         => $request->comment,
-            'value_rating'    => $request->value_rating,
-            'delivery_rating' => $request->delivery_rating,
-            'seller_rating'   => $request->seller_rating,
-            'status'          => $request->status,
-            'reply'           => $request->reply,
-            'replied_at'      => $replyChanged ? now() : $review->replied_at,
+            'status' => ($review->status == 'active') ? 'pending' : 'active',
         ]);
 
-        if (!$wasActive && $review->fresh()->status === 'active') {
-            $this->sendReviewNotification($review);
-        }
+        $toastData = [
+            'title'  => trans('public.request_success'),
+            'msg'    => trans('update.review_status_changed'),
+            'status' => 'success',
+        ];
 
-        return redirect(getAdminPanelUrl('/booking/review'))
-            ->with('success', trans('admin/main.booking_review_updated_successfully'));
+        return back()->with(['toast' => $toastData]);
+    }
+
+    public function reply(Request $request, $id)
+    {
+        $this->authorize('admin_booking_reviews_reply');
+
+        $review = BookingReview::with(['bookings', 'creator', 'comments.user'])->findOrFail($id);
+
+        $data = [
+            'pageTitle' => trans('admin/pages/comments.reply_comment'),
+            'review'    => $review,
+        ];
+
+        return view('admin.booking.reviews.comment_reply', $data);
     }
 
     public function delete($id)
     {
         $this->authorize('admin_booking_review_delete');
 
-        BookingReview::findOrFail($id)->delete();
+        $review = BookingReview::findOrFail($id);
+        $review->delete();
 
-        return redirect(getAdminPanelUrl('/booking/review'))
-            ->with('success', trans('admin/main.booking_review_deleted_successfully'));
-    }
-
-    private function sendReviewNotification(BookingReview $review): void
-    {
-        $review->loadMissing(['booking', 'customer']);
-
-        if (empty($review->booking) || empty($review->booking->creator_id)) {
-            return;
-        }
-
-        $notifyOptions = [
-            '[c.title]'    => $review->booking->title,
-            '[item_title]' => $review->booking->title,
-            '[u.name]'     => optional($review->customer)->full_name,
-            '[rate.count]' => $review->rating,
+        $toastData = [
+            'title'  => trans('public.request_success'),
+            'msg'    => trans('update.review_deleted'),
+            'status' => 'success',
         ];
 
-        sendNotification('booking_new_rating', $notifyOptions, $review->booking->creator_id);
-        sendNotification('booking_new_rating', $notifyOptions, 1);
+        return back()->with(['toast' => $toastData]);
     }
 }
