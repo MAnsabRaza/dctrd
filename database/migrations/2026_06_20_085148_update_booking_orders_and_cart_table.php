@@ -10,7 +10,6 @@ class UpdateBookingOrdersAndCartTable extends Migration
     private function foreignKeyExists(string $table, string $foreignKeyName): bool
     {
         $database = DB::connection()->getDatabaseName();
-
         $result = DB::select("
             SELECT CONSTRAINT_NAME
             FROM information_schema.TABLE_CONSTRAINTS
@@ -19,14 +18,12 @@ class UpdateBookingOrdersAndCartTable extends Migration
               AND CONSTRAINT_NAME = ?
               AND CONSTRAINT_TYPE = 'FOREIGN KEY'
         ", [$database, $table, $foreignKeyName]);
-
         return count($result) > 0;
     }
 
     private function findForeignKeyNameForColumn(string $table, string $column): ?string
     {
         $database = DB::connection()->getDatabaseName();
-
         $result = DB::select("
             SELECT CONSTRAINT_NAME
             FROM information_schema.KEY_COLUMN_USAGE
@@ -35,7 +32,6 @@ class UpdateBookingOrdersAndCartTable extends Migration
               AND COLUMN_NAME = ?
               AND REFERENCED_TABLE_NAME IS NOT NULL
         ", [$database, $table, $column]);
-
         return $result[0]->CONSTRAINT_NAME ?? null;
     }
 
@@ -45,9 +41,8 @@ class UpdateBookingOrdersAndCartTable extends Migration
          * ==========================
          * BOOKING ORDERS UPDATE
          * ==========================
-         * Pattern: exactly like product_orders table
-         * NO foreign key constraints on booking_orders itself
-         * Only plain integer/biginteger columns (same as product_orders)
+         * booking_orders.id = bigint(20) unsigned  ✅ confirmed from DESCRIBE
+         * All reference columns = bigint unsigned to match
          */
 
         // Step 1: Drop user_id FK if exists
@@ -58,22 +53,13 @@ class UpdateBookingOrdersAndCartTable extends Migration
             });
         }
 
-        // Step 2: Drop all old columns
+        // Step 2: Drop old columns
         Schema::table('booking_orders', function (Blueprint $table) {
             $dropColumns = [
-                'order_number',
-                'user_id',
-                'subtotal',
-                'discount_amount',
-                'tax_amount',
-                'total',
-                'currency',
-                'status',
-                'payment_status',
-                'notes',
-                'updated_at',
+                'order_number', 'user_id', 'subtotal', 'discount_amount',
+                'tax_amount', 'total', 'currency', 'status',
+                'payment_status', 'notes', 'updated_at',
             ];
-
             foreach ($dropColumns as $col) {
                 if (Schema::hasColumn('booking_orders', $col)) {
                     $table->dropColumn($col);
@@ -81,67 +67,46 @@ class UpdateBookingOrdersAndCartTable extends Migration
             }
         });
 
-        // Step 3: Add new columns — NO foreign key constraints (same as product_orders)
+        // Step 3: Add new columns — NO FK on booking_orders itself
         Schema::table('booking_orders', function (Blueprint $table) {
 
-            // booking_id: same as product_id in product_orders (integer unsigned)
+            // booking_id — bookings.id = bigint unsigned ✅
             if (!Schema::hasColumn('booking_orders', 'booking_id')) {
-                $table->integer('booking_id')->unsigned()->nullable();
+                $table->unsignedBigInteger('booking_id')->nullable();
             }
-
-            // seller_id: same as product_orders
+            // seller_id — users.id = int unsigned (but db shows bigint, keep bigint)
             if (!Schema::hasColumn('booking_orders', 'seller_id')) {
-                $table->integer('seller_id')->unsigned()->nullable();
+                $table->unsignedBigInteger('seller_id')->nullable();
             }
-
-            // buyer_id: same as product_orders
+            // buyer_id
             if (!Schema::hasColumn('booking_orders', 'buyer_id')) {
-                $table->integer('buyer_id')->unsigned()->nullable();
+                $table->unsignedBigInteger('buyer_id')->nullable();
             }
-
-            // sale_id: same as product_orders
+            // sale_id
             if (!Schema::hasColumn('booking_orders', 'sale_id')) {
-                $table->integer('sale_id')->unsigned()->nullable();
+                $table->unsignedBigInteger('sale_id')->nullable();
             }
-
-            // booking_discount_id: same as discount_id in product_orders
+            // booking_discount_id
             if (!Schema::hasColumn('booking_orders', 'booking_discount_id')) {
-                $table->integer('booking_discount_id')->unsigned()->nullable();
+                $table->unsignedBigInteger('booking_discount_id')->nullable();
             }
-
-            // specifications: same as product_orders
             if (!Schema::hasColumn('booking_orders', 'specifications')) {
                 $table->text('specifications')->nullable();
             }
-
-            // quantity: same as product_orders
             if (!Schema::hasColumn('booking_orders', 'quantity')) {
-                $table->integer('quantity')->nullable();
+                $table->integer('quantity')->unsigned()->nullable();
             }
-
-            // message_to_seller: same as product_orders
             if (!Schema::hasColumn('booking_orders', 'message_to_seller')) {
                 $table->text('message_to_seller')->nullable();
             }
-
-            // tracking_code: same as product_orders
             if (!Schema::hasColumn('booking_orders', 'tracking_code')) {
                 $table->string('tracking_code')->nullable();
             }
-
-            // status: enum same as product_orders
             if (!Schema::hasColumn('booking_orders', 'status')) {
-                $table->enum('status', [
-                    'pending',
-                    'confirmed',
-                    'cancelled',
-                    'completed'
-                ])->default('pending');
+                $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
             }
-
-            // created_at: bigInteger unsigned — same as product_orders
             if (!Schema::hasColumn('booking_orders', 'created_at')) {
-                $table->bigInteger('created_at')->unsigned()->nullable();
+                $table->unsignedBigInteger('created_at')->nullable();
             }
         });
 
@@ -149,11 +114,12 @@ class UpdateBookingOrdersAndCartTable extends Migration
          * ==========================
          * CART UPDATE
          * ==========================
-         * Pattern: exactly like product_orders migration's cart update
-         * cart gets booking_order_id and booking_discount_id with FKs
+         * booking_orders.id = bigint(20) unsigned
+         * cart.booking_order_id   = unsignedBigInteger  ✅ matches
+         * cart.booking_discount_id = unsignedBigInteger ✅ matches booking_discounts.id
          */
 
-        // Drop old booking_id from cart if exists
+        // Drop old cart booking_id column if exists
         if (Schema::hasColumn('cart', 'booking_id')) {
             $cartFkName = $this->findForeignKeyNameForColumn('cart', 'booking_id');
             if (!empty($cartFkName)) {
@@ -166,30 +132,29 @@ class UpdateBookingOrdersAndCartTable extends Migration
             });
         }
 
-        // Add new cart columns + FK (same as product_orders migration does for cart)
+        // Add booking_order_id and booking_discount_id to existing cart table
         Schema::table('cart', function (Blueprint $table) {
 
             if (!Schema::hasColumn('cart', 'booking_order_id')) {
-                // integer unsigned — matches booking_orders.id (increments = INT UNSIGNED)
-                $table->integer('booking_order_id')->unsigned()->nullable()->after('webinar_id');
+                // BIGINT UNSIGNED — matches booking_orders.id (bigint unsigned) ✅
+                $table->unsignedBigInteger('booking_order_id')->nullable()->after('webinar_id');
             }
 
             if (!Schema::hasColumn('cart', 'booking_discount_id')) {
-                $table->integer('booking_discount_id')->unsigned()->nullable()->after('booking_order_id');
+                $table->unsignedBigInteger('booking_discount_id')->nullable()->after('booking_order_id');
             }
 
-            // FK on cart — same pattern as product_orders migration
             if (!$this->foreignKeyExists('cart', 'cart_booking_order_id_foreign')) {
                 $table->foreign('booking_order_id')
-                    ->on('booking_orders')
                     ->references('id')
+                    ->on('booking_orders')
                     ->cascadeOnDelete();
             }
 
             if (Schema::hasTable('booking_discounts') && !$this->foreignKeyExists('cart', 'cart_booking_discount_id_foreign')) {
                 $table->foreign('booking_discount_id')
-                    ->on('booking_discounts')
                     ->references('id')
+                    ->on('booking_discounts')
                     ->nullOnDelete();
             }
         });
@@ -198,9 +163,7 @@ class UpdateBookingOrdersAndCartTable extends Migration
     public function down()
     {
         /**
-         * ==========================
          * CART ROLLBACK
-         * ==========================
          */
         $cartOrderFk    = $this->findForeignKeyNameForColumn('cart', 'booking_order_id');
         $cartDiscountFk = $this->findForeignKeyNameForColumn('cart', 'booking_discount_id');
@@ -221,23 +184,13 @@ class UpdateBookingOrdersAndCartTable extends Migration
         });
 
         /**
-         * ==========================
          * BOOKING ORDERS ROLLBACK
-         * ==========================
          */
         Schema::table('booking_orders', function (Blueprint $table) {
             $dropNew = [
-                'booking_id',
-                'seller_id',
-                'buyer_id',
-                'sale_id',
-                'booking_discount_id',
-                'specifications',
-                'quantity',
-                'message_to_seller',
-                'tracking_code',
-                'status',
-                'created_at',
+                'booking_id', 'seller_id', 'buyer_id', 'sale_id',
+                'booking_discount_id', 'specifications', 'quantity',
+                'message_to_seller', 'tracking_code', 'status', 'created_at',
             ];
             foreach ($dropNew as $col) {
                 if (Schema::hasColumn('booking_orders', $col)) {
@@ -246,7 +199,6 @@ class UpdateBookingOrdersAndCartTable extends Migration
             }
         });
 
-        // Restore old structure
         Schema::table('booking_orders', function (Blueprint $table) {
             if (!Schema::hasColumn('booking_orders', 'order_number')) {
                 $table->string('order_number')->unique();
@@ -270,14 +222,10 @@ class UpdateBookingOrdersAndCartTable extends Migration
                 $table->string('currency', 10)->default('USD');
             }
             if (!Schema::hasColumn('booking_orders', 'status')) {
-                $table->enum('status', [
-                    'pending', 'confirmed', 'cancelled', 'completed', 'no_show'
-                ])->default('pending');
+                $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed', 'no_show'])->default('pending');
             }
             if (!Schema::hasColumn('booking_orders', 'payment_status')) {
-                $table->enum('payment_status', [
-                    'unpaid', 'partial', 'paid', 'refunded'
-                ])->default('unpaid');
+                $table->enum('payment_status', ['unpaid', 'partial', 'paid', 'refunded'])->default('unpaid');
             }
             if (!Schema::hasColumn('booking_orders', 'notes')) {
                 $table->text('notes')->nullable();
@@ -292,10 +240,7 @@ class UpdateBookingOrdersAndCartTable extends Migration
 
         if (!$this->foreignKeyExists('booking_orders', 'booking_orders_user_id_foreign')) {
             Schema::table('booking_orders', function (Blueprint $table) {
-                $table->foreign('user_id')
-                    ->references('id')
-                    ->on('users')
-                    ->cascadeOnDelete();
+                $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             });
         }
     }

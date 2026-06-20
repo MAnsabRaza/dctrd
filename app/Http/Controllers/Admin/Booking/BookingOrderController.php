@@ -108,7 +108,7 @@ class BookingOrderController extends Controller
                 ->whereIn('id', $customer_ids)->get();
         }
 
-        return view('admin.booking.orders.lists', $data);
+        return view('admin.booking.order', $data);
     }
 
     private function getOrderFilters($query, $request)
@@ -192,7 +192,7 @@ class BookingOrderController extends Controller
             'order' => $order,
         ];
 
-        return view('admin.booking.orders.invoice', $data);
+        return view('admin.booking.order', $data);
     }
 
     public function exportExcel(Request $request)
