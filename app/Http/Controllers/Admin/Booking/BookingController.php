@@ -21,6 +21,12 @@ class BookingController extends Controller
         $this->authorize('admin_booking');
         removeContentLocale();
 
+          $productCategories = BookingCategory::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
+
         $parentCategories = BookingCategory::whereNull('parent_id')
             ->where('status', 1)
             ->orderBy('order')
@@ -50,6 +56,7 @@ class BookingController extends Controller
         return view('admin.booking.booking', [
             'pageTitle'              => trans('admin/main.create_booking'),
             'bookingPageMode'        => 'form',
+            'productCategories'      => $productCategories,
             'parentCategories'       => $parentCategories,
             'childCategories'        => $childCategories,
             'bookingTypes'           => $bookingTypes,
@@ -65,6 +72,12 @@ class BookingController extends Controller
     {
         $this->authorize('admin_booking');
         removeContentLocale();
+
+          $productCategories = BookingCategory::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
 
         $query = Booking::query();
 
@@ -100,6 +113,7 @@ class BookingController extends Controller
             'bookingPageMode' => 'list',
             'bookings'        => $bookings,
             'categories'      => $categories,
+            'productCategories'=> $productCategories,
             'allCategories'   => $allCategories,
             'userLanguages'   => $userLanguages,
             'instructors'     => $instructors,
