@@ -41,11 +41,9 @@ class UpdateBookingOrdersAndCartTable extends Migration
          * ==========================
          * BOOKING ORDERS UPDATE
          * ==========================
-         * booking_orders.id = bigint(20) unsigned  ✅ confirmed from DESCRIBE
-         * All reference columns = bigint unsigned to match
          */
 
-        // Step 1: Drop user_id FK if exists
+        // Drop user_id FK if exists
         $fkName = $this->findForeignKeyNameForColumn('booking_orders', 'user_id');
         if (!empty($fkName)) {
             Schema::table('booking_orders', function (Blueprint $table) use ($fkName) {
@@ -53,7 +51,7 @@ class UpdateBookingOrdersAndCartTable extends Migration
             });
         }
 
-        // Step 2: Drop old columns
+        // Drop old columns
         Schema::table('booking_orders', function (Blueprint $table) {
             $dropColumns = [
                 'order_number', 'user_id', 'subtotal', 'discount_amount',
@@ -67,26 +65,20 @@ class UpdateBookingOrdersAndCartTable extends Migration
             }
         });
 
-        // Step 3: Add new columns — NO FK on booking_orders itself
+        // Add new columns — all bigint to match booking_orders.id (bigint unsigned)
         Schema::table('booking_orders', function (Blueprint $table) {
-
-            // booking_id — bookings.id = bigint unsigned ✅
             if (!Schema::hasColumn('booking_orders', 'booking_id')) {
                 $table->unsignedBigInteger('booking_id')->nullable();
             }
-            // seller_id — users.id = int unsigned (but db shows bigint, keep bigint)
             if (!Schema::hasColumn('booking_orders', 'seller_id')) {
                 $table->unsignedBigInteger('seller_id')->nullable();
             }
-            // buyer_id
             if (!Schema::hasColumn('booking_orders', 'buyer_id')) {
                 $table->unsignedBigInteger('buyer_id')->nullable();
             }
-            // sale_id
             if (!Schema::hasColumn('booking_orders', 'sale_id')) {
                 $table->unsignedBigInteger('sale_id')->nullable();
             }
-            // booking_discount_id
             if (!Schema::hasColumn('booking_orders', 'booking_discount_id')) {
                 $table->unsignedBigInteger('booking_discount_id')->nullable();
             }
@@ -114,12 +106,14 @@ class UpdateBookingOrdersAndCartTable extends Migration
          * ==========================
          * CART UPDATE
          * ==========================
+         *
+         * IMPORTANT:
+         * cart.booking_order_id already exists as int(10) unsigned (wrong type)
          * booking_orders.id = bigint(20) unsigned
-         * cart.booking_order_id   = unsignedBigInteger  ✅ matches
-         * cart.booking_discount_id = unsignedBigInteger ✅ matches booking_discounts.id
+         * So we must MODIFY existing columns to bigint, not ADD them
          */
 
-        // Drop old cart booking_id column if exists
+        // Drop old booking_id from cart if exists
         if (Schema::hasColumn('cart', 'booking_id')) {
             $cartFkName = $this->findForeignKeyNameForColumn('cart', 'booking_id');
             if (!empty($cartFkName)) {
@@ -132,39 +126,56 @@ class UpdateBookingOrdersAndCartTable extends Migration
             });
         }
 
-        // Add booking_order_id and booking_discount_id to existing cart table
-        Schema::table('cart', function (Blueprint $table) {
+        // Drop existing FK on booking_order_id if somehow exists (cleanup)
+        $existingFk = $this->findForeignKeyNameForColumn('cart', 'booking_order_id');
+        if (!empty($existingFk)) {
+            Schema::table('cart', function (Blueprint $table) use ($existingFk) {
+                $table->dropForeign($existingFk);
+            });
+        }
+        $existingDiscountFk = $this->findForeignKeyNameForColumn('cart', 'booking_discount_id');
+        if (!empty($existingDiscountFk)) {
+            Schema::table('cart', function (Blueprint $table) use ($existingDiscountFk) {
+                $table->dropForeign($existingDiscountFk);
+            });
+        }
 
-            if (!Schema::hasColumn('cart', 'booking_order_id')) {
-                // BIGINT UNSIGNED — matches booking_orders.id (bigint unsigned) ✅
-                $table->unsignedBigInteger('booking_order_id')->nullable()->after('webinar_id');
-            }
+        // MODIFY columns to correct bigint type (whether they exist or not)
+        // Using raw SQL to safely handle both cases: column exists (MODIFY) or not (ADD)
+        $database = DB::connection()->getDatabaseName();
 
-            if (!Schema::hasColumn('cart', 'booking_discount_id')) {
-                $table->unsignedBigInteger('booking_discount_id')->nullable()->after('booking_order_id');
-            }
+        $bookingOrderColExists = Schema::hasColumn('cart', 'booking_order_id');
+        $bookingDiscountColExists = Schema::hasColumn('cart', 'booking_discount_id');
 
-            if (!$this->foreignKeyExists('cart', 'cart_booking_order_id_foreign')) {
-                $table->foreign('booking_order_id')
-                    ->references('id')
-                    ->on('booking_orders')
-                    ->cascadeOnDelete();
-            }
+        if ($bookingOrderColExists) {
+            // Column exists with wrong INT type — MODIFY to BIGINT
+            DB::statement('ALTER TABLE `cart` MODIFY COLUMN `booking_order_id` BIGINT UNSIGNED NULL');
+        } else {
+            // Column doesn't exist — ADD with correct type
+            DB::statement('ALTER TABLE `cart` ADD COLUMN `booking_order_id` BIGINT UNSIGNED NULL AFTER `webinar_id`');
+        }
 
-            if (Schema::hasTable('booking_discounts') && !$this->foreignKeyExists('cart', 'cart_booking_discount_id_foreign')) {
-                $table->foreign('booking_discount_id')
-                    ->references('id')
-                    ->on('booking_discounts')
-                    ->nullOnDelete();
-            }
-        });
+        if ($bookingDiscountColExists) {
+            // Column exists with wrong INT type — MODIFY to BIGINT
+            DB::statement('ALTER TABLE `cart` MODIFY COLUMN `booking_discount_id` BIGINT UNSIGNED NULL');
+        } else {
+            // Column doesn't exist — ADD with correct type
+            DB::statement('ALTER TABLE `cart` ADD COLUMN `booking_discount_id` BIGINT UNSIGNED NULL AFTER `booking_order_id`');
+        }
+
+        // Now add FK constraints — types match (both BIGINT UNSIGNED) ✅
+        if (!$this->foreignKeyExists('cart', 'cart_booking_order_id_foreign')) {
+            DB::statement('ALTER TABLE `cart` ADD CONSTRAINT `cart_booking_order_id_foreign` FOREIGN KEY (`booking_order_id`) REFERENCES `booking_orders`(`id`) ON DELETE CASCADE');
+        }
+
+        if (Schema::hasTable('booking_discounts') && !$this->foreignKeyExists('cart', 'cart_booking_discount_id_foreign')) {
+            DB::statement('ALTER TABLE `cart` ADD CONSTRAINT `cart_booking_discount_id_foreign` FOREIGN KEY (`booking_discount_id`) REFERENCES `booking_discounts`(`id`) ON DELETE SET NULL');
+        }
     }
 
     public function down()
     {
-        /**
-         * CART ROLLBACK
-         */
+        // Drop cart FKs
         $cartOrderFk    = $this->findForeignKeyNameForColumn('cart', 'booking_order_id');
         $cartDiscountFk = $this->findForeignKeyNameForColumn('cart', 'booking_discount_id');
 
@@ -183,9 +194,7 @@ class UpdateBookingOrdersAndCartTable extends Migration
             }
         });
 
-        /**
-         * BOOKING ORDERS ROLLBACK
-         */
+        // Drop booking_orders new columns
         Schema::table('booking_orders', function (Blueprint $table) {
             $dropNew = [
                 'booking_id', 'seller_id', 'buyer_id', 'sale_id',
@@ -199,6 +208,7 @@ class UpdateBookingOrdersAndCartTable extends Migration
             }
         });
 
+        // Restore old booking_orders structure
         Schema::table('booking_orders', function (Blueprint $table) {
             if (!Schema::hasColumn('booking_orders', 'order_number')) {
                 $table->string('order_number')->unique();
