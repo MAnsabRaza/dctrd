@@ -65,10 +65,19 @@
     @php
         $bookingPageMode = $bookingPageMode ?? (((!empty($errors) && $errors->any()) || !empty($editBooking) || request()->get('tab') == 'create') ? 'form' : 'list');
         $isFormPage = $bookingPageMode === 'form';
+        $inHouseBookings = $inHouseBookings ?? false;
+
+        $bookingListRoute = $inHouseBookings
+            ? getAdminPanelUrl() . '/booking/in-house-bookings'
+            : getAdminPanelUrl() . '/booking/list';
+
+        $bookingListPageTitle = $inHouseBookings
+            ? (trans('update.in-house-bookings') ?? 'In House Bookings')
+            : trans('admin/main.booking_list');
     @endphp
     <section class="section">
         <div class="section-header">
-            <h1>{{ $isFormPage ? (!empty($editBooking) ? 'Edit Booking' : 'New Booking') : trans('admin/main.booking_list') }}</h1>
+            <h1>{{ $isFormPage ? (!empty($editBooking) ? 'Edit Booking' : 'New Booking') : $bookingListPageTitle }}</h1>
             <div class="section-header-breadcrumb">
                 <div class="breadcrumb-item active">
                     <a href="{{ getAdminPanelUrl() }}">{{ trans('admin/main.dashboard') }}</a>
@@ -77,7 +86,7 @@
                 @if($isFormPage)
                     <div class="breadcrumb-item">{{ !empty($editBooking) ? 'Edit' : 'New' }}</div>
                 @else
-                    <div class="breadcrumb-item">{{ trans('admin/main.booking_list') }}</div>
+                    <div class="breadcrumb-item">{{ $bookingListPageTitle }}</div>
                 @endif
             </div>
         </div>
@@ -136,7 +145,7 @@
                 {{-- ==================== FILTER FORM (its own separate card) ==================== --}}
                 <section class="card mt-32">
                     <div class="card-body pb-4">
-                        <form action="{{ getAdminPanelUrl() }}/booking/list" method="get" class="mb-0">
+                        <form action="{{ $bookingListRoute }}" method="get" class="mb-0">
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
@@ -191,17 +200,17 @@
                                         <label class="input-label">{{ trans('admin/main.category') }}</label>
                                         <select name="category_id" data-plugin-selectTwo class="form-control populate">
                                             <option value="">{{ trans('admin/main.all_categories') }}</option>
-                                            @foreach($productCategories as $productCategory)
-                                                            @if(!empty($productCategory->children) and $productCategory->children->count() > 0)
-                                                                <optgroup label="{{  $productCategory->title }}">
-                                                                    @foreach($productCategory->children as $subCategory)
-                                                                        <option value="{{ $subCategory->id }}" {{ ((!empty($editFeaturedCategory) and $editFeaturedCategory->category_id == $subCategory->id) or old('category_id') == $subCategory->id) ? 'selected' : '' }}>{{ $subCategory->title }}</option>
-                                                                    @endforeach
-                                                                </optgroup>
-                                                            @else
-                                                                <option value="{{ $productCategory->id }}" {{ ((!empty($editFeaturedCategory) and $editFeaturedCategory->category_id == $productCategory->id) or old('category_id') == $productCategory->id) ? 'selected' : '' }}>{{ $productCategory->title }}</option>
-                                                            @endif
+                                            @foreach($productCategories ?? [] as $productCategory)
+                                                @if(!empty($productCategory->children) and $productCategory->children->count() > 0)
+                                                    <optgroup label="{{ $productCategory->title }}">
+                                                        @foreach($productCategory->children as $subCategory)
+                                                            <option value="{{ $subCategory->id }}" @if(request()->get('category_id') == $subCategory->id) selected @endif>{{ $subCategory->title }}</option>
                                                         @endforeach
+                                                    </optgroup>
+                                                @else
+                                                    <option value="{{ $productCategory->id }}" @if(request()->get('category_id') == $productCategory->id) selected @endif>{{ $productCategory->title }}</option>
+                                                @endif
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
@@ -230,18 +239,29 @@
                 <div class="card mt-32">
                     <div class="card-header justify-content-between">
                         <div>
-                            <h5 class="font-14 mb-0">{{ trans('admin/main.booking_list') }}</h5>
+                            <h5 class="font-14 mb-0">{{ $bookingListPageTitle }}</h5>
                             <p class="font-12 mt-4 mb-0 text-gray-500">Manage all booking services in your store.</p>
                         </div>
                         <div class="d-flex align-items-center gap-12">
-                            <a href="{{ getAdminPanelUrl() }}/booking/excel?{{ http_build_query(request()->all()) }}" class="btn bg-white bg-hover-gray-100 border-gray-400 text-gray-500">
-                                <x-iconsax-lin-import-2 class="icons text-gray-500" width="18px" height="18px"/>
-                                <span class="ml-4 font-12">{{ trans('admin/main.export_xls') }}</span>
-                            </a>
-                            <a href="{{ getAdminPanelUrl() }}/booking" class="btn btn-primary">
-                                <x-iconsax-lin-add class="icons text-white" width="18px" height="18px"/>
-                                <span class="ml-4 font-12">{{ trans('admin/main.create_booking') }}</span>
-                            </a>
+                            @can('admin_booking')
+                                <a href="{{ getAdminPanelUrl() }}/booking/excel?{{ http_build_query(array_merge(request()->all(), ['in_house_bookings' => $inHouseBookings])) }}" class="btn bg-white bg-hover-gray-100 border-gray-400 text-gray-500">
+                                    <x-iconsax-lin-import-2 class="icons text-gray-500" width="18px" height="18px"/>
+                                    <span class="ml-4 font-12">{{ trans('admin/main.export_xls') }}</span>
+                                </a>
+                            @endcan
+                            @if($inHouseBookings)
+                                @can('admin_booking_create')
+                                    <a href="{{ getAdminPanelUrl() }}/booking" class="btn btn-primary">
+                                        <x-iconsax-lin-add class="icons text-white" width="18px" height="18px"/>
+                                        <span class="ml-4 font-12">{{ trans('admin/main.create_booking') }}</span>
+                                    </a>
+                                @endcan
+                            @else
+                                <a href="{{ getAdminPanelUrl() }}/booking" class="btn btn-primary">
+                                    <x-iconsax-lin-add class="icons text-white" width="18px" height="18px"/>
+                                    <span class="ml-4 font-12">{{ trans('admin/main.create_booking') }}</span>
+                                </a>
+                            @endif
                         </div>
                     </div>
                     <div class="card-body">

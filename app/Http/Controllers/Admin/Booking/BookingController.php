@@ -71,15 +71,40 @@ class BookingController extends Controller
     public function list(Request $request)
     {
         $this->authorize('admin_booking');
+
+        return $this->buildBookingListView($request, false);
+    }
+
+    public function inHouseBookings(Request $request)
+    {
+        $this->authorize('admin_booking_in_house');
+
+        return $this->buildBookingListView($request, true);
+    }
+
+    /**
+     * Shared logic for both the normal booking list and the in-house booking list.
+     * Mirrors ProductsController::index() / inHouseProducts() pattern.
+     */
+    private function buildBookingListView(Request $request, bool $inHouseOnly)
+    {
         removeContentLocale();
 
-          $productCategories = BookingCategory::query()
+        $productCategories = BookingCategory::query()
             ->whereNull('parent_id')
             ->with('children')
             ->orderBy('order')
             ->get();
 
         $query = Booking::query();
+
+        if ($inHouseOnly) {
+            $adminRoleIds = Role::where('is_admin', true)->pluck('id')->toArray();
+
+            $query->whereHas('creator', function ($q) use ($adminRoleIds) {
+                $q->whereIn('role_id', $adminRoleIds);
+            });
+        }
 
         $topStatData = $this->getTopPageStats(deepClone($query));
 
@@ -101,23 +126,24 @@ class BookingController extends Controller
                 },
             ], 'total_price');
 
-        $bookings      = $query->paginate(15);
-        $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
-        $allCategories = BookingCategory::orderBy('order')->get();
-        $userLanguages = $this->getUserLanguages();
-        $instructors   = $this->getInstructors();
+        $bookings        = $query->paginate(15);
+        $categories      = BookingCategory::where('status', 1)->orderBy('order')->get();
+        $allCategories   = BookingCategory::orderBy('order')->get();
+        $userLanguages   = $this->getUserLanguages();
+        $instructors     = $this->getInstructors();
         $selectedSellers = $this->getSelectedSellers($request);
 
         $data = [
-            'pageTitle'       => trans('admin/main.booking_list'),
-            'bookingPageMode' => 'list',
-            'bookings'        => $bookings,
-            'categories'      => $categories,
-            'productCategories'=> $productCategories,
-            'allCategories'   => $allCategories,
-            'userLanguages'   => $userLanguages,
-            'instructors'     => $instructors,
-            'teachers'        => $selectedSellers,
+            'pageTitle'         => $inHouseOnly ? trans('update.in-house-bookings') : trans('admin/main.booking_list'),
+            'bookingPageMode'   => 'list',
+            'inHouseBookings'   => $inHouseOnly,
+            'bookings'          => $bookings,
+            'categories'        => $categories,
+            'productCategories' => $productCategories,
+            'allCategories'     => $allCategories,
+            'userLanguages'     => $userLanguages,
+            'instructors'       => $instructors,
+            'teachers'          => $selectedSellers,
         ];
 
         return view('admin.booking.booking', array_merge($data, $topStatData));
@@ -127,7 +153,17 @@ class BookingController extends Controller
     {
         $this->authorize('admin_booking');
 
-        $bookings = $this->handleFilters(Booking::query(), $request)
+        $query = Booking::query();
+
+        if (!empty($request->get('in_house_bookings'))) {
+            $adminRoleIds = Role::where('is_admin', true)->pluck('id')->toArray();
+
+            $query->whereHas('creator', function ($q) use ($adminRoleIds) {
+                $q->whereIn('role_id', $adminRoleIds);
+            });
+        }
+
+        $bookings = $this->handleFilters($query, $request)
             ->with([
                 'category',
                 'creator' => function ($qu) {

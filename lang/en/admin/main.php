@@ -249,6 +249,7 @@ return [
 'edit_booking_feature_category'=>'Edit Booking Feature Category',
 'edit_booking_top_category'=>'Edit Booking Top Category',
 'update_successfully'=>'Updated Successfully.',
+'in-house-bookings' => 'In House Bookings',
 
     //Booking
     'booking' => 'Booking',
