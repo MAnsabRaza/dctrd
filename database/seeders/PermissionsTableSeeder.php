@@ -478,6 +478,8 @@ class PermissionsTableSeeder extends Seeder
                 'allow' => 1
             ]
         );
+        // permission for in-house bookings (custom)
+        \App\Models\Permission::updateOrCreate(['id' => 3600], ['role_id' => 2, 'section_id' => 3600, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(
             ['id' => 3340],
             [

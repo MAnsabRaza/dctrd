@@ -70,7 +70,7 @@ Route::group(['prefix' => 'booking'], function () {
     Route::get('/{id}/edit', [BookingController::class, 'edit']);
     Route::post('/{id}/update', [BookingController::class, 'update']);
     Route::get('/{id}/delete', [BookingController::class, 'delete']);
-    Route::get('/booking/in-house-bookings', [BookingController::class, 'inHouseBookings'])->name('admin.booking.in-house');
+    Route::get('/in-house-bookings', [BookingController::class, 'inHouseBookings'])->name('admin.booking.in-house');
 
     // Booking Categories
     Route::group(['prefix' => 'categories'], function () {

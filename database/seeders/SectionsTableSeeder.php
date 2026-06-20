@@ -820,6 +820,8 @@ class SectionsTableSeeder extends Seeder
                 'group' => 'admin_booking'
             ]
         );
+        // In-house bookings (custom)
+        Section::updateOrCreate(['id' => 3600], ['name' => 'admin_booking_in_house', 'section_group_id' => 3240, 'caption' => 'In-house Bookings']);
 
         Section::updateOrCreate(
             ['id' => 3332],
