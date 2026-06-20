@@ -131,13 +131,13 @@ Route::group(['prefix' => 'booking'], function () {
         Route::post('/{id}/update', [BookingTimeSlotController::class, 'update']);
         Route::get('/{id}/delete', [BookingTimeSlotController::class, 'delete']);
     });
-    Route::group(['prefix' => 'order'], function () {
-        Route::get('/', [BookingOrderController::class, 'index']);
-        Route::post('/store', [BookingOrderController::class, 'store']);
-        Route::get('/{id}/edit', [BookingOrderController::class, 'edit']);
-        Route::post('/{id}/update', [BookingOrderController::class, 'update']);
-        Route::get('/{id}/delete', [BookingOrderController::class, 'delete']);
-    });
+   Route::group(['prefix' => 'order'], function () {
+    Route::get('/', [BookingOrderController::class, 'index']);
+    Route::get('/in-house-orders', [BookingOrderController::class, 'inHouseOrders']);
+    Route::get('/excel', [BookingOrderController::class, 'exportExcel']);
+    Route::get('/{id}/invoice', [BookingOrderController::class, 'invoice']);
+    Route::get('/{id}/refund', [BookingOrderController::class, 'refund']);
+});
     // ✅ CORRECT
     Route::group(['prefix' => 'specification'], function () {
         Route::get('/', [BookingSpecificationController::class, 'index']);

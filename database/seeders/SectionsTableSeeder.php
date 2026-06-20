@@ -822,6 +822,12 @@ class SectionsTableSeeder extends Seeder
         );
         // In-house bookings (custom)
         Section::updateOrCreate(['id' => 3600], ['name' => 'admin_booking_in_house', 'section_group_id' => 3240, 'caption' => 'In-house Bookings']);
+        //booking order
+       Section::updateOrCreate(['id' => 3601], ['name' => 'admin_booking_orders', 'section_group_id' => 3240, 'caption' => 'Booking Orders']);
+Section::updateOrCreate(['id' => 3602], ['name' => 'admin_booking_in_house_orders', 'section_group_id' => 3240, 'caption' => 'In House Booking Orders']);
+Section::updateOrCreate(['id' => 3603], ['name' => 'admin_booking_orders_invoice', 'section_group_id' => 3240, 'caption' => 'Booking Orders - Invoice']);
+Section::updateOrCreate(['id' => 3604], ['name' => 'admin_booking_orders_refund', 'section_group_id' => 3240, 'caption' => 'Booking Orders - Refund']);
+Section::updateOrCreate(['id' => 3605], ['name' => 'admin_booking_orders_export', 'section_group_id' => 3240, 'caption' => 'Booking Orders - Export']);
 
         Section::updateOrCreate(
             ['id' => 3332],

@@ -4852,5 +4852,6 @@ return [
 'check_in_date'=>'Check-in Date',
 'check_in_time'=>'Check-in Time',
 'availability_assets' => 'Availability Assets',
-'in-house-bookings'=>'In House Bookings'
+'in-house-bookings'=>'In House Bookings',
+'in-house-booking-orders'=>'In House Booking Orders',
 ];

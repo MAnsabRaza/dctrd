@@ -2,259 +2,226 @@
 
 namespace App\Http\Controllers\Admin\Booking;
 
+use App\Exports\BookingOrdersExport;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingBundle;
 use App\Models\BookingOrder;
-use App\Models\BookingOrderItem;
-use App\Models\BookingPackage;
-use App\Models\BookingResource;
+use App\Models\Role;
+use App\User;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class BookingOrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('admin_booking_orders');
 
-        removeContentLocale();
-
-        $orders = BookingOrder::with(['user', 'items.booking', 'items.bundle', 'items.package'])
-            ->orderBy('id', 'desc')
-            ->paginate(20);
-
-        $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
-        $bundles = BookingBundle::orderBy('id', 'desc')->get(['id', 'title']);
-        $packages = BookingPackage::orderBy('id', 'desc')->get(['id', 'title']);
-        $resources = BookingResource::orderBy('name')->get(['id', 'name']);
-
-        return view('admin.booking.order', [
-            'pageTitle' => 'Booking Orders',
-            'orders' => $orders,
-            'bookings' => $bookings,
-            'bundles' => $bundles,
-            'packages' => $packages,
-            'resources' => $resources,
-            'editOrder' => null,
-        ]);
+        return $this->buildOrdersListView($request, false);
     }
 
-    public function store(Request $request)
+    public function inHouseOrders(Request $request)
     {
-        $this->authorize('admin_booking_orders_create');
+        $this->authorize('admin_booking_in_house_orders');
 
-        $validated = $request->validate([
-            'currency' => 'required|string|max:10',
-            'status' => 'required|in:pending,confirmed,cancelled,completed,no_show',
-            'payment_status' => 'required|in:unpaid,partial,paid,refunded',
-            'notes' => 'nullable|string',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'tax_amount' => 'nullable|numeric|min:0',
-            'item_type' => 'required|array|min:1',
-            'item_type.*' => 'required|in:booking,bundle,package',
-            'item_id' => 'required|array|min:1',
-            'item_id.*' => 'required|integer',
-            'resource_id' => 'nullable|array',
-            'resource_id.*' => 'nullable|exists:booking_resources,id',
-            'booking_date' => 'nullable|array',
-            'booking_date.*' => 'nullable|date',
-            'start_time' => 'nullable|array',
-            'start_time.*' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|array',
-            'end_time.*' => 'nullable|date_format:H:i',
-            'quantity' => 'required|array|min:1',
-            'quantity.*' => 'required|integer|min:1',
-            'persons' => 'required|array|min:1',
-            'persons.*' => 'required|integer|min:1',
-            'unit_price' => 'required|array|min:1',
-            'unit_price.*' => 'required|numeric|min:0',
-            'selected_variants' => 'nullable|array',
-            'selected_variants.*' => 'nullable|string|max:255',
-            'item_status' => 'nullable|array',
-            'item_status.*' => 'nullable|in:pending,confirmed,cancelled,completed,no_show',
-        ]);
+        return $this->buildOrdersListView($request, true);
+    }
 
-        $subtotal = 0;
-        $order = BookingOrder::create([
-            'order_number' => 'TEMP-' . uniqid(),
-            'user_id' => auth()->id(),
-            'subtotal' => 0,
-            'discount_amount' => $validated['discount_amount'] ?? 0,
-            'tax_amount' => $validated['tax_amount'] ?? 0,
-            'total' => 0,
-            'currency' => $validated['currency'],
-            'status' => $validated['status'],
-            'payment_status' => $validated['payment_status'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
+    /**
+     * Shared logic for both the normal booking-order list and the
+     * in-house booking-order list. Mirrors
+     * ProductsController::index() / inHouseProducts() pattern.
+     */
+    private function buildOrdersListView(Request $request, bool $inHouseOnly)
+    {
+        $query = BookingOrder::query();
 
-        $order->order_number = 'ORDER-' . $order->id;
-        $order->save();
+        if ($inHouseOnly) {
+            $adminRoleIds = Role::where('is_admin', true)->pluck('id')->toArray();
 
-        foreach ($validated['item_type'] as $index => $type) {
-            $quantity = (int) ($validated['quantity'][$index] ?? 1);
-            $unitPrice = (float) ($validated['unit_price'][$index] ?? 0);
-            $totalPrice = round($quantity * $unitPrice, 2);
-
-            $itemData = [
-                'order_id' => $order->id,
-                'item_type' => $type,
-                'booking_id' => $type === 'booking' ? $validated['item_id'][$index] : null,
-                'bundle_id' => $type === 'bundle' ? $validated['item_id'][$index] : null,
-                'package_id' => $type === 'package' ? $validated['item_id'][$index] : null,
-                'resource_id' => $validated['resource_id'][$index] ?? null,
-                'booking_date' => $validated['booking_date'][$index] ?? null,
-                'start_time' => $validated['start_time'][$index] ?? null,
-                'end_time' => $validated['end_time'][$index] ?? null,
-                'quantity' => $quantity,
-                'persons' => (int) ($validated['persons'][$index] ?? 1),
-                'unit_price' => $unitPrice,
-                'total_price' => $totalPrice,
-                'selected_variants' => array_values(array_filter(array_map('trim', explode(',', $validated['selected_variants'][$index] ?? '')), fn($value) => $value !== '')),
-                'status' => $validated['item_status'][$index] ?? 'pending',
-            ];
-
-            BookingOrderItem::create($itemData);
-            $subtotal += $totalPrice;
+            $query->whereHas('booking.creator', function ($q) use ($adminRoleIds) {
+                $q->whereIn('role_id', $adminRoleIds);
+            });
         }
 
-        $order->update([
-            'subtotal' => $subtotal,
-            'total' => max(0, $subtotal - ($validated['discount_amount'] ?? 0) + ($validated['tax_amount'] ?? 0)),
-        ]);
+        $totalOrders = [
+            'count' => deepClone($query)->count(),
+            'amount' => deepClone($query)->whereHas('sale')->with('sale')->get()->sum(function ($order) {
+                return optional($order->sale)->total_amount ?? 0;
+            }),
+        ];
 
-        $order->sendBookingNotifications('created');
+        $successOrders = [
+            'count' => deepClone($query)->where('status', 'completed')->count(),
+            'amount' => deepClone($query)->where('status', 'completed')->whereHas('sale')->with('sale')->get()->sum(function ($order) {
+                return optional($order->sale)->total_amount ?? 0;
+            }),
+        ];
 
-        return redirect(getAdminPanelUrl('/booking/order'))
-            ->with('success', 'Booking order created successfully.');
-    }
+        $waitingOrders = [
+            'count' => deepClone($query)->where('status', 'pending')->count(),
+            'amount' => deepClone($query)->where('status', 'pending')->whereHas('sale')->with('sale')->get()->sum(function ($order) {
+                return optional($order->sale)->total_amount ?? 0;
+            }),
+        ];
 
-    public function edit($id)
-    {
-        $this->authorize('admin_booking_orders_edit');
+        $canceledOrders = [
+            'count' => deepClone($query)->where('status', 'cancelled')->count(),
+            'amount' => deepClone($query)->where('status', 'cancelled')->whereHas('sale')->with('sale')->get()->sum(function ($order) {
+                return optional($order->sale)->total_amount ?? 0;
+            }),
+        ];
 
-        $editOrder = BookingOrder::with(['items.booking', 'items.bundle', 'items.package'])->findOrFail($id);
+        $ordersQuery = $this->getOrderFilters($query, $request);
 
-        $orders = BookingOrder::with(['user', 'items.booking', 'items.bundle', 'items.package'])
-            ->orderBy('id', 'desc')
-            ->paginate(20);
+        $orders = $ordersQuery->orderBy('booking_orders.created_at', 'desc')
+            ->with([
+                'booking',
+                'seller',
+                'buyer',
+                'sale',
+            ])
+            ->paginate(10);
 
-        $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
-        $bundles = BookingBundle::orderBy('id', 'desc')->get(['id', 'title']);
-        $packages = BookingPackage::orderBy('id', 'desc')->get(['id', 'title']);
-        $resources = BookingResource::orderBy('name')->get(['id', 'name']);
-
-        return view('admin.booking.order', [
-            'pageTitle' => 'Booking Orders',
+        $data = [
+            'pageTitle' => $inHouseOnly
+                ? (trans('update.in-house-booking-orders') ?? 'In House Booking Orders')
+                : (trans('admin/main.booking_orders') ?? 'Booking Orders'),
+            'inHouseOrders' => $inHouseOnly,
             'orders' => $orders,
-            'bookings' => $bookings,
-            'bundles' => $bundles,
-            'packages' => $packages,
-            'resources' => $resources,
-            'editOrder' => $editOrder,
-        ]);
+            'totalOrders' => $totalOrders,
+            'successOrders' => $successOrders,
+            'waitingOrders' => $waitingOrders,
+            'canceledOrders' => $canceledOrders,
+        ];
+
+        $seller_ids = $request->get('seller_ids');
+        $customer_ids = $request->get('customer_ids');
+
+        if (!empty($seller_ids)) {
+            $data['sellers'] = User::select('id', 'full_name')
+                ->whereIn('id', $seller_ids)->get();
+        }
+
+        if (!empty($customer_ids)) {
+            $data['customers'] = User::select('id', 'full_name')
+                ->whereIn('id', $customer_ids)->get();
+        }
+
+        return view('admin.booking.orders.lists', $data);
     }
 
-    public function update(Request $request, $id)
+    private function getOrderFilters($query, $request)
     {
-        $this->authorize('admin_booking_orders_edit');
+        $item_title = $request->get('item_title');
+        $from = $request->get('from');
+        $to = $request->get('to');
+        $status = $request->get('status');
+        $seller_ids = $request->get('seller_ids', []);
+        $customer_ids = $request->get('customer_ids', []);
+
+        if (!empty($item_title)) {
+            $bookingIds = Booking::whereTranslationLike('title', "%$item_title%")
+                ->pluck('id')
+                ->toArray();
+
+            if (empty($bookingIds)) {
+                $bookingIds = Booking::where('title', 'like', "%$item_title%")
+                    ->pluck('id')
+                    ->toArray();
+            }
+
+            $query->whereIn('booking_id', $bookingIds);
+        }
+
+        $query = fromAndToDateFilter($from, $to, $query, 'booking_orders.created_at');
+
+        if (!empty($status)) {
+            $query->where('booking_orders.status', $status);
+        }
+
+        if (!empty($seller_ids) and count($seller_ids)) {
+            $query->whereIn('seller_id', $seller_ids);
+        }
+
+        if (!empty($customer_ids) and count($customer_ids)) {
+            $query->whereIn('buyer_id', $customer_ids);
+        }
+
+        return $query;
+    }
+
+    public function refund($id)
+    {
+        $this->authorize('admin_booking_orders_refund');
 
         $order = BookingOrder::findOrFail($id);
-        $wasConfirmed = $order->status === 'confirmed';
 
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'currency' => 'required|string|max:10',
-            'status' => 'required|in:pending,confirmed,cancelled,completed,no_show',
-            'payment_status' => 'required|in:unpaid,partial,paid,refunded',
-            'notes' => 'nullable|string',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'tax_amount' => 'nullable|numeric|min:0',
-            'item_type' => 'required|array|min:1',
-            'item_type.*' => 'required|in:booking,bundle,package',
-            'item_id' => 'required|array|min:1',
-            'item_id.*' => 'required|integer',
-            'resource_id' => 'nullable|array',
-            'resource_id.*' => 'nullable|exists:booking_resources,id',
-            'booking_date' => 'nullable|array',
-            'booking_date.*' => 'nullable|date',
-            'start_time' => 'nullable|array',
-            'start_time.*' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|array',
-            'end_time.*' => 'nullable|date_format:H:i',
-            'quantity' => 'required|array|min:1',
-            'quantity.*' => 'required|integer|min:1',
-            'persons' => 'required|array|min:1',
-            'persons.*' => 'required|integer|min:1',
-            'unit_price' => 'required|array|min:1',
-            'unit_price.*' => 'required|numeric|min:0',
-            'selected_variants' => 'nullable|array',
-            'selected_variants.*' => 'nullable|string|max:255',
-            'item_status' => 'nullable|array',
-            'item_status.*' => 'nullable|in:pending,confirmed,cancelled,completed,no_show',
-        ]);
-
-        $subtotal = 0;
-
-        $order->update([
-            'currency' => $validated['currency'],
-            'status' => $validated['status'],
-            'payment_status' => $validated['payment_status'],
-            'notes' => $validated['notes'] ?? null,
-            'discount_amount' => $validated['discount_amount'] ?? 0,
-            'tax_amount' => $validated['tax_amount'] ?? 0,
-        ]);
-
-        $order->items()->delete();
-
-        foreach ($validated['item_type'] as $index => $type) {
-            $quantity = (int) ($validated['quantity'][$index] ?? 1);
-            $unitPrice = (float) ($validated['unit_price'][$index] ?? 0);
-            $totalPrice = round($quantity * $unitPrice, 2);
-
-            BookingOrderItem::create([
-                'order_id' => $order->id,
-                'item_type' => $type,
-                'booking_id' => $type === 'booking' ? $validated['item_id'][$index] : null,
-                'bundle_id' => $type === 'bundle' ? $validated['item_id'][$index] : null,
-                'package_id' => $type === 'package' ? $validated['item_id'][$index] : null,
-                'resource_id' => $validated['resource_id'][$index] ?? null,
-                'booking_date' => $validated['booking_date'][$index] ?? null,
-                'start_time' => $validated['start_time'][$index] ?? null,
-                'end_time' => $validated['end_time'][$index] ?? null,
-                'quantity' => $quantity,
-                'persons' => (int) ($validated['persons'][$index] ?? 1),
-                'unit_price' => $unitPrice,
-                'total_price' => $totalPrice,
-                'selected_variants' => array_values(array_filter(array_map('trim', explode(',', $validated['selected_variants'][$index] ?? '')), fn($value) => $value !== '')),
-                'status' => $validated['item_status'][$index] ?? 'pending',
-            ]);
-
-            $subtotal += $totalPrice;
+        if (!empty($order->sale)) {
+            $order->sale->update(['refund_at' => time()]);
         }
 
-        $order->update([
-            'subtotal' => $subtotal,
-            'total' => max(0, $subtotal - ($validated['discount_amount'] ?? 0) + ($validated['tax_amount'] ?? 0)),
-        ]);
+        $order->update(['status' => 'cancelled']);
 
-        if (!$wasConfirmed && $order->status === 'confirmed') {
-            $order->sendBookingNotifications('confirmed');
-        }
-
-        return redirect(getAdminPanelUrl('/booking/order'))
-            ->with('success', 'Booking order updated successfully.');
+        return back();
     }
 
-    public function delete($id)
+    public function invoice($id)
     {
-        $this->authorize('admin_booking_orders_delete');
+        $this->authorize('admin_booking_orders_invoice');
 
-        $order = BookingOrder::findOrFail($id);
-        $order->items()->delete();
-        $order->delete();
+        $order = BookingOrder::where('id', $id)
+            ->with([
+                'booking',
+                'seller' => function ($query) {
+                    $query->select('id', 'full_name');
+                },
+                'buyer' => function ($query) {
+                    $query->select('id', 'full_name');
+                },
+                'sale',
+            ])
+            ->first();
 
-        return redirect(getAdminPanelUrl('/booking/order'))
-            ->with('success', 'Booking order deleted successfully.');
+        if (empty($order)) {
+            abort(404);
+        }
+
+        $data = [
+            'pageTitle' => trans('admin/main.invoice'),
+            'order' => $order,
+        ];
+
+        return view('admin.booking.orders.invoice', $data);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $this->authorize('admin_booking_orders');
+
+        $query = BookingOrder::query();
+
+        if (!empty($request->get('in_house_orders'))) {
+            $adminRoleIds = Role::where('is_admin', true)->pluck('id')->toArray();
+
+            $query->whereHas('booking.creator', function ($q) use ($adminRoleIds) {
+                $q->whereIn('role_id', $adminRoleIds);
+            });
+        }
+
+        $ordersQuery = $this->getOrderFilters($query, $request);
+
+        $orders = $ordersQuery->orderBy('booking_orders.created_at', 'desc')
+            ->with([
+                'booking',
+                'seller',
+                'buyer',
+                'sale',
+            ])
+            ->get();
+
+        $export = new BookingOrdersExport($orders);
+
+        return Excel::download($export, 'booking_orders.xlsx');
     }
 }

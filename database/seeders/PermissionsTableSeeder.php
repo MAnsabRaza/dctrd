@@ -480,6 +480,12 @@ class PermissionsTableSeeder extends Seeder
         );
         // permission for in-house bookings (custom)
         \App\Models\Permission::updateOrCreate(['id' => 3600], ['role_id' => 2, 'section_id' => 3600, 'allow' => 1]);
+        //boking order
+        \App\Models\Permission::updateOrCreate(['id' => 3601], ['role_id' => 2, 'section_id' => 3601, 'allow' => 1]);
+\App\Models\Permission::updateOrCreate(['id' => 3602], ['role_id' => 2, 'section_id' => 3602, 'allow' => 1]);
+\App\Models\Permission::updateOrCreate(['id' => 3603], ['role_id' => 2, 'section_id' => 3603, 'allow' => 1]);
+\App\Models\Permission::updateOrCreate(['id' => 3604], ['role_id' => 2, 'section_id' => 3604, 'allow' => 1]);
+\App\Models\Permission::updateOrCreate(['id' => 3605], ['role_id' => 2, 'section_id' => 3605, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(
             ['id' => 3340],
             [

@@ -237,13 +237,21 @@
                 </li>
             @endcan
 
-            @can('admin_booking_orders')
-                <li class="{{ request()->is(getAdminPanelUrl('/booking/order*', false)) ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/order">
-                        {{ trans('admin/main.admin_booking_orders') }}
-                    </a>
-                </li>
-            @endcan
+        @can('admin_booking_orders')
+    <li class="{{ request()->is(getAdminPanelUrl('/booking/order', false)) ? 'active' : '' }}">
+        <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/order">
+            {{ trans('admin/main.admin_booking_orders') }}
+        </a>
+    </li>
+@endcan
+ 
+@can('admin_booking_in_house_orders')
+    <li class="{{ request()->is(getAdminPanelUrl('/booking/order/in-house-orders', false)) ? 'active' : '' }}">
+        <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/order/in-house-orders">
+            {{ trans('update.in-house-booking-orders') ?? 'In House Booking Orders' }}
+        </a>
+    </li>
+@endcan
 
             @can('admin_booking_time_slots')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/time-slot*', false)) ? 'active' : '' }}">
