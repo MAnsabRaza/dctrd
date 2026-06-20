@@ -883,37 +883,10 @@ Section::updateOrCreate(['id' => 3605], ['name' => 'admin_booking_orders_export'
                 'group' => 'admin_booking'
             ]
         );
-        Section::updateOrCreate(
-            ['id' => 3340],
-            [
-                'name' => 'admin_booking_comment',
-                'group' => 'admin_booking'
-            ]
-        );
-
-        Section::updateOrCreate(
-            ['id' => 3341],
-            [
-                'name' => 'admin_booking_comment_create',
-                'group' => 'admin_booking'
-            ]
-        );
-
-        Section::updateOrCreate(
-            ['id' => 3342],
-            [
-                'name' => 'admin_booking_comment_edit',
-                'group' => 'admin_booking'
-            ]
-        );
-
-        Section::updateOrCreate(
-            ['id' => 3343],
-            [
-                'name' => 'admin_booking_comment_delete',
-                'group' => 'admin_booking'
-            ]
-        );
+        Section::updateOrCreate(['id' => 3340], ['name' => 'admin_booking_comments', 'section_group_id' => 3240, 'caption' => 'Booking Comments']);
+        Section::updateOrCreate(['id' => 3341], ['name' => 'admin_booking_comments_list', 'section_group_id' => 3240, 'caption' => 'Booking Comments List']);
+        Section::updateOrCreate(['id' => 3342], ['name' => 'admin_booking_comments_edit', 'section_group_id' => 3240, 'caption' => 'Booking Comments Edit']);
+        Section::updateOrCreate(['id' => 3343], ['name' => 'admin_booking_comments_delete', 'section_group_id' => 3240, 'caption' => 'Booking Comments Delete']);
 
         Section::updateOrCreate(
             ['id' => 3350],
