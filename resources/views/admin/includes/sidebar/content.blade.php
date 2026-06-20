@@ -138,7 +138,7 @@
 @endcan
 
 @can('admin_booking')
-    <li class="nav-item dropdown {{ (request()->is(getAdminPanelUrl('/booking*', false))) ? 'active' : '' }}">
+    <li class="nav-item dropdown {{ (request()->is(getAdminPanelUrl('/booking*', false)) or request()->is(getAdminPanelUrl('/comments/bookings*', false))) ? 'active' : '' }}">
         <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">
             <x-iconsax-bul-calendar class="icons" width="24px" height="24px" />
             <span>{{ trans('admin/main.booking') }}</span>
@@ -214,6 +214,19 @@
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/discounts">
                         {{ trans('admin/main.booking_discounts') ?? 'Discounts' }}
                     </a>
+                </li>
+            @endcan
+
+            @can('admin_booking_comments')
+                <li class="{{ (request()->is(getAdminPanelUrl('/comments/bookings*', false)) and !request()->is(getAdminPanelUrl('/comments/bookings/reports', false))) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/comments/bookings">{{ trans('admin/main.comments') }}</a>
+                </li>
+            @endcan
+
+            @can('admin_comments_reports')
+                <li class="{{ (request()->is(getAdminPanelUrl('/comments/bookings/reports', false))) ? 'active' : '' }}">
+                    <a class="nav-link"
+                        href="{{ getAdminPanelUrl() }}/comments/bookings/reports">{{ trans('admin/main.comments_reports') }}</a>
                 </li>
             @endcan
 
@@ -342,16 +355,6 @@
                 </li>
             @endcan
 
-            @can('admin_booking_comment')
-                <li class="{{ request()->is(getAdminPanelUrl('/booking/comment*', false)) ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/comment">
-
-                        {{ trans('admin/main.admin_booking_comment') }}
-
-                    </a>
-                </li>
-            @endcan
-
             @php
                 $bookingModuleSidebarItems = [
                     'rules' => ['permission' => 'admin_booking_rules', 'title' => 'Booking Rules'],
@@ -363,19 +366,6 @@
                     'calendar-integrations' => ['permission' => 'admin_booking_calendar_integrations', 'title' => 'Calendar Integrations'],
                 ];
             @endphp
-
-
-
-
-
-            <!-- @can('admin_booking_featured')
-                    <li class="{{ request()->is(getAdminPanelUrl('/booking/featured*', false)) ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/featured">
-                            {{ trans('admin/main.booking_featured') ?? 'Booking Featured' }}
-                        </a>
-                    </li>
-                @endcan -->
-
 
             @foreach($bookingModuleSidebarItems as $moduleKey => $moduleItem)
                 @can($moduleItem['permission'])
