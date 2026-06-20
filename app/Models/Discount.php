@@ -23,9 +23,6 @@ class Discount extends Model
     static $discountSourceBookingBundle = 'booking_bundle';
     static $discountSourceEvent = 'event';
     static $discountSourceMeetingPackage = 'meeting_package';
-
-    sta
-
     static $discountTypes = ['percentage', 'fixed_amount'];
     static $discountTypePercentage = 'percentage';
     static $discountTypeFixedAmount = 'fixed_amount';
