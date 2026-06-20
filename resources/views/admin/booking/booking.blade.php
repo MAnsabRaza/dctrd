@@ -89,162 +89,225 @@
                         <div class="card-body">
 
                             @if(!$isFormPage)
-                                <div class="d-flex justify-content-end mb-3">
-                                    <a href="{{ getAdminPanelUrl() }}/booking" class="btn btn-primary">
-                                        <i class="fas fa-plus mr-1"></i>
-                                        {{ trans('admin/main.create_booking') }}
-                                    </a>
+                                <div class="row">
+                                    <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+                                        <div class="card-statistic">
+                                            <div class="card-statistic__mask"></div>
+                                            <div class="card-statistic__wrap">
+                                                <div class="d-flex align-items-start justify-content-between">
+                                                    <span class="text-gray-500 mt-8">Total Bookings</span>
+                                                    <div class="d-flex-center size-48 bg-success-30 rounded-12">
+                                                        <x-iconsax-bul-document-download class="icons text-success" width="24px" height="24px"/>
+                                                    </div>
+                                                </div>
+                                                <h5 class="font-24 mt-12 line-height-1 text-black">{{ $totalBookings ?? 0 }}</h5>
+                                                <span class="text-gray-500 font-14">{{ trans('admin/main.sales') }}: {{ $totalBookingSales ?? 0 }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+                                        <div class="card-statistic">
+                                            <div class="card-statistic__mask"></div>
+                                            <div class="card-statistic__wrap">
+                                                <div class="d-flex align-items-start justify-content-between">
+                                                    <span class="text-gray-500 mt-8">Total Booking Sellers</span>
+                                                    <div class="d-flex-center size-48 bg-danger-30 rounded-12">
+                                                        <x-iconsax-bul-shop class="icons text-danger" width="24px" height="24px"/>
+                                                    </div>
+                                                </div>
+                                                <h5 class="font-24 mt-12 line-height-1 text-black">{{ $totalBookingSellers ?? 0 }}</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+                                        <div class="card-statistic">
+                                            <div class="card-statistic__mask"></div>
+                                            <div class="card-statistic__wrap">
+                                                <div class="d-flex align-items-start justify-content-between">
+                                                    <span class="text-gray-500 mt-8">Total Booking Customers</span>
+                                                    <div class="d-flex-center size-48 bg-secondary-30 rounded-12">
+                                                        <x-iconsax-bul-profile-2user class="icons text-secondary" width="24px" height="24px"/>
+                                                    </div>
+                                                </div>
+                                                <h5 class="font-24 mt-12 line-height-1 text-black">{{ $totalBookingCustomers ?? 0 }}</h5>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                    {{-- Search Filters --}}
-                                    <form action="{{ getAdminPanelUrl() }}/booking/list" method="get" class="mb-4">
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label class="input-label">{{ trans('admin/main.search') }}</label>
-                                                    <input name="title" type="text" class="form-control"
-                                                           value="{{ request()->get('title') }}"
-                                                           placeholder="{{ trans('admin/main.search_by_title') }}">
+                                <section class="card mt-32">
+                                    <div class="card-body pb-4">
+                                        <form action="{{ getAdminPanelUrl() }}/booking/list" method="get" class="mb-0">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="input-label">{{ trans('admin/main.search') }}</label>
+                                                        <input name="title" type="text" class="form-control" value="{{ request()->get('title') }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="input-label">{{ trans('admin/main.start_date') }}</label>
+                                                        <input type="date" id="from" class="text-center form-control" name="from" value="{{ request()->get('from') }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="input-label">{{ trans('admin/main.end_date') }}</label>
+                                                        <input type="date" id="to" class="text-center form-control" name="to" value="{{ request()->get('to') }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="input-label">{{ trans('admin/main.filters') }}</label>
+                                                        <select name="sort" data-plugin-selectTwo class="form-control populate">
+                                                            <option value="">{{ trans('admin/main.filter_type') }}</option>
+                                                            <option value="sales_asc" @if(request()->get('sort') == 'sales_asc') selected @endif>{{ trans('admin/main.sales_ascending') }}</option>
+                                                            <option value="sales_desc" @if(request()->get('sort') == 'sales_desc') selected @endif>{{ trans('admin/main.sales_descending') }}</option>
+                                                            <option value="price_asc" @if(request()->get('sort') == 'price_asc') selected @endif>{{ trans('admin/main.Price_ascending') }}</option>
+                                                            <option value="price_desc" @if(request()->get('sort') == 'price_desc') selected @endif>{{ trans('admin/main.Price_descending') }}</option>
+                                                            <option value="income_asc" @if(request()->get('sort') == 'income_asc') selected @endif>{{ trans('admin/main.Income_ascending') }}</option>
+                                                            <option value="income_desc" @if(request()->get('sort') == 'income_desc') selected @endif>{{ trans('admin/main.Income_descending') }}</option>
+                                                            <option value="created_at_asc" @if(request()->get('sort') == 'created_at_asc') selected @endif>{{ trans('admin/main.create_date_ascending') }}</option>
+                                                            <option value="created_at_desc" @if(request()->get('sort') == 'created_at_desc') selected @endif>{{ trans('admin/main.create_date_descending') }}</option>
+                                                            <option value="updated_at_asc" @if(request()->get('sort') == 'updated_at_asc') selected @endif>{{ trans('admin/main.update_date_ascending') }}</option>
+                                                            <option value="updated_at_desc" @if(request()->get('sort') == 'updated_at_desc') selected @endif>{{ trans('admin/main.update_date_descending') }}</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="input-label">{{ trans('update.seller') }}</label>
+                                                        <select name="creator_ids[]" multiple="multiple" class="form-control search-user-select2" data-placeholder="{{ trans('update.search_seller') }}">
+                                                            @if(!empty($teachers) and $teachers->count() > 0)
+                                                                @foreach($teachers as $teacher)
+                                                                    <option value="{{ $teacher->id }}" selected>{{ $teacher->full_name }}</option>
+                                                                @endforeach
+                                                            @endif
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="input-label">{{ trans('admin/main.category') }}</label>
+                                                        <select name="category_id" data-plugin-selectTwo class="form-control populate">
+                                                            <option value="">{{ trans('admin/main.all_categories') }}</option>
+                                                            @foreach($categories ?? [] as $category)
+                                                                <option value="{{ $category->id }}" @if(request()->get('category_id') == $category->id) selected @endif>{{ $category->title }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="input-label">{{ trans('admin/main.status') }}</label>
+                                                        <select name="status" data-plugin-selectTwo class="form-control populate">
+                                                            <option value="">{{ trans('admin/main.all_status') }}</option>
+                                                            <option value="draft" @if(request()->get('status') == 'draft') selected @endif>{{ trans('admin/main.draft') }}</option>
+                                                            <option value="pending" @if(request()->get('status') == 'pending') selected @endif>{{ trans('admin/main.pending') }}</option>
+                                                            <option value="published" @if(request()->get('status') == 'published') selected @endif>{{ trans('admin/main.published') }}</option>
+                                                            <option value="rejected" @if(request()->get('status') == 'rejected') selected @endif>{{ trans('public.rejected') }}</option>
+                                                            <option value="inactive" @if(request()->get('status') == 'inactive') selected @endif>{{ trans('admin/main.inactive') }}</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 d-flex align-items-center">
+                                                    <button type="submit" class="btn btn-primary btn-block btn-lg">{{ trans('admin/main.show_results') }}</button>
                                                 </div>
                                             </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label class="input-label">{{ trans('admin/main.category') }}</label>
-                                                    <select name="category_id" data-plugin-selectTwo class="form-control">
-                                                        <option value="">{{ trans('admin/main.all_categories') }}</option>
-                                                        @foreach($categories ?? [] as $category)
-                                                            <option value="{{ $category->id }}"
-                                                                    @if(request()->get('category_id') == $category->id) selected @endif>
-                                                                {{ $category->title }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label class="input-label">{{ trans('admin/main.booking_type') }}</label>
-                                                    <select name="booking_type" data-plugin-selectTwo class="form-control">
-                                                        <option value="">{{ trans('admin/main.all_types') }}</option>
-                                                        @foreach(['tour','activity','rental','event','service','accommodation'] as $type)
-                                                            <option value="{{ $type }}"
-                                                                    @if(request()->get('booking_type') == $type) selected @endif>
-                                                                {{ ucfirst($type) }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-2 d-flex align-items-center">
-                                                <button type="submit" class="btn btn-primary btn-block">
-                                                    <i class="fas fa-search mr-1"></i>
-                                                    {{ trans('admin/main.show_results') }}
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="row mt-2">
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label class="input-label">{{ trans('admin/main.start_date') }}</label>
-                                                    <input type="date" name="from" class="form-control"
-                                                           value="{{ request()->get('from') }}">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label class="input-label">{{ trans('admin/main.end_date') }}</label>
-                                                    <input type="date" name="to" class="form-control"
-                                                           value="{{ request()->get('to') }}">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label class="input-label">{{ trans('admin/main.status') }}</label>
-                                                    <select name="status" data-plugin-selectTwo class="form-control">
-                                                        <option value="">{{ trans('admin/main.all_status') }}</option>
-                                                        <option value="draft"     @if(request()->get('status') == 'draft')     selected @endif>{{ trans('admin/main.draft') }}</option>
-                                                        <option value="published" @if(request()->get('status') == 'published') selected @endif>{{ trans('admin/main.published') }}</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </form>
+                                        </form>
+                                    </div>
+                                </section>
 
-                                    {{-- Bookings Table --}}
-                                    <div class="table-responsive">
-                                        <table class="table custom-table font-14">
-                                            <thead>
+                                <div class="card mt-32">
+                                    <div class="card-header justify-content-between">
+                                        <div>
+                                            <h5 class="font-14 mb-0">{{ trans('admin/main.booking_list') }}</h5>
+                                            <p class="font-12 mt-4 mb-0 text-gray-500">Manage all booking services in your store.</p>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-12">
+                                            <a href="{{ getAdminPanelUrl() }}/booking/excel?{{ http_build_query(request()->all()) }}" class="btn bg-white bg-hover-gray-100 border-gray-400 text-gray-500">
+                                                <x-iconsax-lin-import-2 class="icons text-gray-500" width="18px" height="18px"/>
+                                                <span class="ml-4 font-12">{{ trans('admin/main.export_xls') }}</span>
+                                            </a>
+                                            <a href="{{ getAdminPanelUrl() }}/booking" class="btn btn-primary">
+                                                <x-iconsax-lin-add class="icons text-white" width="18px" height="18px"/>
+                                                <span class="ml-4 font-12">{{ trans('admin/main.create_booking') }}</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table custom-table font-14">
                                                 <tr>
-                                                    <th>{{ trans('admin/main.title') }}</th>
-                                                    <th>{{ trans('admin/main.category') }}</th>
+                                                    <th>{{ trans('admin/main.id') }}</th>
+                                                    <th class="text-left">{{ trans('admin/main.title') }}</th>
+                                                    <th class="text-left">{{ trans('admin/main.creator') }}</th>
                                                     <th>{{ trans('admin/main.booking_type') }}</th>
                                                     <th>{{ trans('admin/main.price') }}</th>
-                                                    <th>{{ trans('public.date') }}</th>
+                                                    <th>{{ trans('admin/main.sales') }}</th>
+                                                    <th>{{ trans('admin/main.income') }}</th>
+                                                    <th>{{ trans('admin/main.updated_at') }}</th>
+                                                    <th>{{ trans('admin/main.created_at') }}</th>
                                                     <th>{{ trans('admin/main.status') }}</th>
-                                                    <th>{{ trans('admin/main.action') }}</th>
+                                                    <th>{{ trans('admin/main.actions') }}</th>
                                                 </tr>
-                                            </thead>
-                                            <tbody>
                                                 @forelse($bookings as $booking)
-                                                    <tr>
-                                                        <td>
-                                                            <a class="text-dark font-weight-bold"
-                                                               href="{{ $booking->getUrl() ?? '#' }}" target="_blank">
-                                                                {{ $booking->title }}
-                                                            </a>
-                                                            @if($booking->featured)
-                                                                <span class="badge badge-warning ml-1">{{ trans('admin/main.featured') }}</span>
+                                                    <tr class="text-center">
+                                                        <td>{{ $booking->id }}</td>
+                                                        <td width="22%" class="text-left">
+                                                            <a class="text-dark mt-0 mb-1 font-weight-bold" href="{{ $booking->getUrl() ?? '#' }}" target="_blank">{{ $booking->title }}</a>
+                                                            @if(!empty($booking->category->title))
+                                                                <div class="text-small text-gray-500">{{ $booking->category->title }}</div>
+                                                            @else
+                                                                <div class="text-small text-warning">{{ trans('admin/main.no_category') }}</div>
                                                             @endif
                                                         </td>
-                                                        <td>{{ $booking->category->title ?? '-' }}</td>
-                                                        <td>
-                                                            <span class="badge badge-info">{{ ucfirst($booking->booking_type) }}</span>
-                                                        </td>
+                                                        <td class="text-left">{{ optional($booking->creator)->full_name ?? '-' }}</td>
+                                                        <td>{{ ucfirst($booking->booking_type) }}</td>
                                                         <td>
                                                             @if($booking->discount_price && $booking->discount_price < $booking->price)
-                                                                <span class="text-muted" style="text-decoration:line-through">
-                                                                    {{ $booking->currency }} {{ number_format($booking->price, 2) }}
-                                                                </span><br>
-                                                                <span class="text-success font-weight-bold">
-                                                                    {{ $booking->currency }} {{ number_format($booking->discount_price, 2) }}
-                                                                </span>
+                                                                <span class="text-gray-500" style="text-decoration: line-through">{{ $booking->currency }} {{ number_format($booking->price, 2) }}</span>
+                                                                <span class="d-block font-weight-bold">{{ $booking->currency }} {{ number_format($booking->discount_price, 2) }}</span>
                                                             @else
-                                                                <span class="font-weight-bold">
-                                                                    {{ $booking->currency }} {{ number_format($booking->price, 2) }}
-                                                                </span>
-                                                            @endif
-                                                            @if($booking->price_unit)
-                                                                <small class="d-block text-muted">{{ $booking->price_unit }}</small>
-                                                            @elseif($booking->price_per)
-                                                                <small class="d-block text-muted">/ {{ number_format($booking->price_per, 2) }}</small>
+                                                                <span class="font-weight-bold">{{ $booking->currency }} {{ number_format($booking->price, 2) }}</span>
                                                             @endif
                                                         </td>
-                                                        <td>{{ dateTimeFormat($booking->created_at, 'j M Y | H:i') }}</td>
+                                                        <td><span class="font-weight-bold">{{ $booking->sales_count ?? 0 }}</span></td>
+                                                        <td>{{ $booking->currency }} {{ number_format((float) ($booking->booking_income ?? 0), 2) }}</td>
+                                                        <td>{{ dateTimeFormat($booking->updated_at, 'Y M j | H:i') }}</td>
+                                                        <td>{{ dateTimeFormat($booking->created_at, 'Y M j | H:i') }}</td>
                                                         <td>
-                                                            <span class="badge-status {{ $booking->status == 'draft' ? 'text-warning bg-warning-30' : 'text-success bg-success-30' }}">
-                                                                {{ $booking->status == 'draft' ? trans('admin/main.draft') : trans('admin/main.published') }}
-                                                            </span>
+                                                            @switch($booking->status)
+                                                                @case('published')
+                                                                    <span class="badge-status text-success bg-success-30">{{ trans('admin/main.published') }}</span>
+                                                                    @break
+                                                                @case('pending')
+                                                                    <span class="badge-status text-warning bg-warning-30">{{ trans('admin/main.pending') }}</span>
+                                                                    @break
+                                                                @case('rejected')
+                                                                @case('inactive')
+                                                                    <span class="badge-status text-danger bg-danger-30">{{ trans('public.rejected') }}</span>
+                                                                    @break
+                                                                @default
+                                                                    <span class="badge-status text-dark bg-dark-30">{{ trans('admin/main.draft') }}</span>
+                                                            @endswitch
                                                         </td>
-                                                        <td width="150px">
+                                                        <td>
                                                             <div class="btn-group dropdown table-actions position-relative">
                                                                 <button type="button" class="btn-transparent dropdown-toggle" data-toggle="dropdown">
-                                                                    <i class="fas fa-ellipsis-v text-gray-500"></i>
+                                                                    <x-iconsax-lin-more class="icons text-gray-500" width="20px" height="20px"/>
                                                                 </button>
                                                                 <div class="dropdown-menu dropdown-menu-right">
                                                                     @can('admin_booking_edit')
-                                                                        <a href="{{ getAdminPanelUrl() }}/booking/{{ $booking->id }}/edit"
-                                                                           class="dropdown-item d-flex align-items-center">
-                                                                            <i class="fas fa-edit mr-2 text-primary"></i>
-                                                                            <span>{{ trans('admin/main.edit') }}</span>
+                                                                        <a href="{{ getAdminPanelUrl() }}/booking/{{ $booking->id }}/edit" class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
+                                                                            <x-iconsax-lin-edit-2 class="icons text-gray-500 mr-2" width="18px" height="18px"/>
+                                                                            <span class="text-gray-500 font-14">{{ trans('admin/main.edit') }}</span>
                                                                         </a>
                                                                     @endcan
                                                                     @can('admin_booking_delete')
-                                                                        <a href="#"
-                                                                           data-href="{{ getAdminPanelUrl() }}/booking/{{ $booking->id }}/delete"
-                                                                           data-toggle="modal"
-                                                                           data-target="#deleteModal"
-                                                                           class="dropdown-item d-flex align-items-center text-danger">
-                                                                            <i class="fas fa-trash mr-2"></i>
+                                                                        <a href="#" data-href="{{ getAdminPanelUrl() }}/booking/{{ $booking->id }}/delete" data-toggle="modal" data-target="#deleteModal" class="dropdown-item d-flex align-items-center text-danger mb-0 py-3 px-0 font-14">
+                                                                            <x-iconsax-lin-trash class="icons text-danger mr-2" width="18px" height="18px"/>
                                                                             <span>{{ trans('admin/main.delete') }}</span>
                                                                         </a>
                                                                     @endcan
@@ -254,19 +317,16 @@
                                                     </tr>
                                                 @empty
                                                     <tr>
-                                                        <td colspan="7" class="text-center text-gray-500 py-4">
-                                                            <i class="fas fa-calendar-alt mr-1"></i>
-                                                            {{ trans('admin/main.no_result') }}
-                                                        </td>
+                                                        <td colspan="11" class="text-center text-gray-500 py-4">{{ trans('admin/main.no_result') }}</td>
                                                     </tr>
                                                 @endforelse
-                                            </tbody>
-                                        </table>
+                                            </table>
+                                        </div>
                                     </div>
-
-                                    <div class="text-center mt-3">
+                                    <div class="card-footer text-center">
                                         {{ $bookings->appends(request()->input())->links() }}
                                     </div>
+                                </div>
                             @else
 
                                 @include('admin.booking.partials.new_booking_form')

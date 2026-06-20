@@ -1,14 +1,18 @@
 <?php
 namespace App\Http\Controllers\Admin\Booking;
 
+use App\Exports\BookingsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingCategory;
+use App\Models\BookingOrder;
 use App\Models\Role;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 class BookingController extends Controller
 {
@@ -64,26 +68,34 @@ class BookingController extends Controller
 
         $query = Booking::query();
 
-        if ($request->get('title'))
-            $query->where('title', 'like', '%' . $request->get('title') . '%');
-        if ($request->get('category_id'))
-            $query->where('category_id', $request->get('category_id'));
-        if ($request->get('booking_type'))
-            $query->where('booking_type', $request->get('booking_type'));
-        if ($request->get('status'))
-            $query->where('status', $request->get('status'));
-        if ($request->get('from'))
-            $query->whereDate('created_at', '>=', $request->get('from'));
-        if ($request->get('to'))
-            $query->whereDate('created_at', '<=', $request->get('to'));
+        $topStatData = $this->getTopPageStats(deepClone($query));
 
-        $bookings      = $query->orderBy('created_at', 'desc')->paginate(15);
+        $query = $this->handleFilters($query, $request)
+            ->with([
+                'category',
+                'creator' => function ($qu) {
+                    $qu->select('id', 'full_name');
+                },
+            ])
+            ->withCount([
+                'orderItems as sales_count' => function ($qu) {
+                    $qu->whereNotIn('status', ['cancelled', 'pending']);
+                },
+            ])
+            ->withSum([
+                'orderItems as booking_income' => function ($qu) {
+                    $qu->whereNotIn('status', ['cancelled', 'pending']);
+                },
+            ], 'total_price');
+
+        $bookings      = $query->paginate(15);
         $categories    = BookingCategory::where('status', 1)->orderBy('order')->get();
         $allCategories = BookingCategory::orderBy('order')->get();
         $userLanguages = $this->getUserLanguages();
         $instructors   = $this->getInstructors();
+        $selectedSellers = $this->getSelectedSellers($request);
 
-        return view('admin.booking.booking', [
+        $data = [
             'pageTitle'       => trans('admin/main.booking_list'),
             'bookingPageMode' => 'list',
             'bookings'        => $bookings,
@@ -91,7 +103,36 @@ class BookingController extends Controller
             'allCategories'   => $allCategories,
             'userLanguages'   => $userLanguages,
             'instructors'     => $instructors,
-        ]);
+            'teachers'        => $selectedSellers,
+        ];
+
+        return view('admin.booking.booking', array_merge($data, $topStatData));
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $this->authorize('admin_booking');
+
+        $bookings = $this->handleFilters(Booking::query(), $request)
+            ->with([
+                'category',
+                'creator' => function ($qu) {
+                    $qu->select('id', 'full_name');
+                },
+            ])
+            ->withCount([
+                'orderItems as sales_count' => function ($qu) {
+                    $qu->whereNotIn('status', ['cancelled', 'pending']);
+                },
+            ])
+            ->withSum([
+                'orderItems as booking_income' => function ($qu) {
+                    $qu->whereNotIn('status', ['cancelled', 'pending']);
+                },
+            ], 'total_price')
+            ->get();
+
+        return Excel::download(new BookingsExport($bookings), 'bookings.xlsx');
     }
 
     public function store(Request $request)
@@ -364,6 +405,135 @@ class BookingController extends Controller
         if (!empty($booking->creator_id) && $booking->creator_id !== auth()->id()) {
             sendNotification($template, $notifyOptions, $booking->creator_id);
         }
+    }
+
+    private function getTopPageStats($query): array
+    {
+        $totalBookings = deepClone($query)->count();
+        $totalBookingSales = deepClone($query)
+            ->join('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
+            ->whereNotIn('booking_order_items.status', ['cancelled', 'pending'])
+            ->count('booking_order_items.id');
+
+        $totalSellers = deepClone($query)
+            ->whereNotNull('creator_id')
+            ->distinct('creator_id')
+            ->count('creator_id');
+
+        $bookingIds = deepClone($query)->pluck('id');
+        $totalCustomers = 0;
+
+        if ($bookingIds->count()) {
+            $totalCustomers = BookingOrder::query()
+                ->join('booking_order_items', 'booking_orders.id', '=', 'booking_order_items.order_id')
+                ->whereIn('booking_order_items.booking_id', $bookingIds)
+                ->whereNotIn('booking_order_items.status', ['cancelled', 'pending'])
+                ->distinct('booking_orders.user_id')
+                ->count('booking_orders.user_id');
+        }
+
+        return [
+            'totalBookings' => $totalBookings,
+            'totalBookingSales' => $totalBookingSales,
+            'totalBookingSellers' => $totalSellers,
+            'totalBookingCustomers' => $totalCustomers,
+        ];
+    }
+
+    private function handleFilters($query, Request $request)
+    {
+        $from = $request->get('from', null);
+        $to = $request->get('to', null);
+        $title = $request->get('title', null);
+        $creatorIds = $request->get('creator_ids', null);
+        $categoryId = $request->get('category_id', null);
+        $bookingType = $request->get('booking_type', null);
+        $status = $request->get('status', null);
+        $sort = $request->get('sort', null);
+
+        $query = fromAndToDateFilter($from, $to, $query, 'created_at');
+
+        if (!empty($title)) {
+            $query->where('title', 'like', '%' . $title . '%');
+        }
+
+        if (!empty($creatorIds) and is_array($creatorIds) and count($creatorIds)) {
+            $query->whereIn('creator_id', $creatorIds);
+        }
+
+        if (!empty($categoryId)) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if (!empty($bookingType)) {
+            $query->where('booking_type', $bookingType);
+        }
+
+        if (!empty($status)) {
+            $query->where('status', $status);
+        }
+
+        switch ($sort) {
+            case 'sales_asc':
+                $query->leftJoin('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
+                    ->select('bookings.*', DB::raw('count(booking_order_items.id) as order_items_count'))
+                    ->groupBy('bookings.id')
+                    ->orderBy('order_items_count', 'asc');
+                break;
+            case 'sales_desc':
+                $query->leftJoin('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
+                    ->select('bookings.*', DB::raw('count(booking_order_items.id) as order_items_count'))
+                    ->groupBy('bookings.id')
+                    ->orderBy('order_items_count', 'desc');
+                break;
+            case 'price_asc':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'income_asc':
+                $query->leftJoin('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
+                    ->select('bookings.*', DB::raw('coalesce(sum(booking_order_items.total_price), 0) as income_amount'))
+                    ->groupBy('bookings.id')
+                    ->orderBy('income_amount', 'asc');
+                break;
+            case 'income_desc':
+                $query->leftJoin('booking_order_items', 'bookings.id', '=', 'booking_order_items.booking_id')
+                    ->select('bookings.*', DB::raw('coalesce(sum(booking_order_items.total_price), 0) as income_amount'))
+                    ->groupBy('bookings.id')
+                    ->orderBy('income_amount', 'desc');
+                break;
+            case 'created_at_asc':
+                $query->orderBy('bookings.created_at', 'asc');
+                break;
+            case 'updated_at_asc':
+                $query->orderBy('bookings.updated_at', 'asc');
+                break;
+            case 'updated_at_desc':
+                $query->orderBy('bookings.updated_at', 'desc');
+                break;
+            case 'created_at_desc':
+            default:
+                $query->orderBy('bookings.created_at', 'desc');
+                break;
+        }
+
+        return $query;
+    }
+
+    private function getSelectedSellers(Request $request)
+    {
+        $creatorIds = $request->get('creator_ids', []);
+
+        if (empty($creatorIds) or !is_array($creatorIds)) {
+            return collect();
+        }
+
+        return User::query()
+            ->select('id', 'full_name')
+            ->whereIn('id', $creatorIds)
+            ->get();
     }
 
     private function getUserLanguages(): array

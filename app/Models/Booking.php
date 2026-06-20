@@ -130,6 +130,11 @@ class Booking extends Model
         return $this->belongsTo(BookingCategory::class, 'category_id');
     }
 
+    public function orderItems()
+    {
+        return $this->hasMany(BookingOrderItem::class, 'booking_id');
+    }
+
     // ─── Scopes ──────────────────────────────────────────────────────
 
     public function scopePublished($query)
