@@ -35,4 +35,8 @@ class CommentReport extends Model
     {
         return $this->belongsTo('App\Models\Product', 'product_id', 'id');
     }
+    public function booking()
+    {
+        return $this->belongsTo('App\Models\Booking', 'booking_id', 'id');
+    }
 }

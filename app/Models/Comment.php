@@ -55,6 +55,16 @@ class Comment extends Model
         return $this->belongsTo('App\Models\ProductReview', 'product_review_id', 'id');
     }
 
+        public function bookings()
+    {
+        return $this->belongsTo('App\Models\Booking', 'booking_id', 'id');
+    }
+
+    public function bookingReview()
+    {
+        return $this->belongsTo('App\Models\BookingReview', 'booking_review_id', 'id');
+    }
+
     public function event()
     {
         return $this->belongsTo('App\Models\Event', 'event_id', 'id');
