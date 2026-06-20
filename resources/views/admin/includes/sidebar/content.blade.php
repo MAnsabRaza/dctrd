@@ -165,7 +165,7 @@
                     </a>
                 </li>
             @endcan
-                @can('admin_booking_orders')
+            @can('admin_booking_orders')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/order', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/order">
                         {{ trans('admin/main.admin_booking_orders') }}
@@ -195,28 +195,28 @@
                     </a>
                 </li>
             @endcan
-              @can('admin_booking_filters')
+            @can('admin_booking_filters')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/filters*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/filters">
                         {{ trans('admin/main.booking_filters') ?? 'Booking Filters' }}
                     </a>
                 </li>
             @endcan
-               @can('admin_booking_specification')
+            @can('admin_booking_specification')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/specification*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/specification">
                         {{ trans('admin/main.admin_booking_specification') }}
                     </a>
                 </li>
             @endcan
-               @can('admin_booking_discounts')
+            @can('admin_booking_discounts')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/discounts*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/discounts">
                         {{ trans('admin/main.booking_discounts') ?? 'Discounts' }}
                     </a>
                 </li>
             @endcan
-            
+
             @can('admin_booking_review')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/review*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/review">
@@ -224,7 +224,7 @@
                     </a>
                 </li>
             @endcan
-               @can('admin_booking_top_categories')
+            @can('admin_booking_top_categories')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/top-categories*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/top-categories">
                         {{ trans('admin/main.booking_top_categories') ?? 'Booking Top Categories' }}
@@ -299,7 +299,7 @@
                     </a>
                 </li>
             @endcan
-         
+
             @can('admin_booking_bundle')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/bundle*', false)) ? 'active' : '' }}">
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/bundle">
@@ -316,7 +316,7 @@
                 </li>
             @endcan
 
-        
+
 
             @can('admin_booking_time_slots')
                 <li class="{{ request()->is(getAdminPanelUrl('/booking/time-slot*', false)) ? 'active' : '' }}">
@@ -364,19 +364,19 @@
                 ];
             @endphp
 
-         
 
-          
+
+
 
             <!-- @can('admin_booking_featured')
-                <li class="{{ request()->is(getAdminPanelUrl('/booking/featured*', false)) ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/featured">
-                        {{ trans('admin/main.booking_featured') ?? 'Booking Featured' }}
-                    </a>
-                </li>
-            @endcan -->
+                    <li class="{{ request()->is(getAdminPanelUrl('/booking/featured*', false)) ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ getAdminPanelUrl() }}/booking/featured">
+                            {{ trans('admin/main.booking_featured') ?? 'Booking Featured' }}
+                        </a>
+                    </li>
+                @endcan -->
 
-         
+
             @foreach($bookingModuleSidebarItems as $moduleKey => $moduleItem)
                 @can($moduleItem['permission'])
                     <li

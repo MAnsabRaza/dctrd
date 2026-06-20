@@ -184,7 +184,7 @@ return [
     'comments_section' => 'Enable Comments',
 
     'booking_rate_plan' => 'Rate Plans',
-    'select_booking'=>'Select Booking',
+    'select_booking' => 'Select Booking',
     'rate_plans' => 'Rate Plans',
     'create_rate_plan' => 'New Rate Plan',
     'edit_rate_plan' => 'Edit Rate Plan',
@@ -224,40 +224,40 @@ return [
     'close_reason_placeholder' => 'e.g. Holiday, Maintenance',
     'resource' => 'Resource',
     'admin_booking_favorite' => 'Favorites',
-'admin_booking_comment' => 'Comments',
-'manage_all_items'=>'Manage All Items',
-'booking_filters'=>'Filters',
-'options'=>'Options',
-'booking_featured'=>'Booking Featured',
-'choose'=>'Choose',
-'home'=>'Home',
-'home_categories'=>'Home Categories',
-'edit_booking_featured'=>'Edit Booking Featured',
-'new_booking_featured'=>'New Booking Featured',
-'booking_top_categories'=>'Top Category',
-'booking_feature_categories'=>'Feature Categories',
+    'admin_booking_comment' => 'Comments',
+    'manage_all_items' => 'Manage All Items',
+    'booking_filters' => 'Filters',
+    'options' => 'Options',
+    'booking_featured' => 'Booking Featured',
+    'choose' => 'Choose',
+    'home' => 'Home',
+    'home_categories' => 'Home Categories',
+    'edit_booking_featured' => 'Edit Booking Featured',
+    'new_booking_featured' => 'New Booking Featured',
+    'booking_top_categories' => 'Top Category',
+    'booking_feature_categories' => 'Feature Categories',
 
-//discount
-'booking_discounts'=>'Discounts',
-'bundle'=>'Bundle',
-'starts_at'=>'Starts At',
-'expires_at'=>'Expiers At',
-'expired'=>'Expired',
-'add_top_category'=>'Add Top Category',
-'add_feature_category'=>'Add Feature Category',
-'created_successfully '=>'Created Successfully.',
-'edit_booking_feature_category'=>'Edit Booking Feature Category',
-'edit_booking_top_category'=>'Edit Booking Top Category',
-'update_successfully'=>'Updated Successfully.',
-'in-house-bookings' => 'In House Bookings',
-'confirmed'=>'Confirmed',
-'completed'=>'Completed',
-//sidebar 
-'new_booking'=>'New Booking',
+    //discount
+    'booking_discounts' => 'Discounts',
+    'bundle' => 'Bundle',
+    'starts_at' => 'Starts At',
+    'expires_at' => 'Expiers At',
+    'expired' => 'Expired',
+    'add_top_category' => 'Add Top Category',
+    'add_feature_category' => 'Add Feature Category',
+    'created_successfully ' => 'Created Successfully.',
+    'edit_booking_feature_category' => 'Edit Booking Feature Category',
+    'edit_booking_top_category' => 'Edit Booking Top Category',
+    'update_successfully' => 'Updated Successfully.',
+    'in-house-bookings' => 'In House Bookings',
+    'confirmed' => 'Confirmed',
+    'completed' => 'Completed',
+    //sidebar 
+    'new_booking' => 'New Booking',
 
     //Booking
     'booking' => 'Booking',
-    
+
     'bookings' => 'Bookings',
     'booking_list' => 'Booking',
     'create_booking' => 'Create Booking',
@@ -281,17 +281,17 @@ return [
     'booking_resources_deleted_successfully' => 'Booking Resources deleted successfully.',
 
     //checkout modules
-    'checkout_modules'=>'Checkout Modules',
-    'checkout_modules_list_title'=>'Checkout Modules List Title',
-    
+    'checkout_modules' => 'Checkout Modules',
+    'checkout_modules_list_title' => 'Checkout Modules List Title',
+
 
     //booking value
-    'reviewer_message'=>'Reviewer Message',
-    'checkout_message'=>'Checkout Message',
-    'validity_days'=>'Validity Days',
-    'usage_limit'=>'Usage Limit',
+    'reviewer_message' => 'Reviewer Message',
+    'checkout_message' => 'Checkout Message',
+    'validity_days' => 'Validity Days',
+    'usage_limit' => 'Usage Limit',
     'booking_type' => 'Booking Type',
-    'numeric_value'=>'Numeric Value',
+    'numeric_value' => 'Numeric Value',
     'search_by_title' => 'Search By Title',
     'min_persons' => 'Min Person',
     'max_persons' => 'Max Persons',
@@ -341,7 +341,7 @@ return [
     'affects_availability' => 'Affects Availability',
 
     //booking bundles
-    'admin_booking_packages'=>'Packages',
+    'admin_booking_packages' => 'Packages',
     'admin_booking_bundle' => 'Bundles',
     'create_booking_bundle' => 'Create Bundle',
     'booking_bundle_created_successfully' => 'Bundle created successfully.',
@@ -354,7 +354,7 @@ return [
     'booking_order_deleted_successfully' => 'Booking order deleted successfully.',
 
     //booking import
-    'admin_booking_imports' =>'Imports',
+    'admin_booking_imports' => 'Imports',
     'booking_imports' => 'Booking Imports',
     'csv_format_note' => 'CSV Format Note',
     'import_bookings' => 'Import Booking',
@@ -434,14 +434,14 @@ return [
     'write_comment' => 'Write your comment...',
     'write_reply' => 'Write your reply...',
     'last_replied' => 'Last Replied',
-    'admin_booking_review'=>'Review',
+    'admin_booking_review' => 'Review',
     'booking_review_created_successfully' => 'Review created successfully.',
     'booking_review_updated_successfully' => 'Review updated successfully.',
     'booking_review_deleted_successfully' => 'Review deleted successfully.',
-    'customer'=>'Customer',
-    'rating'=>'Rating',
-    'validity_days'=>'Validity Days',
-    'usage_limit'=>'Usage Limit',
+    'customer' => 'Customer',
+    'rating' => 'Rating',
+    'validity_days' => 'Validity Days',
+    'usage_limit' => 'Usage Limit',
 
     // Shared
     'values' => 'Values',

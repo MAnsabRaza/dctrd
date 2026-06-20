@@ -71,6 +71,12 @@
                 </li>
             @endcan
 
+            @canany(['admin_booking_comments','admin_bookings_comments'])
+                <li class="{{ (request()->is(getAdminPanelUrl('/comments/bookings', false))) ? 'active' : '' }}">
+                    <a class="nav-link @if(!empty($sidebarBeeps['bookingComments']) and $sidebarBeeps['bookingComments']) beep beep-sidebar @endif" href="{{ getAdminPanelUrl() }}/comments/bookings">{{ trans('admin/main.booking_comments') }}</a>
+                </li>
+            @endcanany
+
             @can('admin_product_comments')
                 <li class="{{ (request()->is(getAdminPanelUrl('/comments/products', false))) ? 'active' : '' }}">
                     <a class="nav-link @if(!empty($sidebarBeeps['productComments']) and $sidebarBeeps['productComments']) beep beep-sidebar @endif" href="{{ getAdminPanelUrl() }}/comments/products">{{ trans('update.product_comments') }}</a>
@@ -110,6 +116,12 @@
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/comments/blog/reports">{{ trans('admin/main.blog_comments_reports') }}</a>
                 </li>
             @endcan
+
+            @canany(['admin_bookings_comments_reports','admin_booking_comments_reports'])
+                <li class="{{ (request()->is(getAdminPanelUrl('/comments/bookings/reports', false))) ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ getAdminPanelUrl() }}/comments/bookings/reports">{{ trans('admin/main.booking_comments_reports') }}</a>
+                </li>
+            @endcanany
 
             @can('admin_report_reasons')
                 <li class="{{ (request()->is(getAdminPanelUrl('/reports/reasons', false))) ? 'active' : '' }}">
