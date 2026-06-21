@@ -61,7 +61,7 @@ class MyBookingPurchaseController extends Controller
         ];
         $data = array_merge($data, $getListData);
 
-        return view('design_1.panel.booking.my_purchases.index', $data);
+        return view('design_1.panel.bookings.my_purchases.index', $data);
     }
 
     private function handleFilters(Request $request, Builder $query): Builder
@@ -155,7 +155,7 @@ class MyBookingPurchaseController extends Controller
         $html = "";
 
         foreach ($orders as $orderRow) {
-            $html .= (string)view()->make('design_1.panel.booking.my_purchases.table_items', ['order' => $orderRow]);
+            $html .= (string)view()->make('design_1.panel.bookings.my_purchases.table_items', ['order' => $orderRow]);
         }
 
         return response()->json([
@@ -242,7 +242,7 @@ class MyBookingPurchaseController extends Controller
                 'buyer' => $bookingOrder->buyer,
             ];
 
-            return view('design_1.panel.booking.invoice.index', $data);
+            return view('design_1.panel.bookings.invoice.index', $data);
         }
 
         abort(404);

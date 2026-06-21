@@ -11,20 +11,22 @@ class BookingOrder extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'booking_orders';
-     // ---- ADD THESE ----
+
+    // ---- STATUS CONSTANTS (mirrors ProductOrder naming) ----
     public static $status = [
         'pending',
-        'waiting_confirmation',
-        'confirmed',
-        'completed',
+        'waiting_delivery',
+        'shipped',
+        'success',
         'canceled',
     ];
 
     public static $pending = 'pending';
-    public static $waitingConfirmation = 'waiting_confirmation';
-    public static $confirmed = 'confirmed';
-    public static $completed = 'completed';
+    public static $waitingDelivery = 'waiting_delivery';
+    public static $shipped = 'shipped';
+    public static $success = 'success';
     public static $canceled = 'canceled';
+    // ----------------------------------------------------------
 
     protected $fillable = [
         'booking_id',

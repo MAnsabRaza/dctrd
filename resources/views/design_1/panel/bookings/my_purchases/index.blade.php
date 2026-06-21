@@ -7,7 +7,7 @@
 @section('content')
 
     {{-- Top Stats --}}
-    @include('design_1.panel.booking.my_purchases.top_stats')
+    @include('design_1.panel.bookings.my_purchases.top_stats')
 
     @if(!empty($orders) and !$orders->isEmpty())
         <div class="bg-white pt-16 rounded-24 mt-20">
@@ -18,7 +18,7 @@
             </div>
 
             {{-- Filters --}}
-            @include('design_1.panel.booking.my_purchases.filters')
+            @include('design_1.panel.bookings.my_purchases.filters')
 
             {{-- List Table --}}
             <div id="tableListContainer" class="table-responsive-lg" data-view-data-path="/panel/bookings/purchases">
@@ -39,7 +39,7 @@
 
                     <tbody class="js-table-body-lists">
                     @foreach($orders as $orderRow)
-                        @include('design_1.panel.booking.my_purchases.table_items', ['order' => $orderRow])
+                        @include('design_1.panel.bookings.my_purchases.table_items', ['order' => $orderRow])
                     @endforeach
                     </tbody>
                 </table>
