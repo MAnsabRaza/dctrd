@@ -6,7 +6,7 @@
     - Steps 2-8 post to panel.bookings.update with current_step + get_step/get_next/draft
     - Every submit causes a normal redirect to the next (or same) step URL
 --}}
-@extends('design_1.panel.layout')
+@extends('design_1.panel.layouts.panel')
 
 @section('content')
 
