@@ -390,10 +390,9 @@ class Booking extends Model
     }
 
     public function visits()
-    {
-        return $this->hasMany(\App\Models\Visit::class, 'visitable_id')
-            ->where('visitable_type', self::class);
-    }
+{
+    return $this->morphMany(\App\Models\VisitLog::class, 'targetable');
+}
 
     public function sales($excludeRefunded = false, $orderByLatest = false)
     {
