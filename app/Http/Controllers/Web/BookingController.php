@@ -233,118 +233,148 @@ class BookingController extends Controller
        BUY WITH POINT
     ══════════════════════════════════════════════ */
 
-    public function buyWithPoint(Request $request, $slug)
-    {
-        if (!auth()->check()) {
-            return redirect('/login');
-        }
+    /* ══════════════════════════════════════════════
+   BUY WITH POINT
+══════════════════════════════════════════════ */
 
-        $user    = auth()->user();
-        $data    = $request->all();
-        $booking = Booking::where('slug', $slug)->where('status', 'published')->first();
+public function buyWithPoint(Request $request, $slug)
+{
+    if (!auth()->check()) {
+        return redirect('/login');
+    }
 
-        if (empty($booking) || ($data['item_id'] ?? null) != $booking->id) {
-            abort(404);
-        }
+    $user    = auth()->user();
+    $data    = $request->all();
+    $booking = Booking::where('slug', $slug)->where('status', 'published')->first();
 
-        if (empty($booking->point)) {
-            return back()->with(['toast' => [
-                'title' => '', 'msg' => trans('update.can_not_buy_this_booking_with_point'), 'status' => 'error',
-            ]]);
-        }
+    if (empty($booking) || ($data['item_id'] ?? null) != $booking->id) {
+        abort(404);
+    }
 
-        $quantity        = (int) ($data['quantity'] ?? 1);
-        $availablePoints = $user->getRewardPoints();
-        $needPoints      = $booking->point * $quantity;
-
-        if ($availablePoints < $needPoints) {
-            return back()->with(['toast' => [
-                'title' => '', 'msg' => trans('update.you_have_no_enough_points_for_this_product'), 'status' => 'error',
-            ]]);
-        }
-
-        $bookingOrder = BookingOrder::create([
-            'booking_id' => $booking->id,
-            'seller_id'  => $booking->creator_id,
-            'buyer_id'   => $user->id,
-            'quantity'   => $quantity,
-            'status'     => BookingOrder::$pending,
-            'created_at' => time(),
-        ]);
-
-        $sale = Sale::create([
-            'buyer_id'         => $user->id,
-            'seller_id'        => $booking->creator_id,
-            'booking_order_id' => $bookingOrder->id,
-            'type'             => 'booking',
-            'payment_method'   => Sale::$credit,
-            'amount'           => 0,
-            'total_amount'     => 0,
-            'created_at'       => time(),
-        ]);
-
-        $bookingOrder->update([
-            'sale_id' => $sale->id,
-            'status'  => BookingOrder::$success,
-        ]);
-
-        RewardAccounting::makeRewardAccounting(
-            $user->id, $needPoints, 'withdraw', null, false, RewardAccounting::DEDUCTION
-        );
-
+    if (empty($booking->point)) {
         return back()->with(['toast' => [
-            'title' => '', 'msg' => trans('update.success_pay_product_with_point_msg'), 'status' => 'success',
+            'title' => '', 'msg' => trans('update.can_not_buy_this_booking_with_point'), 'status' => 'error',
         ]]);
     }
 
-    /* ══════════════════════════════════════════════
-       DIRECT PAYMENT  (AJAX)
-    ══════════════════════════════════════════════ */
+    $quantity        = (int) ($data['quantity'] ?? 1);
+    $availablePoints = $user->getRewardPoints();
+    $needPoints      = $booking->point * $quantity;
 
-    public function directPayment(Request $request)
-    {
-        $user = auth()->user();
+    if ($availablePoints < $needPoints) {
+        return back()->with(['toast' => [
+            'title' => '', 'msg' => trans('update.you_have_no_enough_points_for_this_product'), 'status' => 'error',
+        ]]);
+    }
 
-        if (empty($user) || empty(getFeaturesSettings('direct_bookings_payment_button_status'))) {
-            return response()->json([], 422);
-        }
+    // ✅ FIX: created_at integer timestamp use karo, updated_at nahi hai table mein
+    $bookingOrder = BookingOrder::create([
+        'booking_id' => $booking->id,
+        'seller_id'  => $booking->creator_id,
+        'buyer_id'   => $user->id,
+        'quantity'   => $quantity,
+        'status'     => BookingOrder::$pending,
+        'created_at' => time(),  // integer timestamp
+    ]);
 
-        $this->validate($request, ['item_id' => 'required']);
+    $sale = Sale::create([
+        'buyer_id'         => $user->id,
+        'seller_id'        => $booking->creator_id,
+        'booking_order_id' => $bookingOrder->id,
+        'type'             => 'booking',
+        'payment_method'   => Sale::$credit,
+        'amount'           => 0,
+        'total_amount'     => 0,
+        'created_at'       => time(),
+    ]);
 
-        $data       = $request->except('_token');
-        $bookingId  = $data['item_id'];
-        $quantity   = (int) ($data['quantity'] ?? 1);
+    $bookingOrder->update([
+        'sale_id' => $sale->id,
+        'status'  => BookingOrder::$success,
+    ]);
 
-        $booking = Booking::query()->where('id', $bookingId)->where('status', 'published')->first();
+    // ✅ FIX: existing order_items table use karo, BookingOrderItem nahi
+    \App\Models\OrderItem::create([
+        'user_id'          => $user->id,
+        'booking_order_id' => $bookingOrder->id,
+        'quantity'         => $quantity,
+        'amount'           => 0,
+        'total_amount'     => 0,
+        'created_at'       => time(),
+    ]);
 
-        if (empty($booking)) {
-            return response()->json([], 422);
-        }
+    RewardAccounting::makeRewardAccounting(
+        $user->id, $needPoints, 'withdraw', null, false, RewardAccounting::DEDUCTION
+    );
 
-        $activeDiscount = method_exists($booking, 'getActiveDiscount') ? $booking->getActiveDiscount() : null;
+    return back()->with(['toast' => [
+        'title' => '', 'msg' => trans('update.success_pay_product_with_point_msg'), 'status' => 'success',
+    ]]);
+}
 
-        $bookingOrder = BookingOrder::updateOrCreate(
-            ['booking_id' => $booking->id, 'seller_id' => $booking->creator_id, 'buyer_id' => $user->id],
-            [
-                'quantity'            => $quantity,
-                'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
-                'status'              => BookingOrder::$pending,
-                'created_at'          => time(),
-            ]
-        );
+/* ══════════════════════════════════════════════
+   DIRECT PAYMENT  (AJAX)
+══════════════════════════════════════════════ */
 
-        Cart::updateOrCreate(
-            ['creator_id' => $user->id, 'booking_order_id' => $bookingOrder->id],
-            ['created_at' => time()]
-        );
+public function directPayment(Request $request)
+{
+    $user = auth()->user();
 
-        return response()->json([
-            'code'        => 200,
-            'title'       => trans('cart.cart_add_success_title'),
-            'msg'         => trans('cart.cart_add_success_msg'),
-            'redirect_to' => '/cart',
+    if (empty($user) || empty(getFeaturesSettings('direct_bookings_payment_button_status'))) {
+        return response()->json([], 422);
+    }
+
+    $this->validate($request, ['item_id' => 'required']);
+
+    $data       = $request->except('_token');
+    $bookingId  = $data['item_id'];
+    $quantity   = (int) ($data['quantity'] ?? 1);
+
+    $booking = Booking::query()->where('id', $bookingId)->where('status', 'published')->first();
+
+    if (empty($booking)) {
+        return response()->json([], 422);
+    }
+
+    $activeDiscount = method_exists($booking, 'getActiveDiscount') ? $booking->getActiveDiscount() : null;
+
+    // ✅ FIX: updateOrCreate mein updated_at nahi, sirf created_at integer
+    $bookingOrder = BookingOrder::where([
+        'booking_id' => $booking->id,
+        'seller_id'  => $booking->creator_id,
+        'buyer_id'   => $user->id,
+    ])->first();
+
+    if ($bookingOrder) {
+        $bookingOrder->update([
+            'quantity'            => $quantity,
+            'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
+            'status'              => BookingOrder::$pending,
+        ]);
+    } else {
+        $bookingOrder = BookingOrder::create([
+            'booking_id'          => $booking->id,
+            'seller_id'           => $booking->creator_id,
+            'buyer_id'            => $user->id,
+            'quantity'            => $quantity,
+            'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
+            'status'              => BookingOrder::$pending,
+            'created_at'          => time(),  // integer timestamp
         ]);
     }
+
+    Cart::updateOrCreate(
+        ['creator_id' => $user->id, 'booking_order_id' => $bookingOrder->id],
+        ['created_at' => time()]
+    );
+
+    return response()->json([
+        'code'        => 200,
+        'title'       => trans('cart.cart_add_success_title'),
+        'msg'         => trans('cart.cart_add_success_msg'),
+        'redirect_to' => '/cart',
+    ]);
+}
 
     /* ══════════════════════════════════════════════
        FAVOURITE TOGGLE  (AJAX)

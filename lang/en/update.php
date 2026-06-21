@@ -4891,6 +4891,25 @@ return [
     'booking_categories'=>'Booking Categories',
     'booking_type'=>'Booking Type',
     'has_location'=>'Has Location',
-    'new_booking_page_title'=>'New Booking Page Title'
+    'new_booking_page_title'=>'New Booking Page Title',
+    'check_booking'=>'Check Booking',
+    'add_to_favorites'=>'Add TO Favorites',
+    'select_date_check_slots'=>'Select Date to Check Slots',
+    'resource'=>'Resource',
+    'any_resource'=>'Any Resource',
+    'check_slot'=>'Check Slot',
+    'about_this_booking'=>'About This Booking',
+    'minimum_persons'=>'Minimum Persons',
+    'duration'=>'Duration',
+    'minutes'=>'Minutes',
+    'yes'=>'Yes',
+    'maximum_persons'=>'Maximum Person',
+    'details'=>'Details',
+    'booking_quality'=>'Booking Quality',
+    'provider_quality'=>'Provider Quality',
+    'value_for_money'=>'Value For Money',
+    'location_quality'=>'Location Quality',
+    
+
     
 ];
