@@ -374,8 +374,102 @@ class Booking extends Model
         return $this->hasMany(BookingFeatured::class, 'booking_id');
     }
     // Ek booking ka ek review hoga
+   // Ek booking ka ek review hoga
     public function review()
     {
         return $this->hasOne(BookingReview::class, 'booking_id');
     }
-}
+
+    // ════════════════════════════════════════════════════
+    // ──── Naya code yahan se shuru ────
+    // ════════════════════════════════════════════════════
+
+    public function bookingOrders()
+    {
+        return $this->hasMany(BookingOrder::class, 'booking_id');
+    }
+
+    public function visits()
+    {
+        return $this->hasMany(\App\Models\Visit::class, 'visitable_id')
+            ->where('visitable_type', self::class);
+    }
+
+    public function sales($excludeRefunded = false, $orderByLatest = false)
+    {
+        $query = Sale::query()
+            ->join('booking_orders', 'sales.booking_order_id', '=', 'booking_orders.id')
+            ->where('booking_orders.booking_id', $this->id)
+            ->whereNotIn('booking_orders.status', [BookingOrder::$canceled, BookingOrder::$pending])
+            ->select('sales.*');
+
+        if ($excludeRefunded) {
+            $query->whereNull('sales.refund_at');
+        }
+
+        if ($orderByLatest) {
+            $query->orderBy('sales.created_at', 'desc');
+        }
+
+        return $query;
+    }
+
+    public function salesCount(): int
+    {
+        return (int) $this->sales(true)->count();
+    }
+
+    public function getAvailability(): int
+    {
+        if (!empty($this->unlimited_inventory) || is_null($this->inventory)) {
+            return PHP_INT_MAX;
+        }
+
+        $sold = (int) $this->orderItems()
+            ->whereHas('order', function ($q) {
+                $q->whereNotIn('status', [BookingOrder::$canceled, BookingOrder::$pending]);
+            })
+            ->sum('quantity');
+
+        return max(0, (int) $this->inventory - $sold);
+    }
+
+    public function getActiveDiscount()
+    {
+        return $this->discounts()
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+            })
+            ->first();
+    }
+
+    public function getPriceWithActiveDiscountPrice()
+    {
+        $discount = $this->getActiveDiscount();
+
+        if (empty($discount)) {
+            return (float) $this->price;
+        }
+
+        if (!empty($discount->percent)) {
+            return round((float) $this->price * (1 - ($discount->percent / 100)), 2);
+        }
+
+        if (!empty($discount->amount)) {
+            return max(0, (float) $this->price - (float) $discount->amount);
+        }
+
+        return (float) $this->price;
+    }
+
+    public function isOnsite(): bool
+    {
+        return in_array($this->booking_type, ['tour', 'activity', 'accommodation', 'rental', 'event']);
+    }
+
+}   
+

@@ -12,9 +12,11 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Http\Controllers\Panel\Booking\Traits\MyBookingsListsTrait;
 
 class BookingController extends Controller
 {
+     use MyBookingsListsTrait;
     protected $pricingEngine;
     protected $slotEngine;
     protected $nightlyAvailability;
@@ -35,36 +37,39 @@ class BookingController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function index(Request $request)
-    {
-        $this->authorize('panel_bookings');
+   public function index(Request $request)
+{
+    $this->authorize('panel_bookings');
 
-        $user = auth()->user();
+    $user = auth()->user();
 
-        $query = Booking::query()
-            ->with('category')
-            ->where('creator_id', $user->id);
+    $query = Booking::query()->where('creator_id', $user->id);
+    $query = $this->handleFilters($request, $query);
 
-        $query = $this->handleFilters($request, $query);
+    $pageListData = $this->getPageListData($request, $query);
 
-        $bookings = $query->paginate(10);
-
-        $allCategoryLists = BookingCategory::query()
-            ->select('id', 'title')
-            ->orderBy('title')
-            ->get();
-
-        return view('design_1.panel.bookings.index', [
-
-            'pageTitle' => 'Bookings',
-
-            'bookings' => $bookings,
-
-            'allCategoryLists' => $allCategoryLists,
-
-            'pagination' => $bookings->links(),
-        ]);
+    if ($request->ajax()) {
+        return $pageListData;
     }
+
+    $topStats = $this->handlePageTopStats($user);
+
+    $pageTitle = trans('panel.my_bookings');
+    $breadcrumbs = [
+        ['text' => trans('update.platform'), 'url' => '/'],
+        ['text' => trans('panel.dashboard'), 'url' => '/panel'],
+        ['text' => $pageTitle, 'url' => null],
+    ];
+
+    $data = [
+        'pageTitle' => $pageTitle,
+        'breadcrumbs' => $breadcrumbs,
+        ...$topStats,
+        ...$pageListData,
+    ];
+
+    return view('design_1.panel.bookings.my_bookings.index', $data);
+}
 
     /*
     |--------------------------------------------------------------------------
