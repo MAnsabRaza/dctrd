@@ -14,6 +14,10 @@ class Cart extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'meta' => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo('App\User', 'creator_id', 'id');

@@ -104,6 +104,13 @@
     {{--
         Step 1 with no booking yet -> POST to store()
         Any other step (or step 1 while editing) -> POST to update()
+
+        IMPORTANT: panel.bookings.update is registered as a PUT route
+        (Route::put('/{id}', ...)). A plain method="POST" form without
+        @method('PUT') hits Laravel with a raw POST verb against a URI that
+        only accepts PUT/DELETE -> MethodNotAllowedHttpException.
+        @method('PUT') injects the hidden _method spoofing field so Laravel
+        routes it correctly.
     --}}
     @if(!$isEditing)
         <form method="POST" action="{{ route('panel.bookings.store') }}" enctype="multipart/form-data" id="bookingStepForm">
@@ -111,6 +118,7 @@
     @else
         <form method="POST" action="{{ route('panel.bookings.update', $booking->id) }}" enctype="multipart/form-data" id="bookingStepForm">
             @csrf
+            @method('PUT')
             <input type="hidden" name="current_step" value="{{ $currentStep }}">
     @endif
 
@@ -121,7 +129,14 @@
         <div class="step-footer">
             <div>
                 @if($currentStep > 1)
-                    <a href="{{ route('panel.bookings.edit', ['id' => $booking->id, 'step' => $currentStep - 1]) }}" class="btn btn-outline-secondary">
+                    {{--
+                        FIXED: must use 'panel.bookings.edit.step' (route /{id}/step/{step?}),
+                        not 'panel.bookings.edit' (route /{id}/edit has no {step} parameter).
+                        Passing 'step' to the wrong route silently turned into a query string
+                        that the controller's edit($request, $id, $step = 1) never reads,
+                        so "Back" always reopened step 1 instead of the previous step.
+                    --}}
+                    <a href="{{ route('panel.bookings.edit.step', ['id' => $booking->id, 'step' => $currentStep - 1]) }}" class="btn btn-outline-secondary">
                         <i class="fa fa-arrow-left mr-1"></i> Back
                     </a>
                 @endif
