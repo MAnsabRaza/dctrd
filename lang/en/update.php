@@ -4886,5 +4886,6 @@ return [
 
     'discount_source_booking' => 'Bookings',
     'discount_source_booking_bundle' => 'Booking Bundles',
+    'booking_sales_lists_page_title'=> 'Booking Sales',
     
 ];
