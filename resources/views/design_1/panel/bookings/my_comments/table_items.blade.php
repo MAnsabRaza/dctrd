@@ -1,15 +1,6 @@
 <tr>
-    <th class="text-left">
-        <div class="user-inline-avatar d-flex align-items-center">
-            <div class="size-48 bg-gray-200 rounded-circle">
-                <img src="{{ $comment->user->getAvatar() }}" class="js-avatar-img img-cover rounded-circle" alt="">
-            </div>
-            <span class="user-name ml-4 font-weight-500">{{ $comment->user->full_name }}</span>
-        </div>
-    </th>
-
     <td class="text-left" width="35%">
-        <a href="{{ $comment->booking->getUrl() }}" target="_blank" class="font-weight-500 text-dark">{{ $comment->booking->title }}</a>
+        <a class="text-dark" href="{{ $comment->booking->getUrl() }}" target="_blank">{{ $comment->booking->title }}</a>
     </td>
 
     <td class="text-center">
@@ -17,10 +8,10 @@
     </td>
 
     <td class="text-center">
-        @if(empty($comment->reply_id))
-            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">{{ trans('public.open') }}</span>
+        @if($comment->status == 'active')
+            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('public.published') }}</span>
         @else
-            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('panel.replied') }}</span>
+            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">{{ trans('public.pending') }}</span>
         @endif
     </td>
 
@@ -38,11 +29,11 @@
                 <ul class="my-8">
 
                     <li class="actions-dropdown__dropdown-menu-item">
-                        <button type="button" data-comment-id="{{ $comment->id }}" class="js-reply-comment">{{ trans('panel.reply') }}</button>
+                        <button type="button" data-comment-id="{{ $comment->id }}" class="js-edit-comment">{{ trans('public.edit') }}</button>
                     </li>
 
                     <li class="actions-dropdown__dropdown-menu-item">
-                        <button type="button" data-item-id="{{ $comment->booking_id }}" data-comment-id="{{ $comment->id }}" class="report-comment">{{ trans('panel.report') }}</button>
+                        <a href="/panel/bookings/my-comments/{{ $comment->id }}/delete" class="delete-action text-danger">{{ trans('public.delete') }}</a>
                     </li>
 
                 </ul>

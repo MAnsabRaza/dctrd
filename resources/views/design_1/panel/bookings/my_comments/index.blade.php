@@ -6,26 +6,22 @@
 
 @section('content')
 
-    {{-- Top Stats --}}
-    @include('design_1.panel.bookings.comments.top_stats')
-
     @if(!empty($comments) and !$comments->isEmpty())
-        <div class="bg-white pt-16 rounded-24 mt-20">
+        <div class="bg-white pt-16 rounded-24">
             <div class="d-flex align-items-center justify-content-between pb-16 px-16 border-bottom-gray-100">
                 <div class="">
-                    <h3 class="font-16">{{ trans('update.booking_comments_list') }}</h3>
+                    <h3 class="font-16">{{ trans('panel.my_booking_comments') }}</h3>
                 </div>
             </div>
 
             {{-- Filters --}}
-            @include('design_1.panel.bookings.comments.filters')
+            @include('design_1.panel.bookings.my_comments.filters')
 
             {{-- List Table --}}
-            <div id="tableListContainer" class="table-responsive-lg" data-view-data-path="/panel/bookings/comments">
+            <div id="tableListContainer" class="table-responsive-lg" data-view-data-path="/panel/bookings/my-comments">
                 <table class="table panel-table">
                     <thead>
                     <tr>
-                        <th class="text-left">{{ trans('panel.user') }}</th>
                         <th class="text-left">{{ trans('update.booking') }}</th>
                         <th class="text-center">{{ trans('panel.comment') }}</th>
                         <th class="text-center">{{ trans('public.status') }}</th>
@@ -35,7 +31,7 @@
                     </thead>
                     <tbody class="js-table-body-lists">
                     @foreach($comments as $commentRow)
-                        @include('design_1.panel.bookings.comments.table_items', ['comment' => $commentRow])
+                        @include('design_1.panel.bookings.my_comments.table_items', ['comment' => $commentRow])
                     @endforeach
                     </tbody>
                 </table>
@@ -49,8 +45,9 @@
     @else
         @include('design_1.panel.includes.no-result',[
             'file_name' => 'store_product_comments.svg',
-            'title' => trans('panel.comments_no_result'),
-            'hint' =>  nl2br(trans('panel.comments_no_result_hint')) ,
+            'title' => trans('panel.my_comments_no_result'),
+            'hint' =>  nl2br(trans('panel.my_comments_no_result_hint')),
+            'extraClass' => 'mt-0',
         ])
     @endif
 
@@ -60,11 +57,10 @@
     <script>
         var commentLang = '{{ trans('panel.comment') }}';
         var replyToCommentLang = '{{ trans('panel.reply_to_the_comment') }}';
+        var editCommentLang = '{{ trans('panel.edit_comment') }}';
         var saveLang = '{{ trans('public.save') }}';
         var closeLang = '{{ trans('public.close') }}';
-        var reportLang = '{{ trans('panel.report') }}';
-        var reportSuccessLang = '{{ trans('panel.report_success') }}';
-        var messageToReviewerLang = '{{ trans('public.message_to_reviewer') }}';
+        var failedLang = '{{ trans('quiz.failed') }}';
     </script>
 
     <script src="/assets/default/vendors/moment.min.js"></script>

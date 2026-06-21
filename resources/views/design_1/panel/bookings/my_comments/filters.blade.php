@@ -17,20 +17,7 @@
             </div>
         </div>
 
-        <div class="col-6 col-md-3">
-            <div class="form-group">
-                <label class="form-group-label">{{ trans('panel.user') }}</label>
-                <select name="user_id" class="form-control select2">
-                    <option value="">{{ trans('public.all') }}</option>
-
-                    @foreach($allUsersLists as $allUserList)
-                        <option value="{{ $allUserList->id }}">{{ $allUserList->full_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <div class="col-6 col-md-3">
+        <div class="col-12 col-lg-3">
             <div class="form-group">
                 <label class="form-group-label">{{ trans('update.booking') }}</label>
                 <select name="booking_id" class="form-control select2">
@@ -38,33 +25,6 @@
 
                     @foreach($allBookingsLists as $allBookingList)
                         <option value="{{ $allBookingList->id }}">{{ $allBookingList->title }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <div class="col-12 col-lg-3">
-            <div class="form-group">
-                <label class="form-group-label">{{ trans('public.search') }}</label>
-                <input type="text" name="search" class="form-control" placeholder="{{ trans('update.search_on_comment') }}">
-            </div>
-        </div>
-
-        @php
-            $sortItems = [
-                'create_date_asc',
-                'create_date_desc',
-            ];
-        @endphp
-
-        <div class="col-12 col-lg-3">
-            <div class="form-group ">
-                <label class="form-group-label">{{ trans('filters') }}</label>
-                <select name="sort" class="form-control select2">
-                    <option value="">{{ trans('public.all') }}</option>
-
-                    @foreach($sortItems as $sortItem)
-                        <option value="{{ $sortItem }}" {{ ($sortItem == request()->get('sort')) ? 'selected' : '' }}>{{ trans("update.{$sortItem}") }}</option>
                     @endforeach
                 </select>
             </div>

@@ -774,7 +774,11 @@ class UserController extends Controller
             'status' => 'success'
         ];
 
-        return back()->with(['toast' => $toastData])->with('msg', trans('admin/main.created_successfully'));
+        $tab = $isBundle ? 'purchased_booking_bundles' : 'purchased_bookings';
+
+        return redirect(getAdminPanelUrl("/users/{$user->id}/edit?tab={$tab}"))
+            ->with(['toast' => $toastData])
+            ->with('msg', trans('admin/main.created_successfully'));
     }
 
     public function removeManualBookingOrder(Request $request, $id, $orderId)
@@ -800,8 +804,13 @@ class UserController extends Controller
                 'status' => 'error'
             ];
 
-            return back()->with(['toast' => $toastData]);
+            $tab = !empty($order->bundle_id) ? 'purchased_booking_bundles' : 'purchased_bookings';
+
+            return redirect(getAdminPanelUrl("/users/{$user->id}/edit?tab={$tab}"))
+                ->with(['toast' => $toastData]);
         }
+
+        $tab = !empty($order->bundle_id) ? 'purchased_booking_bundles' : 'purchased_bookings';
 
         $order->delete(); // soft delete => shows up under "Manually Removed"
 
@@ -811,7 +820,8 @@ class UserController extends Controller
             'status' => 'success'
         ];
 
-        return back()->with(['toast' => $toastData]);
+        return redirect(getAdminPanelUrl("/users/{$user->id}/edit?tab={$tab}"))
+            ->with(['toast' => $toastData]);
     }
 
    /* private function getBecomeInstructorFormFieldValues($becomeInstructor)

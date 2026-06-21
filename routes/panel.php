@@ -98,8 +98,14 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/comments', 'Booking\BookingCommentController@index')
+   Route::get('/comments', 'Booking\BookingCommentController@index')
         ->name('panel.bookings.comments');
+
+    Route::get('/my-comments', 'Booking\MyBookingCommentController@index')
+        ->name('panel.bookings.my-comments');
+
+    Route::get('/my-comments/{id}/delete', 'Booking\MyBookingCommentController@destroy')
+        ->name('panel.bookings.my-comments.destroy');
 
     /*
     |--------------------------------------------------------------------------

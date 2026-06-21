@@ -283,11 +283,11 @@
                                         </li>
 
                                         <li class="nav-item">
-                                            <a class="nav-link" id="purchased_bookings-tab" data-toggle="tab" href="#purchased_bookings" role="tab" aria-controls="purchased_bookings" aria-selected="true">Purchased Bookings</a>
+                                            <a class="nav-link {{ (request()->get('tab') == 'purchased_bookings') ? 'active' : '' }}" id="purchased_bookings-tab" data-toggle="tab" href="#purchased_bookings" role="tab" aria-controls="purchased_bookings" aria-selected="true">Purchased Bookings</a>
                                         </li>
 
                                         <li class="nav-item">
-                                            <a class="nav-link" id="purchased_booking_bundles-tab" data-toggle="tab" href="#purchased_booking_bundles" role="tab" aria-controls="purchased_booking_bundles" aria-selected="true">Purchased BOOKING Bundles</a>
+                                            <a class="nav-link {{ (request()->get('tab') == 'purchased_booking_bundles') ? 'active' : '' }}" id="purchased_booking_bundles-tab" data-toggle="tab" href="#purchased_booking_bundles" role="tab" aria-controls="purchased_booking_bundles" aria-selected="true">Purchased Booking Bundles</a>
                                         </li>
 
                                         <li class="nav-item">

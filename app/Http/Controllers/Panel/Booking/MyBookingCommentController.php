@@ -5,31 +5,23 @@ namespace App\Http\Controllers\Panel\Booking;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingComment;
-use App\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
-class BookingCommentController extends Controller
+class MyBookingCommentController extends Controller
 {
     public function index(Request $request)
     {
-        $this->authorize("panel_bookings_comments");
+        $this->authorize("panel_bookings_my_comments");
 
         $user = auth()->user();
 
-        $query = BookingComment::where('status', 'active')
+        $query = BookingComment::query()->where('user_id', $user->id)
             ->whereNotNull('booking_id')
-            ->whereHas('booking', function ($query) use ($user) {
-                $query->where('creator_id', $user->id);
-            })
             ->with([
                 'booking' => function ($query) {
                     $query->select('id', 'slug');
-                },
-                'user' => function ($qu) {
-                    $qu->select('id', 'username', 'full_name', 'role_id', 'role_name', 'avatar', 'avatar_settings');
-                },
-                'replies'
+                }
             ]);
 
         $copyQuery = deepClone($query);
@@ -40,50 +32,30 @@ class BookingCommentController extends Controller
             return $getListData;
         }
 
-        $allCommentsCount = deepClone($copyQuery)->count();
-        $repliedCommentsCount = deepClone($copyQuery)->whereNotNull('reply_id')->count();
-
         $bookingsIds = deepClone($copyQuery)->pluck('booking_id')->toArray();
         $allBookingsLists = Booking::query()->select('id')
             ->whereIn('id', $bookingsIds)->get();
 
-        $usersIds = deepClone($copyQuery)->pluck('user_id')->toArray();
-        $allUsersLists = User::query()->select('id', 'full_name')
-            ->whereIn('id', $usersIds)->get();
-
         $data = [
-            'pageTitle' => trans('panel.booking_comments'),
-            'allCommentsCount' => $allCommentsCount,
-            'repliedCommentsCount' => $repliedCommentsCount,
+            'pageTitle' => trans('panel.my_booking_comments'),
             'allBookingsLists' => $allBookingsLists,
-            'allUsersLists' => $allUsersLists,
         ];
         $data = array_merge($data, $getListData);
 
-        return view('design_1.panel.bookings.comments.index', $data);
+        return view('design_1.panel.bookings.my_comments.index', $data);
     }
 
     private function handleFilters(Request $request, Builder $query): Builder
     {
         $from = $request->get('from', null);
         $to = $request->get('to', null);
-        $user_id = $request->get('user_id');
-        $booking_id = $request->get('booking_id');
-        $search = $request->get('search');
+        $booking_id = $request->get('booking_id', null);
         $sort = $request->get('sort');
 
         $query = fromAndToDateFilter($from, $to, $query, 'created_at');
 
-        if (!empty($user_id)) {
-            $query->where('user_id', $user_id);
-        }
-
         if (!empty($booking_id)) {
             $query->where('booking_id', $booking_id);
-        }
-
-        if (!empty($search)) {
-            $query->where('comment', "like", "%$search%");
         }
 
         if (!empty($sort)) {
@@ -114,12 +86,6 @@ class BookingCommentController extends Controller
 
         $comments = $query->get();
 
-        foreach ($comments->whereNull('viewed_at') as $comment) {
-            $comment->update([
-                'viewed_at' => time()
-            ]);
-        }
-
         if ($request->ajax()) {
             return $this->getAjaxResponse($request, $comments, $total, $count);
         }
@@ -135,12 +101,22 @@ class BookingCommentController extends Controller
         $html = "";
 
         foreach ($comments as $commentRow) {
-            $html .= (string)view()->make('design_1.panel.bookings.comments.table_items', ['comment' => $commentRow]);
+            $html .= (string)view()->make('design_1.panel.bookings.my_comments.table_items', ['comment' => $commentRow]);
         }
 
         return response()->json([
             'data' => $html,
             'pagination' => $this->makePagination($request, $comments, $total, $count, true)
         ]);
+    }
+
+    public function destroy($id)
+    {
+        $user = auth()->user();
+
+        $comment = BookingComment::where('user_id', $user->id)->findOrFail($id);
+        $comment->delete();
+
+        return redirect()->back();
     }
 }

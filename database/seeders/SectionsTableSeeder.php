@@ -1058,6 +1058,8 @@ Section::updateOrCreate(['id' => 3605], ['name' => 'admin_booking_orders_export'
         $this->createPanelSection(['id' => 107], ['name' => 'panel_products_my_comments', 'section_group_id' => 100, 'caption' => 'My Comments']);
 
 
+
+
         // Financial 120 - 139
         $this->createPanelSection(['id' => 120], ['name' => 'panel_financial', 'caption' => 'Financial']);
         $this->createPanelSection(['id' => 121], ['name' => 'panel_financial_sales_reports', 'section_group_id' => 120, 'caption' => 'Sales Reports']);
@@ -1138,6 +1140,10 @@ Section::updateOrCreate(['id' => 3605], ['name' => 'admin_booking_orders_export'
         $this->createPanelSection(['id' => 335], ['name' => 'panel_events_my_purchases', 'section_group_id' => 330, 'caption' => 'My Purchases']);
         $this->createPanelSection(['id' => 336], ['name' => 'panel_events_my_comments', 'section_group_id' => 330, 'caption' => 'My Comments']);
         $this->createPanelSection(['id' => 337], ['name' => 'panel_events_comments', 'section_group_id' => 330, 'caption' => 'Comments']);
+
+        // comments
+        $this->createPanelSection(['id' => 110], ['name' => 'panel_bookings_comments', 'section_group_id' => 100, 'caption' => 'Booking Comments']);
+$this->createPanelSection(['id' => 111], ['name' => 'panel_bookings_my_comments', 'section_group_id' => 100, 'caption' => 'My Booking Comments']);
 
     }
 

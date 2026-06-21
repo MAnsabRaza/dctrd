@@ -9,6 +9,7 @@ return [
     */
 
     'total' => 'Total',
+    'section_product_bundles'=>'Product Bundle',
     'go_to_cart' => 'Go to Cart',
     'checkout' => 'Checkout',
     'shopping_cart' => 'Shopping Cart',

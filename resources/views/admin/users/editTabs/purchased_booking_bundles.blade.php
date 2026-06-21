@@ -1,4 +1,4 @@
-<div class="tab-pane mt-0 fade" id="purchased_booking_bundles" role="tabpanel" aria-labelledby="purchased_booking_bundles-tab">
+<div class="tab-pane mt-0 fade {{ (request()->get('tab') == 'purchased_booking_bundles') ? 'active show' : '' }}" id="purchased_booking_bundles" role="tabpanel" aria-labelledby="purchased_booking_bundles-tab">
     <div class="row">
         @can('admin_users_edit')
             <div class="col-12 col-md-6">
