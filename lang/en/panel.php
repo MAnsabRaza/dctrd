@@ -405,6 +405,11 @@ return [
 'no_invited_bookings_desc'=>'You have not been invited to any bookings yet.',
 'no_organization_bookings_desc'=>'Your organization has not created any bookings yet.',
 'platform'=>'Platform',
+'nvited_bookings_no_result'=>'No invited bookings!',
+'invited_bookings_no_result_hint'=>'You have not been invited to any bookings yet.',
+'organization_bookings_no_result'=>'No organization bookings!',
+'organization_bookings_no_result_hint'=>'Your organization has not created any bookings yet.',
+
 
 //V2
 
