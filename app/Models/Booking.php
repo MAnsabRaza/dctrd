@@ -441,7 +441,7 @@ class Booking extends Model
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->where(function ($q) {
-                $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+                $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })
             ->first();
     }
