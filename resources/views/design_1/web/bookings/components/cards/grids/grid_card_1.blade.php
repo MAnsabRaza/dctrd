@@ -3,9 +3,12 @@
         <div class="product-card__mask"></div>
 
         <div class="position-absolute" style="top: 16px; right: 16px; z-index: 10;">
-            <div class="bookingFavoriteBtn d-flex align-items-center justify-content-center rounded-circle bg-white border border-gray-200" style="width: 38px; height: 38px; cursor: pointer;" data-slug="{{ $booking->slug }}" @if(auth()->guest()) data-login-url="/login" @endif>
-                <x-iconsax-lin-heart class="icons js-empty-fav text-gray-500 {{ !empty($booking->isFavorited) ? 'd-none' : '' }}" width="20px" height="20px"/>
-                <x-iconsax-bol-heart class="icons js-full-fav text-danger {{ !empty($booking->isFavorited) ? '' : 'd-none' }}" width="20px" height="20px"/>
+            <div class="bookingFavoriteBtn d-flex align-items-center justify-content-center rounded-circle bg-white border border-gray-200"
+                 style="width: 38px; height: 38px; cursor: pointer;"
+                 data-slug="{{ $booking->slug }}"
+                 @if(auth()->guest()) data-login-url="/login" @endif>
+                <x-iconsax-lin-heart  class="icons js-empty-fav text-gray-500 {{ !empty($booking->isFavorited) ? 'd-none' : '' }}" width="20px" height="20px"/>
+                <x-iconsax-bol-heart  class="icons js-full-fav text-danger {{ !empty($booking->isFavorited) ? '' : 'd-none' }}" width="20px" height="20px"/>
             </div>
         </div>
 
@@ -15,18 +18,27 @@
             </div>
 
             <div class="product-card__content ml-12 flex-1 d-flex flex-column">
-                <h3 class="product-card__title font-weight-bold font-16 text-dark">{{ clean($booking->title, 'title') }}</h3>
+                <h3 class="product-card__title font-weight-bold font-16 text-dark">
+                    {{ clean($booking->title, 'title') }}
+                </h3>
 
                 <div class="d-flex align-items-center my-16" onclick="event.stopPropagation()">
                     @if(!empty($booking->creator))
-                        <a href="{{ $booking->creator->getProfileUrl() }}" target="_blank" class="size-32 rounded-circle" onclick="event.stopPropagation()">
-                            <img src="{{ $booking->creator->getAvatar(32) }}" class="img-cover rounded-circle" alt="{{ $booking->creator->full_name }}">
+                        <a href="{{ $booking->creator->getProfileUrl() }}" target="_blank"
+                           class="size-32 rounded-circle" onclick="event.stopPropagation()">
+                            <img src="{{ $booking->creator->getAvatar(32) }}"
+                                 class="img-cover rounded-circle"
+                                 alt="{{ $booking->creator->full_name }}">
                         </a>
                     @endif
 
                     <div class="d-flex flex-column ml-4">
                         @if(!empty($booking->creator))
-                            <a href="{{ $booking->creator->getProfileUrl() }}" target="_blank" class="font-14 font-weight-bold text-dark" onclick="event.stopPropagation()">{{ $booking->creator->full_name }}</a>
+                            <a href="{{ $booking->creator->getProfileUrl() }}" target="_blank"
+                               class="font-14 font-weight-bold text-dark"
+                               onclick="event.stopPropagation()">
+                                {{ $booking->creator->full_name }}
+                            </a>
                         @endif
 
                         @if(!empty($booking->category))
@@ -41,8 +53,8 @@
                 <div class="mt-auto d-flex align-items-center justify-content-between">
                     <div>
                         @include('design_1.web.components.rate', [
-                            'rate' => round($booking->getRate(), 1),
-                            'rateCount' => $booking->getRateCount(),
+                            'rate'          => round($booking->getRate(), 1),
+                            'rateCount'     => $booking->getRateCount(),
                             'rateClassName' => '',
                         ])
                     </div>

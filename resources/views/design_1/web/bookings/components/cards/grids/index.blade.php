@@ -8,8 +8,8 @@
     <div class="col-12 mt-24">
         @include('design_1.panel.includes.no-result', [
             'file_name' => 'meeting_packages.svg',
-            'title' => 'No bookings found',
-            'hint' => 'Please change filters or search another booking.'
+            'title'     => trans('update.no_bookings_found'),
+            'hint'      => trans('update.please_change_filters_or_search_another_booking'),
         ])
     </div>
 @endif

@@ -341,14 +341,46 @@ Route::group(['namespace' => 'Web', 'middleware' => ['check_mobile_app', 'impers
         return redirect('/bookings');
     });
 
-    Route::group(['prefix' => 'bookings'], function () {
-        Route::get('/', 'BookingController@index');
-        // Toggle favorite for a booking (requires auth)
-        Route::get('/{slug}/favorite-toggle', 'BookingFavoriteController@toggle')->middleware('web.auth');
-        Route::get('/{slug}', 'BookingController@show');
-        Route::post('/{slug}/pricing', 'BookingController@calculatePrice');
-        Route::get('/{slug}/slots', 'BookingController@getSlots');
+   Route::get('/booking', function () {
+    return redirect('/bookings');
+});
+
+Route::group(['prefix' => 'bookings'], function () {
+
+    // List
+    Route::get('/', 'BookingController@index');
+
+    // Show
+    Route::get('/{slug}', 'BookingController@show');
+
+    // Slots (AJAX)
+    Route::get('/{slug}/slots', 'BookingController@getSlots');
+
+    // Calculate Price (AJAX)
+    Route::post('/{slug}/pricing', 'BookingController@calculatePrice');
+
+    // Favorite Toggle (auth required)
+    Route::get('/{slug}/favorite-toggle', 'BookingController@favoriteToggle')->middleware('web.auth');
+
+    // Buy With Point (auth required)
+    Route::post('/{slug}/points/apply', 'BookingController@buyWithPoint')->middleware('web.auth');
+
+    // Direct Payment (auth required)
+    Route::post('/direct-payment', 'BookingController@directPayment')->middleware('web.auth');
+
+    // Reviews
+    Route::post('/{slug}/reviews/load-more', 'BookingReviewController@getReviewsByBookingSlug');
+
+    Route::group(['prefix' => 'reviews'], function () {
+        Route::post('/store', 'BookingReviewController@store');
+        Route::post('/store-reply-comment', 'BookingReviewController@storeReplyComment');
+        Route::get('/{id}/delete', 'BookingReviewController@destroy');
     });
+
+});
+
+// Old single route fallback
+Route::get('/booking/{slug}', 'BookingController@show');
 
     Route::get('/booking/{slug}', 'BookingController@show');
 
