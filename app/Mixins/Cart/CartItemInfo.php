@@ -148,7 +148,7 @@ class CartItemInfo
         $info['profileUrl'] = !empty($booking->creator) ? $booking->creator->getProfileUrl() : null;
         $info['teacherName'] = !empty($booking->creator) ? $booking->creator->full_name : null;
         $info['rate'] = $booking->getRate();
-        $info['rateCount'] = $booking->reviews()->pluck('customer_id')->count();
+        $info['rateCount'] = $booking->reviews()->pluck('creator_id')->count();
         $info['price'] = convertCurrencyToDefault((float) $booking->price, $booking->currency ?: getDefaultCurrency());
         $info['discountPrice'] = !empty($booking->discount_price)
             ? convertCurrencyToDefault((float) $booking->discount_price, $booking->currency ?: getDefaultCurrency())
