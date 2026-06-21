@@ -9,6 +9,7 @@ use App\User;
 
 class BookingOrder extends Model
 {
+     public $timestamps = false;
     use HasFactory, SoftDeletes;
     protected $table = 'booking_orders';
 
