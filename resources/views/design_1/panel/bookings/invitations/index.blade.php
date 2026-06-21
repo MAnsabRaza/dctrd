@@ -1,4 +1,4 @@
-@extends('design_1.panel.layout')
+@extends('design_1.panel.includes.layout')
 
 @section('content')
 

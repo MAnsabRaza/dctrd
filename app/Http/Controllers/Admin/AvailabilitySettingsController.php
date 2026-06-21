@@ -25,9 +25,13 @@ class AvailabilitySettingsController extends Controller
     public function index()
     {
         $orgId = Auth::id();
+        return view($this->viewPath, $this->makeViewData($orgId));
+    }
 
+    public function makeViewData(int $userId): array
+    {
         $rule = OrgAvailabilityRule::firstOrNew(
-            ['org_id' => $orgId],
+            ['org_id' => $userId],
             [
                 'availability_mode'                 => 'available_by_default',
                 'product_specific_takes_precedence'  => false,
@@ -35,16 +39,22 @@ class AvailabilitySettingsController extends Controller
             ]
         );
 
-        $ranges = OrgAvailabilityRange::where('org_id', $orgId)
+        $ranges = OrgAvailabilityRange::where('org_id', $userId)
             ->orderBy('id')
             ->get();
 
-        // Optional: Empty collections agar models exist nahi karte taake view crash na ho
-        $assets = collect(); 
+        $assets = collect();
         $assetRanges = collect();
 
-        // CRITICAL FIX: 'orgId', 'assets', aur 'assetRanges' ko yahan se lazmi pass karna hai
-        return view($this->viewPath, compact('rule', 'ranges', 'orgId', 'assets', 'assetRanges'));
+        return [
+            'rule' => $rule,
+            'ranges' => $ranges,
+            'assets' => $assets,
+            'assetRanges' => $assetRanges,
+            'orgId' => $userId,
+            'saveRoute' => route('admin.users.availability.save', ['id' => $userId]),
+            'deleteRowUrl' => url("admin/users/{$userId}/availability/row/delete"),
+        ];
     }
 
     /**
@@ -80,23 +90,7 @@ class AvailabilitySettingsController extends Controller
      */
     public function adminIndex(int $userId)
     {
-        $rule = OrgAvailabilityRule::firstOrNew(
-            ['org_id' => $userId],
-            [
-                'availability_mode'                 => 'available_by_default',
-                'product_specific_takes_precedence'  => false,
-                'make_all_unavailable_by_default'    => false,
-            ]
-        );
-
-        $ranges = OrgAvailabilityRange::where('org_id', $userId)
-            ->orderBy('id')
-            ->get();
-
-        $assets = collect(); 
-        $assetRanges = collect();
-
-        return view($this->viewPath, compact('rule', 'ranges', 'assets', 'assetRanges') + ['orgId' => $userId]);
+        return view($this->viewPath, $this->makeViewData($userId));
     }
 
     /**

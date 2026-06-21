@@ -660,6 +660,7 @@ class UserController extends Controller
         $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
 
         $bookingSettingsData = app(BookingCategorySettingsController::class)->makeViewData($user->id);
+        $availabilitySettingsData = app(AvailabilitySettingsController::class)->makeViewData($user->id);
 
         $data = [
             'pageTitle' => trans('admin/pages/users.edit_page_title'),
@@ -683,10 +684,15 @@ class UserController extends Controller
             'userLoginHistories' => $userLoginHistories,
             'moduleSettings' => $moduleSettings,
             'bookingSettingsData' => $bookingSettingsData,
+            'availabilitySettingsData' => $availabilitySettingsData,
         ];
 
         if (!empty($bookingSettingsData)) {
             $data = array_merge($data, $bookingSettingsData);
+        }
+
+        if (!empty($availabilitySettingsData)) {
+            $data = array_merge($data, $availabilitySettingsData);
         }
 
         // Purchased Classes Data
