@@ -23,6 +23,11 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
     Route::group(['prefix' => 'bookings'], function () {
 
+     Route::group(['prefix' => 'organization-bookings'], function () {
+        Route::get('/', 'Booking\OrganizationBookingController@index')
+            ->name('panel.bookings.organization');
+    });
+
         /*
         |--------------------------------------------------------------------------
         | BOOKINGS
