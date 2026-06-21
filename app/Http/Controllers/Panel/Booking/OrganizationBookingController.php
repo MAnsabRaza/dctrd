@@ -156,7 +156,7 @@ class OrganizationBookingController extends Controller
 
         return \App\Models\BookingOrder::query()
             ->whereIn('booking_id', $bookingIds)
-            ->distinct('user_id')
-            ->count('user_id');
+            ->distinct('seller_id')
+            ->count('seller_id');
     }
 }
