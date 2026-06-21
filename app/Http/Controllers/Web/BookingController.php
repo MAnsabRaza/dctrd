@@ -412,38 +412,36 @@ class BookingController extends Controller
     }
 
     private function getBookingFeaturedContents(): array
-    {
-        $data = [];
-        $settings = getStoreFeaturedBookingsSettings();   // ya apna helper naam use karo
+{
+    $data = [];
 
-        /* Top Categories (sidebar slider) */
-        $data['topCategories'] = BookingTopCategory::query()
-            ->with([
-                'category' => fn ($q) => $q->withCount('bookings'),
-            ])
-            ->get();
+    // Top Categories
+    $data['topCategories'] = BookingTopCategory::query()
+        ->with([
+            'category' => fn ($q) => $q->withCount('bookings'),
+        ])
+        ->get();
 
-        /* Featured Bookings (hero carousel) */
-        if (!empty($settings) && !empty($settings['featured_bookings'])) {
-            $data['featuredBookings'] = Booking::query()
-                ->whereIn('id', $settings['featured_bookings'])
-                ->with([
-                    'creator' => fn ($q) => $q->select('id','full_name','role_id','username','avatar','avatar_settings','bio'),
-                    'category',
-                ])
-                ->where('status', 'published')
-                ->get();
-        }
+    // Featured Categories
+    $data['featuredCategories'] = BookingFeaturedCategory::query()
+        ->with([
+            'category' => fn ($q) => $q->withCount('bookings'),
+        ])
+        ->get();
 
-        /* Featured Categories (bottom slider) */
-        $data['featuredCategories'] = BookingFeaturedCategory::query()
-            ->with([
-                'category' => fn ($q) => $q->withCount('bookings'),
-            ])
-            ->get();
+    // Featured Bookings — settings check skip, sirf featured=true wale lo
+    $data['featuredBookings'] = Booking::query()
+        ->where('status', 'published')
+        ->where('featured', true)
+        ->with([
+            'creator' => fn ($q) => $q->select('id','full_name','role_id','username','avatar','avatar_settings','bio'),
+            'category',
+        ])
+        ->limit(10)
+        ->get();
 
-        return $data;
-    }
+    return $data;
+}
 
     private function handleFilters(Request $request, Builder $query): Builder
     {
