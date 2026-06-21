@@ -29,7 +29,7 @@
             <div class="stat-card d-flex justify-content-between align-items-center">
                 <div>
                     <p class="stat-card-label">{{ trans('panel.total_booking_sales') }}</p>
-                    <h3 class="stat-card-value">{{ currencyFormat($stats['bookings_sales']) }}</h3>
+                    <h3 class="stat-card-value">{{ number_format($stats['bookings_sales'], 2) }}</h3>
                 </div>
                 <div class="stat-card-icon bg-dark-light">
                     <i class="fa-light fa-bag-shopping"></i>
