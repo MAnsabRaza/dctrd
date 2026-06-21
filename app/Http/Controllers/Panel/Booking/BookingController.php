@@ -10,8 +10,6 @@ use App\Models\BookingTimeSlot;
 use App\Models\BookingFaq;
 use App\Models\BookingSpecification;
 use App\Models\OrgAvailabilityRule;
-use App\Models\OrgAvailabilityRange;
-use App\Models\BookingRatePlan;
 use App\Services\PricingEngine;
 use App\Services\SlotEngine;
 use App\Services\NightlyAvailability;
@@ -19,7 +17,6 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Panel\Booking\Traits\MyBookingsListsTrait;
 
 class BookingController extends Controller
@@ -82,12 +79,14 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | CREATE (legacy single-page form — kept for backward compatibility)
+    | CREATE — step 1, brand new booking (no record yet)
     |--------------------------------------------------------------------------
     */
 
     public function create()
     {
+        $this->authorize('panel_bookings_create');
+
         $user = auth()->user();
         $user->loadMissing('userMetas');
 
@@ -100,92 +99,384 @@ class BookingController extends Controller
             ->orderBy('title')
             ->get();
 
-        return view('design_1.panel.bookings.create.index', [
-
-            'pageTitle' => 'New Booking',
-
+        $data = [
+            'pageTitle'   => trans('update.new_booking_page_title') ?: 'New Booking',
+            'currentStep' => 1,
+            'stepCount'   => 8,
+            'booking'     => null,
             'allCategoryLists' => $allCategoryLists,
-
-            'booking' => null,
-
-            'userLanguages' => $this->getUserLanguages(),
-
-            'bookingDefaults' => [
-                'currency' => $user->booking_default_currency ?? $user->currency ?? 'USD',
-                'price_unit' => $user->booking_default_price_unit ?? 'booking',
-                'status' => !empty($user->booking_auto_publish) ? 'published' : 'draft',
+            'userLanguages'    => $this->getUserLanguages(),
+            'bookingDefaults'  => [
+                'currency'         => $user->booking_default_currency ?? $user->currency ?? 'USD',
+                'price_unit'       => $user->booking_default_price_unit ?? 'booking',
+                'status'           => !empty($user->booking_auto_publish) ? 'published' : 'draft',
                 'location_enabled' => !empty($user->booking_location_enabled),
             ],
-        ]);
+        ];
+
+        return view('design_1.panel.bookings.create_booking.index', $data);
     }
 
     /*
     |--------------------------------------------------------------------------
-    | STORE (legacy single-page form)
+    | STORE — creates the booking from step 1, then redirects to step 2
     |--------------------------------------------------------------------------
     */
 
     public function store(Request $request)
     {
-        $data = $this->validateBooking($request);
+        $this->authorize('panel_bookings_create');
 
-        $data['creator_id'] = auth()->id();
+        $user = auth()->user();
 
-        $booking = Booking::create($data);
+        $rules = [
+            'title'        => 'required|string|max:255',
+            'slug'         => 'nullable|string|max:255|unique:bookings,slug',
+            'category_id'  => 'nullable|exists:booking_categories,id',
+            'language'     => 'nullable|string|max:10',
+            'booking_type' => 'required|in:tour,activity,rental,event,service,accommodation',
+            'sub_type'     => 'nullable|string|max:255',
+            'description'  => 'nullable|string',
+            'requirements' => 'nullable|string',
+        ];
 
-        $this->sendBookingNotification($booking, 'booking_created');
+        $this->validate($request, $rules);
 
-        return redirect()
-            ->route('panel.bookings.index')
-            ->with('success', 'Booking created successfully.');
+        $data = $request->all();
+
+        $isDraft   = (!empty($data['draft']) and $data['draft'] == 1);
+        $getNext   = (!empty($data['get_next']) and $data['get_next'] == 1);
+
+        $booking = Booking::create([
+            'creator_id'   => $user->id,
+            'title'        => $data['title'],
+            'slug'         => $data['slug'] ?? null,
+            'category_id'  => $data['category_id'] ?? null,
+            'language'     => $data['language'] ?? app()->getLocale(),
+            'booking_type' => $data['booking_type'],
+            'sub_type'     => $data['sub_type'] ?? null,
+            'description'  => $data['description'] ?? null,
+            'requirements' => $data['requirements'] ?? null,
+            'status'       => $isDraft ? 'draft' : 'draft', // never published directly from step 1
+            'wizard_step'  => 1,
+        ]);
+
+        $notifyOptions = [
+            '[u.name]'      => $user->full_name,
+            '[item_title]'  => $booking->title,
+            '[content_type]'=> trans('update.booking') ?: 'Booking',
+        ];
+        sendNotification('new_item_created', $notifyOptions, 1);
+
+        $url = '/panel/bookings';
+        if ($getNext) {
+            $url = '/panel/bookings/' . $booking->id . '/step/2';
+        }
+
+        return redirect($url);
     }
 
     /*
     |--------------------------------------------------------------------------
-    | EDIT (legacy single-page form)
+    | EDIT — renders any step for an existing booking
     |--------------------------------------------------------------------------
     */
 
-    public function edit($id)
+    public function edit(Request $request, $id, $step = 1)
     {
-        $booking = $this->findOwnBooking($id);
+        $this->authorize('panel_bookings_create');
+
+        $user = auth()->user();
+
+        $stepCount = 8;
+
+        if ($step > $stepCount) {
+            return redirect("/panel/bookings/{$id}/step/{$stepCount}");
+        }
+
+        $query = Booking::where('id', $id)
+            ->where('creator_id', $user->id)
+            ->with(['category', 'ratePlans']);
+
+        if ($step == 3) {
+            $query->with(['resources', 'timeSlots']);
+        } elseif ($step == 6) {
+            $query->with(['faqs' => function ($q) {
+                $q->orderBy('sort_order', 'asc');
+            }]);
+        } elseif ($step == 7) {
+            // location fields already load with the base query
+        }
+
+        $booking = $query->first();
+
+        if (empty($booking)) {
+            abort(404);
+        }
 
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title')
             ->orderBy('title')
             ->get();
 
-        return view('design_1.panel.bookings.create.index', [
-
-            'pageTitle' => 'Edit Booking',
-
-            'booking' => $booking,
-
+        $data = [
+            'pageTitle'        => (trans('update.edit_booking') ?: 'Edit Booking') . ' | ' . $booking->title,
+            'booking'          => $booking,
+            'currentStep'      => (int) $step,
+            'stepCount'        => $stepCount,
             'allCategoryLists' => $allCategoryLists,
+            'userLanguages'    => $this->getUserLanguages(),
+        ];
 
-            'userLanguages' => $this->getUserLanguages(),
-        ]);
+        if ($step == 1) {
+            // nothing extra needed
+        } elseif ($step == 2) {
+            $data['orgAvailabilityRule'] = OrgAvailabilityRule::where('org_id', $user->id)->first();
+        } elseif ($step == 7) {
+            $data['specifications'] = $booking->category_id
+                ? BookingSpecification::active()->ordered()->forCategory($booking->category_id)->with('bookingValues')->get()
+                : collect();
+
+            $data['selectedSpecValueIds'] = $booking->meta['specification_value_ids'] ?? [];
+        } elseif ($step == 5) {
+            $data['allBookings'] = Booking::query()
+                ->where('creator_id', $user->id)
+                ->where('id', '!=', $booking->id)
+                ->select('id', 'title')
+                ->orderBy('title')
+                ->get();
+        }
+
+        return view('design_1.panel.bookings.create_booking.index', $data);
     }
 
     /*
     |--------------------------------------------------------------------------
-    | UPDATE (legacy single-page form)
+    | UPDATE — saves whichever step was submitted, then redirects
     |--------------------------------------------------------------------------
     */
 
     public function update(Request $request, $id)
     {
-        $booking = $this->findOwnBooking($id);
+        $this->authorize('panel_bookings_create');
 
-        $data = $this->validateBooking($request, $booking->id);
+        $user = auth()->user();
 
-        $booking->update($data);
+        $data = $request->all();
+        $currentStep = (int) $data['current_step'];
+        $getStep     = $data['get_step'] ?? null;
+        $getNextStep = (!empty($data['get_next']) and $data['get_next'] == 1);
+        $isDraft     = (!empty($data['draft']) and $data['draft'] == 1);
 
-        $this->sendBookingNotification($booking, 'booking_updated');
+        $booking = Booking::where('id', $id)
+            ->where('creator_id', $user->id)
+            ->first();
 
-        return redirect()
-            ->route('panel.bookings.index')
-            ->with('success', 'Booking updated successfully.');
+        if (empty($booking)) {
+            abort(404);
+        }
+
+        $rules = [];
+
+        if ($currentStep == 1) {
+            $rules = [
+                'title'        => 'required|string|max:255',
+                'slug'         => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')->ignore($booking->id)],
+                'category_id'  => 'nullable|exists:booking_categories,id',
+                'language'     => 'nullable|string|max:10',
+                'booking_type' => 'required|in:tour,activity,rental,event,service,accommodation',
+                'sub_type'     => 'nullable|string|max:255',
+                'description'  => 'nullable|string',
+                'requirements' => 'nullable|string',
+            ];
+        } elseif ($currentStep == 2) {
+            $rules = [
+                'price'            => 'nullable|numeric|min:0',
+                'discount_price'   => 'nullable|numeric|min:0',
+                'currency'         => 'nullable|string|max:10',
+                'price_per'        => 'nullable|numeric|min:0',
+                'price_unit'       => 'nullable|string|max:64',
+                'duration_minutes' => 'nullable|integer|min:0',
+
+                'rate_plans'         => 'nullable|array',
+                'rate_plans.*.name'  => 'required_with:rate_plans|string|max:255',
+                'rate_plans.*.from'  => 'nullable|string',
+                'rate_plans.*.to'    => 'nullable|string',
+                'rate_plans.*.price' => 'required_with:rate_plans|numeric|min:0',
+            ];
+        } elseif ($currentStep == 3) {
+            $rules = [
+                'min_persons'      => 'nullable|integer|min:0',
+                'max_persons'      => 'nullable|integer|min:0',
+                'max_children'     => 'nullable|integer|min:0',
+                'children_allowed' => 'nullable|in:on',
+            ];
+        } elseif ($currentStep == 4) {
+            $rules = [
+                'content_sections'          => 'nullable|array',
+                'content_sections.*.title'  => 'required_with:content_sections|string|max:255',
+                'content_sections.*.body'   => 'nullable|string',
+            ];
+        } elseif ($currentStep == 5) {
+            $rules = [
+                'related_booking_ids'   => 'nullable|array',
+                'related_booking_ids.*' => 'integer|exists:bookings,id',
+                'prerequisite_text'     => 'nullable|string',
+            ];
+        } elseif ($currentStep == 6) {
+            // FAQ rows are managed via storeFaq()/destroyFaq(); nothing to validate here
+        } elseif ($currentStep == 7) {
+            $rules = [
+                'location_enabled' => 'nullable|in:on',
+                'address_line'     => 'nullable|string|max:255',
+                'city'             => 'nullable|string|max:100',
+                'state'            => 'nullable|string|max:100',
+                'country'          => 'nullable|string|max:100',
+                'postal_code'      => 'nullable|string|max:20',
+                'lat'              => 'nullable|numeric',
+                'lng'              => 'nullable|numeric',
+
+                'specification_values'   => 'nullable|array',
+                'specification_values.*' => 'integer|exists:booking_specification_values,id',
+            ];
+
+            $data['location_enabled'] = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
+        } elseif ($currentStep == 8) {
+            $rules = [
+                'reviewer_message' => 'nullable|string',
+                'checkout_message' => 'nullable|string',
+                'terms_accepted'   => 'required|in:on',
+            ];
+        }
+
+        $this->validate($request, $rules);
+
+        // Final-step submission requires terms accepted and moves the booking to "pending" review
+        $finalSubmit = ($currentStep == 8 and !$getNextStep and !$isDraft);
+
+        $data['status'] = $isDraft ? 'draft' : ($finalSubmit ? 'pending' : $booking->status);
+        $data['wizard_step'] = max((int) $booking->wizard_step, $currentStep);
+
+        if ($currentStep == 1) {
+            $booking->fill([
+                'title'        => $data['title'],
+                'slug'         => $data['slug'] ?? $booking->slug,
+                'category_id'  => $data['category_id'] ?? null,
+                'language'     => $data['language'] ?? $booking->language,
+                'booking_type' => $data['booking_type'],
+                'sub_type'     => $data['sub_type'] ?? null,
+                'description'  => $data['description'] ?? null,
+                'requirements' => $data['requirements'] ?? null,
+            ]);
+        } elseif ($currentStep == 2) {
+            $ratePlans = $data['rate_plans'] ?? [];
+
+            if (!empty($data['currency'])) {
+                $data['currency'] = strtoupper($data['currency']);
+            }
+
+            $booking->fill([
+                'price'            => $data['price'] ?? null,
+                'discount_price'   => $data['discount_price'] ?? null,
+                'currency'         => $data['currency'] ?? $booking->currency,
+                'price_per'        => $data['price_per'] ?? null,
+                'price_unit'       => $data['price_unit'] ?? $booking->price_unit,
+                'duration_minutes' => $data['duration_minutes'] ?? null,
+            ]);
+
+            $booking->ratePlans()->delete();
+
+            foreach ($ratePlans as $plan) {
+                $booking->ratePlans()->create([
+                    'name'             => $plan['name'],
+                    'type'             => 'seasonal',
+                    'price'            => $plan['price'],
+                    'price_unit'       => $booking->price_unit,
+                    'calculation_type' => 'flat',
+                    'priority'         => 0,
+                    'conditions'       => [
+                        'from' => $plan['from'] ?? null,
+                        'to'   => $plan['to'] ?? null,
+                    ],
+                    'status' => true,
+                ]);
+            }
+        } elseif ($currentStep == 3) {
+            // Participants are plain Booking columns — already on the schema
+            $booking->fill([
+                'min_persons'      => $data['min_persons'] ?? $booking->min_persons,
+                'max_persons'      => $data['max_persons'] ?? $booking->max_persons,
+                'max_children'     => $data['max_children'] ?? $booking->max_children,
+                'children_allowed' => !empty($data['children_allowed']) && $data['children_allowed'] === 'on',
+            ]);
+
+            // Resources, Assets (BookingResource rows) and Recurring (BookingTimeSlot rows)
+            // are added/removed live via storeResource()/destroyResource() and
+            // storeTimeSlot()/destroyTimeSlot() — nothing bulk to save here.
+
+            $meta = $booking->meta ?? [];
+            $meta['participants_enabled'] = !empty($data['participants_enabled']) && $data['participants_enabled'] === 'on';
+            $meta['resources_enabled']    = !empty($data['resources_enabled']) && $data['resources_enabled'] === 'on';
+            $meta['assets_enabled']       = !empty($data['assets_enabled']) && $data['assets_enabled'] === 'on';
+            $meta['recurring_enabled']    = !empty($data['recurring_enabled']) && $data['recurring_enabled'] === 'on';
+            $booking->meta = $meta;
+        } elseif ($currentStep == 4) {
+            $meta = $booking->meta ?? [];
+            $meta['content_sections'] = $data['content_sections'] ?? [];
+            $booking->meta = $meta;
+        } elseif ($currentStep == 5) {
+            $meta = $booking->meta ?? [];
+            $meta['related_booking_ids'] = $data['related_booking_ids'] ?? [];
+            $meta['prerequisite_text']   = $data['prerequisite_text'] ?? null;
+            $booking->meta = $meta;
+        } elseif ($currentStep == 6) {
+            // FAQ rows are managed live via storeFaq()/destroyFaq()
+        } elseif ($currentStep == 7) {
+            $specValueIds = $data['specification_values'] ?? [];
+
+            $booking->fill([
+                'location_enabled' => $data['location_enabled'],
+                'address_line'     => $data['location_enabled'] ? ($data['address_line'] ?? null) : null,
+                'city'             => $data['location_enabled'] ? ($data['city'] ?? null) : null,
+                'state'            => $data['location_enabled'] ? ($data['state'] ?? null) : null,
+                'country'          => $data['location_enabled'] ? ($data['country'] ?? null) : null,
+                'postal_code'      => $data['location_enabled'] ? ($data['postal_code'] ?? null) : null,
+                'lat'              => $data['location_enabled'] ? ($data['lat'] ?? null) : null,
+                'lng'              => $data['location_enabled'] ? ($data['lng'] ?? null) : null,
+            ]);
+
+            $meta = $booking->meta ?? [];
+            $meta['specification_value_ids'] = $specValueIds;
+            $booking->meta = $meta;
+        } elseif ($currentStep == 8) {
+            $booking->fill([
+                'reviewer_message' => $data['reviewer_message'] ?? null,
+                'checkout_message' => $data['checkout_message'] ?? null,
+                'terms_accepted'   => true,
+            ]);
+        }
+
+        $booking->status = $data['status'];
+        $booking->wizard_step = $data['wizard_step'];
+        $booking->save();
+
+        if ($finalSubmit) {
+            $notifyOptions = [
+                '[u.name]'       => $user->full_name,
+                '[item_title]'   => $booking->title,
+                '[content_type]' => trans('update.booking') ?: 'Booking',
+            ];
+            sendNotification('content_review_request', $notifyOptions, 1);
+        }
+
+        $url = '/panel/bookings';
+
+        if ($getNextStep) {
+            $nextStep = (!empty($getStep) and $getStep > 0) ? $getStep : $currentStep + 1;
+            $url = '/panel/bookings/' . $booking->id . '/step/' . (($nextStep <= 8) ? $nextStep : 8);
+        }
+
+        return redirect($url);
     }
 
     /*
@@ -216,7 +507,7 @@ class BookingController extends Controller
         $booking = $this->findOwnBooking($id);
 
         $request->validate([
-            'check_in' => 'required|date',
+            'check_in'  => 'required|date',
             'check_out' => 'required|date|after:check_in',
         ]);
 
@@ -240,10 +531,10 @@ class BookingController extends Controller
         $booking = $this->findOwnBooking($id);
 
         $request->validate([
-            'check_in' => 'required|date',
+            'check_in'  => 'required|date',
             'check_out' => 'required|date|after:check_in',
-            'adults' => 'nullable|integer|min:1',
-            'children' => 'nullable|integer|min:0',
+            'adults'    => 'nullable|integer|min:1',
+            'children'  => 'nullable|integer|min:0',
         ]);
 
         $pricing = $this->pricingEngine->calculate(
@@ -268,7 +559,7 @@ class BookingController extends Controller
         $booking = $this->findOwnBooking($id);
 
         $request->validate([
-            'date' => 'required|date',
+            'date'        => 'required|date',
             'resource_id' => 'nullable|integer|exists:booking_resources,id',
         ]);
 
@@ -284,374 +575,8 @@ class BookingController extends Controller
     }
 
     /*
-    |==========================================================================
-    | CREATE BOOKING WIZARD (new multi-step flow)
-    |==========================================================================
-    */
-
-    /**
-     * Step map: number => [key, view, label, types]
-     * `types` empty array = applicable to ALL booking types.
-     */
-    private function wizardSteps(): array
-    {
-        return [
-            1 => ['key' => 'general',        'view' => 'steps.step1_general',        'label' => 'General Info',             'types' => []],
-            2 => ['key' => 'pricing',        'view' => 'steps.step2_pricing',        'label' => 'Pricing & Availability',   'types' => []],
-            3 => ['key' => 'resources',      'view' => 'steps.step3_resources',      'label' => 'Participants & Resources', 'types' => []],
-            4 => ['key' => 'content',        'view' => 'steps.step4_content',        'label' => 'Content',                  'types' => []],
-            5 => ['key' => 'prerequisites',  'view' => 'steps.step5_prerequisites',  'label' => 'Prerequisites & Related',  'types' => []],
-            6 => ['key' => 'faq',            'view' => 'steps.step6_faq',            'label' => 'FAQ',                      'types' => []],
-            7 => ['key' => 'location_specs', 'view' => 'steps.step7_location_specs', 'label' => 'Location & Filters',       'types' => []],
-            8 => ['key' => 'final',          'view' => 'steps.step8_final',          'label' => 'Review & Submit',          'types' => []],
-        ];
-    }
-
-    /*
     |--------------------------------------------------------------------------
-    | WIZARD: START
-    |--------------------------------------------------------------------------
-    */
-
-    public function wizardStart(Request $request)
-    {
-        $booking = Booking::create([
-            'creator_id'   => auth()->id(),
-            'title'        => 'Untitled booking',
-            'booking_type' => $request->input('booking_type', 'tour'),
-            'status'       => 'draft',
-            'wizard_step'  => 1,
-            'language'     => app()->getLocale(),
-        ]);
-
-        return redirect()->route('panel.bookings.wizard.show_step', [
-            'booking' => $booking->id,
-            'step' => 1,
-        ]);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | WIZARD: SHOW STEP
-    |--------------------------------------------------------------------------
-    */
-
-    public function wizardShowStep(Request $request, $bookingId, int $step)
-    {
-        $booking = $this->findOwnBooking($bookingId);
-
-        $steps = $this->wizardSteps();
-
-        if (!isset($steps[$step])) {
-            abort(404);
-        }
-
-        $booking->loadMissing([
-            'resources', 'timeSlots', 'faqs', 'ratePlans', 'category',
-        ]);
-
-        $allCategoryLists = BookingCategory::query()
-            ->select('id', 'title', 'parent_id')
-            ->orderBy('title')
-            ->get();
-
-        $orgAvailabilityRule = OrgAvailabilityRule::where('org_id', auth()->id())->first();
-
-        $specifications = $booking->category_id
-            ? BookingSpecification::active()->ordered()->forCategory($booking->category_id)->with('bookingValues')->get()
-            : collect();
-
-        $data = [
-            'pageTitle'           => 'New Booking',
-            'booking'             => $booking,
-            'steps'               => $steps,
-            'currentStep'         => $step,
-            'allCategoryLists'    => $allCategoryLists,
-            'userLanguages'       => $this->getUserLanguages(),
-            'orgAvailabilityRule' => $orgAvailabilityRule,
-            'specifications'      => $specifications,
-            // Previously chosen specification value ids are stored on booking.meta
-            // (no booking<->specification_value pivot table exists yet).
-            'selectedSpecValueIds' => $booking->meta['specification_value_ids'] ?? [],
-        ];
-
-        if ($request->ajax()) {
-            // Return just the step partial — used when navigating via the top stepper
-            return view('design_1.panel.booking.create_booking.' . $steps[$step]['view'], $data)->render();
-        }
-
-        return view('design_1.panel.booking.create_booking.index', $data);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | WIZARD: SAVE STEP (AJAX)
-    |--------------------------------------------------------------------------
-    */
-
-    public function wizardSaveStep(Request $request, $bookingId, int $step)
-    {
-        $booking = $this->findOwnBooking($bookingId);
-
-        switch ($step) {
-            case 1:
-                $this->wizardSaveGeneral($request, $booking);
-                break;
-            case 2:
-                $this->wizardSavePricing($request, $booking);
-                break;
-            case 3:
-                $this->wizardSaveParticipantsToggles($request, $booking);
-                break;
-            case 4:
-                $this->wizardSaveContent($request, $booking);
-                break;
-            case 5:
-                $this->wizardSavePrerequisites($request, $booking);
-                break;
-            case 6:
-                // FAQ rows are saved individually via storeFaq(); nothing bulk to do here
-                break;
-            case 7:
-                $this->wizardSaveLocationSpecs($request, $booking);
-                break;
-            case 8:
-                $this->wizardSaveFinal($request, $booking);
-                break;
-        }
-
-        $booking->wizard_step = max((int) $booking->wizard_step, $step);
-        $booking->save();
-
-        return response()->json([
-            'success'    => true,
-            'message'    => 'Step saved.',
-            'booking_id' => $booking->id,
-            'next_step'  => min($step + 1, 8),
-        ]);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | STEP SAVE HANDLERS
-    |--------------------------------------------------------------------------
-    */
-
-    private function wizardSaveGeneral(Request $request, Booking $booking): void
-    {
-        $data = $request->validate([
-            'title'        => 'required|string|max:255',
-            'slug'         => ['nullable', 'string', Rule::unique('bookings', 'slug')->ignore($booking->id)],
-            'category_id'  => 'nullable|exists:booking_categories,id',
-            'language'     => 'nullable|string|max:10',
-            'booking_type' => 'required|string',
-            'sub_type'     => 'nullable|string|max:255',
-            'description'  => 'nullable|string',
-            'requirements' => 'nullable|string',
-        ]);
-
-        $booking->fill($data);
-        $booking->save();
-    }
-
-    private function wizardSavePricing(Request $request, Booking $booking): void
-    {
-        $data = $request->validate([
-            'price'            => 'nullable|numeric|min:0',
-            'discount_price'   => 'nullable|numeric|min:0',
-            'currency'         => 'nullable|string|max:10',
-            'price_per'        => 'nullable|numeric|min:0',
-            'price_unit'       => 'nullable|string|max:64',
-            'duration_minutes' => 'nullable|integer|min:0',
-
-            'rate_plans'         => 'nullable|array',
-            'rate_plans.*.name'  => 'required_with:rate_plans|string|max:255',
-            'rate_plans.*.from'  => 'nullable|string',
-            'rate_plans.*.to'    => 'nullable|string',
-            'rate_plans.*.price' => 'required_with:rate_plans|numeric|min:0',
-        ]);
-
-        if (!empty($data['currency'])) {
-            $data['currency'] = strtoupper($data['currency']);
-        }
-
-        $ratePlans = $data['rate_plans'] ?? [];
-        unset($data['rate_plans']);
-
-        $booking->fill($data);
-        $booking->save();
-
-        // Replace rate plans wholesale for simplicity in this pass
-        $booking->ratePlans()->delete();
-
-        foreach ($ratePlans as $plan) {
-            $booking->ratePlans()->create([
-                'name'             => $plan['name'],
-                'type'             => 'seasonal',
-                'price'            => $plan['price'],
-                'price_unit'       => $booking->price_unit,
-                'calculation_type' => 'flat',
-                'priority'         => 0,
-                'conditions'       => [
-                    'from' => $plan['from'] ?? null,
-                    'to'   => $plan['to'] ?? null,
-                ],
-                'status' => true,
-            ]);
-        }
-    }
-
-    /**
-     * Step 3 "Participants" now writes straight onto the Booking row
-     * (min_persons/max_persons/max_children/children_allowed already
-     * exist there — no separate table needed).
-     *
-     * Resources & Assets are saved live via storeResource()/destroyResource()
-     * as the user adds/removes rows in the UI, so there's nothing bulk
-     * to persist for them here.
-     *
-     * Recurring slots are saved live via storeTimeSlot()/destroyTimeSlot().
-     * This method just persists the on/off toggles for all four sections.
-     */
-    private function wizardSaveParticipantsToggles(Request $request, Booking $booking): void
-    {
-        $data = $request->validate([
-            'participants_enabled' => 'nullable|boolean',
-            'resources_enabled'    => 'nullable|boolean',
-            'assets_enabled'       => 'nullable|boolean',
-            'recurring_enabled'    => 'nullable|boolean',
-
-            'min_persons'     => 'nullable|integer|min:0',
-            'max_persons'     => 'nullable|integer|min:0',
-            'max_children'    => 'nullable|integer|min:0',
-            'children_allowed'=> 'nullable|boolean',
-        ]);
-
-        $booking->min_persons      = $data['min_persons'] ?? $booking->min_persons;
-        $booking->max_persons      = $data['max_persons'] ?? $booking->max_persons;
-        $booking->max_children     = $data['max_children'] ?? $booking->max_children;
-        $booking->children_allowed = $request->boolean('children_allowed');
-
-        $meta = $booking->meta ?? [];
-        $meta['participants_enabled'] = $request->boolean('participants_enabled');
-        $meta['resources_enabled']    = $request->boolean('resources_enabled');
-        $meta['assets_enabled']       = $request->boolean('assets_enabled');
-        $meta['recurring_enabled']    = $request->boolean('recurring_enabled');
-        $booking->meta = $meta;
-
-        $booking->save();
-    }
-
-    private function wizardSaveContent(Request $request, Booking $booking): void
-    {
-        $data = $request->validate([
-            'content_sections'         => 'nullable|array',
-            'content_sections.*.title' => 'required_with:content_sections|string|max:255',
-            'content_sections.*.body'  => 'nullable|string',
-        ]);
-
-        $meta = $booking->meta ?? [];
-        $meta['content_sections'] = $data['content_sections'] ?? [];
-        $booking->meta = $meta;
-        $booking->save();
-    }
-
-    private function wizardSavePrerequisites(Request $request, Booking $booking): void
-    {
-        $data = $request->validate([
-            'related_booking_ids'   => 'nullable|array',
-            'related_booking_ids.*' => 'integer|exists:bookings,id',
-            'prerequisite_text'     => 'nullable|string',
-        ]);
-
-        $meta = $booking->meta ?? [];
-        $meta['related_booking_ids'] = $data['related_booking_ids'] ?? [];
-        $meta['prerequisite_text']   = $data['prerequisite_text'] ?? null;
-        $booking->meta = $meta;
-        $booking->save();
-    }
-
-    private function wizardSaveLocationSpecs(Request $request, Booking $booking): void
-    {
-        $data = $request->validate([
-            'location_enabled' => 'nullable|boolean',
-            'address_line'     => 'nullable|string',
-            'city'             => 'nullable|string',
-            'state'            => 'nullable|string',
-            'country'          => 'nullable|string',
-            'postal_code'      => 'nullable|string',
-            'lat'              => 'nullable|numeric',
-            'lng'              => 'nullable|numeric',
-
-            'specification_values'   => 'nullable|array',
-            'specification_values.*' => 'integer|exists:booking_specification_values,id',
-        ]);
-
-        $data['location_enabled'] = $request->boolean('location_enabled');
-
-        $specValueIds = $data['specification_values'] ?? [];
-        unset($data['specification_values']);
-
-        $booking->fill($data);
-
-        // Pivot-less: chosen specification VALUE ids are stored on booking meta,
-        // since there's no booking<->specification_value pivot table provided.
-        $meta = $booking->meta ?? [];
-        $meta['specification_value_ids'] = $specValueIds;
-        $booking->meta = $meta;
-
-        $booking->save();
-    }
-
-    private function wizardSaveFinal(Request $request, Booking $booking): void
-    {
-        $data = $request->validate([
-            'reviewer_message' => 'nullable|string',
-            'checkout_message' => 'nullable|string',
-            'terms_accepted'   => 'required|accepted',
-        ]);
-
-        $booking->reviewer_message = $data['reviewer_message'] ?? null;
-        $booking->checkout_message = $data['checkout_message'] ?? null;
-        $booking->terms_accepted   = true;
-        $booking->save();
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | WIZARD: SUBMIT (final action)
-    |--------------------------------------------------------------------------
-    */
-
-    public function wizardSubmit(Request $request, $bookingId)
-    {
-        $booking = $this->findOwnBooking($bookingId);
-
-        if (!$booking->terms_accepted) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please accept the terms and conditions before submitting.',
-            ], 422);
-        }
-
-        $booking->status = 'pending'; // goes to review queue, not auto-published
-        $booking->save();
-
-        $this->sendBookingNotification($booking, 'booking_created');
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success'  => true,
-                'redirect' => route('panel.bookings.index'),
-            ]);
-        }
-
-        return redirect()->route('panel.bookings.index')->with('success', 'Booking submitted for review.');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | SUB-RESOURCE: RESOURCES & ASSETS (both live in booking_resources)
+    | SUB-RESOURCE: RESOURCES & ASSETS (both live in booking_resources, AJAX add/remove inside step 3)
     |--------------------------------------------------------------------------
     */
 
@@ -689,7 +614,7 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | SUB-RESOURCE: TIME SLOTS (Recurring Bookings)
+    | SUB-RESOURCE: TIME SLOTS (Recurring Bookings, AJAX add/remove inside step 3)
     |--------------------------------------------------------------------------
     */
 
@@ -729,7 +654,7 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | SUB-RESOURCE: FAQ
+    | SUB-RESOURCE: FAQ (AJAX add/remove inside step 6)
     |--------------------------------------------------------------------------
     */
 
@@ -818,92 +743,6 @@ class BookingController extends Controller
         return $query;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATION (legacy single-page form)
-    |--------------------------------------------------------------------------
-    */
-
-    protected function validateBooking(Request $request, $bookingId = null)
-    {
-        $data = $request->validate([
-
-            'title' => 'required|string|max:255',
-
-            'slug' => [
-                'nullable',
-                'string',
-                Rule::unique('bookings', 'slug')->ignore($bookingId)
-            ],
-
-            'category_id' => 'nullable|exists:booking_categories,id',
-
-            'language' => 'nullable|string|max:10',
-
-            'booking_type' => 'required|string',
-
-            'sub_type' => 'nullable|string|max:255',
-
-            'description' => 'nullable|string',
-
-            'requirements' => 'nullable|string',
-
-            'price' => 'nullable|numeric|min:0',
-
-            'price_per' => 'nullable|numeric|min:0',
-
-            'price_unit' => 'nullable|string|max:64',
-
-            'discount_price' => 'nullable|numeric|min:0',
-
-            'capacity' => 'nullable|integer|min:0',
-
-            'min_persons' => 'nullable|integer|min:0',
-
-            'max_persons' => 'nullable|integer|min:0',
-
-            'duration_minutes' => 'nullable|integer|min:0',
-
-            'currency' => 'nullable|string|max:10',
-
-            'address_line' => 'nullable|string',
-
-            'city' => 'nullable|string',
-
-            'reviewer_message' => 'nullable|string',
-
-            'checkout_message' => 'nullable|string',
-
-            'state' => 'nullable|string',
-
-            'country' => 'nullable|string',
-
-            'postal_code' => 'nullable|string',
-
-            'lat' => 'nullable|numeric',
-
-            'lng' => 'nullable|numeric',
-
-            'meta' => 'nullable|json',
-        ]);
-
-        $data['status'] = $request->boolean('status') ? 'published' : 'draft';
-        $data['featured'] = $request->boolean('featured');
-        $data['location_enabled'] = $request->boolean('location_enabled');
-
-        if (!empty($data['currency'])) {
-            $data['currency'] = strtoupper($data['currency']);
-        }
-
-        $data['language'] = $data['language'] ?? app()->getLocale();
-
-        if (!empty($data['meta'])) {
-            $data['meta'] = json_decode($data['meta'], true);
-        }
-
-        return $data;
-    }
-
     private function getUserLanguages(): array
     {
         $userLanguages = getGeneralSettings('user_languages');
@@ -925,9 +764,9 @@ class BookingController extends Controller
     private function sendBookingNotification(Booking $booking, string $template): void
     {
         $notifyOptions = [
-            '[c.title]' => $booking->title,
+            '[c.title]'    => $booking->title,
             '[item_title]' => $booking->title,
-            '[u.name]' => optional(auth()->user())->full_name,
+            '[u.name]'     => optional(auth()->user())->full_name,
         ];
 
         sendNotification($template, $notifyOptions, 1);

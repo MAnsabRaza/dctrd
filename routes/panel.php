@@ -24,9 +24,9 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
     Route::group(['prefix' => 'bookings'], function () {
 
         Route::group(['prefix' => 'invitations'], function () {
-    Route::get('/', 'Booking\InvitedBookingsController@index')
-        ->name('panel.bookings.invitations');
-});
+            Route::get('/', 'Booking\InvitedBookingsController@index')
+                ->name('panel.bookings.invitations');
+        });
 
         /*
         |--------------------------------------------------------------------------
@@ -57,6 +57,12 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
         Route::get('/{id}/edit', 'Booking\BookingController@edit')
             ->name('panel.bookings.edit');
+
+        // Step-wizard variant of edit, same pattern as courses/upcoming_courses/products below.
+        // {step} optional => defaults to step 1 inside BookingController@edit, exactly like
+        // ProductController::edit($request, $id, $step = 1)
+        Route::get('/{id}/step/{step?}', 'Booking\BookingController@edit')
+            ->name('panel.bookings.edit.step');
 
         Route::post('/{id}/update', 'Booking\BookingController@update')
             ->name('panel.bookings.update.post');
@@ -90,6 +96,34 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
         Route::get('/{id}/slots', 'Booking\BookingController@getSlots')
             ->name('panel.bookings.slots');
+
+        /*
+        |--------------------------------------------------------------------------
+        | BOOKING SUB-RESOURCES (used inside wizard steps — resources/assets,
+        | recurring time slots, faqs, and category specifications)
+        |--------------------------------------------------------------------------
+        */
+
+        Route::post('/{id}/resources', 'Booking\BookingController@storeResource')
+            ->name('panel.bookings.resources.store');
+
+        Route::delete('/resources/{resource}', 'Booking\BookingController@destroyResource')
+            ->name('panel.bookings.resources.destroy');
+
+        Route::post('/{id}/time-slots', 'Booking\BookingController@storeTimeSlot')
+            ->name('panel.bookings.time_slots.store');
+
+        Route::delete('/time-slots/{timeSlot}', 'Booking\BookingController@destroyTimeSlot')
+            ->name('panel.bookings.time_slots.destroy');
+
+        Route::post('/{id}/faqs', 'Booking\BookingController@storeFaq')
+            ->name('panel.bookings.faqs.store');
+
+        Route::delete('/faqs/{faq}', 'Booking\BookingController@destroyFaq')
+            ->name('panel.bookings.faqs.destroy');
+
+        Route::get('/specifications/{category}', 'Booking\BookingController@getCategorySpecifications')
+            ->name('panel.bookings.specifications');
 
         /*
         |--------------------------------------------------------------------------

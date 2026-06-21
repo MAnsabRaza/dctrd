@@ -1,76 +1,47 @@
 {{--
-    resources/views/design_1/panel/booking/create_booking/index.blade.php
+    resources/views/design_1/panel/bookings/create_booking/index.blade.php
 
-    Wizard shell: top icon-stepper + current step content + footer nav.
-    Each step's HTML lives in ./steps/stepN_*.blade.php and is swapped in
-    via AJAX (see script block at the bottom) so "Save as Draft" works
-    on a partially-filled booking.
+    Page-reload step flow, same pattern as create_product/index.blade.php:
+    - Step 1 posts to panel.bookings.store (no booking exists yet)
+    - Steps 2-8 post to panel.bookings.update with current_step + get_step/get_next/draft
+    - Every submit causes a normal redirect to the next (or same) step URL
 --}}
 @extends('design_1.panel.layout')
 
 @section('content')
 
 <style>
-.wiz-stepper {
+.step-progress {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     background: #fff;
     border-radius: 12px;
-    padding: 18px 24px;
+    padding: 16px 20px;
     margin-bottom: 20px;
     overflow-x: auto;
     gap: 4px;
 }
-.wiz-step {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.step-pill {
     flex: 1;
-    min-width: 0;
-    cursor: pointer;
-    opacity: .45;
-    transition: opacity .15s;
-}
-.wiz-step.is-reachable { opacity: 1; }
-.wiz-step.is-active .wiz-step-icon { background: #2563eb; color: #fff; }
-.wiz-step.is-done .wiz-step-icon { background: #16a34a; color: #fff; }
-.wiz-step-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: #eef1f5;
-    color: #6b7280;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    min-width: 90px;
+    text-align: center;
+    padding: 8px 6px;
+    border-radius: 8px;
+    font-size: 12px;
     font-weight: 600;
-    flex-shrink: 0;
-}
-.wiz-step-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #344054;
-    white-space: nowrap;
-}
-.wiz-step-sub {
-    font-size: 11px;
     color: #98a2b3;
+    background: #f3f4f6;
     white-space: nowrap;
 }
-.wiz-divider {
-    flex: 0 0 24px;
-    height: 1px;
-    background: #e4e7ec;
-    margin: 0 4px;
-}
-.wiz-panel {
+.step-pill.is-active { background: #2563eb; color: #fff; }
+.step-pill.is-done { background: #e7f6ec; color: #16a34a; }
+.step-panel {
     background: #fff;
     border-radius: 12px;
     padding: 28px;
-    min-height: 360px;
+    min-height: 320px;
 }
-.wiz-footer {
+.step-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -79,174 +50,99 @@
     border-radius: 12px;
     padding: 16px 24px;
 }
-.wiz-footer-right { display: flex; gap: 10px; align-items: center; }
-.wiz-loading-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,.7);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    z-index: 5;
-}
-.wiz-panel-wrap { position: relative; }
+.booking-switch-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.booking-switch { position: relative; display: inline-block; width: 48px; height: 26px; flex-shrink: 0; }
+.booking-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.booking-switch-slider { position: absolute; inset: 0; background: #ccc; border-radius: 26px; cursor: pointer; transition: background .2s; }
+.booking-switch-slider:before { content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.booking-switch input:checked + .booking-switch-slider { background: #2196F3; }
+.booking-switch input:checked + .booking-switch-slider:before { transform: translateX(22px); }
+.booking-switch-label { font-size: 14px; color: #495057; font-weight: 500; cursor: pointer; user-select: none; margin-bottom: 0; }
+.booking-switch-label small { display: block; font-size: 12px; color: #999; font-weight: 400; }
+.booking-map-preview { width: 100%; height: 220px; border: 1px solid #e1e5eb; border-radius: 12px; overflow: hidden; background: #f7f8fa; }
+.booking-map-preview iframe { width: 100%; height: 100%; border: 0; }
 </style>
 
-<div class="container-fluid" id="bookingWizardApp" data-booking-id="{{ $booking->id }}" data-current-step="{{ $currentStep }}" data-booking-type="{{ $booking->booking_type }}">
+@php
+    $isEditing = isset($booking) && !is_null($booking);
+    $stepLabels = [
+        1 => 'General Info',
+        2 => 'Pricing & Availability',
+        3 => 'Participants & Resources',
+        4 => 'Content',
+        5 => 'Prerequisites & Related',
+        6 => 'FAQ',
+        7 => 'Location & Filters',
+        8 => 'Review & Submit',
+    ];
+@endphp
 
-    <div class="wiz-stepper" id="wizStepper">
-        @foreach($steps as $num => $step)
-            <div class="wiz-step {{ $num == $currentStep ? 'is-active' : '' }} {{ $num <= $booking->wizard_step ? 'is-reachable' : '' }} {{ $num < $booking->wizard_step ? 'is-done' : '' }}"
-                 data-step="{{ $num }}">
-                <div class="wiz-step-icon">{{ $num < $booking->wizard_step ? '✓' : $num }}</div>
-                <div>
-                    <div class="wiz-step-label">{{ $step['label'] }}</div>
-                    <div class="wiz-step-sub">Step {{ $num }} of {{ count($steps) }}</div>
-                </div>
+<div class="container-fluid">
+
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <div class="step-progress">
+        @foreach($stepLabels as $num => $label)
+            <div class="step-pill {{ $num == $currentStep ? 'is-active' : '' }} {{ $isEditing && $num < $currentStep ? 'is-done' : '' }}">
+                {{ $num }}. {{ $label }}
             </div>
-            @if($num < count($steps))
-                <div class="wiz-divider"></div>
-            @endif
         @endforeach
     </div>
 
-    <div class="wiz-panel-wrap">
-        <div class="wiz-loading-overlay" id="wizLoading">
-            <i class="fa fa-spinner fa-spin fa-2x text-primary"></i>
-        </div>
-        <div class="wiz-panel" id="wizPanel">
-            @include('design_1.panel.booking.create_booking.' . $steps[$currentStep]['view'])
-        </div>
-    </div>
+    {{--
+        Step 1 with no booking yet -> POST to store()
+        Any other step (or step 1 while editing) -> POST to update()
+    --}}
+    @if(!$isEditing)
+        <form method="POST" action="{{ route('panel.bookings.store') }}" enctype="multipart/form-data" id="bookingStepForm">
+            @csrf
+    @else
+        <form method="POST" action="{{ route('panel.bookings.update', $booking->id) }}" enctype="multipart/form-data" id="bookingStepForm">
+            @csrf
+            <input type="hidden" name="current_step" value="{{ $currentStep }}">
+    @endif
 
-    <div class="wiz-footer">
-        <button type="button" class="btn btn-outline-secondary" id="wizBackBtn" {{ $currentStep == 1 ? 'disabled' : '' }}>
-            <i class="fa fa-arrow-left mr-1"></i> Back
-        </button>
-        <div class="wiz-footer-right">
-            <button type="button" class="btn btn-light" id="wizSaveDraftBtn">Save as Draft</button>
-            @if($currentStep < count($steps))
-                <button type="button" class="btn btn-primary" id="wizNextBtn">Next <i class="fa fa-arrow-right ml-1"></i></button>
-            @else
-                <button type="button" class="btn btn-primary" id="wizSubmitBtn">Submit for Review</button>
-            @endif
+        <div class="step-panel">
+            @include('design_1.panel.bookings.create_booking.steps.step' . $currentStep)
         </div>
-    </div>
+
+        <div class="step-footer">
+            <div>
+                @if($currentStep > 1)
+                    <a href="{{ route('panel.bookings.edit', ['id' => $booking->id, 'step' => $currentStep - 1]) }}" class="btn btn-outline-secondary">
+                        <i class="fa fa-arrow-left mr-1"></i> Back
+                    </a>
+                @endif
+            </div>
+            <div>
+                @if($isEditing)
+                    <button type="submit" name="draft" value="1" class="btn btn-light mr-2">Save as Draft</button>
+                @endif
+
+                @if($currentStep < $stepCount)
+                    <button type="submit" name="get_next" value="1" class="btn btn-primary">
+                        Next <i class="fa fa-arrow-right ml-1"></i>
+                    </button>
+                @else
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-paper-plane mr-1"></i> Submit for Review
+                    </button>
+                @endif
+            </div>
+        </div>
+    </form>
 </div>
-
-<script>
-(function () {
-    const app = document.getElementById('bookingWizardApp');
-    const bookingId = app.dataset.bookingId;
-    const baseUrl = '{{ url('panel/bookings/wizard') }}';
-    let currentStep = parseInt(app.dataset.currentStep, 10);
-
-    function showLoading(show) {
-        document.getElementById('wizLoading').style.display = show ? 'flex' : 'none';
-    }
-
-    function collectStepForm() {
-        const form = document.querySelector('#wizPanel form, #wizPanel [data-wiz-form]');
-        if (!form) return new FormData();
-        return new FormData(form);
-    }
-
-    function gotoStep(step, opts = {}) {
-        showLoading(true);
-        fetch(`${baseUrl}/${bookingId}/step/${step}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.text())
-        .then(html => {
-            document.getElementById('wizPanel').innerHTML = html;
-            currentStep = step;
-            updateStepperUI();
-            window.dispatchEvent(new CustomEvent('wiz:step-loaded', { detail: { step } }));
-        })
-        .finally(() => showLoading(false));
-    }
-
-    function updateStepperUI() {
-        document.querySelectorAll('.wiz-step').forEach(el => {
-            const num = parseInt(el.dataset.step, 10);
-            el.classList.toggle('is-active', num === currentStep);
-        });
-        document.getElementById('wizBackBtn').disabled = currentStep === 1;
-    }
-
-    function saveCurrentStep({ silent = false } = {}) {
-        return new Promise((resolve, reject) => {
-            const formData = collectStepForm();
-            fetch(`${baseUrl}/${bookingId}/step/${currentStep}`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (!data.success && !silent) {
-                    alert(data.message || 'Could not save this step.');
-                    reject(data);
-                    return;
-                }
-                resolve(data);
-            })
-            .catch(reject);
-        });
-    }
-
-    document.getElementById('wizNextBtn')?.addEventListener('click', function () {
-        showLoading(true);
-        saveCurrentStep()
-            .then(() => gotoStep(currentStep + 1))
-            .catch(() => showLoading(false));
-    });
-
-    document.getElementById('wizBackBtn')?.addEventListener('click', function () {
-        gotoStep(Math.max(1, currentStep - 1));
-    });
-
-    document.getElementById('wizSaveDraftBtn')?.addEventListener('click', function () {
-        showLoading(true);
-        saveCurrentStep({ silent: true })
-            .then(() => { window.location.href = '{{ route('panel.bookings.index') }}'; })
-            .finally(() => showLoading(false));
-    });
-
-    document.getElementById('wizSubmitBtn')?.addEventListener('click', function () {
-        showLoading(true);
-        saveCurrentStep()
-            .then(() => fetch(`${baseUrl}/${bookingId}/submit`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            }))
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = data.redirect;
-                } else {
-                    alert(data.message || 'Could not submit.');
-                }
-            })
-            .finally(() => showLoading(false));
-    });
-
-    document.querySelectorAll('.wiz-step.is-reachable').forEach(el => {
-        el.addEventListener('click', function () {
-            const target = parseInt(this.dataset.step, 10);
-            if (target === currentStep) return;
-            // Save current step before navigating away, but don't block the jump on failure
-            saveCurrentStep({ silent: true }).finally(() => gotoStep(target));
-        });
-    });
-})();
-</script>
 
 @endsection
