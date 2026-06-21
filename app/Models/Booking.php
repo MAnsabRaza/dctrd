@@ -224,22 +224,30 @@ class Booking extends Model
     }
 
     public function getRate(): float
-    {
-        if (!empty($this->rating)) {
-            return (float) $this->rating;
-        }
+{
+    $rate = 0;
 
-        return (float) $this->reviews()->active()->avg('rating');
+    $reviews = $this->reviews()
+        ->where('status', 'active')
+        ->get();
+
+    if (!empty($reviews) and $reviews->count() > 0) {
+        $rate = number_format($reviews->avg('rates'), 2);
     }
 
-    public function getRateCount(): int
-    {
-        if (!empty($this->review_count)) {
-            return (int) $this->review_count;
-        }
-
-        return (int) $this->reviews()->active()->count();
+    if ($rate > 5) {
+        $rate = 5;
     }
+
+    return $rate > 0 ? (float) number_format($rate, 2) : 0;
+}
+
+public function getRateCount(): int
+{
+    return $this->reviews()
+        ->where('status', 'active')
+        ->count();
+}
 
     // ─── Auto Slug ───────────────────────────────────────────────────
 
