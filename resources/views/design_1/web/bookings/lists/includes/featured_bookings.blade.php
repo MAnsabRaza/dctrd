@@ -1,19 +1,6 @@
 @if(!empty($featuredBookings) and count($featuredBookings))
-    @php
-        $featuredBookingsSettings = getStoreFeaturedBookingsSettings();
-        $featuredBg               = $featuredBookingsSettings['background_image'] ?? null;
-        $featuredOverlayImage     = $featuredBookingsSettings['overlay_image']    ?? null;
-    @endphp
-
-    <div class="products-lists-featured position-relative mt-48 bg-gray-200"
-         @if(!empty($featuredBg)) style="background-image: url('{{ $featuredBg }}')" @endif>
+    <div class="products-lists-featured position-relative mt-48 bg-gray-200">
         <div class="container position-relative h-100 pt-48 pb-56">
-
-            @if(!empty($featuredOverlayImage))
-                <div class="products-lists-featured__overlay-image d-flex-center">
-                    <img src="{{ $featuredOverlayImage }}" alt="{{ trans('update.overlay_image') }}" class="img-fluid">
-                </div>
-            @endif
 
             <div class="row w-100 h-100">
                 <div class="col-12 col-lg-3">
@@ -46,6 +33,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 @endif
