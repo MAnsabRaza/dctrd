@@ -71,4 +71,9 @@ class BookingCategory extends Model
     );
 }
 
+  public function getUrl()
+    {
+        return '/bookings?category_id=' . $this->id;
+    }
+
 }
