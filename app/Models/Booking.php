@@ -287,10 +287,30 @@ public function getRateCount(): int
     {
         return $this->hasMany(BookingVariant::class)->orderBy('sort_order');
     }
-    public function specifications()
-    {
-        return $this->hasMany(BookingSpecificationValue::class, 'booking_id');
-    }
+   public function specifications()
+{
+    return $this->hasManyThrough(
+        BookingSpecification::class,
+        BookingCategory::class,
+        'id',          // booking_categories.id
+        'id',          // booking_specifications.id — yeh hasManyThrough ke liye sahi nahi
+        'category_id', // bookings.category_id
+        'id'
+    );
+}
+
+public function getCategorySpecificationsAttribute()
+{
+    if (empty($this->category_id)) return collect();
+    
+    return BookingSpecification::query()
+        ->active()
+        ->ordered()
+        ->whereHas('categories', fn($q) => $q->where('booking_categories.id', $this->category_id))
+        ->orWhereDoesntHave('categories')
+        ->with('bookingValues')
+        ->get();
+}
     public function reviews()
     {
         return $this->hasMany(BookingReview::class, 'booking_id');

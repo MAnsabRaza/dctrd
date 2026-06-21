@@ -85,23 +85,23 @@ class BookingController extends Controller
         }
 
         $booking = Booking::query()
-            ->where('slug', $slug)
-            ->where('status', 'published')
-            ->with([
-                'creator' => fn ($q) => $q->select(
-                    'id','full_name','username','role_id','role_name',
-                    'avatar','avatar_settings','bio','about','cover_img','profile_secondary_image'
-                ),
-                'category',
-                'resources'  => fn ($q) => $q->where('status', true)->orderBy('order'),
-                'variants'   => fn ($q) => $q->where('status', true)->orderBy('sort_order'),
-                'specifications.specification',
-                'policy',
-                'faqs',
-                'reviews'  => fn ($q) => $q->where('status', 'active')->with('reviewer')->latest(),
-                'comments' => fn ($q) => $q->where('is_active', true)->with('user')->latest(),
-            ])
-            ->first();
+    ->where('slug', $slug)
+    ->where('status', 'published')
+    ->with([
+        'creator' => fn ($q) => $q->select(
+            'id','full_name','username','role_id','role_name',
+            'avatar','avatar_settings','bio','about','cover_img','profile_secondary_image'
+        ),
+        'category',
+        'resources'  => fn ($q) => $q->where('status', true)->orderBy('order'),
+        'variants'   => fn ($q) => $q->where('status', true)->orderBy('sort_order'),
+        'policy',
+        'faqs',
+        'reviews'  => fn ($q) => $q->where('status', 'active')->latest(),
+        'comments' => fn ($q) => $q->where('is_active', true)->with('user')->latest(),
+        // ← 'specifications.specification' hata diya
+    ])
+    ->first();
 
         if (empty($booking)) {
             abort(404);
