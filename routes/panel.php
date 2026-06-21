@@ -30,7 +30,7 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
         | {id} on the PUT/DELETE routes and throws "Method Not Allowed".
         |--------------------------------------------------------------------------
         */
-        Route::group(['prefix' => 'organization-bookings'], function () {
+        Route::group(['prefix' => 'organization'], function () {
             Route::get('/', 'Booking\OrganizationBookingController@index')
                 ->name('panel.bookings.organization');
         });
