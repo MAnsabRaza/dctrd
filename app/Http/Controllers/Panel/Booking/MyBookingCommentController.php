@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Panel\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingComment;
+use App\Models\Comment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -16,7 +16,7 @@ class MyBookingCommentController extends Controller
 
         $user = auth()->user();
 
-        $query = BookingComment::query()->where('user_id', $user->id)
+        $query = Comment::query()->where('user_id', $user->id)
             ->whereNotNull('booking_id')
             ->with([
                 'booking' => function ($query) {
@@ -114,7 +114,7 @@ class MyBookingCommentController extends Controller
     {
         $user = auth()->user();
 
-        $comment = BookingComment::where('user_id', $user->id)->findOrFail($id);
+        $comment = Comment::where('user_id', $user->id)->findOrFail($id);
         $comment->delete();
 
         return redirect()->back();

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Panel\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingComment;
+use App\Models\Comment;
 use App\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class BookingCommentController extends Controller
 
         $user = auth()->user();
 
-        $query = BookingComment::where('status', 'active')
+        $query = Comment::where('status', 'active')
             ->whereNotNull('booking_id')
             ->whereHas('booking', function ($query) use ($user) {
                 $query->where('creator_id', $user->id);
