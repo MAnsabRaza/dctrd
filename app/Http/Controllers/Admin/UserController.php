@@ -657,15 +657,9 @@ class UserController extends Controller
                 ->paginate(10);
         }
 
-        $moduleSettings = [];
-        if ($user->isOrganization() or $user->isTeacher()) {
-            $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
-        }
+        $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
 
-        $bookingSettingsData = [];
-        if ($user->isOrganization() or $user->isTeacher()) {
-            $bookingSettingsData = app(BookingCategorySettingsController::class)->makeViewData($user->id);
-        }
+        $bookingSettingsData = app(BookingCategorySettingsController::class)->makeViewData($user->id);
 
         $data = [
             'pageTitle' => trans('admin/pages/users.edit_page_title'),
@@ -1775,10 +1769,6 @@ class UserController extends Controller
         $this->authorize('admin_users_edit');
 
         $user = User::query()->findOrFail($id);
-
-        if (!($user->isOrganization() or $user->isTeacher())) {
-            abort(404);
-        }
 
         $data = $request->validate([
             'modules' => 'required|array',

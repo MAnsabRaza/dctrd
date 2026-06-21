@@ -257,11 +257,9 @@
                                             @endcan
                                         @endif
 
-                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
-                                            <li class="nav-item">
-                                                <a class="nav-link {{ (request()->get('tab') == 'checkoutOptions') ? 'active' : '' }}" id="checkoutOptions-tab" data-toggle="tab" href="#checkoutOptions" role="tab" aria-controls="checkoutOptions" aria-selected="true">{{ trans('panel.checkout_options') }}</a>
-                                            </li>
-                                        @endif
+                                        <li class="nav-item">
+                                            <a class="nav-link {{ (request()->get('tab') == 'checkoutOptions') ? 'active' : '' }}" id="checkoutOptions-tab" data-toggle="tab" href="#checkoutOptions" role="tab" aria-controls="checkoutOptions" aria-selected="true">{{ trans('panel.checkout_options') }}</a>
+                                        </li>
 
                                         @if(!empty($becomeInstructor))
                                             <li class="nav-item">
@@ -271,15 +269,15 @@
 
 
                                         <li class="nav-item">
-                                            <a class="nav-link" id="purchased_courses-tab" data-toggle="tab" href="#purchased_courses" role="tab" aria-controls="purchased_courses" aria-selected="true">{{ trans('update.purchased_courses') }}</a>
+                                            <a class="nav-link {{ (request()->get('tab') == 'purchased_courses') ? 'active' : '' }}" id="purchased_courses-tab" data-toggle="tab" href="#purchased_courses" role="tab" aria-controls="purchased_courses" aria-selected="true">{{ trans('update.purchased_courses') }}</a>
                                         </li>
 
                                         <li class="nav-item">
-                                            <a class="nav-link" id="purchased_bundles-tab" data-toggle="tab" href="#purchased_bundles" role="tab" aria-controls="purchased_bundles" aria-selected="true">{{ trans('update.purchased_bundles') }}</a>
+                                            <a class="nav-link {{ (request()->get('tab') == 'purchased_bundles') ? 'active' : '' }}" id="purchased_bundles-tab" data-toggle="tab" href="#purchased_bundles" role="tab" aria-controls="purchased_bundles" aria-selected="true">{{ trans('update.purchased_bundles') }}</a>
                                         </li>
 
                                         <li class="nav-item">
-                                            <a class="nav-link" id="purchased_products-tab" data-toggle="tab" href="#purchased_products" role="tab" aria-controls="purchased_products" aria-selected="true">{{ trans('update.purchased_products') }}</a>
+                                            <a class="nav-link {{ (request()->get('tab') == 'purchased_products') ? 'active' : '' }}" id="purchased_products-tab" data-toggle="tab" href="#purchased_products" role="tab" aria-controls="purchased_products" aria-selected="true">{{ trans('update.purchased_products') }}</a>
                                         </li>
 
                                         <li class="nav-item">
@@ -294,20 +292,13 @@
                                             <a class="nav-link" id="topics-tab" data-toggle="tab" href="#topics" role="tab" aria-controls="topics" aria-selected="true">{{ trans('update.forum_topics') }}</a>
                                         </li>
 
-                                          @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
+                                        <li class="nav-item">
+                                            <a class="nav-link {{ (request()->get('tab') == 'availability') ? 'active' : '' }}" id="availability-tab" data-toggle="tab" href="#availability" role="tab" aria-controls="availability" aria-selected="true">{{ trans('update.availability_assets') }}</a>
+                                        </li>
 
-                                            <li class="nav-item">
-                                                <a class="nav-link" id="availability-tab" data-toggle="tab" href="#availability" role="tab" aria-controls="availability" aria-selected="true">{{ trans('update.availability_assets') }}</a>
-                                            </li>
-                                        @endif
-
-                                         @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
-
-
-                                           <li class="nav-item">
-                                                <a class="nav-link" id="bookingSettings-tab" data-toggle="tab" href="#bookingSettings" role="tab" aria-controls="bookingSettings" aria-selected="true">Booking Settings</a>
-                                            </li>
-                                            @endif
+                                        <li class="nav-item">
+                                            <a class="nav-link {{ (request()->get('tab') == 'bookingSettings') ? 'active' : '' }}" id="bookingSettings-tab" data-toggle="tab" href="#bookingSettings" role="tab" aria-controls="bookingSettings" aria-selected="true">Booking Settings</a>
+                                        </li>
                                           
 
                                         <li class="nav-item">
@@ -350,17 +341,11 @@
                                             @endcan
                                         @endif
 
-                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
-                                            @include('admin.users.editTabs.checkout_options')
-                                        @endif
+                                        @include('admin.users.editTabs.checkout_options')
 
-                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
-                                            @include('admin.users.editTabs.availability')
-                                        @endif
+                                        @include('admin.users.editTabs.availability')
 
-                                        @if(!empty($user) and ($user->isOrganization() or $user->isTeacher()))
-                                            @include('admin.users.editTabs.booking_settings')
-                                        @endif
+                                        @include('admin.users.editTabs.booking_settings')
 
                                         @if(!empty($becomeInstructor))
                                             @include('admin.users.editTabs.become_instructor')

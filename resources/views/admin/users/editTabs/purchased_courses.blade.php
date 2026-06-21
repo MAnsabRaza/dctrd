@@ -1,4 +1,4 @@
-<div class="tab-pane mt-0 fade" id="purchased_courses" role="tabpanel" aria-labelledby="purchased_courses-tab">
+<div class="tab-pane mt-0 fade {{ (request()->get('tab') == 'purchased_courses') ? 'active show' : '' }}" id="purchased_courses" role="tabpanel" aria-labelledby="purchased_courses-tab">
     <div class="row">
 
         @can('admin_enrollment_add_student_to_items')
