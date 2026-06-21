@@ -23,7 +23,7 @@
     <div class="col-12">
         <div class="form-check mt-2 mb-4">
             <input class="form-check-input @error('terms_accepted') is-invalid @enderror" type="checkbox" id="termsAccepted" name="terms_accepted"
-                   {{ old('terms_accepted', $booking->terms_accepted) ? 'checked' : '' }}>
+                   {{ old('terms_accepted', $booking->meta['terms_accepted'] ?? false) ? 'checked' : '' }}>
             <label class="form-check-label" for="termsAccepted">
                 I agree to the <a href="{{ url('/terms') }}" target="_blank">terms and conditions</a>
             </label>

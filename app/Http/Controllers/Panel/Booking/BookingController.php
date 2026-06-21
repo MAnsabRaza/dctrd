@@ -158,7 +158,6 @@ class BookingController extends Controller
             'description'  => $data['description'] ?? null,
             'requirements' => $data['requirements'] ?? null,
             'status'       => $isDraft ? 'draft' : 'draft', // never published directly from step 1
-            'wizard_step'  => 1,
         ]);
 
         $notifyOptions = [
@@ -355,7 +354,6 @@ class BookingController extends Controller
         $finalSubmit = ($currentStep == 8 and !$getNextStep and !$isDraft);
 
         $data['status'] = $isDraft ? 'draft' : ($finalSubmit ? 'pending' : $booking->status);
-        $data['wizard_step'] = max((int) $booking->wizard_step, $currentStep);
 
         if ($currentStep == 1) {
             $booking->fill([
@@ -452,12 +450,15 @@ class BookingController extends Controller
             $booking->fill([
                 'reviewer_message' => $data['reviewer_message'] ?? null,
                 'checkout_message' => $data['checkout_message'] ?? null,
-                'terms_accepted'   => true,
             ]);
+
+            // terms_accepted has no dedicated column — stored in meta instead
+            $meta = $booking->meta ?? [];
+            $meta['terms_accepted'] = true;
+            $booking->meta = $meta;
         }
 
         $booking->status = $data['status'];
-        $booking->wizard_step = $data['wizard_step'];
         $booking->save();
 
         if ($finalSubmit) {

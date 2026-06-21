@@ -144,7 +144,6 @@ class CartManagerController extends Controller
                                 $item->uid = $id;
                                 $item->booking_id = $booking->id;
                                 $item->booking = $booking;
-                                $item->meta = $cookieCart['meta'] ?? null;
 
                                 $carts->add($item);
                             }
@@ -469,26 +468,6 @@ class CartManagerController extends Controller
 
         if (empty($data['quantity'])) {
             $data['quantity'] = 1;
-        }
-
-        if ($item_name == 'booking_id') {
-            $meta = [];
-            if (isset($data['slot_date'])) {
-                $meta['slot_date'] = $data['slot_date'];
-            }
-            if (isset($data['slot_start'])) {
-                $meta['slot_start'] = $data['slot_start'];
-            }
-            if (isset($data['slot_end'])) {
-                $meta['slot_end'] = $data['slot_end'];
-            }
-            if (isset($data['resource_id'])) {
-                $meta['resource_id'] = $data['resource_id'];
-            }
-
-            if (!empty($meta)) {
-                $data['meta'] = $meta;
-            }
         }
 
         $carts[$item_name . '_' . $item_id] = $data;
