@@ -477,6 +477,7 @@ public function getRateCount(): int
     {
         return in_array($this->booking_type, ['tour', 'activity', 'accommodation', 'rental', 'event']);
     }
+    
 
 }   
 
