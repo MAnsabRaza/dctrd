@@ -5,11 +5,9 @@ namespace App\Http\Controllers\Panel\Booking;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingCategory;
-use App\Models\BookingParticipant;
 use App\Models\BookingResource;
-use App\Models\BookingAsset;
+use App\Models\BookingTimeSlot;
 use App\Models\BookingFaq;
-use App\Models\BookingRecurrence;
 use App\Models\BookingSpecification;
 use App\Models\OrgAvailabilityRule;
 use App\Models\OrgAvailabilityRange;
@@ -349,8 +347,7 @@ class BookingController extends Controller
         }
 
         $booking->loadMissing([
-            'participants', 'resources', 'assets', 'faqs', 'recurrence',
-            'ratePlans', 'category',
+            'resources', 'timeSlots', 'faqs', 'ratePlans', 'category',
         ]);
 
         $allCategoryLists = BookingCategory::query()
@@ -404,7 +401,7 @@ class BookingController extends Controller
                 $this->wizardSavePricing($request, $booking);
                 break;
             case 3:
-                $this->wizardSaveResourcesToggles($request, $booking);
+                $this->wizardSaveParticipantsToggles($request, $booking);
                 break;
             case 4:
                 $this->wizardSaveContent($request, $booking);
@@ -467,11 +464,11 @@ class BookingController extends Controller
             'price_unit'       => 'nullable|string|max:64',
             'duration_minutes' => 'nullable|integer|min:0',
 
-            'rate_plans'             => 'nullable|array',
-            'rate_plans.*.name'      => 'required_with:rate_plans|string|max:255',
-            'rate_plans.*.from'      => 'nullable|string',
-            'rate_plans.*.to'        => 'nullable|string',
-            'rate_plans.*.price'     => 'required_with:rate_plans|numeric|min:0',
+            'rate_plans'         => 'nullable|array',
+            'rate_plans.*.name'  => 'required_with:rate_plans|string|max:255',
+            'rate_plans.*.from'  => 'nullable|string',
+            'rate_plans.*.to'    => 'nullable|string',
+            'rate_plans.*.price' => 'required_with:rate_plans|numeric|min:0',
         ]);
 
         if (!empty($data['currency'])) {
@@ -489,40 +486,51 @@ class BookingController extends Controller
 
         foreach ($ratePlans as $plan) {
             $booking->ratePlans()->create([
-                'name'              => $plan['name'],
-                'type'              => 'seasonal',
-                'price'             => $plan['price'],
-                'price_unit'        => $booking->price_unit,
-                'calculation_type'  => 'flat',
-                'priority'          => 0,
-                'conditions'        => [
+                'name'             => $plan['name'],
+                'type'             => 'seasonal',
+                'price'            => $plan['price'],
+                'price_unit'       => $booking->price_unit,
+                'calculation_type' => 'flat',
+                'priority'         => 0,
+                'conditions'       => [
                     'from' => $plan['from'] ?? null,
                     'to'   => $plan['to'] ?? null,
                 ],
-                'status'            => true,
+                'status' => true,
             ]);
         }
     }
 
-    private function wizardSaveResourcesToggles(Request $request, Booking $booking): void
+    /**
+     * Step 3 "Participants" now writes straight onto the Booking row
+     * (min_persons/max_persons/max_children/children_allowed already
+     * exist there — no separate table needed).
+     *
+     * Resources & Assets are saved live via storeResource()/destroyResource()
+     * as the user adds/removes rows in the UI, so there's nothing bulk
+     * to persist for them here.
+     *
+     * Recurring slots are saved live via storeTimeSlot()/destroyTimeSlot().
+     * This method just persists the on/off toggles for all four sections.
+     */
+    private function wizardSaveParticipantsToggles(Request $request, Booking $booking): void
     {
-        // Participants/Resources/Assets themselves are saved via their own
-        // storeParticipant()/storeResource()/storeAsset() endpoints (added/removed
-        // live in the UI). This step save just persists the on/off toggles
-        // and the recurrence rule.
-        $request->validate([
+        $data = $request->validate([
             'participants_enabled' => 'nullable|boolean',
             'resources_enabled'    => 'nullable|boolean',
             'assets_enabled'       => 'nullable|boolean',
             'recurring_enabled'    => 'nullable|boolean',
 
-            'recurrence.frequency'    => 'nullable|string|in:daily,weekly,monthly',
-            'recurrence.interval'     => 'nullable|integer|min:1',
-            'recurrence.days_of_week' => 'nullable|array',
-            'recurrence.starts_on'    => 'nullable|date',
-            'recurrence.ends_on'      => 'nullable|date|after_or_equal:recurrence.starts_on',
-            'recurrence.occurrences'  => 'nullable|integer|min:1',
+            'min_persons'     => 'nullable|integer|min:0',
+            'max_persons'     => 'nullable|integer|min:0',
+            'max_children'    => 'nullable|integer|min:0',
+            'children_allowed'=> 'nullable|boolean',
         ]);
+
+        $booking->min_persons      = $data['min_persons'] ?? $booking->min_persons;
+        $booking->max_persons      = $data['max_persons'] ?? $booking->max_persons;
+        $booking->max_children     = $data['max_children'] ?? $booking->max_children;
+        $booking->children_allowed = $request->boolean('children_allowed');
 
         $meta = $booking->meta ?? [];
         $meta['participants_enabled'] = $request->boolean('participants_enabled');
@@ -530,32 +538,16 @@ class BookingController extends Controller
         $meta['assets_enabled']       = $request->boolean('assets_enabled');
         $meta['recurring_enabled']    = $request->boolean('recurring_enabled');
         $booking->meta = $meta;
-        $booking->save();
 
-        if ($request->boolean('recurring_enabled')) {
-            $booking->recurrence()->updateOrCreate(
-                ['booking_id' => $booking->id],
-                [
-                    'enabled'      => true,
-                    'frequency'    => $request->input('recurrence.frequency'),
-                    'interval'     => $request->input('recurrence.interval', 1),
-                    'days_of_week' => $request->input('recurrence.days_of_week', []),
-                    'starts_on'    => $request->input('recurrence.starts_on'),
-                    'ends_on'      => $request->input('recurrence.ends_on'),
-                    'occurrences'  => $request->input('recurrence.occurrences'),
-                ]
-            );
-        } else {
-            $booking->recurrence()->update(['enabled' => false]);
-        }
+        $booking->save();
     }
 
     private function wizardSaveContent(Request $request, Booking $booking): void
     {
         $data = $request->validate([
-            'content_sections'          => 'nullable|array',
-            'content_sections.*.title'  => 'required_with:content_sections|string|max:255',
-            'content_sections.*.body'   => 'nullable|string',
+            'content_sections'         => 'nullable|array',
+            'content_sections.*.title' => 'required_with:content_sections|string|max:255',
+            'content_sections.*.body'  => 'nullable|string',
         ]);
 
         $meta = $booking->meta ?? [];
@@ -659,46 +651,7 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | SUB-RESOURCE: PARTICIPANTS
-    |--------------------------------------------------------------------------
-    */
-
-    public function storeParticipant(Request $request, $bookingId)
-    {
-        $booking = $this->findOwnBooking($bookingId);
-
-        $data = $request->validate([
-            'label'                 => 'required|string|max:255',
-            'type'                  => 'nullable|string|max:64',
-            'min'                   => 'nullable|integer|min:0',
-            'max'                   => 'nullable|integer|min:0',
-            'per_participant_cost'  => 'nullable|numeric|min:0',
-            'charge_per_day'        => 'nullable|boolean',
-        ]);
-
-        $data['charge_per_day'] = $request->boolean('charge_per_day');
-        $data['sort_order'] = $booking->participants()->count();
-        $data['status'] = true;
-
-        $participant = $booking->participants()->create($data);
-
-        return response()->json(['success' => true, 'participant' => $participant]);
-    }
-
-    public function destroyParticipant($participantId)
-    {
-        $participant = BookingParticipant::whereHas('booking', function ($q) {
-            $q->where('creator_id', auth()->id());
-        })->findOrFail($participantId);
-
-        $participant->delete();
-
-        return response()->json(['success' => true]);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | SUB-RESOURCE: RESOURCES
+    | SUB-RESOURCE: RESOURCES & ASSETS (both live in booking_resources)
     |--------------------------------------------------------------------------
     */
 
@@ -714,6 +667,7 @@ class BookingController extends Controller
             'extra_price' => 'nullable|numeric|min:0',
         ]);
 
+        $data['type'] = $data['type'] ?? 'resource';
         $data['status'] = true;
         $data['order'] = $booking->resources()->count();
 
@@ -735,37 +689,40 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | SUB-RESOURCE: ASSETS
+    | SUB-RESOURCE: TIME SLOTS (Recurring Bookings)
     |--------------------------------------------------------------------------
     */
 
-    public function storeAsset(Request $request, $bookingId)
+    public function storeTimeSlot(Request $request, $bookingId)
     {
         $booking = $this->findOwnBooking($bookingId);
 
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'type'        => 'nullable|string|max:64',
-            'description' => 'nullable|string',
-            'quantity'    => 'nullable|integer|min:1',
-            'extra_price' => 'nullable|numeric|min:0',
+            'resource_id'      => 'nullable|integer|exists:booking_resources,id',
+            'day_of_week'      => 'required|array|min:1',
+            'day_of_week.*'    => 'string|in:mon,tue,wed,thu,fri,sat,sun',
+            'start_time'       => 'required',
+            'end_time'         => 'required',
+            'duration_minutes' => 'nullable|integer|min:0',
+            'buffer_minutes'   => 'nullable|integer|min:0',
+            'max_bookings'     => 'nullable|integer|min:1',
         ]);
 
         $data['status'] = true;
-        $data['sort_order'] = $booking->assets()->count();
+        $data['max_bookings'] = $data['max_bookings'] ?? 1;
 
-        $asset = $booking->assets()->create($data);
+        $timeSlot = $booking->timeSlots()->create($data);
 
-        return response()->json(['success' => true, 'asset' => $asset]);
+        return response()->json(['success' => true, 'time_slot' => $timeSlot]);
     }
 
-    public function destroyAsset($assetId)
+    public function destroyTimeSlot($timeSlotId)
     {
-        $asset = BookingAsset::whereHas('booking', function ($q) {
+        $timeSlot = BookingTimeSlot::whereHas('booking', function ($q) {
             $q->where('creator_id', auth()->id());
-        })->findOrFail($assetId);
+        })->findOrFail($timeSlotId);
 
-        $asset->delete();
+        $timeSlot->delete();
 
         return response()->json(['success' => true]);
     }
