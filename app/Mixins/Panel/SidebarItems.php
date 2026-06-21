@@ -154,7 +154,8 @@ class SidebarItems
             $user->can('panel_bookings_my_comments') or
             $user->can('panel_bookings_sales') or
             $user->can('panel_bookings_purchases') or
-            $user->can('panel_bookings_organization')
+            $user->can('panel_bookings_organization') or
+             $user->can('panel_bookings_invited_lists') 
         ) {
             $bookingUrl = '/panel/bookings';
 
@@ -170,6 +171,9 @@ class SidebarItems
                 }
                 elseif ($user->can('panel_bookings_organization')) {
                     $bookingUrl = '/panel/bookings/organization';
+                }
+                  elseif ($user->can('panel_bookings_invited_lists')) {
+                    $bookingUrl = '/panel/bookings/invitations';
                 }
                  else {
                     $bookingUrl = '/panel/bookings/comments';

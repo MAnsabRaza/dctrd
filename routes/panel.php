@@ -23,6 +23,11 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
     Route::group(['prefix' => 'bookings'], function () {
 
+        Route::group(['prefix' => 'invitations'], function () {
+    Route::get('/', 'Booking\InvitedBookingsController@index')
+        ->name('panel.bookings.invitations');
+});
+
         /*
         |--------------------------------------------------------------------------
         | ORGANIZATION BOOKINGS  (MOVED HERE — must be ABOVE the /{id} wildcard

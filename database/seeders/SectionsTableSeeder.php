@@ -1145,6 +1145,11 @@ Section::updateOrCreate(['id' => 3605], ['name' => 'admin_booking_orders_export'
         $this->createPanelSection(['id' => 336], ['name' => 'panel_events_my_comments', 'section_group_id' => 330, 'caption' => 'My Comments']);
         $this->createPanelSection(['id' => 337], ['name' => 'panel_events_comments', 'section_group_id' => 330, 'caption' => 'Comments']);
 
+        $this->createPanelSection(['id' => 366], [
+    'name' => 'panel_bookings_invited_lists',
+    'section_group_id' => 36,
+    'caption' => 'Invited Bookings'
+]);
         // comments
         $this->createPanelSection(['id' => 111], ['name' => 'panel_bookings_my_comments', 'section_group_id' => 100, 'caption' => 'My Booking Comments']);
 
