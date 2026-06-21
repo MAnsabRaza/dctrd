@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('answer');
             $table->foreign('booking_id')->references('id')->on('bookings')->onDelete('cascade');
        
-             $table->foreign('user_id')
+             $table->foreign('creator_id')
                 ->references('id')
                 ->on('users')
                 ->cascadeOnDelete();
