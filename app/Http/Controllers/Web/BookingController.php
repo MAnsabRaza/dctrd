@@ -9,7 +9,7 @@ use App\Models\AdvertisingBanner;
 use App\Models\Booking;
 use App\Models\BookingCategory;
 use App\Models\BookingFavorite;
-use App\Models\BookingFeaturedCategory;
+use App\Models\BookingFeatureCategory;
 use App\Models\BookingOrder;
 use App\Models\BookingTopCategory;
 use App\Models\Cart;
@@ -423,7 +423,7 @@ class BookingController extends Controller
         ->get();
 
     // Featured Categories
-    $data['featuredCategories'] = BookingFeaturedCategory::query()
+    $data['featuredCategories'] = BookingFeatureCategory::query()
         ->with([
             'category' => fn ($q) => $q->withCount('bookings'),
         ])
