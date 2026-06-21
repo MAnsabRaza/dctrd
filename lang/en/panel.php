@@ -394,6 +394,11 @@ return [
 'success'=>'Success',
 'canceled'=>'Canceled',
 'waiting_delivery'=>'Waiting delivery',
+'organization_bookings'=>'Organization bookings',
+'bookings_count'=>'Bookings count',
+'operators_count'=>'Operators count',
+'customers_count'=>'Customers count',
+'organization_profile'=>'Organization profile',
 
 //V2
 
