@@ -150,7 +150,6 @@ class SidebarItems
         if (
             $user->can('panel_bookings') or
             $user->can('panel_bookings_favorites') or
-            $user->can('panel_bookings_reviews') or
             $user->can('panel_bookings_comments') or
             $user->can('panel_bookings_my_comments') or
             $user->can('panel_bookings_sales') or
@@ -161,9 +160,7 @@ class SidebarItems
             if (!$user->can('panel_bookings')) {
                if ($user->can('panel_bookings_favorites')) {
                     $bookingUrl = '/panel/bookings/favorites';
-                } elseif ($user->can('panel_bookings_reviews')) {
-                    $bookingUrl = '/panel/bookings/reviews';
-                } elseif ($user->can('panel_bookings_comments')) {
+                }  elseif ($user->can('panel_bookings_comments')) {
                     $bookingUrl = '/panel/bookings/comments';
                 } elseif ($user->can('panel_bookings_sales')) {
                     $bookingUrl = '/panel/bookings/sales';
@@ -198,9 +195,7 @@ class SidebarItems
                 $items['bookings']['items'][] = ['text' => 'Favorites', 'url' => '/panel/bookings/favorites'];
             }
 
-            if ($user->can('panel_bookings_reviews')) {
-                $items['bookings']['items'][] = ['text' => 'Reviews', 'url' => '/panel/bookings/reviews'];
-            }
+           
 
             if ($user->can('panel_bookings_comments')) {
                 $items['bookings']['items'][] = ['text' => 'Comments', 'url' => '/panel/bookings/comments'];
