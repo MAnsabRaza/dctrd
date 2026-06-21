@@ -207,6 +207,9 @@ class SidebarItems
              if ($user->can('panel_bookings_organization')) {
                 $items['bookings']['items'][] = ['text' => 'Organization', 'url' => '/panel/bookings/organization'];
             }
+             if ($user->can('panel_bookings_invited_lists')) {
+                $items['bookings']['items'][] = ['text' => 'Invited Lists', 'url' => '/panel/bookings/invitations'];
+            }
 
             if ($user->can('panel_bookings_comments')) {
                 $items['bookings']['items'][] = ['text' => 'Comments', 'url' => '/panel/bookings/comments'];
