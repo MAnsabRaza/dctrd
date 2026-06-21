@@ -4862,5 +4862,29 @@ return [
     'booking_comments'=>'Booking Comment',
     'booking_comments_reports'=>'Booking Comment Report',
     'discount_source_booking'=>'Bookings',
-    'discount_source_booking_bundle'=>'Booking Bundles'
+    'discount_source_booking_bundle'=>'Booking Bundles',
+     'total_bookings' => 'Total Bookings',
+    'pending_bookings' => 'Pending Bookings',
+    'canceled_bookings' => 'Canceled Bookings',
+    'total_booking_purchase' => 'Total Booking Purchase',
+
+    'booking_purchases_history' => 'Booking Purchases History',
+    'booking_purchases_lists_page_title' => 'Booking Purchases List',
+    'booking_purchases_no_result' => 'No Results Found',
+    'booking_purchases_no_result_hint' => 'Try adjusting your filters or search criteria',
+
+    'booking_order_status_waiting_confirmation' => 'Waiting Confirmation',
+    'booking_order_status_confirmed' => 'Confirmed',
+    'booking_order_status_completed' => 'Completed',
+    'booking_order_status_canceled' => 'Canceled',
+
+    'view_booking_details' => 'View Booking Details',
+    'confirm_booking_completed' => 'Confirm Completion',
+    'confirm_booking_completed_text' => 'Are you sure you want to mark this booking as completed?',
+    'confirm_booking_completed_success' => 'Booking marked as completed successfully',
+    'confirm_booking_completed_error' => 'Error while confirming booking completion',
+
+    'discount_source_booking' => 'Bookings',
+    'discount_source_booking_bundle' => 'Booking Bundles',
+    
 ];

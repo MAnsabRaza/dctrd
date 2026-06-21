@@ -16,6 +16,7 @@ return [
 'follow' => 'Follow',
 'unfollow' => 'Unfollow',
 'booking_comments'=>'Booking comments',
+'my_booking_comments'=>'My booking comments',
 
 'webinars' => 'Courses',
 'webinar' => 'Course',

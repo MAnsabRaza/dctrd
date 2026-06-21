@@ -11,6 +11,20 @@ class BookingOrder extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'booking_orders';
+     // ---- ADD THESE ----
+    public static $status = [
+        'pending',
+        'waiting_confirmation',
+        'confirmed',
+        'completed',
+        'canceled',
+    ];
+
+    public static $pending = 'pending';
+    public static $waitingConfirmation = 'waiting_confirmation';
+    public static $confirmed = 'confirmed';
+    public static $completed = 'completed';
+    public static $canceled = 'canceled';
 
     protected $fillable = [
         'booking_id',

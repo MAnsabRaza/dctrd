@@ -107,6 +107,44 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
     Route::get('/my-comments/{id}/delete', 'Booking\MyBookingCommentController@destroy')
         ->name('panel.bookings.my-comments.destroy');
 
+        /*
+    |--------------------------------------------------------------------------
+    | SALES
+    |--------------------------------------------------------------------------
+    */
+
+    Route::group(['prefix' => 'sales'], function () {
+        Route::get('/', 'Booking\BookingSaleController@index')
+            ->name('panel.bookings.sales');
+
+        Route::get('/{id}/bookingOrder/{order_id}/invoice', 'Booking\BookingSaleController@invoice')
+            ->name('panel.bookings.sales.invoice');
+
+        Route::get('/{id}/getBookingOrder/{order_id}', 'Booking\BookingSaleController@getBookingOrder')
+            ->name('panel.bookings.sales.get-order');
+
+        Route::post('/{id}/bookingOrder/{order_id}/setTrackingCode', 'Booking\BookingSaleController@setTrackingCode')
+            ->name('panel.bookings.sales.set-tracking-code');
+    });
+    /*
+    |--------------------------------------------------------------------------
+    | MY PURCHASES (Buyer side) — NEW
+    |--------------------------------------------------------------------------
+    */
+    Route::group(['prefix' => 'purchases'], function () {
+        Route::get('/', 'Booking\MyBookingPurchaseController@index')
+            ->name('panel.bookings.purchases');
+
+        Route::get('/{id}/getBookingOrder/{order_id}', 'Booking\MyBookingPurchaseController@getBookingOrder')
+            ->name('panel.bookings.purchases.get-order');
+
+        Route::get('/{id}/orderItem/{order_id}/setCompleted', 'Booking\MyBookingPurchaseController@setCompleted')
+            ->name('panel.bookings.purchases.set-completed');
+
+        Route::get('/{id}/orderItem/{order_id}/invoice', 'Booking\MyBookingPurchaseController@invoice')
+            ->name('panel.bookings.purchases.invoice');
+    });
+
     /*
     |--------------------------------------------------------------------------
     | FAVORITES
