@@ -399,6 +399,12 @@ return [
 'operators_count'=>'Operators count',
 'customers_count'=>'Customers count',
 'organization_profile'=>'Organization profile',
+'invited_bookings'=>'Invited bookings',
+'total_booking_sales'=>'Total booking sales',
+'no_bookings'=>'No bookings',
+'no_invited_bookings_desc'=>'You have not been invited to any bookings yet.',
+'no_organization_bookings_desc'=>'Your organization has not created any bookings yet.',
+'platform'=>'Platform',
 
 //V2
 
