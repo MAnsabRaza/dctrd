@@ -327,6 +327,10 @@ public function getCategorySpecificationsAttribute()
     {
         return $this->hasMany(BookingBundleItem::class, 'booking_id');
     }
+     public function faqs()
+    {
+        return $this->hasMany(BookingFaqs::class, 'booking_id');
+    }
 
     // Bundles relation (many-to-many)
     public function bundles()
