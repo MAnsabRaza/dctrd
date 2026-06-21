@@ -79,6 +79,7 @@ class BookingCalendarController extends Controller
 
         return view('design_1.panel.bookings.calendar.index', [
             'pageTitle' => trans('panel.booking_calendar'),
+            'request' => $request,
             'allBookings' => $allBookings,
             'selectedBookingIds' => $filterBookingIds,
             'status' => $status,
