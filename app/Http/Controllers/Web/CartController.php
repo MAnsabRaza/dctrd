@@ -33,6 +33,7 @@ class CartController extends Controller
                 'eventTicket.event.creator',
                 'meetingPackage.creator',
                 'booking.creator',
+                'bookingOrder.booking.creator',
                 'subscribe',
                 'promotion',
                 'gift',
@@ -234,9 +235,9 @@ class CartController extends Controller
                 $entityType = 'booking';
                 $entityId = $cart->reserve_meeting_id;
                 $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
-            } elseif (!empty($cart->booking_id)) {
+            } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
                 $entityType = 'booking';
-                $entityId = $cart->booking_id;
+                $entityId = optional($cart->booking)->id;
                 $orgId = optional($cart->booking)->creator_id;
             } elseif (!empty($cart->meeting_package_id)) {
                 $entityType = 'booking';
@@ -393,9 +394,9 @@ class CartController extends Controller
                     $entityType = 'booking';
                     $entityId = $cart->reserve_meeting_id;
                     $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
-                } elseif (!empty($cart->booking_id)) {
+                } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
                     $entityType = 'booking';
-                    $entityId = $cart->booking_id;
+                    $entityId = optional($cart->booking)->id;
                     $orgId = optional($cart->booking)->creator_id;
                 }
 
@@ -593,6 +594,7 @@ class CartController extends Controller
                 'event_ticket_id' => $cart->event_ticket_id ?? null,
                 'product_id' => (!empty($cart->product_order_id) and !empty($cart->productOrder->product)) ? $cart->productOrder->product->id : null,
                 'product_order_id' => (!empty($cart->product_order_id)) ? $cart->product_order_id : null,
+                'booking_order_id' => $cart->booking_order_id ?? null,
                 'reserve_meeting_id' => $cart->reserve_meeting_id ?? null,
                 'meeting_package_id' => $cart->meeting_package_id ?? null,
                 'subscribe_id' => $cart->subscribe_id ?? null,
@@ -639,7 +641,7 @@ class CartController extends Controller
             $user = $cart->webinar_id ? $cart->webinar->creator : $cart->bundle->creator;
         } elseif (!empty($cart->reserve_meeting_id)) {
             $user = $cart->reserveMeeting->meeting->creator;
-        } elseif (!empty($cart->booking_id)) {
+        } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
             $user = $cart->booking->creator;
         } elseif (!empty($cart->product_order_id) and !empty($cart->productOrder)) {
             $user = $cart->productOrder->seller;
@@ -829,7 +831,7 @@ class CartController extends Controller
 
             $totalDiscount += $discount;
             $subTotal += $price;
-        } elseif (!empty($cart->booking_id)) {
+        } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
             $booking = $cart->booking;
 
             if (!empty($booking)) {

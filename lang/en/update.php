@@ -4891,5 +4891,6 @@ return [
     'booking_categories'=>'Booking Categories',
     'booking_type'=>'Booking Type',
     'has_location'=>'Has Location',
+    'new_booking_page_title'=>'New Booking Page Title'
     
 ];

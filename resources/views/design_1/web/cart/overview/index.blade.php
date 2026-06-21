@@ -123,7 +123,9 @@
                 @include('design_1.web.cart.overview.includes.cashback_alert')
 
                 {{-- Bookings section label --}}
-                @php $bookingCarts = $carts->whereNotNull('booking_id'); @endphp
+                @php
+                    $bookingCarts = $carts->filter(fn ($cart) => !empty($cart->booking_order_id) || !empty($cart->booking_id));
+                @endphp
                 @if($bookingCarts->isNotEmpty())
                     <div class="cart-section-label">{{ trans('update.bookings') ?? 'Bookings' }}</div>
                 @endif

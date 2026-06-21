@@ -15,7 +15,7 @@
 
             {{-- IMAGE --}}
             <div class="col-12 col-lg-6">
-                @include('design_1.web.bookings.show.includes.image')
+                @include('design_1.web.bookings.show.includes.booking_image')
             </div>
 
             {{-- MAIN INFO + SLOT PANEL --}}

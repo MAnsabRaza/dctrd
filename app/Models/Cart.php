@@ -60,7 +60,19 @@ class Cart extends Model
 
     public function booking()
     {
-        return $this->belongsTo('App\\Models\\Booking', 'booking_id', 'id');
+        return $this->hasOneThrough(
+            'App\\Models\\Booking',
+            'App\\Models\\BookingOrder',
+            'id',
+            'id',
+            'booking_order_id',
+            'booking_id'
+        );
+    }
+
+    public function bookingOrder()
+    {
+        return $this->belongsTo('App\\Models\\BookingOrder', 'booking_order_id', 'id');
     }
     public function subscribe()
     {
@@ -119,7 +131,7 @@ class Cart extends Model
             $price += $cart->eventTicket->getPriceWithDiscount() * $cart->quantity;
         } else if (!empty($cart->meeting_package_id) and !empty($cart->meetingPackage)) {
             $price += $cart->meetingPackage->getPrices()['price'];
-        } else if (!empty($cart->booking_id) and !empty($cart->booking)) {
+        } else if ((!empty($cart->booking_order_id) or !empty($cart->booking_id)) and !empty($cart->booking)) {
             $booking = $cart->booking;
             $amount = (float) ($booking->discount_price ?: $booking->price);
 

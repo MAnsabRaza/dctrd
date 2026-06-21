@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bundle;
+use App\Models\Booking;
+use App\Models\BookingOrder;
 use App\Models\Cart;
 use App\Models\CartDiscount;
 use App\Models\EventTicket;
@@ -39,6 +41,8 @@ class CartManagerController extends Controller
                 ->with([
                     'webinar',
                     'bundle',
+                    'booking.creator',
+                    'bookingOrder.booking.creator',
                     'installmentPayment',
                     'productOrder' => function ($query) {
                         $query->with(['product']);
@@ -264,7 +268,7 @@ class CartManagerController extends Controller
     {
         $booking_id = $data['item_id'];
 
-        $booking = \App\Models\Booking::where('id', $booking_id)
+        $booking = Booking::where('id', $booking_id)
             ->where('status', 'published')
             ->first();
 
@@ -283,9 +287,19 @@ class CartManagerController extends Controller
                 $meta['resource_id'] = $data['resource_id'];
             }
 
+            $bookingOrder = BookingOrder::updateOrCreate([
+                'booking_id' => $booking->id,
+                'seller_id' => $booking->creator_id,
+                'buyer_id' => $user->id,
+            ], [
+                'quantity' => 1,
+                'status' => BookingOrder::$pending,
+                'created_at' => time(),
+            ]);
+
             Cart::updateOrCreate([
                 'creator_id' => $user->id,
-                'booking_id' => $booking->id,
+                'booking_order_id' => $bookingOrder->id,
             ], [
                 'created_at' => time(),
                 'meta' => !empty($meta) ? $meta : null,

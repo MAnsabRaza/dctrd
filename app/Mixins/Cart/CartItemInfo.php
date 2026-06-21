@@ -26,7 +26,7 @@ class CartItemInfo
             $product = $cart->productOrder->product;
 
             return $this->getProductInfo($cart, $product);
-        } elseif (!empty($cart->booking_id)) {
+        } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
             $booking = $cart->booking;
 
             return $this->getBookingInfo($cart, $booking);

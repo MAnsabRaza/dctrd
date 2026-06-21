@@ -7,7 +7,7 @@
     @endphp
 
     {{-- ════ BOOKING ITEM ════ --}}
-    @if(!empty($cart->booking_id))
+    @if(!empty($cart->booking_order_id) || !empty($cart->booking_id))
         @php
             $booking     = $cart->booking;
             $title       = $booking->title ?? ($itemInfo['title'] ?? '');
