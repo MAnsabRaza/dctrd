@@ -23,10 +23,17 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
     Route::group(['prefix' => 'bookings'], function () {
 
-     Route::group(['prefix' => 'organization-bookings'], function () {
-        Route::get('/', 'Booking\OrganizationBookingController@index')
-            ->name('panel.bookings.organization');
-    });
+        /*
+        |--------------------------------------------------------------------------
+        | ORGANIZATION BOOKINGS  (MOVED HERE — must be ABOVE the /{id} wildcard
+        | routes below, otherwise Laravel matches "organization-bookings" as
+        | {id} on the PUT/DELETE routes and throws "Method Not Allowed".
+        |--------------------------------------------------------------------------
+        */
+        Route::group(['prefix' => 'organization-bookings'], function () {
+            Route::get('/', 'Booking\OrganizationBookingController@index')
+                ->name('panel.bookings.organization');
+        });
 
         /*
         |--------------------------------------------------------------------------
@@ -150,11 +157,6 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
                 ->name('panel.bookings.purchases.invoice');
         });
 
-
-        Route::group(['prefix' => 'organization-bookings'], function () {
-            Route::get('/', 'Booking\OrganizationBookingController@index')
-                ->name('panel.bookings.organization');
-        });
         /*
         |--------------------------------------------------------------------------
         | FAVORITES
