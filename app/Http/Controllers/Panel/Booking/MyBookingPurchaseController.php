@@ -34,10 +34,8 @@ class MyBookingPurchaseController extends Controller
 
         $totalOrders = deepClone($copyQuery)->count();
 
-        $pendingOrders = deepClone($copyQuery)->where(function ($query) {
-            $query->where('status', BookingOrder::$waitingConfirmation)
-                ->orWhere('status', BookingOrder::$confirmed);
-        })->count();
+        // FIXED: waiting_delivery is the only "in progress" status now
+        $pendingOrders = deepClone($copyQuery)->where('status', BookingOrder::$waitingDelivery)->count();
 
         $canceledOrders = deepClone($copyQuery)->where('status', BookingOrder::$canceled)->count();
 
@@ -198,7 +196,7 @@ class MyBookingPurchaseController extends Controller
 
         if (!empty($order)) {
             $order->update([
-                'status' => BookingOrder::$completed
+                'status' => BookingOrder::$success   // FIXED: was $completed
             ]);
 
             $item = $order->item; // booking or bundle
