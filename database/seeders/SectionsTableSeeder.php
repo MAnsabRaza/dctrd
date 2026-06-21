@@ -1004,8 +1004,7 @@ Section::updateOrCreate(['id' => 3605], ['name' => 'admin_booking_orders_export'
         $this->createPanelSection(['id' => 365], ['name' => 'panel_bookings_my_comments', 'section_group_id' => 36, 'caption' => 'My Booking Comments']);
         $this->createPanelSection(['id' => 112], ['name' => 'panel_bookings_sales', 'section_group_id' => 100, 'caption' => 'Booking Sales']);
          $this->createPanelSection(['id' => 113], ['name' => 'panel_bookings_purchases', 'section_group_id' => 100, 'caption' => 'Booking Purchases']);
-$this->createPanelSection(['id' => 115], ['name' => 'panel_bookings_organization', 'section_group_id' => 100, 'caption' => 'Organization Bookings']);
-        // Upcoming Courses 40 - 49
+
         $this->createPanelSection(['id' => 40], ['name' => 'panel_upcoming_courses', 'caption' => 'Upcoming Courses']);
         $this->createPanelSection(['id' => 41], ['name' => 'panel_upcoming_courses_lists', 'section_group_id' => 40, 'caption' => 'Lists']);
         $this->createPanelSection(['id' => 42], ['name' => 'panel_upcoming_courses_create', 'section_group_id' => 40, 'caption' => 'Create/Edit']);
@@ -1013,6 +1012,8 @@ $this->createPanelSection(['id' => 115], ['name' => 'panel_bookings_organization
         $this->createPanelSection(['id' => 44], ['name' => 'panel_upcoming_courses_followings', 'section_group_id' => 40, 'caption' => 'Followings']);
         $this->createPanelSection(['id' => 45], ['name' => 'panel_upcoming_courses_followers', 'section_group_id' => 40, 'caption' => 'Followers']);
 
+        // Organization bookings (placed in 40-49 range as requested)
+        $this->createPanelSection(['id' => 46], ['name' => 'panel_bookings_organization', 'section_group_id' => 36, 'caption' => 'Organization Bookings']);
         // Bundles 50 - 59
         $this->createPanelSection(['id' => 50], ['name' => 'panel_bundles', 'caption' => 'Bundles']);
         $this->createPanelSection(['id' => 51], ['name' => 'panel_bundles_lists', 'section_group_id' => 50, 'caption' => 'Lists']);
