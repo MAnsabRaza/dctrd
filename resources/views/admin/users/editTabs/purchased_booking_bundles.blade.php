@@ -40,7 +40,86 @@
 
         <div class="col-12">
             <div class="mt-5">
-                <h5 class="section-title after-line">Purchased BOOKING Bundles</h5>
+                <h5 class="section-title after-line">Manually Added Booking Bundles</h5>
+
+                <div class="table-responsive mt-3">
+                    <table class="table custom-table table-md">
+                        <tr>
+                            <th>Booking Bundle</th>
+                            <th>{{ trans('admin/main.price') }}</th>
+                            <th>{{ trans('update.provider') }}</th>
+                            <th class="text-center">{{ trans('panel.purchase_date') }}</th>
+                            @can('admin_users_edit')
+                                <th class="text-center">{{ trans('admin/main.actions') }}</th>
+                            @endcan
+                        </tr>
+
+                        @forelse($manualAddedBookingBundles ?? [] as $order)
+                            <tr>
+                                <td width="30%">{{ $order->bundle->title ?? trans('update.deleted_item') }}</td>
+                                <td>
+                                    @php
+                                        $unitPrice = !empty($order->bundle) ? ($order->bundle->discount_price ?: $order->bundle->price) : 0;
+                                    @endphp
+                                    {{ !empty($order->bundle) ? $order->bundle->currency : getDefaultCurrency() }} {{ number_format((float) $unitPrice * $order->quantity, 2) }}
+                                </td>
+                                <td>{{ $order->bundle->creator->full_name ?? '-' }}</td>
+                                <td class="text-center">{{ dateTimeFormat($order->created_at,'j M Y | H:i') }}</td>
+                                @can('admin_users_edit')
+                                    <td class="text-center">
+                                        <form action="{{ getAdminPanelUrl() }}/users/{{ $user->id }}/booking-orders/{{ $order->id }}/delete" method="post" onsubmit="return confirm('{{ trans('admin/main.are_you_sure') }}');">
+                                            {{ csrf_field() }}
+                                            <button type="submit" class="btn btn-sm btn-icon" title="Remove">
+                                                <x-iconsax-lin-trash class="icons text-danger" width="18px" height="18px"/>
+                                            </button>
+                                        </form>
+                                    </td>
+                                @endcan
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">{{ trans('admin/main.no_result') }}</td>
+                            </tr>
+                        @endforelse
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <h5 class="section-title after-line">Manually Removed Booking Bundles</h5>
+
+                <div class="table-responsive mt-3">
+                    <table class="table custom-table table-md">
+                        <tr>
+                            <th>Booking Bundle</th>
+                            <th>{{ trans('admin/main.price') }}</th>
+                            <th>{{ trans('update.provider') }}</th>
+                            <th class="text-center">{{ trans('panel.purchase_date') }}</th>
+                        </tr>
+
+                        @forelse($manualRemovedBookingBundles ?? [] as $order)
+                            <tr class="text-muted">
+                                <td width="30%">{{ $order->bundle->title ?? trans('update.deleted_item') }}</td>
+                                <td>
+                                    @php
+                                        $unitPrice = !empty($order->bundle) ? ($order->bundle->discount_price ?: $order->bundle->price) : 0;
+                                    @endphp
+                                    {{ !empty($order->bundle) ? $order->bundle->currency : getDefaultCurrency() }} {{ number_format((float) $unitPrice * $order->quantity, 2) }}
+                                </td>
+                                <td>{{ $order->bundle->creator->full_name ?? '-' }}</td>
+                                <td class="text-center">{{ dateTimeFormat($order->created_at,'j M Y | H:i') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">{{ trans('admin/main.no_result') }}</td>
+                            </tr>
+                        @endforelse
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <h5 class="section-title after-line">Purchased Booking Bundles</h5>
 
                 <div class="table-responsive mt-3">
                     <table class="table custom-table table-md">
@@ -52,15 +131,15 @@
                             <th class="text-center">{{ trans('panel.purchase_date') }}</th>
                         </tr>
 
-                        @forelse($purchasedBookingBundleItems ?? [] as $item)
+                        @forelse($purchasedBookingBundles ?? [] as $order)
                             <tr>
-                                <td width="30%">{{ $item->bundle->title ?? trans('update.deleted_item') }}</td>
-                                <td>{{ $item->order->currency ?? getDefaultCurrency() }} {{ number_format((float) $item->total_price, 2) }}</td>
-                                <td>{{ $item->bundle->creator->full_name ?? '-' }}</td>
+                                <td width="30%">{{ $order->bundle->title ?? trans('update.deleted_item') }}</td>
+                                <td>{{ optional($order->sale)->total_amount ? handlePrice($order->sale->total_amount) : '-' }}</td>
+                                <td>{{ $order->bundle->creator->full_name ?? '-' }}</td>
                                 <td class="text-center">
-                                    <span class="badge badge-primary">{{ $item->status }}</span>
+                                    <span class="badge badge-primary">{{ $order->status }}</span>
                                 </td>
-                                <td class="text-center">{{ dateTimeFormat($item->created_at,'j M Y | H:i') }}</td>
+                                <td class="text-center">{{ dateTimeFormat($order->created_at,'j M Y | H:i') }}</td>
                             </tr>
                         @empty
                             <tr>

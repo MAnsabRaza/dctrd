@@ -51,6 +51,91 @@
 
         <div class="col-12">
             <div class="mt-5">
+                <h5 class="section-title after-line">Manually Added Bookings</h5>
+
+                <div class="table-responsive mt-3">
+                    <table class="table custom-table table-md">
+                        <tr>
+                            <th>Booking</th>
+                            <th>{{ trans('admin/main.price') }}</th>
+                            <th>{{ trans('update.provider') }}</th>
+                            <th class="text-center">{{ trans('panel.purchase_date') }}</th>
+                            @can('admin_users_edit')
+                                <th class="text-center">{{ trans('admin/main.actions') }}</th>
+                            @endcan
+                        </tr>
+
+                        @forelse($manualAddedBookings ?? [] as $order)
+                            <tr>
+                                <td width="30%">
+                                    <a href="{{ !empty($order->booking) ? $order->booking->getUrl() : '#!' }}" target="_blank" class="text-dark">
+                                        {{ !empty($order->booking) ? $order->booking->title : trans('update.deleted_item') }}
+                                    </a>
+                                </td>
+                                <td>
+                                    @php
+                                        $unitPrice = !empty($order->booking) ? ($order->booking->discount_price ?: $order->booking->price) : 0;
+                                    @endphp
+                                    {{ !empty($order->booking) ? $order->booking->currency : getDefaultCurrency() }} {{ number_format((float) $unitPrice * $order->quantity, 2) }}
+                                </td>
+                                <td>{{ $order->booking->creator->full_name ?? '-' }}</td>
+                                <td class="text-center">{{ dateTimeFormat($order->created_at,'j M Y | H:i') }}</td>
+                                @can('admin_users_edit')
+                                    <td class="text-center">
+                                        <form action="{{ getAdminPanelUrl() }}/users/{{ $user->id }}/booking-orders/{{ $order->id }}/delete" method="post" onsubmit="return confirm('{{ trans('admin/main.are_you_sure') }}');">
+                                            {{ csrf_field() }}
+                                            <button type="submit" class="btn btn-sm btn-icon" title="Remove">
+                                                <x-iconsax-lin-trash class="icons text-danger" width="18px" height="18px"/>
+                                            </button>
+                                        </form>
+                                    </td>
+                                @endcan
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">{{ trans('admin/main.no_result') }}</td>
+                            </tr>
+                        @endforelse
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <h5 class="section-title after-line">Manually Removed Bookings</h5>
+
+                <div class="table-responsive mt-3">
+                    <table class="table custom-table table-md">
+                        <tr>
+                            <th>Booking</th>
+                            <th>{{ trans('admin/main.price') }}</th>
+                            <th>{{ trans('update.provider') }}</th>
+                            <th class="text-center">{{ trans('panel.purchase_date') }}</th>
+                        </tr>
+
+                        @forelse($manualRemovedBookings ?? [] as $order)
+                            <tr class="text-muted">
+                                <td width="30%">
+                                    {{ !empty($order->booking) ? $order->booking->title : trans('update.deleted_item') }}
+                                </td>
+                                <td>
+                                    @php
+                                        $unitPrice = !empty($order->booking) ? ($order->booking->discount_price ?: $order->booking->price) : 0;
+                                    @endphp
+                                    {{ !empty($order->booking) ? $order->booking->currency : getDefaultCurrency() }} {{ number_format((float) $unitPrice * $order->quantity, 2) }}
+                                </td>
+                                <td>{{ $order->booking->creator->full_name ?? '-' }}</td>
+                                <td class="text-center">{{ dateTimeFormat($order->created_at,'j M Y | H:i') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">{{ trans('admin/main.no_result') }}</td>
+                            </tr>
+                        @endforelse
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-5">
                 <h5 class="section-title after-line">Purchased Bookings</h5>
 
                 <div class="table-responsive mt-3">
@@ -59,29 +144,27 @@
                             <th>Booking</th>
                             <th>{{ trans('admin/main.price') }}</th>
                             <th>{{ trans('update.provider') }}</th>
-                            <th class="text-center">Booking Date</th>
                             <th class="text-center">{{ trans('admin/main.status') }}</th>
                             <th class="text-center">{{ trans('panel.purchase_date') }}</th>
                         </tr>
 
-                        @forelse($purchasedBookingItems ?? [] as $item)
+                        @forelse($purchasedBookings ?? [] as $order)
                             <tr>
                                 <td width="30%">
-                                    <a href="{{ !empty($item->booking) ? $item->booking->getUrl() : '#!' }}" target="_blank" class="text-dark">
-                                        {{ !empty($item->booking) ? $item->booking->title : trans('update.deleted_item') }}
+                                    <a href="{{ !empty($order->booking) ? $order->booking->getUrl() : '#!' }}" target="_blank" class="text-dark">
+                                        {{ !empty($order->booking) ? $order->booking->title : trans('update.deleted_item') }}
                                     </a>
                                 </td>
-                                <td>{{ $item->order->currency ?? getDefaultCurrency() }} {{ number_format((float) $item->total_price, 2) }}</td>
-                                <td>{{ $item->booking->creator->full_name ?? '-' }}</td>
-                                <td class="text-center">{{ !empty($item->booking_date) ? $item->booking_date->format('Y-m-d') : '-' }}</td>
+                                <td>{{ optional($order->sale)->total_amount ? handlePrice($order->sale->total_amount) : '-' }}</td>
+                                <td>{{ $order->booking->creator->full_name ?? '-' }}</td>
                                 <td class="text-center">
-                                    <span class="badge badge-primary">{{ $item->status }}</span>
+                                    <span class="badge badge-primary">{{ $order->status }}</span>
                                 </td>
-                                <td class="text-center">{{ dateTimeFormat($item->created_at,'j M Y | H:i') }}</td>
+                                <td class="text-center">{{ dateTimeFormat($order->created_at,'j M Y | H:i') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted">{{ trans('admin/main.no_result') }}</td>
+                                <td colspan="5" class="text-center text-muted">{{ trans('admin/main.no_result') }}</td>
                             </tr>
                         @endforelse
                     </table>

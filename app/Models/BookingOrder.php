@@ -14,6 +14,7 @@ class BookingOrder extends Model
 
     protected $fillable = [
         'booking_id',
+        'bundle_id',
         'seller_id',
         'buyer_id',
         'sale_id',
@@ -36,6 +37,11 @@ class BookingOrder extends Model
         return $this->belongsTo('App\Models\Booking', 'booking_id', 'id');
     }
 
+    public function bundle()
+    {
+        return $this->belongsTo('App\Models\BookingBundle', 'bundle_id', 'id');
+    }
+
     public function seller()
     {
         return $this->belongsTo('App\User', 'seller_id', 'id');
@@ -56,12 +62,29 @@ class BookingOrder extends Model
         return $this->belongsTo('App\Models\BookingDiscount', 'booking_discount_id', 'id');
     }
 
+    /**
+     * The purchased item, whichever type this order is for.
+     */
+    public function getItemAttribute()
+    {
+        return $this->bundle_id ? $this->bundle : $this->booking;
+    }
+
+    /**
+     * Was this order created manually by an admin (no checkout/Sale behind it)?
+     */
+    public function getIsManualAttribute()
+    {
+        return empty($this->sale_id);
+    }
+
     public function sendBookingNotifications(string $event = 'created'): void
     {
-        $this->loadMissing(['booking.creator', 'seller', 'buyer']);
+        $this->loadMissing(['booking.creator', 'bundle.creator', 'seller', 'buyer']);
 
-        $title = !empty($this->booking) ? $this->booking->title : ('#' . $this->id);
-        $sellerId = !empty($this->booking) ? $this->booking->creator_id : $this->seller_id;
+        $item = $this->bundle_id ? $this->bundle : $this->booking;
+        $title = !empty($item) ? $item->title : ('#' . $this->id);
+        $sellerId = !empty($item) ? $item->creator_id : $this->seller_id;
 
         $notifyOptions = [
             '[c.title]' => $title,

@@ -704,8 +704,9 @@ class UserController extends Controller
         // Purchased Product Data
         $data = array_merge($data, $this->getPurchasedProductsData($user));
 
-        // Purchased Booking Data
-       // $data = array_merge($data, $this->getPurchasedBookingsData($user));
+        // Purchased Booking Data (bookings + booking bundles)
+        $data = array_merge($data, $this->getPurchasedBookingsData($user));
+        $data = array_merge($data, $this->getPurchasedBookingBundlesData($user));
 
         if (auth()->user()->can('admin_forum_topics_lists')) {
             $data['topics'] = ForumTopic::where('creator_id', $user->id)
@@ -739,42 +740,78 @@ class UserController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $item = $data['item_type'] === 'bundle'
+        $isBundle = $data['item_type'] === 'bundle';
+
+        $item = $isBundle
             ? BookingBundle::findOrFail($data['bundle_id'])
             : Booking::findOrFail($data['booking_id']);
 
-        $unitPrice = (float) ($item->discount_price ?: $item->price ?: 0);
         $quantity = (int) ($data['quantity'] ?? 1);
-        $total = $unitPrice * $quantity;
 
         $order = BookingOrder::create([
-            'order_number' => 'MAN-BOOK-' . strtoupper(uniqid()),
-            'user_id' => $user->id,
-            'subtotal' => $total,
-            'discount_amount' => 0,
-            'tax_amount' => 0,
-            'total' => $total,
-            'currency' => $item->currency ?: getDefaultCurrency(),
-            'status' => 'confirmed',
-            'payment_status' => 'paid',
-            'notes' => $data['notes'] ?? 'Manually added by admin.',
-        ]);
-
-        $order->items()->create([
-            'item_type' => $data['item_type'],
-            'booking_id' => $data['item_type'] === 'booking' ? $item->id : null,
-            'bundle_id' => $data['item_type'] === 'bundle' ? $item->id : null,
-            'booking_date' => $data['booking_date'] ?? null,
+            'booking_id' => $isBundle ? null : $item->id,
+            'bundle_id' => $isBundle ? $item->id : null,
+            'seller_id' => $item->creator_id ?? null,
+            'buyer_id' => $user->id,
+            'sale_id' => null, // null => manually granted access, no checkout/Sale behind it
+            'specifications' => [
+                'booking_date' => $data['booking_date'] ?? null,
+                'persons' => (int) ($data['persons'] ?? 1),
+                'manually_added' => true,
+            ],
             'quantity' => $quantity,
-            'persons' => (int) ($data['persons'] ?? 1),
-            'unit_price' => $unitPrice,
-            'total_price' => $total,
+            'message_to_seller' => $data['notes'] ?? 'Manually added by admin.',
+            'tracking_code' => 'MAN-BOOK-' . strtoupper(uniqid()),
             'status' => 'confirmed',
+            'created_at' => time(),
         ]);
 
         $order->sendBookingNotifications('confirmed');
 
-        return back()->with('msg', trans('admin/main.created_successfully'));
+        $toastData = [
+            'title' => trans('public.request_success'),
+            'msg' => trans('admin/main.created_successfully'),
+            'status' => 'success'
+        ];
+
+        return back()->with(['toast' => $toastData])->with('msg', trans('admin/main.created_successfully'));
+    }
+
+    public function removeManualBookingOrder(Request $request, $id, $orderId)
+    {
+        $this->authorize('admin_users_edit');
+
+        $user = User::findOrFail($id);
+
+        $order = BookingOrder::where('id', $orderId)
+            ->where('buyer_id', $user->id)
+            ->first();
+
+        if (empty($order)) {
+            abort(404);
+        }
+
+        // Safety: only manually-added orders (no Sale behind them) can be
+        // removed from here. Real purchases must go through the refund flow.
+        if (!empty($order->sale_id)) {
+            $toastData = [
+                'title' => trans('public.request_failed'),
+                'msg' => 'This was a real purchase and cannot be removed here. Use the refund flow instead.',
+                'status' => 'error'
+            ];
+
+            return back()->with(['toast' => $toastData]);
+        }
+
+        $order->delete(); // soft delete => shows up under "Manually Removed"
+
+        $toastData = [
+            'title' => trans('public.request_success'),
+            'msg' => trans('admin/main.deleted_successfully'),
+            'status' => 'success'
+        ];
+
+        return back()->with(['toast' => $toastData]);
     }
 
    /* private function getBecomeInstructorFormFieldValues($becomeInstructor)
@@ -935,41 +972,90 @@ class UserController extends Controller
         ];
     }
 
-    // private function getPurchasedBookingsData($user): array
-    // {
-    //     $bookingOrders = BookingOrder::query()
-    //         ->where('user_id', $user->id)
-    //         ->with(['items.booking.creator', 'items.bundle.creator'])
-    //         ->orderBy('created_at', 'desc')
-    //         ->get();
+    /**
+     * Booking purchases live in booking_orders directly (booking_id column,
+     * no separate items table). A row with sale_id = null was granted
+     * manually by an admin (storeManualBookingOrder); a row with sale_id
+     * filled came from a real checkout. Soft-deleted rows are bookings an
+     * admin manually removed access to.
+     */
+    private function getPurchasedBookingsData($user)
+    {
+        $baseQuery = BookingOrder::whereNotNull('booking_id')
+            ->where('buyer_id', $user->id)
+            ->with(['booking.creator', 'sale']);
 
-    //     $purchasedBookingItems = $bookingOrders
-    //         ->flatMap(fn($order) => $order->items->map(function ($item) use ($order) {
-    //             $item->setRelation('order', $order);
-    //             return $item;
-    //         }))
-    //         ->where('item_type', 'booking');
+        $manualAddedBookings = (clone $baseQuery)
+            ->whereNull('sale_id')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-    //     $purchasedBookingBundleItems = $bookingOrders
-    //         ->flatMap(fn($order) => $order->items->map(function ($item) use ($order) {
-    //             $item->setRelation('order', $order);
-    //             return $item;
-    //         }))
-    //         ->where('item_type', 'bundle');
+        $manualRemovedBookings = BookingOrder::onlyTrashed()
+            ->whereNotNull('booking_id')
+            ->where('buyer_id', $user->id)
+            ->whereNull('sale_id')
+            ->with(['booking.creator', 'sale'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-    //     return [
-    //         'availableBookings' => Booking::query()
-    //             ->where('status', 'published')
-    //             ->orderBy('title')
-    //             ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']),
-    //         'availableBookingBundles' => BookingBundle::query()
-    //             ->where('status', 'published')
-    //             ->orderBy('title')
-    //             ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']),
-    //         'purchasedBookingItems' => $purchasedBookingItems,
-    //         'purchasedBookingBundleItems' => $purchasedBookingBundleItems,
-    //     ];
-    // }
+        $purchasedBookings = (clone $baseQuery)
+            ->whereNotNull('sale_id')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $availableBookings = Booking::query()
+            ->where('status', 'published')
+            ->orderBy('title')
+            ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']);
+
+        return [
+            'availableBookings' => $availableBookings,
+            'manualAddedBookings' => $manualAddedBookings,
+            'manualRemovedBookings' => $manualRemovedBookings,
+            'purchasedBookings' => $purchasedBookings,
+        ];
+    }
+
+    /**
+     * Same logic as getPurchasedBookingsData(), but for the bundle_id side
+     * of booking_orders.
+     */
+    private function getPurchasedBookingBundlesData($user)
+    {
+        $baseQuery = BookingOrder::whereNotNull('bundle_id')
+            ->where('buyer_id', $user->id)
+            ->with(['bundle.creator', 'sale']);
+
+        $manualAddedBookingBundles = (clone $baseQuery)
+            ->whereNull('sale_id')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $manualRemovedBookingBundles = BookingOrder::onlyTrashed()
+            ->whereNotNull('bundle_id')
+            ->where('buyer_id', $user->id)
+            ->whereNull('sale_id')
+            ->with(['bundle.creator', 'sale'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $purchasedBookingBundles = (clone $baseQuery)
+            ->whereNotNull('sale_id')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $availableBookingBundles = BookingBundle::query()
+            ->where('status', 'published')
+            ->orderBy('title')
+            ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']);
+
+        return [
+            'availableBookingBundles' => $availableBookingBundles,
+            'manualAddedBookingBundles' => $manualAddedBookingBundles,
+            'manualRemovedBookingBundles' => $manualRemovedBookingBundles,
+            'purchasedBookingBundles' => $purchasedBookingBundles,
+        ];
+    }
 
     public function update(Request $request, $id)
     {

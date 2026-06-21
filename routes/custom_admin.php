@@ -269,6 +269,10 @@ Route::group(['prefix' => 'booking'], function () {
 Route::post('/users/{id}/booking-orders/store', [UserController::class, 'storeManualBookingOrder'])
     ->name('admin.users.booking_orders.store');
 
+// Remove a manually-added booking/bundle order (soft delete -> "Manually Removed" list)
+Route::post('/users/{id}/booking-orders/{orderId}/delete', [UserController::class, 'removeManualBookingOrder'])
+    ->name('admin.users.booking_orders.delete');
+
 Route::post('/users/{id}/booking-options-update', [UserController::class, 'bookingOptionsUpdate'])
     ->name('admin.users.booking_options.update');
 

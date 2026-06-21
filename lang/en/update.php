@@ -4861,4 +4861,6 @@ return [
     'admin_bookings_comments_page_title'=>'Booking Comments',
     'booking_comments'=>'Booking Comment',
     'booking_comments_reports'=>'Booking Comment Report',
+    'discount_source_booking'=>'Bookings',
+    'discount_source_booking_bundle'=>'Booking Bundles'
 ];
