@@ -380,6 +380,8 @@ return [
 
 'content_defined' => 'Content defined',
 'purchased_courses' => 'Purchased courses',
+'my_bookings'=>'My bookings',
+'total_sales'=>'Total Sales',
 
 //V2
 
