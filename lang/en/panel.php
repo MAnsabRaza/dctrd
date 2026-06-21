@@ -382,6 +382,18 @@ return [
 'purchased_courses' => 'Purchased courses',
 'my_bookings'=>'My bookings',
 'total_sales'=>'Total Sales',
+'booking_calendar'=>'Booking Calendar',
+'available / Purchased '=>'Available / Purchased',
+'available'=>'Available',
+'values'=>'Values',
+'all_status'=>'All status',
+'number_of'=>'Number of',
+'booking_id'=>'Booking ID',
+'shipped'=>'Shipped',
+'pending'=>'Pending',
+'success'=>'Success',
+'canceled'=>'Canceled',
+'waiting_delivery'=>'Waiting delivery',
 
 //V2
 
