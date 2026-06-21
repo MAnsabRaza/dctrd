@@ -8,8 +8,11 @@ use App\Http\Controllers\Web\traits\UserFormFieldsTrait;
 use App\Mixins\Geo\Geo;
 use App\Mixins\RegistrationPackage\UserPackage;
 use App\Models\Category;
+use App\Models\BookingCategory;
 use App\Models\DeleteAccountRequest;
 use App\Models\Newsletter;
+use App\Models\OrgAvailabilityRange;
+use App\Models\OrgAvailabilityRule;
 use App\Models\Region;
 use App\Models\ReserveMeeting;
 use App\Models\Reward;
@@ -27,9 +30,11 @@ use App\Services\UnitConversionService;
 use App\Services\LocationService;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -80,6 +85,8 @@ class UserController extends Controller
         $userLoginHistories = null;
         $moduleSettings = null;
         $formFieldsHtml = null;
+        $bookingSettingsData = [];
+        $availabilitySettingsData = [];
 
         if ($step == "extra_information") {
             $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
@@ -107,6 +114,18 @@ class UserController extends Controller
             }
 
             $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
+        } elseif ($step == "booking_settings") {
+            if (!($user->isOrganization() or $user->isTeacher())) {
+                abort(404);
+            }
+
+            $bookingSettingsData = $this->makeBookingSettingsViewData($user->id);
+        } elseif ($step == "availability") {
+            if (!($user->isOrganization() or $user->isTeacher())) {
+                abort(404);
+            }
+
+            $availabilitySettingsData = $this->makeAvailabilitySettingsViewData($user->id);
         }
 
         $userBanks = UserBank::query()
@@ -116,7 +135,7 @@ class UserController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return [
+        return array_merge([
             'categories' => $categories,
             'educations' => $userMetas->where('name', 'education'),
             'experiences' => $userMetas->where('name', 'experience'),
@@ -133,6 +152,63 @@ class UserController extends Controller
             'attachments' => $attachments,
             'userLoginHistories' => $userLoginHistories,
             'moduleSettings' => $moduleSettings,
+        ], $bookingSettingsData, $availabilitySettingsData);
+    }
+
+    private function makeBookingSettingsViewData(int $userId): array
+    {
+        $categories = BookingCategory::query()
+            ->select(['id', 'parent_id', 'title', 'status', 'order'])
+            ->orderBy('order')
+            ->orderBy('id')
+            ->get();
+
+        $grouped = $categories->groupBy(fn ($item) => $item->parent_id ?: 0);
+
+        $buildNode = function ($category, bool $parentEnabled = true) use (&$buildNode, $grouped) {
+            $rawEnabled = (bool) $category->status;
+            $effectiveEnabled = $parentEnabled && $rawEnabled;
+
+            $children = collect($grouped->get((int) $category->id, []))
+                ->map(fn ($child) => $buildNode($child, $effectiveEnabled))
+                ->values()
+                ->all();
+
+            return [
+                'id' => (int) $category->id,
+                'title' => $category->title,
+                'enabled' => $effectiveEnabled,
+                'children' => $children,
+            ];
+        };
+
+        return [
+            'categoryTree' => collect($grouped->get(0, []))
+                ->map(fn ($category) => $buildNode($category, true))
+                ->values()
+                ->all(),
+            'bookingSettingsSaveUrl' => route('panel.setting.booking_settings.save'),
+            'bookingSettingsUserId' => $userId,
+        ];
+    }
+
+    private function makeAvailabilitySettingsViewData(int $userId): array
+    {
+        return [
+            'orgId' => $userId,
+            'rule' => OrgAvailabilityRule::firstOrNew(
+                ['org_id' => $userId],
+                [
+                    'availability_mode' => 'available_by_default',
+                    'product_specific_takes_precedence' => false,
+                    'make_all_unavailable_by_default' => false,
+                ]
+            ),
+            'ranges' => OrgAvailabilityRange::where('org_id', $userId)->orderBy('id')->get(),
+            'assets' => collect(),
+            'assetRanges' => collect(),
+            'availabilitySaveUrl' => route('panel.setting.availability.save'),
+            'availabilityDeleteRowUrl' => url('/panel/setting/availability/row/delete'),
         ];
     }
 
@@ -672,6 +748,140 @@ class UserController extends Controller
         }
 
         return response()->json([], 422);
+    }
+
+    public function saveBookingSettings(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!($user->isOrganization() or $user->isTeacher())) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'categories' => ['required', 'array'],
+            'categories.*.id' => ['required', 'integer', 'exists:booking_categories,id'],
+            'categories.*.enabled' => ['nullable'],
+        ]);
+
+        $allCategories = BookingCategory::query()
+            ->select(['id', 'parent_id'])
+            ->orderBy('order')
+            ->orderBy('id')
+            ->get()
+            ->keyBy('id');
+
+        $submitted = collect($validated['categories'])
+            ->mapWithKeys(fn ($row) => [(int) $row['id'] => (bool) ($row['enabled'] ?? false)])
+            ->all();
+
+        $resolved = [];
+        foreach ($allCategories as $catId => $category) {
+            $resolved[$catId] = (bool) ($submitted[$catId] ?? false);
+        }
+
+        foreach ($resolved as $catId => $enabled) {
+            if (!$enabled) {
+                continue;
+            }
+
+            $parentId = $allCategories[$catId]->parent_id ?? null;
+
+            while (!empty($parentId)) {
+                $resolved[(int) $parentId] = true;
+                $parentId = $allCategories[$parentId]->parent_id ?? null;
+            }
+        }
+
+        DB::transaction(function () use ($resolved) {
+            foreach ($resolved as $catId => $enabled) {
+                BookingCategory::where('id', $catId)->update([
+                    'status' => (int) $enabled,
+                ]);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking categories saved successfully.',
+        ]);
+    }
+
+    public function saveAvailabilitySettings(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!($user->isOrganization() or $user->isTeacher())) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'availability_mode' => ['required', Rule::in(['available_by_default', 'unavailable_by_default'])],
+            'make_all_unavailable_by_default' => ['nullable', 'boolean'],
+            'product_specific_takes_precedence' => ['nullable', 'boolean'],
+            'ranges' => ['nullable', 'array'],
+            'ranges.*.range_type' => ['required_with:ranges', Rule::in(['custom', 'daily', 'weekly', 'monthly', 'date_range'])],
+            'ranges.*.from_date' => ['required_with:ranges', 'date'],
+            'ranges.*.to_date' => ['required_with:ranges', 'date'],
+            'ranges.*.bookable' => ['nullable', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($user, $validated) {
+            OrgAvailabilityRule::updateOrCreate(
+                ['org_id' => $user->id],
+                [
+                    'availability_mode' => $validated['availability_mode'],
+                    'make_all_unavailable_by_default' => (bool) ($validated['make_all_unavailable_by_default'] ?? false),
+                    'product_specific_takes_precedence' => (bool) ($validated['product_specific_takes_precedence'] ?? false),
+                ]
+            );
+
+            OrgAvailabilityRange::where('org_id', $user->id)->delete();
+
+            if (!empty($validated['ranges'])) {
+                $rows = collect($validated['ranges'])
+                    ->filter(fn ($range) => !empty($range['from_date']) and !empty($range['to_date']))
+                    ->map(fn ($range) => [
+                        'org_id' => $user->id,
+                        'range_type' => $range['range_type'],
+                        'from_date' => $range['from_date'],
+                        'to_date' => $range['to_date'],
+                        'bookable' => (bool) ($range['bookable'] ?? true),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ])
+                    ->values()
+                    ->all();
+
+                if (!empty($rows)) {
+                    OrgAvailabilityRange::insert($rows);
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => trans('booking.availability_saved'),
+        ]);
+    }
+
+    public function deleteAvailabilityRow(int $rowId): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!($user->isOrganization() or $user->isTeacher())) {
+            abort(404);
+        }
+
+        $deleted = OrgAvailabilityRange::where('id', $rowId)
+            ->where('org_id', $user->id)
+            ->delete();
+
+        if (!$deleted) {
+            return response()->json(['success' => false, 'message' => 'Row not found.'], 404);
+        }
+
+        return response()->json(['success' => true]);
     }
 
 }

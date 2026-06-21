@@ -145,6 +145,11 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
             ->name('panel.bookings.purchases.invoice');
     });
 
+    Route::group(['prefix' => 'organization-bookings'], function () {
+    Route::get('/', 'Booking\OrganizationBookingController@index')
+        ->name('panel.bookings.organization');
+});
+
     /*
     |--------------------------------------------------------------------------
     | FAVORITES

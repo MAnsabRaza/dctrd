@@ -1004,7 +1004,7 @@ Section::updateOrCreate(['id' => 3605], ['name' => 'admin_booking_orders_export'
         $this->createPanelSection(['id' => 365], ['name' => 'panel_bookings_my_comments', 'section_group_id' => 36, 'caption' => 'My Booking Comments']);
         $this->createPanelSection(['id' => 112], ['name' => 'panel_bookings_sales', 'section_group_id' => 100, 'caption' => 'Booking Sales']);
          $this->createPanelSection(['id' => 113], ['name' => 'panel_bookings_purchases', 'section_group_id' => 100, 'caption' => 'Booking Purchases']);
-
+$this->createPanelSection(['id' => 115], ['name' => 'panel_bookings_organization', 'section_group_id' => 100, 'caption' => 'Organization Bookings']);
         // Upcoming Courses 40 - 49
         $this->createPanelSection(['id' => 40], ['name' => 'panel_upcoming_courses', 'caption' => 'Upcoming Courses']);
         $this->createPanelSection(['id' => 41], ['name' => 'panel_upcoming_courses_lists', 'section_group_id' => 40, 'caption' => 'Lists']);
