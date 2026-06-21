@@ -76,5 +76,84 @@
     <script src="/assets/default/vendors/daterangepicker/daterangepicker.min.js"></script>
     <script src="{{ getDesign1ScriptPath("get_view_data") }}"></script>
 
-    <script src="/assets/design_1/js/panel/booking_my_purchase.min.js"></script>
+    {{-- Booking purchase page logic (inline, no separate build file needed) --}}
+    <script>
+        (function () {
+
+            // ---- View booking details modal ----
+            $(document).on('click', '.js-view-booking-details', function () {
+                var saleId = $(this).data('sale-id');
+                var orderId = $(this).data('order-id');
+
+                $.ajax({
+                    url: '/panel/bookings/purchases/' + saleId + '/getBookingOrder/' + orderId,
+                    method: 'GET',
+                    success: function (response) {
+                        if (response && response.order) {
+                            // TODO: render response.order (item title, specifications,
+                            // message_to_seller, tracking_code, address) into your modal markup.
+                            // Example skeleton if you have a modal with id="bookingDetailsModal":
+                            //
+                            // $('#bookingDetailsModalTitle').text(viewBookingDetailsModalTitleLang);
+                            // $('#bookingDetailsModalBody').html(buildBookingDetailsHtml(response.order));
+                            // $('#bookingDetailsModal').modal('show');
+                        }
+                    },
+                    error: function () {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(setCompletedSaveErrorLang);
+                        }
+                    }
+                });
+            });
+
+            // ---- Mark booking as completed (buyer confirms) ----
+            $(document).on('click', '.js-set-completed', function () {
+                var saleId = $(this).data('sale-id');
+                var orderId = $(this).data('order-id');
+
+                if (typeof swal !== 'undefined') {
+                    swal({
+                        title: setCompletedLang,
+                        text: setCompletedConfirmTextLang,
+                        type: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: confirmLang,
+                        cancelButtonText: closeLang,
+                    }).then(function (result) {
+                        if (result.value) {
+                            sendSetCompletedRequest(saleId, orderId);
+                        }
+                    });
+                } else if (confirm(setCompletedConfirmTextLang)) {
+                    sendSetCompletedRequest(saleId, orderId);
+                }
+            });
+
+            function sendSetCompletedRequest(saleId, orderId) {
+                $.ajax({
+                    url: '/panel/bookings/purchases/' + saleId + '/orderItem/' + orderId + '/setCompleted',
+                    method: 'GET',
+                    success: function (response) {
+                        if (response && response.code === 200) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(setCompletedSaveSuccessLang);
+                            }
+                            location.reload();
+                        } else {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(setCompletedSaveErrorLang);
+                            }
+                        }
+                    },
+                    error: function () {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(setCompletedSaveErrorLang);
+                        }
+                    }
+                });
+            }
+
+        })();
+    </script>
 @endpush
