@@ -152,7 +152,8 @@ class SidebarItems
             $user->can('panel_bookings_my_orders') or
             $user->can('panel_bookings_favorites') or
             $user->can('panel_bookings_reviews') or
-            $user->can('panel_bookings_comments')
+            $user->can('panel_bookings_comments') or
+            $user->can('panel_bookings_my_comments')
         ) {
             $bookingUrl = '/panel/bookings';
 
@@ -201,6 +202,10 @@ class SidebarItems
 
             if ($user->can('panel_bookings_comments')) {
                 $items['bookings']['items'][] = ['text' => 'Comments', 'url' => '/panel/bookings/comments'];
+            }
+
+            if ($user->can('panel_bookings_my_comments')) {
+                $items['bookings']['items'][] = ['text' => trans('panel.my_comments'), 'url' => '/panel/bookings/my-comments'];
             }
         }
 
