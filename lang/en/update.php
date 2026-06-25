@@ -4911,7 +4911,7 @@ return [
     'location_quality'=>'Location Quality',
     'book_now'=>'Book Now',
     'check_slots'=>'Check Slots',
-    
+    'edit_booking'=>'Edit Booking',    
 
     
 ];
