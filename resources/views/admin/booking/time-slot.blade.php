@@ -393,24 +393,24 @@
                                                             : (string) old('resource_id');
                                                     @endphp
 
+                                                    {{--
+                                                        NOTE: this <select> starts EMPTY on purpose (only the
+                                                        placeholder option below is server-rendered). The full
+                                                        master list of resources is provided to JS separately as
+                                                        JSON (see #resourcesData script tag at the bottom) and
+                                                        the dropdown's real <option> list is built entirely on
+                                                        the client, filtered to the selected booking. This avoids
+                                                        relying on CSS show()/hide() on <option> tags, which native
+                                                        <select> popups do not reliably honor across browsers —
+                                                        that was the cause of resources from the wrong booking
+                                                        still being selectable even though they looked "hidden".
+                                                    --}}
                                                     <select name="resource_id"
                                                             id="resource_id"
-                                                            class="form-control @error('resource_id') is-invalid @enderror">
+                                                            class="form-control @error('resource_id') is-invalid @enderror"
+                                                            disabled>
 
-                                                        <option value="">Select Resource</option>
-
-                                                        @foreach($resources as $resource)
-
-                                                            <option
-                                                                value="{{ $resource->id }}"
-                                                                data-booking="{{ $resource->booking_id }}"
-                                                                {{ $selectedResource === (string) $resource->id ? 'selected' : '' }}>
-
-                                                                #{{ $resource->id }} - {{ $resource->name }}
-
-                                                            </option>
-
-                                                        @endforeach
+                                                        <option value="">Select Booking First</option>
 
                                                     </select>
 
@@ -576,6 +576,24 @@
 
     </div>
 </section>
+
+{{--
+    Full master list of resources, grouped by their booking_id, rendered
+    once as JSON. The JS below uses this as the single source of truth
+    to rebuild the #resource_id dropdown's actual <option> elements every
+    time the booking selection changes — instead of toggling CSS
+    display:none on existing <option> tags (which native <select> popups
+    do not reliably hide/disable for selection across browsers).
+--}}
+<script id="resourcesData" type="application/json">
+    {!! $resources->map(function ($resource) {
+        return [
+            'id'        => (string) $resource->id,
+            'bookingId' => (string) $resource->booking_id,
+            'label'     => '#' . $resource->id . ' - ' . $resource->name,
+        ];
+    })->values()->toJson() !!}
+</script>
 @endsection
 
 @push('scripts')
@@ -585,66 +603,71 @@ $(document).ready(function () {
     var bookingSelect  = $('#booking_id');
     var resourceSelect = $('#resource_id');
 
-    // ============================================================
-    // Yahan PHP se selected resource_id pass ho raha hai
-    // Edit mode ya validation error mein yeh value hogi
-    // ============================================================
+    // Master list of all resources (id, bookingId, label), parsed once from
+    // the JSON the server rendered above. This never gets mutated.
+    var allResources = [];
+    try {
+        allResources = JSON.parse(document.getElementById('resourcesData').textContent || '[]');
+    } catch (e) {
+        allResources = [];
+    }
+
+    // Pre-selected resource (edit mode or validation error re-fill).
+    // Used once on first render, then cleared.
     var preSelectedResourceId = "{{ old('resource_id', !empty($editSlot) ? $editSlot->resource_id : '') }}";
+    var isFirstRender = true;
 
     function filterResources() {
 
-        var selectedBookingId = bookingSelect.val();
+        var selectedBookingId = String(bookingSelect.val() || '');
 
-        // Pehle saare resource options hide karo
-        resourceSelect.find('option').each(function () {
-            var val = $(this).val();
-            // Default empty option hamesha show karo
-            if (val === '') {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
-        });
+        // Rebuild the dropdown from scratch every time. We never rely on
+        // hiding/showing existing <option> elements — only options that
+        // genuinely belong to the selected booking ever exist in the DOM,
+        // so a wrong-booking resource can never be opened or selected,
+        // regardless of browser.
+        resourceSelect.empty();
 
-        // Agar koi booking select nahi ki
-        if (!selectedBookingId || selectedBookingId === '') {
+        if (selectedBookingId === '') {
+            resourceSelect.append($('<option></option>').val('').text('Select Booking First'));
             resourceSelect.val('');
             resourceSelect.prop('disabled', true);
             return;
         }
 
-        // Resource dropdown enable karo
-        resourceSelect.prop('disabled', false);
-
-        // Sirf us booking ke resources show karo
-        resourceSelect.find('option[data-booking]').each(function () {
-            var optionBookingId = String($(this).data('booking'));
-            if (optionBookingId === String(selectedBookingId)) {
-                $(this).show();
-            }
+        var matchingResources = allResources.filter(function (resource) {
+            return resource.bookingId === selectedBookingId;
         });
 
-        // Agar pre-selected resource hai (edit mode)
-        // aur wo is booking ka hai toh usse select karo
-        if (preSelectedResourceId !== '') {
-            var matchFound = false;
-            resourceSelect.find('option[data-booking]:visible').each(function () {
-                if (String($(this).val()) === String(preSelectedResourceId)) {
-                    matchFound = true;
-                }
+        if (!matchingResources.length) {
+            resourceSelect.append($('<option></option>').val('').text('No resources available'));
+            resourceSelect.val('');
+            resourceSelect.prop('disabled', true);
+            return;
+        }
+
+        resourceSelect.prop('disabled', false);
+        resourceSelect.append($('<option></option>').val('').text('Select Resource'));
+
+        matchingResources.forEach(function (resource) {
+            resourceSelect.append(
+                $('<option></option>')
+                    .attr('data-booking', resource.bookingId)
+                    .val(resource.id)
+                    .text(resource.label)
+            );
+        });
+
+        // On first render only (edit mode / validation error re-fill), restore
+        // the previously chosen resource — but only if it truly belongs to
+        // this booking. Otherwise leave it unselected rather than guessing.
+        if (isFirstRender && preSelectedResourceId !== '') {
+            var stillValid = matchingResources.some(function (resource) {
+                return resource.id === preSelectedResourceId;
             });
 
-            if (matchFound) {
-                resourceSelect.val(preSelectedResourceId);
-            } else {
-                resourceSelect.val('');
-            }
-
-            // Ek baar use karne ke baad reset karo
-            // taake booking change par reset ho sake
-            preSelectedResourceId = '';
+            resourceSelect.val(stillValid ? preSelectedResourceId : '');
         } else {
-            // Booking change hone par resource reset
             resourceSelect.val('');
         }
     }
@@ -656,6 +679,7 @@ $(document).ready(function () {
 
     // Page load hone par bhi filter chalao (edit + validation error dono ke liye)
     filterResources();
+    isFirstRender = false;
 
 });
 </script>
