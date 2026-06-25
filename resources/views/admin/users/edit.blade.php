@@ -351,9 +351,9 @@
                                         </li>
 
                                         <li class="nav-item">
-                                            <a class="nav-link {{ (request()->get('tab') == 'purBoo') ? 'active' : '' }}"
-                                                id="purBoo-tab" data-toggle="tab" href="#purBoo"
-                                                role="tab" aria-controls="purBoo"
+                                            <a class="nav-link {{ (request()->get('tab') == 'purchased_bookings') ? 'active' : '' }}"
+                                                id="purchased_bookings-tab" data-toggle="tab" href="#purchased_bookings"
+                                                role="tab" aria-controls="purchased_bookings"
                                                 aria-selected="true">{{ trans('panel.purchased_bookings') }}</a>
                                         </li>
 
@@ -436,7 +436,7 @@
 
                                         <!-- @include('admin.users.editTabs.availability') -->
 
-                                        <!-- @include('admin.users.editTabs.booking_settings') -->
+                                        @include('admin.users.editTabs.booking_settings')
 
                                         @if(!empty($becomeInstructor))
                                             @include('admin.users.editTabs.become_instructor')
@@ -447,10 +447,8 @@
                                         @include('admin.users.editTabs.purchased_bundles')
 
                                         @include('admin.users.editTabs.purchased_products')
-                                        <!-- @include('admin.users.editTabs.purchased_bookings') -->
-                                         <div class="tab-pane active show" id="purBoo">
-    <h1>Hello Test</h1>
-</div>
+                                         @include('admin.users.editTabs.purchased_bookings') 
+                                         
                                         @include('admin.users.editTabs.purchased_booking_bundles')
                                         @include('admin.users.editTabs.topics')
 
