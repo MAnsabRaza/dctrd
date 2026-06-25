@@ -109,16 +109,9 @@
      PHP SETUP
 ════════════════════════════════════════ --}}
 @php
-    $itemKey         = $itemKey ?? ($cart->id ?? '0');
-    $checkoutModules = $checkoutModules ?? collect();
-
-    /*
-    | ✅ FIX: Pehle is_required check tha jis ki wajah se sirf required modules
-    | show hote the. Ab yeh hata diya — jo bhi modules getModulesForEntity()
-    | ne return kiye hain (enabled = true wale), woh sab directly show honge.
-    | is_required sirf validation ke liye hai, show/hide ke liye nahi.
-    */
-    $activeModules = $checkoutModules;
+    $itemKey            = $itemKey ?? ($cart->id ?? '0');
+    $checkoutModules    = $checkoutModules ?? collect();
+    $activeModules      = $checkoutModules->filter(fn($m) => $m->is_active ?? true);
 
     // Grid modules go in the 3-column top row, everything else stacks below
     $gridModules   = $activeModules->filter(fn($m) => in_array($m->name, ['days', 'hours', 'staff_member']));

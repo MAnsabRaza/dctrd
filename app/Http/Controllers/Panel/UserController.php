@@ -318,13 +318,13 @@ class UserController extends Controller
                     'public_message' => (!empty($data['public_message']) and $data['public_message'] == 'on'),
                     'enable_profile_statistics' => (!empty($data['enable_profile_statistics']) and $data['enable_profile_statistics'] == 'on'),
                     'auto_renew_subscription' => (!empty($data['auto_renew_subscription']) and $data['auto_renew_subscription'] == 'on'),
-                    'address' => $data['address'] ?? null,
-                    'city' => $data['city'] ?? null,
-                    'state' => $data['state'] ?? null,
-                    'country' => $data['country'] ?? null,
+                    'lat' => !empty($data['lat']) ? $data['lat'] : $user->lat,
+'lng' => !empty($data['lng']) ? $data['lng'] : $user->lng,
+'address' => !empty($data['address']) ? $data['address'] : $user->address,
+'city'    => !empty($data['city'])    ? $data['city']    : $user->city,
+'state'   => !empty($data['state'])   ? $data['state']   : $user->state,
+'country' => !empty($data['country']) ? $data['country'] : $user->country,
                     'postal_code' => $data['postal_code'] ?? null,
-                    'lat' => $data['lat'] ?? null,
-                    'lng' => $data['lng'] ?? null,
                 ];
 
                 foreach ($unitService->getUnitTypes() as $type) {
