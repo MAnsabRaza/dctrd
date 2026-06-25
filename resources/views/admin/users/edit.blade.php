@@ -401,6 +401,29 @@
     }
 </script>
 
+<script>
+    // Tab click par URL update karo
+    document.querySelectorAll('[data-toggle="tab"]').forEach(function(tab) {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            var tabId = e.target.getAttribute('href').replace('#', '');
+            var url = new URL(window.location);
+            url.searchParams.set('tab', tabId);
+            window.history.pushState({}, '', url);
+        });
+    });
+
+    // Page load par correct tab activate karo
+    document.addEventListener('DOMContentLoaded', function() {
+        var tab = new URLSearchParams(window.location.search).get('tab');
+        if (tab) {
+            var tabLink = document.querySelector('[href="#' + tab + '"]');
+            if (tabLink) {
+                tabLink.click();
+            }
+        }
+    });
+</script>
+
 
     <script>
         var saveSuccessLang = '{{ trans('webinars.success_store') }}';
