@@ -1,5 +1,5 @@
 {{--
-Step 6 — FAQ
+    Step 6 — FAQ
 --}}
 <div class="section-head">
     <div class="badge-icon"><i class="fa fa-question-circle"></i></div>
@@ -17,11 +17,10 @@ Step 6 — FAQ
                     <div class="d-flex align-items-start">
                         <div class="badge-icon mr-3 mt-1"><i class="fa fa-question"></i></div>
                         <div class="flex-grow-1">
-                            <strong class="d-block small mb-1">{{ $faq->title }}</strong>
+                            <strong class="d-block small mb-1">{{ $faq->question }}</strong>
                             <span class="text-muted small">{{ $faq->answer }}</span>
                         </div>
-                        <button type="button" class="btn btn-sm btn-link text-danger remove-faq ml-2"><i
-                                class="fa fa-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-link text-danger remove-faq ml-2"><i class="fa fa-trash"></i></button>
                     </div>
                 </div>
             </div>
@@ -37,9 +36,7 @@ Step 6 — FAQ
 <div class="panel-card mb-0">
     <div class="section-head mb-3">
         <div class="badge-icon"><i class="fa fa-plus"></i></div>
-        <div>
-            <h6>Add a question</h6>
-        </div>
+        <div><h6>Add a question</h6></div>
     </div>
     <div class="form-group">
         <label>Question</label>
@@ -55,57 +52,57 @@ Step 6 — FAQ
 </div>
 
 <script>
-    (function () {
-        @if(!empty($booking->id))
-            const bookingId = {{ $booking->id }};
-            const csrf = '{{ csrf_token() }}';
+(function () {
+    @if(!empty($booking->id))
+    const bookingId = {{ $booking->id }};
+    const csrf = '{{ csrf_token() }}';
 
-            document.getElementById('addFaqBtn')?.addEventListener('click', function () {
-                const title = document.getElementById('newFaqQuestion').value.trim();
-                const answer = document.getElementById('newFaqAnswer').value.trim();
-                if (!title) return;
+    document.getElementById('addFaqBtn')?.addEventListener('click', function () {
+        const question = document.getElementById('newFaqQuestion').value.trim();
+        const answer = document.getElementById('newFaqAnswer').value.trim();
+        if (!question) return;
 
-                fetch(`/panel/bookings/${bookingId}/faqs`, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, answer })
-                })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (!data.success) return;
-                        document.getElementById('emptyFaqHint')?.remove();
-                        const faq = data.faq;
-                        const card = document.createElement('div');
-                        card.className = 'card mb-2 faq-card border';
-                        card.dataset.id = faq.id;
-                        card.innerHTML = `
-                    <div class="card-body py-3">
-                        <div class="d-flex align-items-start">
-                            <div class="badge-icon mr-3 mt-1"><i class="fa fa-question"></i></div>
-                            <div class="flex-grow-1">
-                                <strong class="d-block small mb-1">${faq.question}</strong>
-                                <span class="text-muted small">${faq.answer ?? ''}</span>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-link text-danger remove-faq ml-2"><i class="fa fa-trash"></i></button>
+        fetch(`/panel/bookings/${bookingId}/faqs`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question, answer })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            document.getElementById('emptyFaqHint')?.remove();
+            const faq = data.faq;
+            const card = document.createElement('div');
+            card.className = 'card mb-2 faq-card border';
+            card.dataset.id = faq.id;
+            card.innerHTML = `
+                <div class="card-body py-3">
+                    <div class="d-flex align-items-start">
+                        <div class="badge-icon mr-3 mt-1"><i class="fa fa-question"></i></div>
+                        <div class="flex-grow-1">
+                            <strong class="d-block small mb-1">${faq.question}</strong>
+                            <span class="text-muted small">${faq.answer ?? ''}</span>
                         </div>
-                    </div>`;
-                        document.getElementById('faqList').appendChild(card);
-                        document.getElementById('newFaqQuestion').value = '';
-                        document.getElementById('newFaqAnswer').value = '';
-                    });
-            });
+                        <button type="button" class="btn btn-sm btn-link text-danger remove-faq ml-2"><i class="fa fa-trash"></i></button>
+                    </div>
+                </div>`;
+            document.getElementById('faqList').appendChild(card);
+            document.getElementById('newFaqQuestion').value = '';
+            document.getElementById('newFaqAnswer').value = '';
+        });
+    });
 
-            document.getElementById('faqList')?.addEventListener('click', function (e) {
-                const btn = e.target.closest('.remove-faq');
-                if (!btn) return;
-                const card = btn.closest('.faq-card');
-                fetch(`/panel/bookings/faqs/${card.dataset.id}`, {
-                    method: 'DELETE',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }
-                })
-                    .then(r => r.json())
-                    .then(data => { if (data.success) card.remove(); });
-            });
-        @endif
+    document.getElementById('faqList')?.addEventListener('click', function (e) {
+        const btn = e.target.closest('.remove-faq');
+        if (!btn) return;
+        const card = btn.closest('.faq-card');
+        fetch(`/panel/bookings/faqs/${card.dataset.id}`, {
+            method: 'DELETE',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }
+        })
+        .then(r => r.json())
+        .then(data => { if (data.success) card.remove(); });
+    });
+    @endif
 })();
 </script>

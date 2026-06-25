@@ -201,7 +201,7 @@ class BookingController extends Controller
             $query->with(['resources', 'timeSlots']);
         } elseif ($step == 6) {
             $query->with(['faqs' => function ($q) {
-                $q->orderBy('id', 'asc');
+                $q->orderBy('sort_order', 'asc');
             }]);
         } elseif ($step == 7) {
             // location fields already load with the base query
@@ -659,22 +659,22 @@ class BookingController extends Controller
     |--------------------------------------------------------------------------
     */
 
-  public function storeFaq(Request $request, $bookingId)
-{
-    $booking = $this->findOwnBooking($bookingId);
+    public function storeFaq(Request $request, $bookingId)
+    {
+        $booking = $this->findOwnBooking($bookingId);
 
-    $data = $request->validate([
-        'title'  => 'required|string|max:255',
-        'answer' => 'required|string',
-    ]);
+        $data = $request->validate([
+            'question' => 'required|string|max:500',
+            'answer'   => 'nullable|string',
+        ]);
 
-    $data['creator_id'] = auth()->id();
-    $data['locale']     = app()->getLocale();
+        $data['status'] = true;
+        $data['sort_order'] = $booking->faqs()->count();
 
-    $faq = $booking->faqs()->create($data);
+        $faq = $booking->faqs()->create($data);
 
-    return response()->json(['success' => true, 'faq' => $faq]);
-}
+        return response()->json(['success' => true, 'faq' => $faq]);
+    }
 
     public function destroyFaq($faqId)
     {
