@@ -230,6 +230,7 @@ class BookingController extends Controller
                                     ? Str::slug($request->slug)
                                     : Str::slug($request->title) . '-' . uniqid(),
             'booking_type'     => $request->booking_type,
+            'status'           => $request->status,
             'sub_type'         => $request->sub_type,
             'description'      => $request->description,
             'requirements'     => $request->requirements,
@@ -280,7 +281,6 @@ class BookingController extends Controller
             'lng'              => $request->lng ?: null,
 
             // Status & misc
-            'status'           => 'draft',
             'featured'         => $request->boolean('featured'),
             'forum_enabled'    => $request->boolean('forum_enabled'),
             'comments_enabled' => $request->boolean('comments_enabled'),
@@ -382,6 +382,7 @@ class BookingController extends Controller
                                     ? Str::slug($request->slug)
                                     : $booking->slug,
             'booking_type'     => $request->booking_type,
+            'status'           => $request->status,
             'sub_type'         => $request->sub_type,
             'description'      => $request->description,
             'requirements'     => $request->requirements,

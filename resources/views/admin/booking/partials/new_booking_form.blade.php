@@ -2,7 +2,7 @@
     $booking = $editBooking ?? null;
     $meta = old('meta', $booking->meta ?? []);
     $tags = old('tags', !empty($meta['tags']) ? implode(', ', (array) $meta['tags']) : '');
-    $field = fn ($name, $default = null) => old($name, !empty($booking) ? $booking->{$name} : $default);
+    $field = fn($name, $default = null) => old($name, !empty($booking) ? $booking->{$name} : $default);
     $checked = function ($name, $default = false) use ($booking) {
         return old($name, !empty($booking) ? (bool) $booking->{$name} : $default) ? 'checked' : '';
     };
@@ -77,6 +77,44 @@
                     @error('slug')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
+          <div class="form-group">
+    <label class="input-label">
+        Status <span class="text-danger">*</span>
+    </label>
+
+    <select
+        name="status"
+        id="status"
+        class="form-control @error('status') is-invalid @enderror"
+        required
+    >
+        <option value="">Select Status</option>
+
+        <option value="draft" {{ $field('status') == 'draft' ? 'selected' : '' }}>
+            Draft
+        </option>
+
+        <option value="pending" {{ $field('status') == 'pending' ? 'selected' : '' }}>
+            Pending
+        </option>
+
+        <option value="published" {{ $field('status') == 'published' ? 'selected' : '' }}>
+            Published
+        </option>
+
+        <option value="rejected" {{ $field('status') == 'rejected' ? 'selected' : '' }}>
+            Rejected
+        </option>
+
+        <option value="inactive" {{ $field('status') == 'inactive' ? 'selected' : '' }}>
+            Inactive
+        </option>
+    </select>
+
+    @error('status')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
                 <div class="row">
                  
                     <div class="col-12 col-md-6">
@@ -148,25 +186,25 @@
 
         <div class="row">
             @foreach([
-                'children_allowed' => ['Children Allowed', true],
-                'instant_booking' => ['Instant Booking', true],
-                'requires_approval' => ['Requires Approval', false],
-                'allow_reschedule' => ['Allow Reschedule', true],
-                'waitlist_enabled' => ['Waitlist Enabled', false],
-                'forum_enabled' => ['Forum Enabled', false],
-                'comments_enabled' => ['Comments Enabled', true],
-                'reviews_enabled' => ['Reviews Enabled', true],
-                'featured' => ['Featured', false],
-            ] as $name => [$label, $default])
-                <div class="col-12 col-md-4">
-                    <div class="form-group d-flex align-items-center">
-                        <div class="custom-control custom-switch">
-                            <input type="checkbox" name="{{ $name }}" id="booking_{{ $name }}" value="1" class="custom-control-input" {{ $checked($name, $default) }}>
-                            <label class="custom-control-label" for="booking_{{ $name }}"></label>
+                    'children_allowed' => ['Children Allowed', true],
+                    'instant_booking' => ['Instant Booking', true],
+                    'requires_approval' => ['Requires Approval', false],
+                    'allow_reschedule' => ['Allow Reschedule', true],
+                    'waitlist_enabled' => ['Waitlist Enabled', false],
+                    'forum_enabled' => ['Forum Enabled', false],
+                    'comments_enabled' => ['Comments Enabled', true],
+                    'reviews_enabled' => ['Reviews Enabled', true],
+                    'featured' => ['Featured', false],
+                ] as $name => [$label, $default])
+                    <div class="col-12 col-md-4">
+                        <div class="form-group d-flex align-items-center">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" name="{{ $name }}" id="booking_{{ $name }}" value="1" class="custom-control-input" {{ $checked($name, $default) }}>
+                                <label class="custom-control-label" for="booking_{{ $name }}"></label>
+                            </div>
+                            <label for="booking_{{ $name }}" class="mb-0 ml-2">{{ $label }}</label>
                         </div>
-                        <label for="booking_{{ $name }}" class="mb-0 ml-2">{{ $label }}</label>
                     </div>
-                </div>
             @endforeach
         </div>
        
@@ -179,7 +217,7 @@
             <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Cost per Block <span class="info-icon">i</span></label><input type="number" name="price_per" step="0.01" min="0" value="{{ $field('price_per') }}" class="form-control"></div></div>
             <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Price Unit</label><input type="text" name="price_unit" value="{{ $field('price_unit') }}" class="form-control" placeholder="e.g. per hour, per session"></div></div>
             <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Display / Discount Price <span class="info-icon">i</span></label><input type="number" name="discount_price" step="0.01" min="0" value="{{ $field('discount_price') }}" class="form-control"></div></div>
-            <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Currency</label><select name="currency" data-plugin-selectTwo class="form-control">@foreach(['USD','EUR','GBP','PKR','AED','SAR','INR'] as $cur)<option value="{{ $cur }}" {{ $field('currency', 'USD') == $cur ? 'selected' : '' }}>{{ $cur }}</option>@endforeach</select></div></div>
+            <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Currency</label><select name="currency" data-plugin-selectTwo class="form-control">@foreach(['USD', 'EUR', 'GBP', 'PKR', 'AED', 'SAR', 'INR'] as $cur)<option value="{{ $cur }}" {{ $field('currency', 'USD') == $cur ? 'selected' : '' }}>{{ $cur }}</option>@endforeach</select></div></div>
             <div class="col-12 col-md-3"><div class="form-group d-flex align-items-center mt-4"><div class="custom-control custom-switch"><input type="checkbox" name="deposit_enabled" id="booking_deposit_enabled" value="1" class="custom-control-input" {{ $checked('deposit_enabled', false) }}><label class="custom-control-label" for="booking_deposit_enabled"></label></div><label for="booking_deposit_enabled" class="mb-0 ml-2">Deposit Enabled</label></div></div>
         </div>
         <div id="bookingDepositPanel" class="booking-deposit-panel">
