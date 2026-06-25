@@ -206,6 +206,7 @@
     var selector = 'input[name="address_line"], input[name="address"]';
     document.querySelectorAll(selector).forEach(function (input) {
         if (input.dataset.locSuggestReady === '1') return;
+          if (input.closest('[data-location-picker]')) return;
         input.dataset.locSuggestReady = '1';
 
         var suggestionsEl = document.createElement('div');
