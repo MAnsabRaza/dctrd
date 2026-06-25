@@ -17,6 +17,7 @@ return [
 'unfollow' => 'Unfollow',
 'booking_comments'=>'Booking comments',
 'my_booking_comments'=>'My booking comments',
+'purchased_bookings'=>'Purchased bookings',
 
 'webinars' => 'Courses',
 'webinar' => 'Course',
