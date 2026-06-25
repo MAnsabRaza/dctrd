@@ -33,6 +33,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -468,6 +469,9 @@ public function update(Request $request)
         // ── DB update ────────────────────────────────────────────────
         if (!empty($updateData)) {
             $user->update($updateData);
+            Log::info('After User Update', [
+                 'address' => $user->fresh()->address,
+            ]);
         }
         
 
