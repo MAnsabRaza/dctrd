@@ -90,5 +90,8 @@ return [
     'section_courses' => 'Courses',
     'section_course_bundles' => 'Course Bundles',
     'saving'=>'Saving...',
-    ''
+    'always_required'=>'Always Required',
+    'saved_successfully'=>'Saved Successfully',
+    'children'=>'Children',
+    'adults'=>'Adults',
 ];
