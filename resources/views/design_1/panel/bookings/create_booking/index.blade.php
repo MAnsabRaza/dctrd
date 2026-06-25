@@ -235,7 +235,7 @@
         <form method="POST" action="{{ route('panel.bookings.store') }}" enctype="multipart/form-data" id="bookingStepForm">
             @csrf
     @else
-        <form method="POST" action="{{ route('panel.bookings.update.post', $booking->id) }}" enctype="multipart/form-data" id="bookingStepForm">
+        <form method="POST" action="{{ route('panel.bookings.update.post', $booking->id) }}" enctype="multipart/form-data" id="bookingStepForm"></form>
             @csrf
             <input type="hidden" name="current_step" value="{{ $currentStep }}">
     @endif
