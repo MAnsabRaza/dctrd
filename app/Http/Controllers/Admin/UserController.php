@@ -986,14 +986,20 @@ class UserController extends Controller
    private function getPurchasedBookingsData($user)
 {
     try {
+        \Log::info('getPurchasedBookingsData START', ['user_id' => $user->id]);
+
         $baseQuery = BookingOrder::whereNotNull('booking_id')
             ->where('buyer_id', $user->id)
             ->with(['booking.creator', 'sale']);
+
+        \Log::info('baseQuery built');
 
         $manualAddedBookings = (clone $baseQuery)
             ->whereNull('sale_id')
             ->orderBy('created_at', 'desc')
             ->get();
+
+        \Log::info('manualAddedBookings', ['count' => $manualAddedBookings->count()]);
 
         $manualRemovedBookings = BookingOrder::onlyTrashed()
             ->whereNotNull('booking_id')
@@ -1003,36 +1009,45 @@ class UserController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        \Log::info('manualRemovedBookings', ['count' => $manualRemovedBookings->count()]);
+
         $purchasedBookings = (clone $baseQuery)
             ->whereNotNull('sale_id')
             ->orderBy('created_at', 'desc')
             ->get();
+
+        \Log::info('purchasedBookings', ['count' => $purchasedBookings->count()]);
 
         $availableBookings = Booking::query()
             ->where('status', 'published')
             ->orderBy('title')
             ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']);
 
+        \Log::info('availableBookings', ['count' => $availableBookings->count()]);
+
+        \Log::info('getPurchasedBookingsData END — all OK');
+
         return [
-            'availableBookings'    => $availableBookings,
-            'manualAddedBookings'  => $manualAddedBookings,
-            'manualRemovedBookings'=> $manualRemovedBookings,
-            'purchasedBookings'    => $purchasedBookings,
+            'availableBookings'     => $availableBookings,
+            'manualAddedBookings'   => $manualAddedBookings,
+            'manualRemovedBookings' => $manualRemovedBookings,
+            'purchasedBookings'     => $purchasedBookings,
         ];
 
     } catch (\Throwable $e) {
-        // ✅ Log mein error save hoga
-        \Log::error('getPurchasedBookingsData error: ' . $e->getMessage(), [
+        \Log::error('getPurchasedBookingsData FAILED', [
             'user_id' => $user->id,
+            'message' => $e->getMessage(),
+            'file'    => $e->getFile(),
+            'line'    => $e->getLine(),
             'trace'   => $e->getTraceAsString(),
         ]);
 
-        // Blank arrays return karo taake page crash na ho
         return [
-            'availableBookings'    => collect(),
-            'manualAddedBookings'  => collect(),
-            'manualRemovedBookings'=> collect(),
-            'purchasedBookings'    => collect(),
+            'availableBookings'     => collect(),
+            'manualAddedBookings'   => collect(),
+            'manualRemovedBookings' => collect(),
+            'purchasedBookings'     => collect(),
         ];
     }
 }
