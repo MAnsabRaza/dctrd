@@ -214,6 +214,7 @@ class BookingController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
             'slug'           => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')],
             'creator_id'     => 'nullable|exists:users,id',
+            'status'         => 'nullable|in:draft,pending,published,rejected,inactive',
             'tax'            => 'nullable|numeric|min:0|max:999.99',
             'commission'     => 'nullable|numeric|min:0|max:999.99',
             'deposit_amount' => 'nullable|numeric|min:0',
@@ -230,7 +231,7 @@ class BookingController extends Controller
                                     ? Str::slug($request->slug)
                                     : Str::slug($request->title) . '-' . uniqid(),
             'booking_type'     => $request->booking_type,
-            'status'           => $request->status,
+            'status'           => $request->status ?: 'draft',
             'sub_type'         => $request->sub_type,
             'description'      => $request->description,
             'requirements'     => $request->requirements,
@@ -368,6 +369,7 @@ class BookingController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
             'slug'           => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')->ignore($booking->id)],
             'creator_id'     => 'nullable|exists:users,id',
+            'status'         => 'nullable|in:draft,pending,published,rejected,inactive',
             'tax'            => 'nullable|numeric|min:0|max:999.99',
             'commission'     => 'nullable|numeric|min:0|max:999.99',
             'deposit_amount' => 'nullable|numeric|min:0',
@@ -382,7 +384,15 @@ class BookingController extends Controller
                                     ? Str::slug($request->slug)
                                     : $booking->slug,
             'booking_type'     => $request->booking_type,
-            'status'           => $request->status,
+            // FIX: this was previously defined a SECOND time further down as
+            // 'status' => 'draft' (hardcoded). In a PHP array literal the last
+            // occurrence of a duplicate key wins, so that line was silently
+            // overwriting whatever status the admin picked in the form —
+            // every update was forced back to "draft" no matter what.
+            // It has been removed below; this single line is now the only
+            // place 'status' is set, and it correctly falls back to the
+            // booking's current status if nothing was submitted.
+            'status'           => $request->status ?: $booking->status,
             'sub_type'         => $request->sub_type,
             'description'      => $request->description,
             'requirements'     => $request->requirements,
@@ -433,7 +443,6 @@ class BookingController extends Controller
             'lng'              => $request->lng ?: null,
 
             // Status & misc
-            'status'           => 'draft',
             'featured'         => $request->boolean('featured'),
             'forum_enabled'    => $request->boolean('forum_enabled'),
             'comments_enabled' => $request->boolean('comments_enabled'),

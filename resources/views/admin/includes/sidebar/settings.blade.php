@@ -32,6 +32,14 @@
     </li>
 @endcan
 
+@can('admin_checkout_modules')
+    <li class="nav-item {{ request()->is(getAdminPanelUrl('/checkout-modules*', false)) ? 'active' : '' }}">
+        <a href="{{ getAdminPanelUrl() }}/checkout-modules" class="nav-link">
+            <x-iconsax-bul-bag-2 class="icons" width="24px" height="24px" />
+            <span>{{ trans('admin/main.checkout_modules') }}</span>
+        </a>
+    </li>
+@endcan
 
 @can('admin_translator')
     <li class="nav-item {{ (request()->is(getAdminPanelUrl('/translator*', false))) ? 'active' : '' }}">

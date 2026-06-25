@@ -12,7 +12,11 @@
       method="POST"
       class="booking-admin-form">
     {{ csrf_field() }}
-    <input type="hidden" name="status" value="draft">
+    {{-- NOTE: the "status" hidden input that used to sit here was removed.
+         It was named "status" — same name as the real <select name="status">
+         further below — which is a duplicate-field footgun (two fields with
+         the same name conflicting with each other on submit). The select
+         below is the single source of truth for status now. --}}
     <input type="hidden" name="creator_id" value="{{ auth()->id() }}">
 
     <div class="booking-section">
@@ -77,46 +81,46 @@
                     @error('slug')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
-          <div class="form-group">
-    <label class="input-label">
-        Status <span class="text-danger">*</span>
-    </label>
+                <div class="form-group">
+                    <label class="input-label">
+                        Status <span class="text-danger">*</span>
+                    </label>
 
-    <select
-        name="status"
-        id="status"
-        class="form-control @error('status') is-invalid @enderror"
-        required
-    >
-        <option value="">Select Status</option>
+                    <select
+                        name="status"
+                        id="status"
+                        class="form-control @error('status') is-invalid @enderror"
+                        required
+                    >
+                        <option value="">Select Status</option>
 
-        <option value="draft" {{ $field('status') == 'draft' ? 'selected' : '' }}>
-            Draft
-        </option>
+                        <option value="draft" {{ $field('status', 'draft') == 'draft' ? 'selected' : '' }}>
+                            Draft
+                        </option>
 
-        <option value="pending" {{ $field('status') == 'pending' ? 'selected' : '' }}>
-            Pending
-        </option>
+                        <option value="pending" {{ $field('status') == 'pending' ? 'selected' : '' }}>
+                            Pending
+                        </option>
 
-        <option value="published" {{ $field('status') == 'published' ? 'selected' : '' }}>
-            Published
-        </option>
+                        <option value="published" {{ $field('status') == 'published' ? 'selected' : '' }}>
+                            Published
+                        </option>
 
-        <option value="rejected" {{ $field('status') == 'rejected' ? 'selected' : '' }}>
-            Rejected
-        </option>
+                        <option value="rejected" {{ $field('status') == 'rejected' ? 'selected' : '' }}>
+                            Rejected
+                        </option>
 
-        <option value="inactive" {{ $field('status') == 'inactive' ? 'selected' : '' }}>
-            Inactive
-        </option>
-    </select>
+                        <option value="inactive" {{ $field('status') == 'inactive' ? 'selected' : '' }}>
+                            Inactive
+                        </option>
+                    </select>
 
-    @error('status')
-        <div class="invalid-feedback">{{ $message }}</div>
-    @enderror
-</div>
+                    @error('status')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <div class="row">
-                 
                     <div class="col-12 col-md-6">
                         <div class="form-group">
                             <label class="input-label">Tax</label>
@@ -124,8 +128,6 @@
                         </div>
                     </div>
                 </div>
-
-             
 
                 <div class="form-group">
                     <label class="input-label">Thumbnail / Featured Image</label>
@@ -182,7 +184,7 @@
             <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Cutoff Time (hours)</label><input type="number" name="cutoff_time_hours" min="0" value="{{ $field('cutoff_time_hours', 0) }}" class="form-control"></div></div>
             <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Reschedule Before (hours)</label><input type="number" name="reschedule_before_hours" min="0" value="{{ $field('reschedule_before_hours', 24) }}" class="form-control"></div></div>
             <div class="col-12 col-md-3"><div class="form-group"><label class="input-label">Inventory</label><input type="number" name="inventory" min="0" value="{{ $field('inventory') }}" class="form-control" placeholder="Leave blank for unlimited"></div></div>
-               </div>
+        </div>
 
         <div class="row">
             @foreach([
@@ -207,7 +209,6 @@
                     </div>
             @endforeach
         </div>
-       
     </div>
 
     <div class="booking-section">
@@ -230,7 +231,7 @@
 
     <div class="booking-section">
         <h3 class="booking-section-title">Additional Information</h3>
-       
+
         <div class="form-group">
             <label class="input-label">Category</label>
             <div class="input-group">
@@ -247,7 +248,6 @@
         </div>
     </div>
 
-     
     <div class="booking-section">
         <div class="text-gray-500 text-small mb-3">Check this if booking requires admin approval/confirmation.</div>
         <div class="form-group">
