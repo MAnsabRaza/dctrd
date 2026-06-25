@@ -1,5 +1,5 @@
-<div class="tab-pane mt-0 fade {{ (request()->get('tab') == 'purchased_bookings') ? 'active show' : '' }}" id="purchased_bookings" role="tabpanel" aria-labelledby="purchased_bookings-tab">
-    <div class="row">
+<div class="tab-pane mt-0 fade active show" id="purchased_bookings" role="tabpanel" aria-labelledby="purchased_bookings-tab">
+<div class="row">
         <div class="col-12 col-md-6">
             <h5 class="section-title after-line">Add Booking to User</h5>
 

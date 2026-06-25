@@ -285,15 +285,11 @@
     </a>
 </li>
 
-<li class="nav-item">
-    <a class="nav-link {{ (request()->get('tab') == 'purchased_bookings') ? 'active' : '' }}" 
-       id="purchased_bookings-tab" 
-       data-toggle="tab" 
-       href="#purchased_bookings" 
-       role="tab">
-       Purchased Bookings
-    </a>
-</li>
+<a class="nav-link {{ (request()->get('tab') == 'purchased_bookings') ? 'active' : '' }}" 
+   href="{{ getAdminPanelUrl() }}/users/{{ $user->id }}/edit?tab=purchased_bookings" 
+   role="tab">
+   Purchased Bookings
+</a>
 
 <li class="nav-item">
     <a class="nav-link {{ (request()->get('tab') == 'purchased_booking_bundles') ? 'active' : '' }}" 
