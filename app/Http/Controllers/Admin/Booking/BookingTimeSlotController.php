@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class BookingTimeSlotController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('admin_booking_time_slots');
 
@@ -22,15 +22,15 @@ class BookingTimeSlotController extends Controller
             ->orderBy('start_time')
             ->paginate(20);
 
-        $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
+        $bookings  = Booking::orderBy('id', 'desc')->get(['id', 'title']);
         $resources = BookingResource::orderBy('name')->get(['id', 'booking_id', 'name']);
 
         return view('admin.booking.time-slot', [
-            'pageTitle'  => 'Booking Time Slots',
-            'timeSlots'  => $timeSlots,
-            'bookings'   => $bookings,
-            'resources'  => $resources,
-            'editSlot'   => null,
+            'pageTitle' => 'Booking Time Slots',
+            'timeSlots' => $timeSlots,
+            'bookings'  => $bookings,
+            'resources' => $resources,
+            'editSlot'  => null,
         ]);
     }
 
@@ -43,24 +43,29 @@ class BookingTimeSlotController extends Controller
         ]);
 
         $validated = $request->validate([
-            'booking_id'    => 'required|exists:bookings,id',
-            'resource_id'   => 'nullable|exists:booking_resources,id',
-            'day_of_week'   => 'required|array|min:1',
-            'day_of_week.*' => 'required|in:1,2,3,4,5,6,7',
-            'start_time'    => 'required|date_format:H:i',
-            'end_time'      => 'required|date_format:H:i|after:start_time',
+            'booking_id'       => 'required|exists:bookings,id',
+            'resource_id'      => 'nullable|exists:booking_resources,id',
+            'day_of_week'      => 'required|array|min:1',
+            'day_of_week.*'    => 'required|in:1,2,3,4,5,6,7',
+            'start_time'       => 'required|date_format:H:i',
+            'end_time'         => 'required|date_format:H:i|after:start_time',
             'duration_minutes' => 'required|integer|min:1',
             'buffer_minutes'   => 'nullable|integer|min:0',
-            'max_bookings'  => 'required|integer|min:1',
-            'status'        => 'required|boolean',
+            'max_bookings'     => 'required|integer|min:1',
+            'status'           => 'required|boolean',
         ]);
 
-        $validated['resource_id'] = !empty($validated['resource_id']) ? $validated['resource_id'] : null;
-       $validated['duration_minutes'] = (int) $validated['duration_minutes'];
-        $validated['max_bookings'] = (int) $validated['max_bookings'];
-        $validated['status'] = (int) $validated['status'];
+        $validated['resource_id']      = !empty($validated['resource_id']) ? $validated['resource_id'] : null;
+        $validated['buffer_minutes']   = isset($validated['buffer_minutes']) ? (int) $validated['buffer_minutes'] : 0;
+        $validated['duration_minutes'] = (int) $validated['duration_minutes'];
+        $validated['max_bookings']     = (int) $validated['max_bookings'];
+        $validated['status']           = (int) $validated['status'];
 
-        if (!empty($validated['resource_id']) && !BookingResource::where('id', $validated['resource_id'])->where('booking_id', $validated['booking_id'])->exists()) {
+        if (!empty($validated['resource_id']) &&
+            !BookingResource::where('id', $validated['resource_id'])
+                ->where('booking_id', $validated['booking_id'])
+                ->exists()
+        ) {
             return back()
                 ->withInput()
                 ->withErrors(['resource_id' => 'Selected resource does not belong to the selected booking.']);
@@ -74,7 +79,7 @@ class BookingTimeSlotController extends Controller
             ->with('success', 'Time slot created successfully.');
     }
 
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
         $this->authorize('admin_booking_time_slots_edit');
 
@@ -86,7 +91,7 @@ class BookingTimeSlotController extends Controller
             ->orderBy('start_time')
             ->paginate(20);
 
-        $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
+        $bookings  = Booking::orderBy('id', 'desc')->get(['id', 'title']);
         $resources = BookingResource::orderBy('name')->get(['id', 'booking_id', 'name']);
 
         return view('admin.booking.time-slot', [
@@ -109,25 +114,29 @@ class BookingTimeSlotController extends Controller
         ]);
 
         $validated = $request->validate([
-            'booking_id'    => 'required|exists:bookings,id',
-            'resource_id'   => 'nullable|exists:booking_resources,id',
-            'day_of_week'   => 'required|array|min:1',
-            'day_of_week.*' => 'required|in:1,2,3,4,5,6,7',
-            'start_time'    => 'required|date_format:H:i',
-            'end_time'      => 'required|date_format:H:i|after:start_time',
+            'booking_id'       => 'required|exists:bookings,id',
+            'resource_id'      => 'nullable|exists:booking_resources,id',
+            'day_of_week'      => 'required|array|min:1',
+            'day_of_week.*'    => 'required|in:1,2,3,4,5,6,7',
+            'start_time'       => 'required|date_format:H:i',
+            'end_time'         => 'required|date_format:H:i|after:start_time',
             'duration_minutes' => 'required|integer|min:1',
             'buffer_minutes'   => 'nullable|integer|min:0',
-            'max_bookings'  => 'required|integer|min:1',
-            'status'        => 'required|boolean',
+            'max_bookings'     => 'required|integer|min:1',
+            'status'           => 'required|boolean',
         ]);
 
-        $validated['resource_id'] = !empty($validated['resource_id']) ? $validated['resource_id'] : null;
-        $validated['buffer_minutes'] = $validated['buffer_minutes'] !== null && $validated['buffer_minutes'] !== '' ? (int) $validated['buffer_minutes'] : 0;
+        $validated['resource_id']      = !empty($validated['resource_id']) ? $validated['resource_id'] : null;
+        $validated['buffer_minutes']   = isset($validated['buffer_minutes']) ? (int) $validated['buffer_minutes'] : 0;
         $validated['duration_minutes'] = (int) $validated['duration_minutes'];
-        $validated['max_bookings'] = (int) $validated['max_bookings'];
-        $validated['status'] = (int) $validated['status'];
+        $validated['max_bookings']     = (int) $validated['max_bookings'];
+        $validated['status']           = (int) $validated['status'];
 
-        if (!empty($validated['resource_id']) && !BookingResource::where('id', $validated['resource_id'])->where('booking_id', $validated['booking_id'])->exists()) {
+        if (!empty($validated['resource_id']) &&
+            !BookingResource::where('id', $validated['resource_id'])
+                ->where('booking_id', $validated['booking_id'])
+                ->exists()
+        ) {
             return back()
                 ->withInput()
                 ->withErrors(['resource_id' => 'Selected resource does not belong to the selected booking.']);
