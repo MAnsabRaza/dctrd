@@ -1,57 +1,53 @@
 <div class="tab-pane mt-0 fade {{ (request()->get('tab') == 'purchased_bookings') ? 'active show' : '' }}" id="purchased_bookings" role="tabpanel" aria-labelledby="purchased_bookings-tab">
     <div class="row">
-            <div class="col-12 col-md-6">
-                <h5 class="section-title after-line">Add Booking to User</h5>
+        <div class="col-12 col-md-6">
+            <h5 class="section-title after-line">Add Booking to User</h5>
 
-                <form action="{{ getAdminPanelUrl() }}/users/{{ $user->id }}/booking-orders/store" method="post">
-                    {{ csrf_field() }}
-                    <input type="hidden" name="item_type" value="booking">
+            <form action="{{ getAdminPanelUrl() }}/users/{{ $user->id }}/booking-orders/store" method="post">
+                {{ csrf_field() }}
+                <input type="hidden" name="item_type" value="booking">
 
-                    <div class="form-group">
-                        <label class="input-label">Booking</label>
-                        <select name="booking_id" class="form-control select2" data-placeholder="Search Bookings">
-                            <option value="">Search Bookings</option>
-                            @foreach($availableBookings ?? [] as $booking)
-                                <option value="{{ $booking->id }}">
-                                    #{{ $booking->id }} - {{ $booking->title }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label class="input-label">Booking</label>
+                    <select name="booking_id" class="form-control select2" data-placeholder="Search Bookings">
+                        <option value="">Search Bookings</option>
+                        @foreach($availableBookings ?? [] as $booking)
+                            <option value="{{ $booking->id }}">
+                                #{{ $booking->id }} - {{ $booking->title }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-                    <div class="row">
-                        <div class="col-12 col-md-6">
-                            <div class="form-group">
-                                <label class="input-label">Booking Date</label>
-                                <input type="date" name="booking_date" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <div class="form-group">
-                                <label class="input-label">Persons</label>
-                                <input type="number" name="persons" min="1" value="1" class="form-control">
-                            </div>
+                <div class="row">
+                    <div class="col-12 col-md-6">
+                        <div class="form-group">
+                            <label class="input-label">Booking Date</label>
+                            <input type="date" name="booking_date" class="form-control">
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label class="input-label">Notes</label>
-                        <textarea name="notes" rows="3" class="form-control"></textarea>
+                    <div class="col-12 col-md-6">
+                        <div class="form-group">
+                            <label class="input-label">Persons</label>
+                            <input type="number" name="persons" min="1" value="1" class="form-control">
+                        </div>
                     </div>
+                </div>
 
-                    <button type="submit" class="btn btn-primary">
-                        <x-iconsax-lin-calendar-add class="icons text-white mr-1" width="18px" height="18px"/>
-                        {{ trans('admin/main.submit') }}
-                    </button>
-                </form>
-            </div>
-       
+                <div class="form-group">
+                    <label class="input-label">Notes</label>
+                    <textarea name="notes" rows="3" class="form-control"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    {{ trans('admin/main.submit') }}
+                </button>
+            </form>
+        </div>
 
         <div class="col-12">
             <div class="mt-5">
                 <h5 class="section-title after-line">Manually Added Bookings</h5>
-
                 <div class="table-responsive mt-3">
                     <table class="table custom-table table-md">
                         <tr>
@@ -59,9 +55,7 @@
                             <th>{{ trans('admin/main.price') }}</th>
                             <th>{{ trans('update.provider') }}</th>
                             <th class="text-center">{{ trans('panel.purchase_date') }}</th>
-                            @can('admin_users_edit')
-                                <th class="text-center">{{ trans('admin/main.actions') }}</th>
-                            @endcan
+                            <th class="text-center">{{ trans('admin/main.actions') }}</th>
                         </tr>
 
                         @forelse($manualAddedBookings ?? [] as $order)
@@ -79,16 +73,14 @@
                                 </td>
                                 <td>{{ $order->booking->creator->full_name ?? '-' }}</td>
                                 <td class="text-center">{{ dateTimeFormat($order->created_at,'j M Y | H:i') }}</td>
-                                @can('admin_users_edit')
-                                    <td class="text-center">
-                                        <form action="{{ getAdminPanelUrl() }}/users/{{ $user->id }}/booking-orders/{{ $order->id }}/delete" method="post" onsubmit="return confirm('{{ trans('admin/main.are_you_sure') }}');">
-                                            {{ csrf_field() }}
-                                            <button type="submit" class="btn btn-sm btn-icon" title="Remove">
-                                                <x-iconsax-lin-trash class="icons text-danger" width="18px" height="18px"/>
-                                            </button>
-                                        </form>
-                                    </td>
-                                @endcan
+                                <td class="text-center">
+                                    <form action="{{ getAdminPanelUrl() }}/users/{{ $user->id }}/booking-orders/{{ $order->id }}/delete" method="post" onsubmit="return confirm('{{ trans('admin/main.are_you_sure') }}');">
+                                        {{ csrf_field() }}
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Remove">
+                                            Remove
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
                         @empty
                             <tr>
@@ -101,7 +93,6 @@
 
             <div class="mt-5">
                 <h5 class="section-title after-line">Manually Removed Bookings</h5>
-
                 <div class="table-responsive mt-3">
                     <table class="table custom-table table-md">
                         <tr>
@@ -136,7 +127,6 @@
 
             <div class="mt-5">
                 <h5 class="section-title after-line">Purchased Bookings</h5>
-
                 <div class="table-responsive mt-3">
                     <table class="table custom-table table-md">
                         <tr>

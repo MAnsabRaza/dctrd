@@ -983,8 +983,9 @@ class UserController extends Controller
      * filled came from a real checkout. Soft-deleted rows are bookings an
      * admin manually removed access to.
      */
-    private function getPurchasedBookingsData($user)
-    {
+   private function getPurchasedBookingsData($user)
+{
+    try {
         $baseQuery = BookingOrder::whereNotNull('booking_id')
             ->where('buyer_id', $user->id)
             ->with(['booking.creator', 'sale']);
@@ -1013,12 +1014,28 @@ class UserController extends Controller
             ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']);
 
         return [
-            'availableBookings' => $availableBookings,
-            'manualAddedBookings' => $manualAddedBookings,
-            'manualRemovedBookings' => $manualRemovedBookings,
-            'purchasedBookings' => $purchasedBookings,
+            'availableBookings'    => $availableBookings,
+            'manualAddedBookings'  => $manualAddedBookings,
+            'manualRemovedBookings'=> $manualRemovedBookings,
+            'purchasedBookings'    => $purchasedBookings,
+        ];
+
+    } catch (\Throwable $e) {
+        // ✅ Log mein error save hoga
+        \Log::error('getPurchasedBookingsData error: ' . $e->getMessage(), [
+            'user_id' => $user->id,
+            'trace'   => $e->getTraceAsString(),
+        ]);
+
+        // Blank arrays return karo taake page crash na ho
+        return [
+            'availableBookings'    => collect(),
+            'manualAddedBookings'  => collect(),
+            'manualRemovedBookings'=> collect(),
+            'purchasedBookings'    => collect(),
         ];
     }
+}
 
     /**
      * Same logic as getPurchasedBookingsData(), but for the bundle_id side
