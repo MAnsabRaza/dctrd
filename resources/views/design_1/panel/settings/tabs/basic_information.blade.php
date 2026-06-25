@@ -95,7 +95,7 @@
                 @include('partials._location_picker', [
                     'locationModel' => $user,
                     'addressName' => 'address',
-                    'showAjaxSave' => true,
+                    'showAjaxSave' => false,
                 ])
             </div>
 
