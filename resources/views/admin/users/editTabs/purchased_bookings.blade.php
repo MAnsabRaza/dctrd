@@ -1,6 +1,6 @@
-<div class="tab-pane mt-0 fade active show" id="purchased_bookings" role="tabpanel" aria-labelledby="purchased_bookings-tab">
+<div class="tab-pane mt-0 fade active show" id="purchased_bookings" role="tabpanel" aria-labelledby="purchased_bookings-tab"></div>
 <div class="row">
-        <!-- <div class="col-12 col-md-6">
+        <div class="col-12 col-md-6">
             <h5 class="section-title after-line">Add Booking to User</h5>
 
             <form action="{{ getAdminPanelUrl() }}/users/{{ $user->id }}/booking-orders/store" method="post">
@@ -159,9 +159,6 @@
                     </table>
                 </div>
             </div>
-        </div> -->
-
-
-        hello
+        </div>
     </div>
 </div>
