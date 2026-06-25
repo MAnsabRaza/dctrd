@@ -182,6 +182,7 @@ return [
     'my_articles' => 'My Articles',
     'edit_blog' => 'Edit Blog Post',
     'comments_section' => 'Enable Comments',
+    'edit_booking' => 'Edit Booking',
 
     'booking_rate_plan' => 'Rate Plans',
     'select_booking' => 'Select Booking',

@@ -380,6 +380,12 @@
 
 @push('scripts_bottom')
 
+<script>
+    function toggleUserLocation(show) {
+        var panel = document.getElementById('userLocationPanel');
+        if (panel) panel.style.display = show ? '' : 'none';
+    }
+</script>
 
 
     <script>
