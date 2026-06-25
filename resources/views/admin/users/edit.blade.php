@@ -351,9 +351,9 @@
                                         </li>
 
                                         <li class="nav-item">
-                                            <a class="nav-link {{ (request()->get('tab') == 'purchasedBookings') ? 'active' : '' }}"
-                                                id="purchasedBookings-tab" data-toggle="tab" href="#purchasedBookings"
-                                                role="tab" aria-controls="purchasedBookings"
+                                            <a class="nav-link {{ (request()->get('tab') == 'purBoo') ? 'active' : '' }}"
+                                                id="purBoo-tab" data-toggle="tab" href="#purBoo"
+                                                role="tab" aria-controls="purBoo"
                                                 aria-selected="true">{{ trans('panel.purchased_bookings') }}</a>
                                         </li>
 
@@ -447,7 +447,9 @@
                                         @include('admin.users.editTabs.purchased_bundles')
 
                                         @include('admin.users.editTabs.purchased_products')
-                                        @include('admin.users.editTabs.purchased_bookings')
+                                       <div class="tab-content">
+    @include('admin.users.editTabs.purchased_bookings')
+</div>
                                         @include('admin.users.editTabs.purchased_booking_bundles')
                                         @include('admin.users.editTabs.topics')
 

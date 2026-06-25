@@ -1,4 +1,4 @@
-<div class="tab-pane mt-3 fade {{ (request()->get('tab') == 'purchasedBookings') ? 'active show' : '' }}" id="purchasedBookings" role="tabpanel" aria-labelledby="purchasedBookings-tab">
+<div class="tab-pane mt-3 fade {{ (request()->get('tab') == 'purBoo') ? 'active show' : '' }}" id="purBoo" role="tabpanel" aria-labelledby="purBoo-tab">
     <div class="row">
        hello
     </div>
