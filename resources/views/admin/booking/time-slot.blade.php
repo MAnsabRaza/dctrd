@@ -343,8 +343,11 @@
 </section>
 @endsection
 
-@push('scripts')
+@push('scripts_bottom')
+ <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
+    <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
 <script>
+    
 document.addEventListener('DOMContentLoaded', function () {
 
     var bookingSelect  = document.getElementById('booking_id');
