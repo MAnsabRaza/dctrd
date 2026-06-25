@@ -202,66 +202,88 @@
                 }
 
                 // Attach lightweight suggestions to plain address inputs used in other forms (e.g. bookings)
-                function attachGlobalAddressSuggestions() {
-                    var selector = 'input[name="address_line"], input[name="address"]';
-                    document.querySelectorAll(selector).forEach(function (input) {
-                        if (input.dataset.locSuggestReady === '1') return;
-                        input.dataset.locSuggestReady = '1';
+              function attachGlobalAddressSuggestions() {
+    var selector = 'input[name="address_line"], input[name="address"]';
+    document.querySelectorAll(selector).forEach(function (input) {
+        if (input.dataset.locSuggestReady === '1') return;
+        input.dataset.locSuggestReady = '1';
 
-                        var suggestionsEl = document.createElement('div');
-                        suggestionsEl.className = 'location-picker-suggestions dropdown-menu d-none show';
-                        suggestionsEl.style.position = 'absolute';
-                        suggestionsEl.style.zIndex = 1050;
-                        suggestionsEl.style.width = input.offsetWidth + 'px';
-                        input.parentNode.style.position = 'relative';
-                        input.parentNode.appendChild(suggestionsEl);
+        var suggestionsEl = document.createElement('div');
+        suggestionsEl.className = 'location-picker-suggestions dropdown-menu d-none show';
+        suggestionsEl.style.position = 'absolute';
+        suggestionsEl.style.zIndex = 1050;
+        suggestionsEl.style.width = input.offsetWidth + 'px';
+        input.parentNode.style.position = 'relative';
+        input.parentNode.appendChild(suggestionsEl);
 
-                        var render = function (items) {
-                            suggestionsEl.innerHTML = '';
-                            items.forEach(function (item) {
-                                var option = document.createElement('button');
-                                option.type = 'button';
-                                option.className = 'location-picker-suggestion dropdown-item text-wrap py-8';
-                                option.textContent = item.display_name;
-                                option.addEventListener('click', function () {
-                                    // fill nearest fields in the same form
-                                    var form = input.closest('form') || document;
-                                    input.value = item.display_name || input.value;
-                                    var latField = form.querySelector('input[name="lat"]');
-                                    var lngField = form.querySelector('input[name="lng"]');
-                                    var cityField = form.querySelector('input[name="city"]');
-                                    var stateField = form.querySelector('input[name="state"]');
-                                    var countryField = form.querySelector('input[name="country"]');
-                                    var postalField = form.querySelector('input[name="postal_code"]');
+        var render = function (items) {
+            suggestionsEl.innerHTML = '';
+            items.forEach(function (item) {
+                var option = document.createElement('button');
+                option.type = 'button';
+                option.className = 'location-picker-suggestion dropdown-item text-wrap py-8';
+                option.textContent = item.display_name;
+                option.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
 
-                                    if (latField) latField.value = item.lat || '';
-                                    if (lngField) lngField.value = item.lng || '';
-                                    if (cityField) cityField.value = item.city || '';
-                                    if (stateField) stateField.value = item.state || '';
-                                    if (countryField) countryField.value = item.country || '';
-                                    if (postalField) postalField.value = item.postal_code || '';
+                    var form = input.closest('form') || document;
+                    input.value = item.display_name || input.value;
 
-                                    suggestionsEl.classList.add('d-none');
-                                });
-                                suggestionsEl.appendChild(option);
-                            });
-                            suggestionsEl.classList.toggle('d-none', !items.length);
-                        };
+                    // Lat/Lng fields fill karo
+                    var latField = form.querySelector('input[name="lat"], [data-location-lat]');
+                    var lngField = form.querySelector('input[name="lng"], [data-location-lng]');
+                    var cityField = form.querySelector('input[name="city"], [data-location-city]');
+                    var stateField = form.querySelector('input[name="state"], [data-location-state]');
+                    var countryField = form.querySelector('input[name="country"], [data-location-country]');
+                    var postalField = form.querySelector('input[name="postal_code"], [data-location-postal]');
 
-                        var doSuggest = RocketLocationPicker.debounce(function () {
-                            var q = input.value.trim();
-                            if (q.length < 3) { render([]); return; }
-                            fetch('/location/suggestions?q=' + encodeURIComponent(q))
-                                .then(function (r) { return r.json(); })
-                                .then(render)
-                                .catch(function () { render([]); });
-                        }, 400);
+                    if (latField) latField.value = item.lat || '';
+                    if (lngField) lngField.value = item.lng || '';
+                    if (cityField) cityField.value = item.city || '';
+                    if (stateField) stateField.value = item.state || '';
+                    if (countryField) countryField.value = item.country || '';
+                    if (postalField) postalField.value = item.postal_code || '';
 
-                        input.addEventListener('input', doSuggest);
-                        input.addEventListener('keyup', doSuggest);
-                    });
-                }
+                    // ✅ Map marker update karo
+                    if (item.lat && item.lng) {
+                        RocketLocationPicker.instances.forEach(function (inst) {
+                            if (inst.root.contains(input) || form.contains(inst.root)) {
+                                inst.marker.setLatLng([item.lat, item.lng]);
+                                inst.map.setView([item.lat, item.lng], 14);
+                            }
+                        });
+                    }
 
+                    // ✅ Dropdown band karo
+                    suggestionsEl.innerHTML = '';
+                    suggestionsEl.classList.add('d-none');
+                });
+                suggestionsEl.appendChild(option);
+            });
+            suggestionsEl.classList.toggle('d-none', !items.length);
+        };
+
+        // ✅ Bahar click karne par band karo
+        document.addEventListener('click', function (e) {
+            if (e.target !== input && !suggestionsEl.contains(e.target)) {
+                suggestionsEl.classList.add('d-none');
+            }
+        }, true);
+
+        var doSuggest = RocketLocationPicker.debounce(function () {
+            var q = input.value.trim();
+            if (q.length < 3) { render([]); return; }
+            fetch('/location/suggestions?q=' + encodeURIComponent(q))
+                .then(function (r) { return r.json(); })
+                .then(render)
+                .catch(function () { render([]); });
+        }, 400);
+
+        input.addEventListener('input', doSuggest);
+        input.addEventListener('keyup', doSuggest);
+    });
+}
                 if (document.readyState === 'loading') {
                     document.addEventListener('DOMContentLoaded', function () { initLocationPickers(); attachGlobalAddressSuggestions(); });
                 } else {
