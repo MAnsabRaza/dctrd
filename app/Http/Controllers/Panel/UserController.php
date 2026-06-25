@@ -224,15 +224,6 @@ class UserController extends Controller
         return $unitPreferences;
     }
 
-   <?php
-
-// ============================================================
-// FIXED update() method — UserController.php
-// Changes:
-// 1. Duplicate 'postal_code' key removed
-// 2. LocationService::saveLocation() always called for basic_information
-// 3. Location fields use clean null-coalescing fallback
-// ============================================================
 
 public function update(Request $request)
 {
