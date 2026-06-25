@@ -275,18 +275,35 @@
                                         <li class="nav-item">
                                             <a class="nav-link {{ (request()->get('tab') == 'purchased_bundles') ? 'active' : '' }}" id="purchased_bundles-tab" data-toggle="tab" href="#purchased_bundles" role="tab" aria-controls="purchased_bundles" aria-selected="true">{{ trans('update.purchased_bundles') }}</a>
                                         </li>
-
                                         <li class="nav-item">
-                                            <a class="nav-link {{ (request()->get('tab') == 'purchased_products') ? 'active' : '' }}" id="purchased_products-tab" data-toggle="tab" href="#purchased_products" role="tab" aria-controls="purchased_products" aria-selected="true">{{ trans('update.purchased_products') }}</a>
-                                        </li>
+    <a class="nav-link {{ (request()->get('tab') == 'purchased_products') ? 'active' : '' }}" 
+       id="purchased_products-tab" 
+       data-toggle="tab" 
+       href="#purchased_products" 
+       role="tab">
+       {{ trans('update.purchased_products') }}
+    </a>
+</li>
 
-                                        <li class="nav-item">
-                                            <a class="nav-link {{ (request()->get('tab') == 'purchased_bookings') ? 'active' : '' }}" id="purchased_bookings-tab" data-toggle="tab" href="#purchased_bookings" role="tab" aria-controls="purchased_bookings" aria-selected="true">Purchased Bookings</a>
-                                        </li>
+<li class="nav-item">
+    <a class="nav-link {{ (request()->get('tab') == 'purchased_bookings') ? 'active' : '' }}" 
+       id="purchased_bookings-tab" 
+       data-toggle="tab" 
+       href="#purchased_bookings" 
+       role="tab">
+       Purchased Bookings
+    </a>
+</li>
 
-                                        <li class="nav-item">
-                                            <a class="nav-link {{ (request()->get('tab') == 'purchased_booking_bundles') ? 'active' : '' }}" id="purchased_booking_bundles-tab" data-toggle="tab" href="#purchased_booking_bundles" role="tab" aria-controls="purchased_booking_bundles" aria-selected="true">Purchased Booking Bundles</a>
-                                        </li>
+<li class="nav-item">
+    <a class="nav-link {{ (request()->get('tab') == 'purchased_booking_bundles') ? 'active' : '' }}" 
+       id="purchased_booking_bundles-tab" 
+       data-toggle="tab" 
+       href="#purchased_booking_bundles" 
+       role="tab">
+       Purchased Booking Bundles
+    </a>
+</li>
 
                                         <li class="nav-item">
                                             <a class="nav-link" id="topics-tab" data-toggle="tab" href="#topics" role="tab" aria-controls="topics" aria-selected="true">{{ trans('update.forum_topics') }}</a>
@@ -355,12 +372,9 @@
 
                                         @include('admin.users.editTabs.purchased_bundles')
 
-                                        @include('admin.users.editTabs.purchased_products')
-
-                                        @include('admin.users.editTabs.purchased_bookings')
-
-                                        @include('admin.users.editTabs.purchased_booking_bundles')
-
+                                    @include('admin.users.editTabs.purchased_products')
+@include('admin.users.editTabs.purchased_bookings')
+@include('admin.users.editTabs.purchased_booking_bundles')
                                         @include('admin.users.editTabs.topics')
 
                                         @include('admin.users.editTabs.support_tickets')
