@@ -347,12 +347,11 @@
                                                         <span class="text-danger">*</span>
                                                     </label>
 
-                                                    @php
-                                                        $selectedBooking = !empty($editSlot)
-                                                            ? (string) $editSlot->booking_id
-                                                            : (string) old('booking_id');
-                                                    @endphp
-
+                                                    {{--
+                                                        NOTE: yahan booking_id directly HTML <option selected> se
+                                                        set ho rahi hai. JS plugin (Select2 etc.) ke chakkar mein
+                                                        nahi parenge — raw <select> value reliable hai.
+                                                    --}}
                                                     <select name="booking_id"
                                                             id="booking_id"
                                                             class="form-control @error('booking_id') is-invalid @enderror"
@@ -362,8 +361,14 @@
 
                                                         @foreach($bookings as $booking)
 
+                                                            @php
+                                                                $selBook = !empty($editSlot)
+                                                                    ? (string) $editSlot->booking_id
+                                                                    : (string) old('booking_id');
+                                                            @endphp
+
                                                             <option value="{{ $booking->id }}"
-                                                                {{ $selectedBooking === (string) $booking->id ? 'selected' : '' }}>
+                                                                {{ $selBook === (string) $booking->id ? 'selected' : '' }}>
 
                                                                 #{{ $booking->id }} - {{ $booking->title }}
 
@@ -379,7 +384,13 @@
 
                                                 </div>
 
-                                                {{-- RESOURCE --}}
+                                                {{--
+                                                    RESOURCE:
+                                                    Pehle wali approach JS se filter karti thi lekin kaam nahi
+                                                    kar rahi thi. Ab hum SERVER SIDE se hi sirf us booking ke
+                                                    resources render kar rahe hain aur JS se disabled toggle
+                                                    karte hain — koi AJAX, koi jugaad nahi.
+                                                --}}
                                                 <div class="form-group">
 
                                                     <label>
@@ -388,17 +399,36 @@
                                                     </label>
 
                                                     @php
-                                                        $selectedResource = !empty($editSlot)
+                                                        $selBook     = !empty($editSlot)
+                                                            ? (string) $editSlot->booking_id
+                                                            : (string) old('booking_id');
+
+                                                        $selResource = !empty($editSlot)
                                                             ? (string) $editSlot->resource_id
                                                             : (string) old('resource_id');
+
+                                                        // Sirf selected booking ke resources
+                                                        $filteredResources = $selBook
+                                                            ? $resources->where('booking_id', (int) $selBook)
+                                                            : collect();
                                                     @endphp
 
                                                     <select name="resource_id"
                                                             id="resource_id"
                                                             class="form-control @error('resource_id') is-invalid @enderror"
-                                                            disabled>
+                                                            {{ empty($selBook) ? 'disabled' : '' }}>
 
-                                                        <option value="">Select Booking First</option>
+                                                        @if(empty($selBook))
+                                                            <option value="">Select Booking First</option>
+                                                        @else
+                                                            <option value="">Select Resource</option>
+                                                            @foreach($filteredResources as $resource)
+                                                                <option value="{{ $resource->id }}"
+                                                                    {{ $selResource === (string) $resource->id ? 'selected' : '' }}>
+                                                                    #{{ $resource->id }} - {{ $resource->name }}
+                                                                </option>
+                                                            @endforeach
+                                                        @endif
 
                                                     </select>
 
@@ -566,10 +596,9 @@
 </section>
 
 {{--
-    Full master list of resources, grouped by their booking_id, rendered
-    once as JSON. The JS below uses this as the single source of truth
-    to rebuild the #resource_id dropdown's actual <option> elements every
-    time the booking selection changes.
+    Full master list of resources as JSON — sirf JS (booking change) ke liye use hota hai.
+    Page load par server-side rendering kaam karti hai (upar wala @php block).
+    Jab user booking change kare tab JS se resource dropdown update hoti hai via AJAX-free approach.
 --}}
 <script id="resourcesData" type="application/json">
     {!! $resources->map(function ($resource) {
@@ -584,82 +613,103 @@
 
 @push('scripts')
 <script>
-$(document).ready(function () {
+(function () {
 
-    var bookingSelect  = $('#booking_id');
-    var resourceSelect = $('#resource_id');
+    // Yeh sab kuch window.onload ke baad chalega — Select2 ya koi bhi
+    // plugin tab tak initialize ho chuka hoga.
+    function initTimeSlotResourceFilter() {
 
-    // Master list of all resources parsed once from server-rendered JSON
-    var allResources = [];
-    try {
-        allResources = JSON.parse(document.getElementById('resourcesData').textContent || '[]');
-    } catch (e) {
-        allResources = [];
-    }
+        var bookingSelectEl = document.getElementById('booking_id');
+        var resourceSelectEl = document.getElementById('resource_id');
 
-    // Pre-selected resource (edit mode or validation error re-fill)
-    var preSelectedResourceId = "{{ old('resource_id', !empty($editSlot) ? $editSlot->resource_id : '') }}";
-    var isFirstRender = true;
+        if (!bookingSelectEl || !resourceSelectEl) return;
 
-    function filterResources() {
-
-        var selectedBookingId = String(bookingSelect.val() || '');
-
-        resourceSelect.empty();
-
-        if (selectedBookingId === '') {
-            resourceSelect.append($('<option></option>').val('').text('Select Booking First'));
-            resourceSelect.val('');
-            resourceSelect.prop('disabled', true);
-            return;
+        var allResources = [];
+        try {
+            var raw = document.getElementById('resourcesData');
+            allResources = raw ? JSON.parse(raw.textContent || '[]') : [];
+        } catch (e) {
+            allResources = [];
         }
 
-        var matchingResources = allResources.filter(function (resource) {
-            return resource.bookingId === selectedBookingId;
-        });
+        // Server ne jo resource pre-select kiya hai (edit/old) woh yahan store hai
+        var preSelectedResourceId = resourceSelectEl.getAttribute('data-preselect') || '';
 
-        if (!matchingResources.length) {
-            resourceSelect.append($('<option></option>').val('').text('No resources available'));
-            resourceSelect.val('');
-            resourceSelect.prop('disabled', true);
-            return;
-        }
+        function rebuildResourceDropdown(selectedBookingId, restoreValue) {
 
-        resourceSelect.prop('disabled', false);
-        resourceSelect.append($('<option></option>').val('').text('Select Resource'));
+            // Purani options clear karo
+            resourceSelectEl.innerHTML = '';
 
-        matchingResources.forEach(function (resource) {
-            resourceSelect.append(
-                $('<option></option>')
-                    .attr('data-booking', resource.bookingId)
-                    .val(resource.id)
-                    .text(resource.label)
-            );
-        });
+            if (!selectedBookingId) {
+                resourceSelectEl.innerHTML = '<option value="">Select Booking First</option>';
+                resourceSelectEl.disabled = true;
+                return;
+            }
 
-        // Edit mode / validation error: restore previously selected resource
-        if (isFirstRender && preSelectedResourceId !== '') {
-            var stillValid = matchingResources.some(function (resource) {
-                return resource.id === preSelectedResourceId;
+            var matching = allResources.filter(function (r) {
+                return r.bookingId === String(selectedBookingId);
             });
-            resourceSelect.val(stillValid ? preSelectedResourceId : '');
-        } else {
-            resourceSelect.val('');
+
+            if (!matching.length) {
+                resourceSelectEl.innerHTML = '<option value="">No resources available</option>';
+                resourceSelectEl.disabled = true;
+                return;
+            }
+
+            resourceSelectEl.disabled = false;
+
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select Resource';
+            resourceSelectEl.appendChild(placeholder);
+
+            matching.forEach(function (r) {
+                var opt = document.createElement('option');
+                opt.value = r.id;
+                opt.textContent = r.label;
+                if (restoreValue && r.id === String(restoreValue)) {
+                    opt.selected = true;
+                }
+                resourceSelectEl.appendChild(opt);
+            });
+        }
+
+        // Booking change hone par (user manually change kare)
+        bookingSelectEl.addEventListener('change', function () {
+            rebuildResourceDropdown(this.value, null);
+        });
+
+        // Select2 use ho rahi ho tab bhi kaam kare
+        if (window.jQuery && $.fn.select2) {
+            $(bookingSelectEl).on('select2:select select2:unselect', function () {
+                rebuildResourceDropdown(this.value, null);
+            });
+        }
+
+        // Page load par: booking already selected hai (edit/old) toh
+        // resource dropdown rebuild karo aur pre-selected value restore karo.
+        // Hum yahan bookingSelectEl.value directly read karte hain — yeh
+        // HTML <option selected> se set hota hai, Select2 se independent hai.
+        var initialBookingId = bookingSelectEl.value;
+        if (initialBookingId) {
+            // Server-side ne already sahi options render kar diye hain,
+            // lekin agar woh empty hain (JS ne override kiya) toh rebuild karo.
+            var currentOptions = resourceSelectEl.querySelectorAll('option[value]:not([value=""])');
+            if (!currentOptions.length) {
+                // Read pre-selected resource from data attribute set below
+                rebuildResourceDropdown(initialBookingId, preSelectedResourceId);
+            }
+            resourceSelectEl.disabled = false;
         }
     }
 
-    // Booking dropdown change hone par filter chalao
-    bookingSelect.on('change', function () {
-        isFirstRender = false;
-        filterResources();
-    });
+    // window.onload par chalao — sab plugins initialize ho jayen pehle
+    if (document.readyState === 'complete') {
+        initTimeSlotResourceFilter();
+    } else {
+        window.addEventListener('load', initTimeSlotResourceFilter);
+    }
 
-    // ✅ FIX: trigger('change') se page load par bhi booking value detect hogi
-    // Yeh ensure karta hai ke agar booking already selected hai (edit/old mode),
-    // toh resource dropdown automatically fill ho jaye
-    bookingSelect.trigger('change');
-    isFirstRender = false;
-
-});
+})();
 </script>
 @endpush
