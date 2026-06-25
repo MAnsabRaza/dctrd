@@ -4893,7 +4893,7 @@ return [
     'has_location'=>'Has Location',
     'new_booking_page_title'=>'New Booking Page Title',
     'check_booking'=>'Check Booking',
-    'add_to_favorites'=>'Add TO Favorites',
+    'add_to_favorites'=>'Add To Favorites',
     'select_date_check_slots'=>'Select Date to Check Slots',
     'resource'=>'Resource',
     'any_resource'=>'Any Resource',
@@ -4909,6 +4909,8 @@ return [
     'provider_quality'=>'Provider Quality',
     'value_for_money'=>'Value For Money',
     'location_quality'=>'Location Quality',
+    'book_now'=>'Book Now',
+    'check_slots'=>'Check Slots',
     
 
     
