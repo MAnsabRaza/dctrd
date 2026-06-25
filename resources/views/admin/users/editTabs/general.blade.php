@@ -357,30 +357,32 @@
                     </div>
                 @endif
 
-                <div class="form-group mt-4">
-                    <label class="input-label">{{ trans('update.location') }}</label>
+           @php
+    $locationActive = !empty($user->lat) || !empty($user->address) || old('location_enabled') == 'on';
+@endphp
 
-                    {{-- ✅ Toggle add kiya --}}
-                    <div class="form-group d-flex align-items-center mb-2">
-                        <div class="custom-control custom-switch">
-                            <input type="checkbox" name="location_enabled" id="userLocationSwitch" value="on"
-                                class="custom-control-input" {{ (old('location_enabled') == 'on' || (!empty($user) && $user->location_enabled)) ? 'checked' : '' }}
-                                onchange="toggleUserLocation(this.checked)">
-                            <label class="custom-control-label" for="userLocationSwitch"></label>
-                        </div>
-                        <label for="userLocationSwitch"
-                            class="mb-0 ml-2">{{ trans('admin/main.enable_location') }}</label>
-                    </div>
+<div class="form-group mt-4">
+    <div class="form-group d-flex align-items-center mb-2">
+        <div class="custom-control custom-switch">
+            <input type="checkbox" 
+                   name="location_enabled" 
+                   id="userLocationSwitch" 
+                   value="on" 
+                   class="custom-control-input"
+                   {{ $locationActive ? 'checked' : '' }}
+                   onchange="toggleUserLocation(this.checked)">
+            <label class="custom-control-label" for="userLocationSwitch"></label>
+        </div>
+        <label for="userLocationSwitch" class="mb-0 ml-2">{{ trans('admin/main.enable_location') }}</label>
+    </div>
 
-                    {{-- Location fields — toggle se show/hide hoga --}}
-                    <div id="userLocationPanel"
-                        style="{{ (old('location_enabled') == 'on' || (!empty($user) && $user->location_enabled)) ? '' : 'display:none' }}">
-                        @include('partials._location_picker', [
-                            'locationModel' => $user,
-                            'addressName' => 'address',
-                            'showAjaxSave' => false,
-                            'pickerId' => 'adminUserLocationPicker'
-                        ])
+    <div id="userLocationPanel" style="{{ $locationActive ? '' : 'display:none' }}">
+        @include('partials._location_picker', [
+            'locationModel' => $user,
+            'addressName' => 'address',
+            'showAjaxSave' => false,
+            'pickerId' => 'adminUserLocationPicker'
+        ])
     </div>
 </div>
                 <div class=" mt-4">
