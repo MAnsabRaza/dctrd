@@ -447,7 +447,10 @@
                                         @include('admin.users.editTabs.purchased_bundles')
 
                                         @include('admin.users.editTabs.purchased_products')
-                                        @include('admin.users.editTabs.purchased_bookings')
+                                        <!-- @include('admin.users.editTabs.purchased_bookings') -->
+                                         <div class="tab-pane active show" id="purBoo">
+    <h1>Hello Test</h1>
+</div>
                                         @include('admin.users.editTabs.purchased_booking_bundles')
                                         @include('admin.users.editTabs.topics')
 
