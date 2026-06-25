@@ -224,270 +224,304 @@ class UserController extends Controller
         return $unitPreferences;
     }
 
-    public function update(Request $request)
-    {
-        $data = $request->all();
+   <?php
 
-        $organization = null;
-        if (!empty($data['organization_id']) and !empty($data['user_id'])) {
-            $organization = auth()->user();
-            $user = User::where('id', $data['user_id'])
-                ->where('organ_id', $organization->id)
-                ->first();
-        } else {
-            $user = auth()->user();
+// ============================================================
+// FIXED update() method — UserController.php
+// Changes:
+// 1. Duplicate 'postal_code' key removed
+// 2. LocationService::saveLocation() always called for basic_information
+// 3. Location fields use clean null-coalescing fallback
+// ============================================================
+
+public function update(Request $request)
+{
+    $data = $request->all();
+
+    $organization = null;
+    if (!empty($data['organization_id']) and !empty($data['user_id'])) {
+        $organization = auth()->user();
+        $user = User::where('id', $data['user_id'])
+            ->where('organ_id', $organization->id)
+            ->first();
+    } else {
+        $user = auth()->user();
+    }
+
+    $step = $data['step'] ?? "basic_information";
+
+    $rules = [];
+
+    if ($step == "basic_information") {
+        $registerMethod = getGeneralSettings('register_method') ?? 'mobile';
+        $unitService = app(UnitConversionService::class);
+
+        $rules = [
+            'full_name'                      => 'required|string',
+            'email'                          => (($registerMethod == 'email') ? 'required' : 'nullable') . '|email|max:255|unique:users,email,' . $user->id,
+            'mobile'                         => (($registerMethod == 'mobile') ? 'required' : 'nullable') . '|numeric|unique:users,mobile,' . $user->id,
+            'currency'                       => 'nullable|string|max:3',
+            'preferred_date_format'          => 'nullable|string|max:30',
+            'preferred_custom_date_format'   => 'nullable|string|max:30',
+            'preferred_time_format'          => 'nullable|string|max:30',
+            'preferred_custom_time_format'   => 'nullable|string|max:30',
+            'preferred_week_start'           => 'nullable|string|max:10',
+            'booking_default_currency'       => 'nullable|string|max:3',
+            'booking_default_price_unit'     => 'nullable|string|max:64',
+            'booking_auto_publish'           => 'nullable|in:on,1,true',
+            'booking_location_enabled'       => 'nullable|in:on,1,true',
+            'address'                        => 'nullable|string|max:255',
+            'city'                           => 'nullable|string|max:100',
+            'state'                          => 'nullable|string|max:100',
+            'country'                        => 'nullable|string|max:100',
+            'postal_code'                    => 'nullable|string|max:20',
+            'lat'                            => 'nullable|numeric',
+            'lng'                            => 'nullable|numeric',
+        ];
+
+        foreach ($unitService->getUnitTypes() as $type) {
+            $rules["preferred_{$type}_unit"] = 'nullable|in:' . implode(',', array_keys(config("units.conversions.{$type}", [])));
+        }
+    }
+
+    $this->validate($request, $rules);
+
+    if (!empty($user)) {
+
+        // ── Password update ──────────────────────────────────────────
+        if (!empty($data['password'])) {
+            $this->validate($request, [
+                'password' => 'required|confirmed|min:6',
+            ]);
+
+            $user->update([
+                'password' => User::generatePassword($data['password'])
+            ]);
         }
 
-        $step = $data['step'] ?? "basic_information";
+        $updateData    = [];
+        $updateUserMeta = [];
 
-        $rules = [];
-
+        // ── STEP: basic_information ──────────────────────────────────
         if ($step == "basic_information") {
-            $registerMethod = getGeneralSettings('register_method') ?? 'mobile';
-            $unitService = app(UnitConversionService::class);
 
-            $rules = [
-                'full_name' => 'required|string',
-                'email' => (($registerMethod == 'email') ? 'required' : 'nullable') . '|email|max:255|unique:users,email,' . $user->id,
-                'mobile' => (($registerMethod == 'mobile') ? 'required' : 'nullable') . '|numeric|unique:users,mobile,' . $user->id,
-                'currency' => 'nullable|string|max:3',
-                'preferred_date_format' => 'nullable|string|max:30',
-                'preferred_custom_date_format' => 'nullable|string|max:30',
-                'preferred_time_format' => 'nullable|string|max:30',
-                'preferred_custom_time_format' => 'nullable|string|max:30',
-                'preferred_week_start' => 'nullable|string|max:10',
-                'booking_default_currency' => 'nullable|string|max:3',
-                'booking_default_price_unit' => 'nullable|string|max:64',
-                'booking_auto_publish' => 'nullable|in:on,1,true',
-                'booking_location_enabled' => 'nullable|in:on,1,true',
-                'address' => 'nullable|string|max:255',
-                'city' => 'nullable|string|max:100',
-                'state' => 'nullable|string|max:100',
-                'country' => 'nullable|string|max:100',
-                'postal_code' => 'nullable|string|max:20',
-                'lat' => 'nullable|numeric',
-                'lng' => 'nullable|numeric',
+            $joinNewsletter = (!empty($data['join_newsletter']) and $data['join_newsletter'] == 'on');
+            $unitService    = app(UnitConversionService::class);
+
+            $dateFormat = (($data['preferred_date_format'] ?? null) === 'custom')
+                ? ($data['preferred_custom_date_format'] ?? null)
+                : ($data['preferred_date_format'] ?? null);
+
+            $timeFormat = (($data['preferred_time_format'] ?? null) === 'custom')
+                ? ($data['preferred_custom_time_format'] ?? null)
+                : ($data['preferred_time_format'] ?? null);
+
+            $updateData = [
+                'full_name'                 => $data['full_name'],
+                'email'                     => $data['email'],
+                'mobile'                    => $data['mobile'],
+                'language'                  => $data['language'] ?? null,
+                'timezone'                  => $data['timezone'] ?? null,
+                'currency'                  => !empty($data['currency']) ? strtoupper($data['currency']) : null,
+                'preferred_currency'        => !empty($data['currency']) ? strtoupper($data['currency']) : config('exchange.base_currency', 'USD'),
+                'preferred_date_format'     => $dateFormat ?: 'F j, Y',
+                'preferred_time_format'     => $timeFormat ?: 'g:i a',
+                'preferred_week_start'      => $data['preferred_week_start'] ?? 'Monday',
+                'offline'                   => (!empty($data['offline']) and $data['offline'] == "on"),
+                'offline_message'           => (!empty($data['offline_message'])) ? $data['offline_message'] : null,
+                'newsletter'                => $joinNewsletter,
+                'public_message'            => (!empty($data['public_message']) and $data['public_message'] == 'on'),
+                'enable_profile_statistics' => (!empty($data['enable_profile_statistics']) and $data['enable_profile_statistics'] == 'on'),
+                'auto_renew_subscription'   => (!empty($data['auto_renew_subscription']) and $data['auto_renew_subscription'] == 'on'),
+
+                // ── FIX 1: location fields — clean fallback to existing DB value ──
+                // Agar form se koi value aayi hai toh woh use karo,
+                // warna purani DB value raho — NULL mat karo
+                'address'     => (isset($data['address'])     && $data['address']     !== '') ? $data['address']     : $user->address,
+                'city'        => (isset($data['city'])        && $data['city']        !== '') ? $data['city']        : $user->city,
+                'state'       => (isset($data['state'])       && $data['state']       !== '') ? $data['state']       : $user->state,
+                'country'     => (isset($data['country'])     && $data['country']     !== '') ? $data['country']     : $user->country,
+                // ── FIX 2: postal_code SIRF EK BAAR — duplicate key hata diya ──
+                'postal_code' => (isset($data['postal_code']) && $data['postal_code'] !== '') ? $data['postal_code'] : $user->postal_code,
+                // ── lat/lng: agar form se aayi toh save, warna DB wali rakho ──
+                'lat'         => (isset($data['lat'])         && $data['lat']         !== '') ? $data['lat']         : $user->lat,
+                'lng'         => (isset($data['lng'])         && $data['lng']         !== '') ? $data['lng']         : $user->lng,
             ];
 
             foreach ($unitService->getUnitTypes() as $type) {
-                $rules["preferred_{$type}_unit"] = 'nullable|in:' . implode(',', array_keys(config("units.conversions.{$type}", [])));
-            }
-        }
-
-        $this->validate($request, $rules);
-
-        if (!empty($user)) {
-
-            if (!empty($data['password'])) {
-                $this->validate($request, [
-                    'password' => 'required|confirmed|min:6',
-                ]);
-
-                $user->update([
-                    'password' => User::generatePassword($data['password'])
-                ]);
+                $key = "preferred_{$type}_unit";
+                $updateData[$key] = $data[$key] ?? config("units.base_units.{$type}");
             }
 
-            $updateData = [];
-            $updateUserMeta = [];
+            $updateUserMeta = [
+                'booking_default_currency'   => !empty($data['booking_default_currency']) ? strtoupper($data['booking_default_currency']) : null,
+                'booking_default_price_unit' => $data['booking_default_price_unit'] ?? null,
+                'booking_auto_publish'       => (!empty($data['booking_auto_publish']) and in_array($data['booking_auto_publish'], ['on', '1', 'true'], true)) ? '1' : '0',
+                'booking_location_enabled'   => (!empty($data['booking_location_enabled']) and in_array($data['booking_location_enabled'], ['on', '1', 'true'], true)) ? '1' : '0',
+            ];
 
-            if ($step == "basic_information") {
-                $joinNewsletter = (!empty($data['join_newsletter']) and $data['join_newsletter'] == 'on');
-                $unitService = app(UnitConversionService::class);
-                $dateFormat = (($data['preferred_date_format'] ?? null) === 'custom')
-                    ? ($data['preferred_custom_date_format'] ?? null)
-                    : ($data['preferred_date_format'] ?? null);
-                $timeFormat = (($data['preferred_time_format'] ?? null) === 'custom')
-                    ? ($data['preferred_custom_time_format'] ?? null)
-                    : ($data['preferred_time_format'] ?? null);
+            $this->handleNewsletter($data['email'], $user->id, $joinNewsletter);
 
-                $updateData = [
-                    'full_name' => $data['full_name'],
-                    'email' => $data['email'],
-                    'mobile' => $data['mobile'],
-                    'language' => $data['language'] ?? null,
-                    'timezone' => $data['timezone'] ?? null,
-                    'currency' => !empty($data['currency']) ? strtoupper($data['currency']) : null,
-                    'preferred_currency' => !empty($data['currency']) ? strtoupper($data['currency']) : config('exchange.base_currency', 'USD'),
-                    'preferred_date_format' => $dateFormat ?: 'F j, Y',
-                    'preferred_time_format' => $timeFormat ?: 'g:i a',
-                    'preferred_week_start' => $data['preferred_week_start'] ?? 'Monday',
-                    'offline' => (!empty($data['offline']) and $data['offline'] == "on"),
-                    'offline_message' => (!empty($data['offline_message'])) ? $data['offline_message'] : null,
-                    'newsletter' => $joinNewsletter,
-                    'public_message' => (!empty($data['public_message']) and $data['public_message'] == 'on'),
-                    'enable_profile_statistics' => (!empty($data['enable_profile_statistics']) and $data['enable_profile_statistics'] == 'on'),
-                    'auto_renew_subscription' => (!empty($data['auto_renew_subscription']) and $data['auto_renew_subscription'] == 'on'),
-                    'lat' => array_key_exists('lat', $data) && $data['lat'] !== '' ? $data['lat'] : $user->lat,
-                    'lng' => array_key_exists('lng', $data) && $data['lng'] !== '' ? $data['lng'] : $user->lng,
-                    'address' => array_key_exists('address', $data) && $data['address'] !== '' ? $data['address'] : $user->address,
-                    'city' => array_key_exists('city', $data) && $data['city'] !== '' ? $data['city'] : $user->city,
-                    'state' => array_key_exists('state', $data) && $data['state'] !== '' ? $data['state'] : $user->state,
-                    'country' => array_key_exists('country', $data) && $data['country'] !== '' ? $data['country'] : $user->country,
-                    'postal_code' => array_key_exists('postal_code', $data) && $data['postal_code'] !== '' ? $data['postal_code'] : $user->postal_code,
-                    'postal_code' => $data['postal_code'] ?? null,
-                ];
+        // ── STEP: extra_information ──────────────────────────────────
+        } elseif ($step == "extra_information") {
 
-                foreach ($unitService->getUnitTypes() as $type) {
-                    $key = "preferred_{$type}_unit";
-                    $updateData[$key] = $data[$key] ?? config("units.base_units.{$type}");
-                }
+            $updateData = [
+                "meeting_type"     => $data['meeting_type'] ?? null,
+                "level_of_training"=> !empty($data['level_of_training']) ? (new UserLevelOfTraining())->getValue($data['level_of_training']) : null,
+                "country_id"       => $data['country_id'] ?? null,
+                "province_id"      => $data['province_id'] ?? null,
+                "city_id"          => $data['city_id'] ?? null,
+                "district_id"      => $data['district_id'] ?? null,
+                "location"         => (!empty($data['latitude']) and !empty($data['longitude']))
+                                        ? DB::raw("POINT(" . $data['latitude'] . "," . $data['longitude'] . ")")
+                                        : null,
+                "address"          => $data['address'] ?? null,
+            ];
 
+            $updateUserMeta = [
+                "birthday" => !empty($data['birthday']) ? convertTimeToUTCzone($data['birthday'])->getTimestamp() : null,
+                "gender"   => $data['gender'] ?? null,
+            ];
+
+            $updateUserMeta['socials'] = (!empty($data['socials']) and is_array($data['socials']))
+                ? json_encode($data['socials'])
+                : null;
+
+            $this->handleUserExtraForm($request, $user);
+
+        // ── STEP: financial ──────────────────────────────────────────
+        } elseif ($step == "financial") {
+
+            if (!empty($data['bank_id'])) {
+                $this->handleUserBankAccount($user, $data);
+            }
+
+            $updateData = [
+                'identity_scan' => $this->handleUploadImagesAndFiles($request, $user, "identity_scan"),
+                'certificate'   => $this->handleUploadImagesAndFiles($request, $user, "certificate"),
+            ];
+
+        // ── STEP: images ─────────────────────────────────────────────
+        } elseif ($step == "images") {
+
+            $updateData = [
+                'avatar'                  => $this->handleUploadImagesAndFiles($request, $user, "avatar"),
+                'profile_video'           => $this->handleUploadImagesAndFiles($request, $user, "profile_video"),
+                'cover_img'               => $this->handleUploadImagesAndFiles($request, $user, "cover_img"),
+                'profile_secondary_image' => $this->handleUploadImagesAndFiles($request, $user, "profile_secondary_image"),
+            ];
+
+            if (!empty($request->file("signature_img"))) {
+                $signatureImgPath = $this->handleUploadImagesAndFiles($request, $user, "signature_img");
                 $updateUserMeta = [
-                    'booking_default_currency' => !empty($data['booking_default_currency']) ? strtoupper($data['booking_default_currency']) : null,
-                    'booking_default_price_unit' => $data['booking_default_price_unit'] ?? null,
-                    'booking_auto_publish' => (!empty($data['booking_auto_publish']) and in_array($data['booking_auto_publish'], ['on', '1', 'true'], true)) ? '1' : '0',
-                    'booking_location_enabled' => (!empty($data['booking_location_enabled']) and in_array($data['booking_location_enabled'], ['on', '1', 'true'], true)) ? '1' : '0',
+                    'signature' => $signatureImgPath
                 ];
-
-                $this->handleNewsletter($data['email'], $user->id, $joinNewsletter);
-            } elseif ($step == "extra_information") {
-                $updateData = [
-                    "meeting_type" => $data['meeting_type'] ?? null,
-                    "level_of_training" => !empty($data['level_of_training']) ? (new UserLevelOfTraining())->getValue($data['level_of_training']) : null,
-                    "country_id" => $data['country_id'] ?? null,
-                    "province_id" => $data['province_id'] ?? null,
-                    "city_id" => $data['city_id'] ?? null,
-                    "district_id" => $data['district_id'] ?? null,
-                    "location" => (!empty($data['latitude']) and !empty($data['longitude'])) ? DB::raw("POINT(" . $data['latitude'] . "," . $data['longitude'] . ")") : null,
-                    "address" => $data['address'] ?? null,
-                ];
-
-                $updateUserMeta = [
-                    "birthday" => !empty($data['birthday']) ? convertTimeToUTCzone($data['birthday'])->getTimestamp() : null,
-                    "gender" => $data['gender'] ?? null,
-                ];
-
-                // Handle User Socials
-                $updateUserMeta['socials'] = (!empty($data['socials']) and is_array($data['socials'])) ? json_encode($data['socials']) : null;
-
-                // Store Additional Forms
-                $this->handleUserExtraForm($request, $user);
-
-            } elseif ($step == "financial") {
-
-                // Update User Bank Account
-                if (!empty($data['bank_id'])) {
-                    $this->handleUserBankAccount($user, $data);
-                }
-
-                $updateData = [
-                    'identity_scan' => $this->handleUploadImagesAndFiles($request, $user, "identity_scan"),
-                    'certificate' => $this->handleUploadImagesAndFiles($request, $user, "certificate"),
-                ];
-
-            } elseif ($step == "images") {
-
-                $updateData = [
-                    'avatar' => $this->handleUploadImagesAndFiles($request, $user, "avatar"),
-                    'profile_video' => $this->handleUploadImagesAndFiles($request, $user, "profile_video"),
-                    'cover_img' => $this->handleUploadImagesAndFiles($request, $user, "cover_img"),
-                    'profile_secondary_image' => $this->handleUploadImagesAndFiles($request, $user, "profile_secondary_image"),
-                ];
-
-
-                if (!empty($request->file("signature_img"))) {
-                    $signatureImgPath = $this->handleUploadImagesAndFiles($request, $user, "signature_img");
-
-                    $updateUserMeta = [
-                        'signature' => $signatureImgPath
-                    ];
-                }
-
-            } elseif ($step == "about") {
-                $updateData = [
-                    'about' => $data['about'] ?? null,
-                    'bio' => $data['bio'] ?? null,
-                ];
-
-                if (!$user->isUser()) {
-                    UserOccupation::where('user_id', $user->id)->delete();
-
-                    if (!empty($data['occupations'])) {
-                        foreach ($data['occupations'] as $category_id) {
-                            UserOccupation::create([
-                                'user_id' => $user->id,
-                                'category_id' => $category_id
-                            ]);
-                        }
-                    }
-                }
-
-            } elseif ($step == "zoom") {
-
-                if (!empty($data['zoom_api_key']) and !empty($data['zoom_api_secret'])) {
-                    UserZoomApi::updateOrCreate(
-                        [
-                            'user_id' => $user->id,
-                        ],
-                        [
-                            'api_key' => $data['zoom_api_key'] ?? null,
-                            'api_secret' => $data['zoom_api_secret'] ?? null,
-                            'account_id' => $data['zoom_account_id'] ?? null,
-                            'created_at' => time()
-                        ]
-                    );
-                } else {
-                    UserZoomApi::where('user_id', $user->id)->delete();
-                }
-            } elseif ($step == "checkout_options") {
-                if (!($user->isOrganization() or $user->isTeacher())) {
-                    abort(404);
-                }
-
-                $this->validate($request, [
-                    'modules' => 'required|array',
-                    'modules.*' => 'nullable|boolean',
-                ]);
-
-                app(CheckoutModuleService::class)->saveOrgModuleSettings(
-                    $user->id,
-                    $data['modules'] ?? []
-                );
             }
 
-            if (!empty($updateData)) {
-                $user->update($updateData);
-            }
+        // ── STEP: about ──────────────────────────────────────────────
+        } elseif ($step == "about") {
 
-            if (
-                $step == "basic_information" && (
-                    (array_key_exists('lat', $data) && $data['lat'] !== '') ||
-                    (array_key_exists('lng', $data) && $data['lng'] !== '')
-                )
-            ) {
-                app(LocationService::class)->saveLocation($user, $data);
-            }
+            $updateData = [
+                'about' => $data['about'] ?? null,
+                'bio'   => $data['bio'] ?? null,
+            ];
 
-            if (!empty($updateUserMeta)) {
-                foreach ($updateUserMeta as $metaName => $metaValue) {
-                    UserMeta::query()->where('user_id', $user->id)->where('name', $metaName)->delete();
+            if (!$user->isUser()) {
+                UserOccupation::where('user_id', $user->id)->delete();
 
-                    if (!empty($metaValue)) {
-                        UserMeta::query()->create([
-                            'user_id' => $user->id,
-                            'name' => $metaName,
-                            'value' => $metaValue
+                if (!empty($data['occupations'])) {
+                    foreach ($data['occupations'] as $category_id) {
+                        UserOccupation::create([
+                            'user_id'     => $user->id,
+                            'category_id' => $category_id
                         ]);
                     }
                 }
             }
 
-            $url = "/panel/setting/step/{$step}";
-            if (!empty($organization)) {
-                $userType = $user->isTeacher() ? 'instructors' : 'students';
-                $url = "/panel/manage/{$userType}/{$user->id}/edit";
+        // ── STEP: zoom ───────────────────────────────────────────────
+        } elseif ($step == "zoom") {
+
+            if (!empty($data['zoom_api_key']) and !empty($data['zoom_api_secret'])) {
+                UserZoomApi::updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'api_key'    => $data['zoom_api_key'] ?? null,
+                        'api_secret' => $data['zoom_api_secret'] ?? null,
+                        'account_id' => $data['zoom_account_id'] ?? null,
+                        'created_at' => time()
+                    ]
+                );
+            } else {
+                UserZoomApi::where('user_id', $user->id)->delete();
             }
 
-            $toastData = [
-                'title' => trans('public.request_success'),
-                'msg' => trans('panel.user_setting_success'),
-                'status' => 'success'
-            ];
-            return redirect($url)->with(['toast' => $toastData]);
+        // ── STEP: checkout_options ───────────────────────────────────
+        } elseif ($step == "checkout_options") {
+
+            if (!($user->isOrganization() or $user->isTeacher())) {
+                abort(404);
+            }
+
+            $this->validate($request, [
+                'modules'   => 'required|array',
+                'modules.*' => 'nullable|boolean',
+            ]);
+
+            app(CheckoutModuleService::class)->saveOrgModuleSettings(
+                $user->id,
+                $data['modules'] ?? []
+            );
         }
-        abort(404);
+
+        // ── DB update ────────────────────────────────────────────────
+        if (!empty($updateData)) {
+            $user->update($updateData);
+        }
+
+        // ── FIX 3: LocationService — har baar basic_information par call karo ──
+        // Pehle sirf lat/lng change hone par call hoti thi — ab har save par hogi
+        // Taki address, city, state, country bhi LocationService mein save ho sakein
+        if ($step == "basic_information") {
+            app(LocationService::class)->saveLocation($user, $data);
+        }
+
+        // ── UserMeta save ────────────────────────────────────────────
+        if (!empty($updateUserMeta)) {
+            foreach ($updateUserMeta as $metaName => $metaValue) {
+                UserMeta::query()
+                    ->where('user_id', $user->id)
+                    ->where('name', $metaName)
+                    ->delete();
+
+                if (!empty($metaValue)) {
+                    UserMeta::query()->create([
+                        'user_id' => $user->id,
+                        'name'    => $metaName,
+                        'value'   => $metaValue
+                    ]);
+                }
+            }
+        }
+
+        // ── Redirect ─────────────────────────────────────────────────
+        $url = "/panel/setting/step/{$step}";
+        if (!empty($organization)) {
+            $userType = $user->isTeacher() ? 'instructors' : 'students';
+            $url = "/panel/manage/{$userType}/{$user->id}/edit";
+        }
+
+        $toastData = [
+            'title'  => trans('public.request_success'),
+            'msg'    => trans('panel.user_setting_success'),
+            'status' => 'success'
+        ];
+
+        return redirect($url)->with(['toast' => $toastData]);
     }
+
+    abort(404);
+}
 
     private function handleUserBankAccount($user, $data)
     {
