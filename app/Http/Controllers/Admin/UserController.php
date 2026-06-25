@@ -1019,7 +1019,7 @@ class UserController extends Controller
         \Log::info('purchasedBookings', ['count' => $purchasedBookings->count()]);
 
         $availableBookings = Booking::query()
-            ->where('status', 'published')
+         //   ->where('status', 'published')
             ->orderBy('title')
             ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']);
 
