@@ -393,18 +393,6 @@
                                                             : (string) old('resource_id');
                                                     @endphp
 
-                                                    {{--
-                                                        NOTE: this <select> starts EMPTY on purpose (only the
-                                                        placeholder option below is server-rendered). The full
-                                                        master list of resources is provided to JS separately as
-                                                        JSON (see #resourcesData script tag at the bottom) and
-                                                        the dropdown's real <option> list is built entirely on
-                                                        the client, filtered to the selected booking. This avoids
-                                                        relying on CSS show()/hide() on <option> tags, which native
-                                                        <select> popups do not reliably honor across browsers —
-                                                        that was the cause of resources from the wrong booking
-                                                        still being selectable even though they looked "hidden".
-                                                    --}}
                                                     <select name="resource_id"
                                                             id="resource_id"
                                                             class="form-control @error('resource_id') is-invalid @enderror"
@@ -581,9 +569,7 @@
     Full master list of resources, grouped by their booking_id, rendered
     once as JSON. The JS below uses this as the single source of truth
     to rebuild the #resource_id dropdown's actual <option> elements every
-    time the booking selection changes — instead of toggling CSS
-    display:none on existing <option> tags (which native <select> popups
-    do not reliably hide/disable for selection across browsers).
+    time the booking selection changes.
 --}}
 <script id="resourcesData" type="application/json">
     {!! $resources->map(function ($resource) {
@@ -603,8 +589,7 @@ $(document).ready(function () {
     var bookingSelect  = $('#booking_id');
     var resourceSelect = $('#resource_id');
 
-    // Master list of all resources (id, bookingId, label), parsed once from
-    // the JSON the server rendered above. This never gets mutated.
+    // Master list of all resources parsed once from server-rendered JSON
     var allResources = [];
     try {
         allResources = JSON.parse(document.getElementById('resourcesData').textContent || '[]');
@@ -612,8 +597,7 @@ $(document).ready(function () {
         allResources = [];
     }
 
-    // Pre-selected resource (edit mode or validation error re-fill).
-    // Used once on first render, then cleared.
+    // Pre-selected resource (edit mode or validation error re-fill)
     var preSelectedResourceId = "{{ old('resource_id', !empty($editSlot) ? $editSlot->resource_id : '') }}";
     var isFirstRender = true;
 
@@ -621,11 +605,6 @@ $(document).ready(function () {
 
         var selectedBookingId = String(bookingSelect.val() || '');
 
-        // Rebuild the dropdown from scratch every time. We never rely on
-        // hiding/showing existing <option> elements — only options that
-        // genuinely belong to the selected booking ever exist in the DOM,
-        // so a wrong-booking resource can never be opened or selected,
-        // regardless of browser.
         resourceSelect.empty();
 
         if (selectedBookingId === '') {
@@ -658,14 +637,11 @@ $(document).ready(function () {
             );
         });
 
-        // On first render only (edit mode / validation error re-fill), restore
-        // the previously chosen resource — but only if it truly belongs to
-        // this booking. Otherwise leave it unselected rather than guessing.
+        // Edit mode / validation error: restore previously selected resource
         if (isFirstRender && preSelectedResourceId !== '') {
             var stillValid = matchingResources.some(function (resource) {
                 return resource.id === preSelectedResourceId;
             });
-
             resourceSelect.val(stillValid ? preSelectedResourceId : '');
         } else {
             resourceSelect.val('');
@@ -674,11 +650,14 @@ $(document).ready(function () {
 
     // Booking dropdown change hone par filter chalao
     bookingSelect.on('change', function () {
+        isFirstRender = false;
         filterResources();
     });
 
-    // Page load hone par bhi filter chalao (edit + validation error dono ke liye)
-    filterResources();
+    // ✅ FIX: trigger('change') se page load par bhi booking value detect hogi
+    // Yeh ensure karta hai ke agar booking already selected hai (edit/old mode),
+    // toh resource dropdown automatically fill ho jaye
+    bookingSelect.trigger('change');
     isFirstRender = false;
 
 });
