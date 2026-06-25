@@ -469,6 +469,11 @@ public function update(Request $request)
         if (!empty($updateData)) {
             $user->update($updateData);
         }
+        dd([
+    'request_address' => $data['address'] ?? null,
+    'user_address_before' => $user->address,
+    'updateData_address' => $updateData['address'] ?? null,
+]);
 
         // ── FIX 3: LocationService — har baar basic_information par call karo ──
         // Pehle sirf lat/lng change hone par call hoti thi — ab har save par hogi
