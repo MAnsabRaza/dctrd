@@ -447,9 +447,7 @@
                                         @include('admin.users.editTabs.purchased_bundles')
 
                                         @include('admin.users.editTabs.purchased_products')
-                                       <div class="tab-content">
-    @include('admin.users.editTabs.purchased_bookings')
-</div>
+                                        @include('admin.users.editTabs.purchased_bookings')
                                         @include('admin.users.editTabs.purchased_booking_bundles')
                                         @include('admin.users.editTabs.topics')
 
