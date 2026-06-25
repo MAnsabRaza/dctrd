@@ -126,13 +126,21 @@ Route::group(['prefix' => 'booking'], function () {
         Route::post('/{id}/update', [BookingVariantController::class, 'update']);
         Route::get('/{id}/delete', [BookingVariantController::class, 'delete']);
     });
-    Route::group(['prefix' => 'time-slot'], function () {
-        Route::get('/', [BookingTimeSlotController::class, 'index']);
-        Route::post('/store', [BookingTimeSlotController::class, 'store']);
-        Route::get('/{id}/edit', [BookingTimeSlotController::class, 'edit']);
-        Route::post('/{id}/update', [BookingTimeSlotController::class, 'update']);
-        Route::get('/{id}/delete', [BookingTimeSlotController::class, 'delete']);
-    });
+Route::group(['prefix' => 'time-slot'], function () {
+
+    Route::get('/resources', [BookingTimeSlotController::class, 'getResources']);
+
+    Route::get('/', [BookingTimeSlotController::class, 'index']);
+
+    Route::post('/store', [BookingTimeSlotController::class, 'store']);
+
+    Route::get('/{id}/edit', [BookingTimeSlotController::class, 'edit']);
+
+    Route::post('/{id}/update', [BookingTimeSlotController::class, 'update']);
+
+    Route::get('/{id}/delete', [BookingTimeSlotController::class, 'delete']);
+
+});
    Route::group(['prefix' => 'order'], function () {
     Route::get('/', [BookingOrderController::class, 'index']);
     Route::get('/in-house-orders', [BookingOrderController::class, 'inHouseOrders']);

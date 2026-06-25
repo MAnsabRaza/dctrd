@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class BookingTimeSlotController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $this->authorize('admin_booking_time_slots');
 
@@ -22,16 +22,36 @@ class BookingTimeSlotController extends Controller
             ->orderBy('start_time')
             ->paginate(20);
 
-        $bookings  = Booking::orderBy('id', 'desc')->get(['id', 'title']);
-        $resources = BookingResource::orderBy('name')->get(['id', 'booking_id', 'name']);
+        $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
 
         return view('admin.booking.time-slot', [
             'pageTitle' => 'Booking Time Slots',
             'timeSlots' => $timeSlots,
             'bookings'  => $bookings,
-            'resources' => $resources,
             'editSlot'  => null,
         ]);
+    }
+
+    /**
+     * AJAX: booking_id ke hissab se resources return karo
+     * Route: GET /admin/booking/time-slot/resources?booking_id=5
+     */
+    public function getResources(Request $request)
+    {
+        $this->authorize('admin_booking_time_slots_create');
+
+        $bookingId = $request->input('booking_id');
+
+        if (empty($bookingId)) {
+            return response()->json([]);
+        }
+
+        $resources = BookingResource::where('booking_id', $bookingId)
+            ->where('status', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'type']);
+
+        return response()->json($resources);
     }
 
     public function store(Request $request)
@@ -66,8 +86,7 @@ class BookingTimeSlotController extends Controller
                 ->where('booking_id', $validated['booking_id'])
                 ->exists()
         ) {
-            return back()
-                ->withInput()
+            return back()->withInput()
                 ->withErrors(['resource_id' => 'Selected resource does not belong to the selected booking.']);
         }
 
@@ -79,7 +98,7 @@ class BookingTimeSlotController extends Controller
             ->with('success', 'Time slot created successfully.');
     }
 
-    public function edit(Request $request, $id)
+    public function edit($id)
     {
         $this->authorize('admin_booking_time_slots_edit');
 
@@ -91,15 +110,20 @@ class BookingTimeSlotController extends Controller
             ->orderBy('start_time')
             ->paginate(20);
 
-        $bookings  = Booking::orderBy('id', 'desc')->get(['id', 'title']);
-        $resources = BookingResource::orderBy('name')->get(['id', 'booking_id', 'name']);
+        $bookings = Booking::orderBy('id', 'desc')->get(['id', 'title']);
+
+        // Edit mode mein is booking ke resources pehle se load karo
+        $editResources = BookingResource::where('booking_id', $editSlot->booking_id)
+            ->where('status', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'type']);
 
         return view('admin.booking.time-slot', [
-            'pageTitle' => 'Edit Booking Time Slot',
-            'timeSlots' => $timeSlots,
-            'bookings'  => $bookings,
-            'resources' => $resources,
-            'editSlot'  => $editSlot,
+            'pageTitle'     => 'Edit Booking Time Slot',
+            'timeSlots'     => $timeSlots,
+            'bookings'      => $bookings,
+            'editSlot'      => $editSlot,
+            'editResources' => $editResources,
         ]);
     }
 
@@ -137,8 +161,7 @@ class BookingTimeSlotController extends Controller
                 ->where('booking_id', $validated['booking_id'])
                 ->exists()
         ) {
-            return back()
-                ->withInput()
+            return back()->withInput()
                 ->withErrors(['resource_id' => 'Selected resource does not belong to the selected booking.']);
         }
 

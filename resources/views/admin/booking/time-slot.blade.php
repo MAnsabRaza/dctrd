@@ -4,14 +4,10 @@
 <section class="section">
     <div class="section-header">
         <h1>{{ trans('admin/main.admin_booking_time_slots') }}</h1>
-
         <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active">
-                <a href="{{ getAdminPanelUrl() }}">
-                    {{ trans('admin/main.dashboard') }}
-                </a>
+                <a href="{{ getAdminPanelUrl() }}">{{ trans('admin/main.dashboard') }}</a>
             </div>
-
             <div class="breadcrumb-item">
                 {{ trans('admin/main.admin_booking_time_slots') }}
             </div>
@@ -32,34 +28,9 @@
                             );
 
                             $dayNames = [
-                                1 => 'Mon',
-                                2 => 'Tue',
-                                3 => 'Wed',
-                                4 => 'Thu',
-                                5 => 'Fri',
-                                6 => 'Sat',
-                                7 => 'Sun'
+                                1 => 'Mon', 2 => 'Tue', 3 => 'Wed',
+                                4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'
                             ];
-
-                            // Booking ID: edit mode > GET param > old input
-                            $selBook = '';
-                            if (!empty($editSlot)) {
-                                $selBook = (string) $editSlot->booking_id;
-                            } elseif (request()->filled('booking_id')) {
-                                $selBook = (string) request('booking_id');
-                            } elseif (old('booking_id')) {
-                                $selBook = (string) old('booking_id');
-                            }
-
-                            // Resource ID: edit mode > old input
-                            $selResource = !empty($editSlot)
-                                ? (string) $editSlot->resource_id
-                                : (string) old('resource_id');
-
-                            // Sirf selected booking ke resources filter karo
-                            $filteredResources = $selBook
-                                ? $resources->where('booking_id', (int) $selBook)
-                                : collect();
                         @endphp
 
                         {{-- TABS --}}
@@ -68,10 +39,7 @@
                             @can('admin_booking_time_slots')
                                 <li class="nav-item">
                                     <a class="nav-link {{ $createActive ? '' : 'active' }}"
-                                       id="list-tab"
-                                       data-toggle="tab"
-                                       href="#listTab"
-                                       role="tab">
+                                       id="list-tab" data-toggle="tab" href="#listTab" role="tab">
                                         {{ trans('admin/main.admin_booking_time_slots') }}
                                     </a>
                                 </li>
@@ -80,13 +48,8 @@
                             @can('admin_booking_time_slots_create')
                                 <li class="nav-item">
                                     <a class="nav-link {{ $createActive ? 'active' : '' }}"
-                                       id="create-tab"
-                                       data-toggle="tab"
-                                       href="#createTab"
-                                       role="tab">
-                                        {{ !empty($editSlot)
-                                            ? trans('admin/main.edit_time_slot')
-                                            : trans('admin/main.create_time_slot') }}
+                                       id="create-tab" data-toggle="tab" href="#createTab" role="tab">
+                                        {{ !empty($editSlot) ? trans('admin/main.edit_time_slot') : trans('admin/main.create_time_slot') }}
                                     </a>
                                 </li>
                             @endcan
@@ -97,9 +60,7 @@
 
                             {{-- LIST TAB --}}
                             @can('admin_booking_time_slots')
-                                <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}"
-                                     id="listTab"
-                                     role="tabpanel">
+                                <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}" id="listTab" role="tabpanel">
 
                                     @if(!empty($timeSlots) && $timeSlots->count())
                                         <div class="table-responsive">
@@ -137,9 +98,7 @@
                                                             </td>
                                                             <td class="text-center">
                                                                 @foreach((array) $slot->day_of_week as $day)
-                                                                    <span class="badge badge-info mr-1">
-                                                                        {{ $dayNames[$day] ?? $day }}
-                                                                    </span>
+                                                                    <span class="badge badge-info mr-1">{{ $dayNames[$day] ?? $day }}</span>
                                                                 @endforeach
                                                             </td>
                                                             <td class="text-center">{{ substr($slot->start_time, 0, 5) }}</td>
@@ -156,22 +115,14 @@
                                                             </td>
                                                             <td width="80px">
                                                                 <div class="btn-group dropdown table-actions position-relative">
-                                                                    <button type="button"
-                                                                            class="btn-transparent dropdown-toggle"
-                                                                            data-toggle="dropdown">
-                                                                        <x-iconsax-lin-more
-                                                                            class="icons text-gray-500"
-                                                                            width="20px"
-                                                                            height="20px"/>
+                                                                    <button type="button" class="btn-transparent dropdown-toggle" data-toggle="dropdown">
+                                                                        <x-iconsax-lin-more class="icons text-gray-500" width="20px" height="20px"/>
                                                                     </button>
                                                                     <div class="dropdown-menu dropdown-menu-right">
                                                                         @can('admin_booking_time_slots_edit')
                                                                             <a href="{{ getAdminPanelUrl() }}/booking/time-slot/{{ $slot->id }}/edit"
                                                                                class="dropdown-item d-flex align-items-center mb-3 py-3 px-0 gap-4">
-                                                                                <x-iconsax-lin-edit-2
-                                                                                    class="icons text-gray-500 mr-2"
-                                                                                    width="18px"
-                                                                                    height="18px"/>
+                                                                                <x-iconsax-lin-edit-2 class="icons text-gray-500 mr-2" width="18px" height="18px"/>
                                                                                 <span class="text-gray-500 font-14">{{ trans('admin/main.edit') }}</span>
                                                                             </a>
                                                                         @endcan
@@ -205,16 +156,12 @@
 
                             {{-- CREATE / EDIT TAB --}}
                             @can('admin_booking_time_slots_create')
-                                <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}"
-                                     id="createTab"
-                                     role="tabpanel">
-
+                                <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}" id="createTab" role="tabpanel">
                                     <div class="row">
                                         <div class="col-12 col-md-6">
 
                                             <form action="{{ getAdminPanelUrl() }}/booking/time-slot/{{ !empty($editSlot) ? $editSlot->id . '/update' : 'store' }}"
                                                   method="post">
-
                                                 {{ csrf_field() }}
 
                                                 {{-- BOOKING --}}
@@ -224,20 +171,23 @@
                                                         <span class="text-danger">*</span>
                                                     </label>
 
+                                                    @php
+                                                        $selBook = !empty($editSlot)
+                                                            ? (string) $editSlot->booking_id
+                                                            : (string) old('booking_id');
+                                                    @endphp
+
                                                     <select name="booking_id"
                                                             id="booking_id"
                                                             class="form-control @error('booking_id') is-invalid @enderror"
                                                             required>
-
-                                                        <option value="">Select Booking</option>
-
+                                                        <option value="">-- Select Booking --</option>
                                                         @foreach($bookings as $booking)
                                                             <option value="{{ $booking->id }}"
                                                                 {{ $selBook === (string) $booking->id ? 'selected' : '' }}>
                                                                 #{{ $booking->id }} - {{ $booking->title }}
                                                             </option>
                                                         @endforeach
-
                                                     </select>
 
                                                     @error('booking_id')
@@ -246,37 +196,49 @@
                                                 </div>
 
                                                 {{-- RESOURCE --}}
-                                                {{--
-                                                    APPROACH: Booking change hone par page GET param ke saath
-                                                    reload hota hai (?booking_id=X). Server-side PHP filter
-                                                    karta hai resources — koi JS dependency nahi.
-                                                --}}
                                                 <div class="form-group">
                                                     <label>
                                                         {{ trans('admin/main.resource') }}
                                                         <span class="text-danger">*</span>
                                                     </label>
 
+                                                    @php
+                                                        $selResource = !empty($editSlot)
+                                                            ? (string) $editSlot->resource_id
+                                                            : (string) old('resource_id');
+                                                    @endphp
+
+                                                    {{--
+                                                        resource_id select mein data-preselect attribute rakha hai.
+                                                        JS AJAX call karega booking select hone par aur
+                                                        SELECT * FROM booking_resources WHERE booking_id = ?
+                                                        wala kaam controller karega.
+                                                        Edit mode mein editResources already controller se aa rahe hain.
+                                                    --}}
                                                     <select name="resource_id"
                                                             id="resource_id"
                                                             class="form-control @error('resource_id') is-invalid @enderror"
+                                                            data-preselect="{{ $selResource }}"
                                                             {{ empty($selBook) ? 'disabled' : '' }}>
 
                                                         @if(empty($selBook))
                                                             <option value="">-- Pehle Booking Select Karein --</option>
                                                         @else
+                                                            {{-- Edit mode: controller ne already resources bheje hain --}}
                                                             <option value="">-- Resource Select Karein --</option>
-                                                            @forelse($filteredResources as $resource)
-                                                                <option value="{{ $resource->id }}"
-                                                                    {{ $selResource === (string) $resource->id ? 'selected' : '' }}>
-                                                                    #{{ $resource->id }} - {{ $resource->name }}
+                                                            @foreach($editResources ?? [] as $res)
+                                                                <option value="{{ $res->id }}"
+                                                                    {{ $selResource === (string) $res->id ? 'selected' : '' }}>
+                                                                    #{{ $res->id }} - {{ $res->name }}
                                                                 </option>
-                                                            @empty
-                                                                <option value="" disabled>Is booking ka koi resource nahi</option>
-                                                            @endforelse
+                                                            @endforeach
                                                         @endif
 
                                                     </select>
+
+                                                    <small id="resource_loading" class="text-muted d-none">
+                                                        Loading resources...
+                                                    </small>
 
                                                     @error('resource_id')
                                                         <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -291,13 +253,9 @@
                                                     </label>
 
                                                     @php
-                                                        $selectedDays = array_map(
-                                                            'strval',
-                                                            (array) (!empty($editSlot)
-                                                                ? $editSlot->day_of_week
-                                                                : old('day_of_week', [])
-                                                            )
-                                                        );
+                                                        $selectedDays = array_map('strval', (array) (
+                                                            !empty($editSlot) ? $editSlot->day_of_week : old('day_of_week', [])
+                                                        ));
                                                     @endphp
 
                                                     <div class="d-flex flex-wrap gap-2">
@@ -320,48 +278,35 @@
                                                 {{-- START TIME --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.start_time') }}</label>
-                                                    <input type="time"
-                                                           name="start_time"
-                                                           class="form-control"
+                                                    <input type="time" name="start_time" class="form-control"
                                                            value="{{ !empty($editSlot) ? substr($editSlot->start_time, 0, 5) : old('start_time') }}">
                                                 </div>
 
                                                 {{-- END TIME --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.end_time') }}</label>
-                                                    <input type="time"
-                                                           name="end_time"
-                                                           class="form-control"
+                                                    <input type="time" name="end_time" class="form-control"
                                                            value="{{ !empty($editSlot) ? substr($editSlot->end_time, 0, 5) : old('end_time') }}">
                                                 </div>
 
                                                 {{-- DURATION --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.duration') }}</label>
-                                                    <input type="number"
-                                                           min="1"
-                                                           name="duration_minutes"
-                                                           class="form-control"
+                                                    <input type="number" min="1" name="duration_minutes" class="form-control"
                                                            value="{{ !empty($editSlot) ? $editSlot->duration_minutes : old('duration_minutes', 60) }}">
                                                 </div>
 
                                                 {{-- BUFFER --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.buffer') }}</label>
-                                                    <input type="number"
-                                                           min="0"
-                                                           name="buffer_minutes"
-                                                           class="form-control"
+                                                    <input type="number" min="0" name="buffer_minutes" class="form-control"
                                                            value="{{ !empty($editSlot) ? $editSlot->buffer_minutes : old('buffer_minutes', 0) }}">
                                                 </div>
 
                                                 {{-- MAX BOOKINGS --}}
                                                 <div class="form-group">
                                                     <label>{{ trans('admin/main.max_bookings') }}</label>
-                                                    <input type="number"
-                                                           min="1"
-                                                           name="max_bookings"
-                                                           class="form-control"
+                                                    <input type="number" min="1" name="max_bookings" class="form-control"
                                                            value="{{ !empty($editSlot) ? $editSlot->max_bookings : old('max_bookings', 1) }}">
                                                 </div>
 
@@ -380,21 +325,16 @@
                                                 </div>
 
                                                 <button type="submit" class="btn btn-primary">
-                                                    {{ !empty($editSlot)
-                                                        ? trans('admin/main.update_time_slot')
-                                                        : trans('admin/main.create_time_slot') }}
+                                                    {{ !empty($editSlot) ? trans('admin/main.update_time_slot') : trans('admin/main.create_time_slot') }}
                                                 </button>
 
                                             </form>
-
                                         </div>
                                     </div>
-
                                 </div>
                             @endcan
 
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -407,27 +347,93 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    var bookingSelect = document.getElementById('booking_id');
-    if (!bookingSelect) return;
+    var bookingSelect  = document.getElementById('booking_id');
+    var resourceSelect = document.getElementById('resource_id');
+    var loadingText    = document.getElementById('resource_loading');
 
-    // Booking change hone par page reload karo GET param ke saath
-    // Yeh sabse reliable approach hai — koi JS filter nahi, koi Select2 issue nahi
-    bookingSelect.addEventListener('change', function () {
-        var bookingId = this.value;
+    // AJAX URL — controller ka getResources method
+    var ajaxUrl = "{{ getAdminPanelUrl() }}/booking/time-slot/resources";
 
-        @if(!empty($editSlot))
-            // Edit mode mein base URL alag hoga
-            var baseUrl = "{{ getAdminPanelUrl() }}/booking/time-slot/{{ $editSlot->id }}/edit";
-        @else
-            var baseUrl = "{{ getAdminPanelUrl() }}/booking/time-slot";
-        @endif
+    if (!bookingSelect || !resourceSelect) return;
 
-        if (bookingId) {
-            window.location.href = baseUrl + '?booking_id=' + bookingId;
-        } else {
-            window.location.href = baseUrl;
+    /**
+     * Booking ID de do — ye function AJAX se
+     * SELECT * FROM booking_resources WHERE booking_id = bookingId
+     * chalayega aur dropdown fill karega
+     */
+    function loadResources(bookingId, preSelectId) {
+
+        if (!bookingId) {
+            resourceSelect.innerHTML = '<option value="">-- Pehle Booking Select Karein --</option>';
+            resourceSelect.disabled = true;
+            return;
         }
+
+        // Loading state
+        resourceSelect.disabled = true;
+        loadingText.classList.remove('d-none');
+        resourceSelect.innerHTML = '<option value="">Loading...</option>';
+
+        fetch(ajaxUrl + '?booking_id=' + bookingId, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        })
+        .then(function (response) {
+            if (!response.ok) throw new Error('Server error: ' + response.status);
+            return response.json();
+        })
+        .then(function (resources) {
+
+            loadingText.classList.add('d-none');
+            resourceSelect.innerHTML = '';
+
+            if (!resources.length) {
+                resourceSelect.innerHTML = '<option value="">Is booking ka koi resource nahi</option>';
+                resourceSelect.disabled = true;
+                return;
+            }
+
+            resourceSelect.disabled = false;
+
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '-- Resource Select Karein --';
+            resourceSelect.appendChild(placeholder);
+
+            resources.forEach(function (res) {
+                var opt = document.createElement('option');
+                opt.value = res.id;
+                opt.textContent = '#' + res.id + ' - ' + res.name;
+                // Agar edit mode hai toh pre-select karo
+                if (preSelectId && String(res.id) === String(preSelectId)) {
+                    opt.selected = true;
+                }
+                resourceSelect.appendChild(opt);
+            });
+        })
+        .catch(function (err) {
+            loadingText.classList.add('d-none');
+            resourceSelect.innerHTML = '<option value="">Error loading resources</option>';
+            resourceSelect.disabled = true;
+            console.error('Resource load error:', err);
+        });
+    }
+
+    // User jab booking change kare
+    bookingSelect.addEventListener('change', function () {
+        loadResources(this.value, null);
     });
+
+    // Edit mode: page load par already selected booking ka resource load karo
+    var initialBookingId = bookingSelect.value;
+    if (initialBookingId) {
+        var preSelectId = resourceSelect.getAttribute('data-preselect') || '';
+        // Edit mode mein server ne options render kar diye hain, AJAX ki zaroorat nahi
+        // Sirf disabled hata do
+        resourceSelect.disabled = false;
+    }
 
 });
 </script>
