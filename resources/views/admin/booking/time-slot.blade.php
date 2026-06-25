@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function loadResources(bookingId, preSelectId) {
 
         if (!bookingId) {
-            resourceSelect.innerHTML = '<option value="">-- Pehle Booking Select Karein --</option>';
+            resourceSelect.innerHTML = '<option value="">-- Select Booking First --</option>';
             resourceSelect.disabled = true;
             return;
         }
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function () {
             resourceSelect.innerHTML = '';
 
             if (!resources.length) {
-                resourceSelect.innerHTML = '<option value="">Is booking ka koi resource nahi</option>';
+                resourceSelect.innerHTML = '<option value="">No Booking Resources Found</option>';
                 resourceSelect.disabled = true;
                 return;
             }

@@ -1,12 +1,15 @@
 {{--
     partials/checkout_modules/_settings_form.blade.php
 
-    Checkout Options Settings Panel — Single column layout:
-    - Section name as header with master toggle
-    - Module rows: mini toggle + name + description (full width, no right grid)
-    - Blue (#2563EB) for ON toggles
-    - Gray for OFF toggles
-    - AJAX save
+    Checkout Options Settings Panel — BOOKING ONLY
+    - Sirf "Bookings" ke modules dikhaye jaate hain (days, hours, staff_member,
+      persons_children, extra_services, cancellation_policy, checkout_message)
+    - Har module ka EK toggle — ON/OFF karne se "enabled" AND "required"
+      dono database mein update hote hain (org_checkout_modules table)
+    - Data $moduleSettings (database se, CheckoutModuleService::getOrgModuleSettings) se aata hai
+    - Field name "modules[name]" — UserController@checkoutOptionsUpdate ke
+      validation se match karta hai
+    - Hidden input + checkbox combo: toggle OFF karne par bhi "0" submit hota hai
 --}}
 
 @php
@@ -19,15 +22,16 @@
     $wrapForm    = $wrapForm    ?? true;
 
     $rawSettings = $moduleSettings ?? [];
-    $isFlat = isset($rawSettings[0]) || (count($rawSettings) && !is_array(reset($rawSettings)[0] ?? null));
 
-    $sectionConfig = [
-        'bookings'        => ['label' => trans('cart.section_bookings')        ?? 'checkout_section_bookings',  'modules' => ['days','hours','staff_member','persons_children','extra_services','cancellation_policy','checkout_message']],
-        'booking_bundles' => ['label' => trans('cart.section_booking_bundles') ?? 'checkout_section_booking_bundles', 'modules' => ['days','hours','staff_member','checkout_message']],
-        'products'        => ['label' => trans('cart.section_products')        ?? 'checkout_section_products',  'modules' => ['days','hours','persons_children','checkout_message']],
-        'product_bundles' => ['label' => trans('cart.section_product_bundles') ?? 'checkout_section_product_bundles', 'modules' => ['days','hours','staff_member','checkout_message']],
-        'courses'         => ['label' => trans('cart.section_courses')         ?? 'checkout_section_courses',   'modules' => ['days','hours','staff_member','checkout_message']],
-        'course_bundles'  => ['label' => trans('cart.section_course_bundles')  ?? 'checkout_section_course_bundles',  'modules' => ['days','hours','staff_member','checkout_message']],
+    // Sirf booking checkout pe use hone wale modules — order yahi rakha gaya hai
+    $bookingModuleNames = [
+        'days',
+        'hours',
+        'staff_member',
+        'persons_children',
+        'extra_services',
+        'cancellation_policy',
+        'checkout_message',
     ];
 
     $moduleLabels = [
@@ -38,7 +42,6 @@
         'extra_services'      => trans('cart.module_extra_services')      ?? 'Extra Services',
         'cancellation_policy' => trans('cart.module_cancellation_policy') ?? 'Cancellation Policy',
         'checkout_message'    => trans('cart.module_checkout_message')    ?? 'Message for Check-out',
-        'reviewer_message'    => trans('cart.module_reviewer_message')    ?? 'Message to Reviewer',
     ];
     $moduleDescs = [
         'days'                => trans('cart.module_days_desc')                ?? 'Check-in and check-out dates',
@@ -48,77 +51,52 @@
         'extra_services'      => trans('cart.module_extra_services_desc')      ?? 'Additional services you require',
         'cancellation_policy' => trans('cart.module_cancellation_policy_desc') ?? 'Please read and agree to our policy',
         'checkout_message'    => trans('cart.module_checkout_message_desc')    ?? 'Any special instructions for your booking',
-        'reviewer_message'    => trans('cart.module_reviewer_message_desc')    ?? 'Private message to the organizer',
     ];
 
-    $sections = [];
-    foreach ($sectionConfig as $sectionKey => $sectionMeta) {
-        $sectionModules = [];
-        foreach ($sectionMeta['modules'] as $modName) {
-            $found = null;
-            if (isset($rawSettings[$sectionKey]) && is_array($rawSettings[$sectionKey])) {
-                foreach ($rawSettings[$sectionKey] as $m) {
-                    if (($m['name'] ?? '') === $modName) { $found = $m; break; }
-                }
-            } elseif ($isFlat) {
-                foreach ($rawSettings as $m) {
-                    if (($m['name'] ?? '') === $modName) { $found = $m; break; }
-                }
+    // $rawSettings, CheckoutModuleService::getOrgModuleSettings() se aata hai —
+    // flat array of ['name' => ..., 'enabled' => ..., 'is_required' => ..., ...]
+    $bookingModules = [];
+    foreach ($bookingModuleNames as $modName) {
+        $found = null;
+        foreach ($rawSettings as $m) {
+            if (($m['name'] ?? '') === $modName) {
+                $found = $m;
+                break;
             }
-            $sectionModules[] = [
-                'name'        => $modName,
-                'label'       => $found['label']       ?? ($moduleLabels[$modName] ?? $modName),
-                'desc'        => $found['help_text']   ?? ($moduleDescs[$modName]  ?? ''),
-                'enabled'     => $found['enabled']     ?? false,
-                'is_required' => $found['is_required'] ?? false,
-                'input_type'  => $found['input_type']  ?? '',
-                'id'          => $found['id']          ?? null,
-            ];
         }
-        $sectionEnabled = $orgModules[$sectionKey]['enabled'] ?? true;
-        $sections[$sectionKey] = [
-            'label'   => $sectionMeta['label'],
-            'enabled' => $sectionEnabled,
-            'modules' => $sectionModules,
+
+        $bookingModules[] = [
+            'name'        => $modName,
+            'label'       => $found['label']       ?? ($moduleLabels[$modName] ?? $modName),
+            'desc'        => $found['help_text']   ?? ($moduleDescs[$modName]  ?? ''),
+            'enabled'     => $found['enabled']     ?? false,
+            'is_required' => $found['is_required'] ?? false, // global, hamesha required
         ];
     }
 @endphp
 
 @push('styles_top')
 <style>
-/* ══════════════════════════════════════
-   CHECKOUT OPTIONS — SINGLE COLUMN
-══════════════════════════════════════ */
 .co-wrap {
     font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
 }
 
-/* ── Section block ── */
-.co-section-block {
-    margin-bottom: 6px;
-}
-
-/* Section header row */
 .co-section-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 0 4px;
+    padding: 6px 0 8px;
 }
 
 .co-section-name {
-    font-size: 11.5px;
+    font-size: 12.5px;
     font-weight: 700;
     color: #0f172a;
     letter-spacing: 0.01em;
 }
 
-/* ── Module row ── */
 .co-module-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 5px 6px 5px 4px;
+    padding: 7px 6px 7px 4px;
     border-radius: 7px;
     transition: background 0.12s;
 }
@@ -129,7 +107,7 @@
 .co-module-row-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     min-width: 0;
 }
 
@@ -138,30 +116,30 @@
 }
 
 .co-module-row-name {
-    font-size: 11.5px;
+    font-size: 12.5px;
     font-weight: 500;
     color: #1e293b;
     line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .co-module-row-desc {
-    font-size: 10px;
+    font-size: 10.5px;
     color: #94a3b8;
     line-height: 1.3;
     margin-top: 1px;
 }
 
-/* Section divider */
-.co-section-divider {
-    height: 0.5px;
-    background: #e2e8f0;
-    margin: 6px 0;
+.co-required-badge {
+    font-size: 9.5px;
+    font-weight: 600;
+    color: #2563EB;
+    background: #eff6ff;
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    white-space: nowrap;
 }
 
-/* Save row */
 .co-save-row {
     display: flex;
     align-items: center;
@@ -192,35 +170,7 @@
     display: none;
 }
 
-/* ── MASTER TOGGLE (section header, 32×18) ── */
-.co-master-toggle {
-    position: relative;
-    width: 32px;
-    height: 18px;
-    flex-shrink: 0;
-}
-.co-master-toggle input { opacity:0; width:0; height:0; position:absolute; }
-.co-master-slider {
-    position: absolute;
-    inset: 0;
-    border-radius: 20px;
-    background: #cbd5e1;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.co-master-slider:before {
-    content: '';
-    position: absolute;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: #fff;
-    top: 3px; left: 3px;
-    transition: transform 0.2s;
-}
-.co-master-toggle input:checked + .co-master-slider            { background: #2563EB; }
-.co-master-toggle input:checked + .co-master-slider:before     { transform: translateX(14px); }
-
-/* ── MODULE TOGGLE (each row, 34×19) ── */
+/* ── MODULE TOGGLE (34×19) ── */
 .co-mod-toggle {
     position: relative;
     width: 34px;
@@ -248,13 +198,7 @@
 }
 .co-mod-toggle input:checked + .co-mod-slider           { background: #2563EB; }
 .co-mod-toggle input:checked + .co-mod-slider:before    { transform: translateX(15px); }
-
-/* Faded when master OFF */
-.co-section-faded {
-    opacity: 0.35;
-    pointer-events: none;
-    user-select: none;
-}
+.co-mod-toggle input:disabled + .co-mod-slider          { opacity: 0.7; cursor: not-allowed; }
 </style>
 @endpush
 
@@ -268,60 +212,54 @@
             @csrf
     @endif
 
-    @foreach($sections as $sectionKey => $section)
+    <div class="co-section-header">
+        <span class="co-section-name">{{ trans('cart.section_bookings') ?? 'Bookings' }}</span>
+    </div>
 
-        <div class="co-section-block">
+    <div id="co-mods-bookings">
+        @foreach($bookingModules as $mod)
+            <div class="co-module-row">
+                <div class="co-module-row-left">
 
-            {{-- Section header: name + master toggle --}}
-            <div class="co-section-header">
-                <label class="co-master-toggle" title="{{ $section['label'] }}">
-                    <input
-                        type="checkbox"
-                        class="co-master-check"
-                        data-section="{{ $sectionKey }}"
-                        {{ $section['enabled'] ? 'checked' : '' }}
-                        onchange="coMasterToggle('{{ $sectionKey }}', this)"
-                    >
-                    <span class="co-master-slider"></span>
-                </label>
-                <span class="co-section-name">{{ $section['label'] }}</span>
-            </div>
+                    @if($mod['is_required'])
+                        {{-- Globally required module — toggle hamesha ON, disable kiya hai --}}
+                        <label class="co-mod-toggle" title="{{ $mod['label'] }}">
+                            <input type="checkbox" checked disabled>
+                            <span class="co-mod-slider"></span>
+                        </label>
+                        {{-- Hidden field zaroori nahi — service is_required modules ko
+                             hamesha true rakhta hai chahe input aaye ya na aaye --}}
+                    @else
+                        {{-- Hidden input pehle — checkbox unchecked hone par "0" submit hoga --}}
+                        <input type="hidden" name="modules[{{ $mod['name'] }}]" value="0">
+                        <label class="co-mod-toggle" title="{{ $mod['label'] }}">
+                            <input
+                                type="checkbox"
+                                class="co-module-toggle"
+                                name="modules[{{ $mod['name'] }}]"
+                                value="1"
+                                data-module="{{ $mod['name'] }}"
+                                {{ $mod['enabled'] ? 'checked' : '' }}
+                            >
+                            <span class="co-mod-slider"></span>
+                        </label>
+                    @endif
 
-            {{-- Module rows --}}
-            <div id="co-mods-{{ $sectionKey }}" class="{{ !$section['enabled'] ? 'co-section-faded' : '' }}">
-                @foreach($section['modules'] as $mod)
-                    <div class="co-module-row">
-                        <div class="co-module-row-left">
-                            <label class="co-mod-toggle" title="{{ $mod['label'] }}">
-                                <input
-                                    type="checkbox"
-                                    class="co-module-toggle"
-                                    name="sections[{{ $sectionKey }}][{{ $mod['name'] }}]"
-                                    value="1"
-                                    data-section="{{ $sectionKey }}"
-                                    data-module="{{ $mod['name'] }}"
-                                    {{ $mod['enabled'] ? 'checked' : '' }}
-                                >
-                                <span class="co-mod-slider"></span>
-                            </label>
-                            <div class="co-module-row-text">
-                                <div class="co-module-row-name">{{ $mod['label'] }}</div>
-                                @if($mod['desc'])
-                                    <div class="co-module-row-desc">{{ $mod['desc'] }}</div>
-                                @endif
-                            </div>
+                    <div class="co-module-row-text">
+                        <div class="co-module-row-name">
+                            {{ $mod['label'] }}
+                            @if($mod['is_required'])
+                                <span class="co-required-badge">{{ trans('cart.always_required') ?? 'Always Required' }}</span>
+                            @endif
                         </div>
+                        @if($mod['desc'])
+                            <div class="co-module-row-desc">{{ $mod['desc'] }}</div>
+                        @endif
                     </div>
-                @endforeach
+                </div>
             </div>
-
-        </div>
-
-        @if(!$loop->last)
-            <div class="co-section-divider"></div>
-        @endif
-
-    @endforeach
+        @endforeach
+    </div>
 
     {{-- Save Row --}}
     <div class="co-save-row">
@@ -344,34 +282,23 @@
 (function () {
     'use strict';
 
-    /* Master toggle — fades/unfades module rows */
-    window.coMasterToggle = function (sectionId, checkbox) {
-        var modsBlock = document.getElementById('co-mods-' + sectionId);
-        if (!modsBlock) return;
-        if (checkbox.checked) {
-            modsBlock.classList.remove('co-section-faded');
-        } else {
-            modsBlock.classList.add('co-section-faded');
-        }
-    };
-
-    /* AJAX save (wrapForm = false) */
+    /* AJAX save (jab wrapForm = false ho) */
     window.coSaveSettings = function () {
         var btn = document.getElementById('co-save-btn');
         var msg = document.getElementById('co-save-msg');
-        var settings = {};
+        var modules = {};
 
-        document.querySelectorAll('.co-module-toggle').forEach(function (t) {
-            var sec = t.dataset.section;
-            var mod = t.dataset.module;
-            if (!settings[sec]) settings[sec] = {};
-            settings[sec][mod] = t.checked;
-        });
+        document.querySelectorAll('#co-mods-bookings input[name^="modules["]').forEach(function (input) {
+            var match = input.name.match(/modules\[(.+)\]/);
+            if (!match) return;
+            var modName = match[1];
 
-        document.querySelectorAll('.co-master-check').forEach(function (cb) {
-            var sec = cb.dataset.section;
-            if (!settings[sec]) settings[sec] = {};
-            settings[sec]['_enabled'] = cb.checked;
+            // checkbox priority: agar checkbox checked hai to true, warna hidden ki value
+            if (input.type === 'checkbox') {
+                modules[modName] = input.checked;
+            } else if (!(modName in modules)) {
+                modules[modName] = (input.value === '1');
+            }
         });
 
         var csrf = document.querySelector('meta[name="csrf-token"]');
@@ -386,7 +313,7 @@
                 'X-CSRF-TOKEN': csrf ? csrf.getAttribute('content') : '',
                 'Accept': 'application/json',
             },
-            body: JSON.stringify({ settings: settings })
+            body: JSON.stringify({ modules: modules })
         })
         .then(function (r) { return r.json(); })
         .then(function () {

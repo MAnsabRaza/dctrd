@@ -17,6 +17,12 @@ class CheckoutModuleService
      *
      * Kisi bhi product/course/booking ke liye enabled modules laata hai.
      * Priority: Entity Override > Org Setting > Default (disabled)
+     *
+     * is_required ab sirf global column se nahi aata — agar org ne
+     * apne settings panel se kisi module ko "required" mark kiya hai
+     * (org_checkout_modules.required = true), to wo bhi is_required
+     * ban jaata hai, taake checkout/cart wali required condition
+     * org ke toggle ko follow kare.
      */
     public function getModulesForEntity(
         string $entityType,
@@ -32,6 +38,10 @@ class CheckoutModuleService
         $orgEnabledIds = OrgCheckoutModule::where('org_id', $orgId)
             ->where('enabled', true)
             ->pluck('enabled', 'module_id'); // [module_id => true/false]
+
+        // Step 2b: Org level pe kon se modules "required" mark hain
+        $orgRequiredIds = OrgCheckoutModule::where('org_id', $orgId)
+            ->pluck('required', 'module_id'); // [module_id => true/false]
 
         // Step 3: Entity level pe koi override hai?
         $entityOverrides = EntityCheckoutModule::where('entity_type', $entityType)
@@ -59,8 +69,9 @@ class CheckoutModuleService
             return false;
         });
 
-        // Step 5: Entity config_override merge karo agar hai
-        $enabledModules = $enabledModules->map(function ($module) use ($entityOverrides) {
+        // Step 5: Entity config_override merge karo agar hai + is_required ko
+        // org-level "required" toggle ke sath merge karo
+        $enabledModules = $enabledModules->map(function ($module) use ($entityOverrides, $orgRequiredIds) {
             if ($entityOverrides->has($module->id)) {
                 $override = $entityOverrides[$module->id];
                 if (!empty($override->config_override)) {
@@ -72,6 +83,13 @@ class CheckoutModuleService
                     $module->config = $mergedConfig;
                 }
             }
+
+            // Global is_required already true hai toh waisa hi rehne do,
+            // warna org ke required toggle ko respect karo.
+            if (!$module->is_required && !empty($orgRequiredIds[$module->id])) {
+                $module->is_required = true;
+            }
+
             return $module;
         });
 
@@ -345,6 +363,8 @@ class CheckoutModuleService
      *
      * Org/Instructor ke panel mein dikhane ke liye saare modules
      * aur unka enabled/disabled status laata hai.
+     * 'enabled' yahan org ke "required" toggle ko bhi reflect karta hai
+     * (kyunke save karte waqt enabled aur required same value pe set hote hain).
      */
     public function getOrgModuleSettings(int $orgId): array
     {
@@ -357,8 +377,12 @@ class CheckoutModuleService
         $orgSettings = OrgCheckoutModule::where('org_id', $orgId)
             ->pluck('enabled', 'module_id'); // [module_id => true/false]
 
+        // Is org ke required modules (cart validation ke liye)
+        $orgRequired = OrgCheckoutModule::where('org_id', $orgId)
+            ->pluck('required', 'module_id'); // [module_id => true/false]
+
         // Merge karke return karo
-        return $allModules->map(function ($module) use ($orgSettings) {
+        return $allModules->map(function ($module) use ($orgSettings, $orgRequired) {
             return [
                 'id'               => $module->id,
                 'name'             => $module->name,
@@ -366,8 +390,9 @@ class CheckoutModuleService
                 'help_text'        => $module->translated_help_text,
                 'input_type'       => $module->input_type,
                 'order_index'      => $module->order_index,
-                'is_required'      => $module->is_required,
+                'is_required'      => $module->is_required, // global force-required
                 'enabled'          => (bool) ($module->is_required || ($orgSettings[$module->id] ?? false)),
+                'required'         => (bool) ($module->is_required || ($orgRequired[$module->id] ?? false)),
             ];
         })->toArray();
     }
@@ -379,6 +404,13 @@ class CheckoutModuleService
      *
      * Org/Instructor ki module preferences save karta hai.
      * $moduleSettings = ['days' => true, 'hours' => false, ...]
+     *
+     * Settings panel mein har module ka SIRF EK toggle hai — jo
+     * "enabled" aur "required" dono ko same value pe set karta hai.
+     * Matlab: toggle ON => module checkout pe dikhega AUR cart mein
+     * required (mandatory) hoga. Toggle OFF => dono false ho jaate hain.
+     * Globally is_required modules (e.g. cancellation_policy) hamesha
+     * enabled+required true rehte hain, regardless of toggle.
      */
     public function saveOrgModuleSettings(int $orgId, array $moduleSettings): void
     {
@@ -391,7 +423,7 @@ class CheckoutModuleService
                 continue; // Unknown module — skip karo
             }
 
-            $enabled = $module->is_required ? true : (bool) $isEnabled;
+            $value = $module->is_required ? true : (bool) $isEnabled;
 
             OrgCheckoutModule::updateOrCreate(
                 [
@@ -399,7 +431,8 @@ class CheckoutModuleService
                     'module_id' => $module->id,
                 ],
                 [
-                    'enabled' => $enabled,
+                    'enabled'  => $value,
+                    'required' => $value,
                 ]
             );
         }
