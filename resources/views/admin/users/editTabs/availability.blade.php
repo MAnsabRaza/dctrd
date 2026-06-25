@@ -345,7 +345,8 @@
             </button>
         </div>
     </div>
-</div>
+    </div><!-- /.container-fluid -->
+</div><!-- /#availability.tab-pane -->
 
 <div id="availToast" class="alert mb-0" role="alert"></div>
 
