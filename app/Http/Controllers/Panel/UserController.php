@@ -318,12 +318,13 @@ class UserController extends Controller
                     'public_message' => (!empty($data['public_message']) and $data['public_message'] == 'on'),
                     'enable_profile_statistics' => (!empty($data['enable_profile_statistics']) and $data['enable_profile_statistics'] == 'on'),
                     'auto_renew_subscription' => (!empty($data['auto_renew_subscription']) and $data['auto_renew_subscription'] == 'on'),
-                    'lat' => !empty($data['lat']) ? $data['lat'] : $user->lat,
-'lng' => !empty($data['lng']) ? $data['lng'] : $user->lng,
-'address' => !empty($data['address']) ? $data['address'] : $user->address,
-'city'    => !empty($data['city'])    ? $data['city']    : $user->city,
-'state'   => !empty($data['state'])   ? $data['state']   : $user->state,
-'country' => !empty($data['country']) ? $data['country'] : $user->country,
+                 'lat'         => array_key_exists('lat', $data) && $data['lat'] !== '' ? $data['lat'] : $user->lat,
+'lng'         => array_key_exists('lng', $data) && $data['lng'] !== '' ? $data['lng'] : $user->lng,
+'address'     => array_key_exists('address', $data) && $data['address'] !== '' ? $data['address'] : $user->address,
+'city'        => array_key_exists('city', $data) && $data['city'] !== '' ? $data['city'] : $user->city,
+'state'       => array_key_exists('state', $data) && $data['state'] !== '' ? $data['state'] : $user->state,
+'country'     => array_key_exists('country', $data) && $data['country'] !== '' ? $data['country'] : $user->country,
+'postal_code' => array_key_exists('postal_code', $data) && $data['postal_code'] !== '' ? $data['postal_code'] : $user->postal_code,
                     'postal_code' => $data['postal_code'] ?? null,
                 ];
 
@@ -449,9 +450,12 @@ class UserController extends Controller
                 $user->update($updateData);
             }
 
-            if ($step == "basic_information" and (!empty($data['lat']) or !empty($data['lng']))) {
-                app(LocationService::class)->saveLocation($user, $data);
-            }
+        if ($step == "basic_information" && (
+    (array_key_exists('lat', $data) && $data['lat'] !== '') ||
+    (array_key_exists('lng', $data) && $data['lng'] !== '')
+)) {
+    app(LocationService::class)->saveLocation($user, $data);
+}
 
             if (!empty($updateUserMeta)) {
                 foreach ($updateUserMeta as $metaName => $metaValue) {
