@@ -434,9 +434,9 @@
 
                                         @include('admin.users.editTabs.checkout_options')
 
-                                        @include('admin.users.editTabs.availability')
+                                        <!-- @include('admin.users.editTabs.availability') -->
 
-                                        @include('admin.users.editTabs.booking_settings')
+                                        <!-- @include('admin.users.editTabs.booking_settings') -->
 
                                         @if(!empty($becomeInstructor))
                                             @include('admin.users.editTabs.become_instructor')
