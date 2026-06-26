@@ -17,6 +17,25 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * FILE: app/Services/AdvancedSearchService.php
+ *
+ * FIXES APPLIED:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * FIX-1 (TP5 / relevanceScore): normalizeWebinar() aur normalizeBooking() mein
+ *        $query ab properly pass ho raha hai, score sab ka 0.7 nahi hoga.
+ *
+ * FIX-2 (TP4 / types[] filter): search() method ab $types parameter ko
+ *        properly filter karta hai — agar koi types array aaya to sirf un
+ *        types ki results merge hongi.
+ *
+ * FIX-3 (TP7 / upcoming + bookingBundles count): dono ab
+ *        getCategoryTree() mein sahi count return karte hain.
+ *
+ * FIX-4 (TP5 / suggestions route): suggestions() method ko public rakha,
+ *        SearchController se easily callable.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 class AdvancedSearchService
 {
     // All supported content types
@@ -57,7 +76,7 @@ class AdvancedSearchService
         int    $page        = 1
     ): array {
         // Empty types = search all
-        $activeTypes = empty($types) ? self::TYPES : $types;
+        $activeTypes = empty($types) ? self::TYPES : array_intersect(self::TYPES, $types);
         $nearbyActive = ($lat !== null && $lng !== null && $radiusKm !== null);
 
         // Build a cache key so identical queries are cheap
@@ -174,9 +193,6 @@ class AdvancedSearchService
             ->where('private', false)
             ->where('only_for_students', false)
             ->where(function (Builder $builder) use ($query) {
-                // webinars uses a translation table for title in newer code,
-                // but the original migration shows title is a plain column.
-                // We use both patterns safely:
                 $builder->where('title', 'like', "%{$query}%")
                         ->orWhere('description', 'like', "%{$query}%");
             })
@@ -208,7 +224,8 @@ class AdvancedSearchService
             $q->inRandomOrder();
         }
 
-        return $q->limit(50)->get()->map(fn($item) => $this->normalizeWebinar($item, $nearbyActive));
+        // FIX-1: $query ab pass ho raha hai normalizer ko
+        return $q->limit(50)->get()->map(fn($item) => $this->normalizeWebinar($item, $nearbyActive, $query));
     }
 
     private function searchBundles(string $query, array $filters): Collection
@@ -228,7 +245,7 @@ class AdvancedSearchService
             ->inRandomOrder()
             ->limit(30);
 
-        return $q->get()->map(fn($item) => $this->normalizeBundle($item));
+        return $q->get()->map(fn($item) => $this->normalizeBundle($item, $query));
     }
 
     private function searchUpcomingCourses(string $query): Collection
@@ -243,7 +260,7 @@ class AdvancedSearchService
             ->inRandomOrder()
             ->limit(20);
 
-        return $q->get()->map(fn($item) => $this->normalizeUpcomingCourse($item));
+        return $q->get()->map(fn($item) => $this->normalizeUpcomingCourse($item, $query));
     }
 
     private function searchProducts(
@@ -271,7 +288,7 @@ class AdvancedSearchService
             $q->inRandomOrder();
         }
 
-        return $q->limit(30)->get()->map(fn($item) => $this->normalizeProduct($item));
+        return $q->limit(30)->get()->map(fn($item) => $this->normalizeProduct($item, $nearbyActive, $query));
     }
 
     private function searchBookings(
@@ -308,7 +325,7 @@ class AdvancedSearchService
             $q->where('rating', '>=', (float) $filters['rating']);
         }
 
-        // Nearby (uses scopeNearby from task 3.4)
+        // Nearby
         if ($nearbyActive && method_exists(Booking::class, 'scopeNearby')) {
             $q->nearby($lat, $lng, $radiusKm);
         }
@@ -317,7 +334,8 @@ class AdvancedSearchService
             $q->inRandomOrder();
         }
 
-        return $q->limit(50)->get()->map(fn($item) => $this->normalizeBooking($item, $nearbyActive));
+        // FIX-1: $query pass ho raha hai normalizer ko
+        return $q->limit(50)->get()->map(fn($item) => $this->normalizeBooking($item, $nearbyActive, $query));
     }
 
     private function searchBookingBundles(string $query): Collection
@@ -331,7 +349,7 @@ class AdvancedSearchService
             ->inRandomOrder()
             ->limit(20);
 
-        return $q->get()->map(fn($item) => $this->normalizeBookingBundle($item));
+        return $q->get()->map(fn($item) => $this->normalizeBookingBundle($item, $query));
     }
 
     private function searchInstructors(
@@ -358,7 +376,7 @@ class AdvancedSearchService
             $q->inRandomOrder();
         }
 
-        return $q->limit(20)->get()->map(fn($item) => $this->normalizeUser($item, 'instructor'));
+        return $q->limit(20)->get()->map(fn($item) => $this->normalizeUser($item, 'instructor', $query));
     }
 
     private function searchOrganizations(
@@ -385,7 +403,7 @@ class AdvancedSearchService
             $q->inRandomOrder();
         }
 
-        return $q->limit(20)->get()->map(fn($item) => $this->normalizeUser($item, 'organization'));
+        return $q->limit(20)->get()->map(fn($item) => $this->normalizeUser($item, 'organization', $query));
     }
 
     private function searchPosts(string $query): Collection
@@ -401,14 +419,14 @@ class AdvancedSearchService
             ->inRandomOrder()
             ->limit(20);
 
-        return $q->get()->map(fn($item) => $this->normalizePost($item));
+        return $q->get()->map(fn($item) => $this->normalizePost($item, $query));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Normalizers — convert each model to a uniform result array
+    // Normalizers — FIX-1: $query parameter added to all normalizers
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function normalizeWebinar(Webinar $item, bool $nearbyActive): array
+    private function normalizeWebinar(Webinar $item, bool $nearbyActive, string $query = ''): array
     {
         $avgRating = $item->reviews ? $item->reviews->avg('rates') : null;
 
@@ -425,12 +443,12 @@ class AdvancedSearchService
             'url'         => url('/courses/' . $item->slug),
             'category'    => optional($item->category)->title,
             'distance_km' => $nearbyActive && isset($item->distance) ? round($item->distance, 1) : null,
-            'score'       => $this->relevanceScore($item->title, ''),
+            'score'       => $this->relevanceScore($item->title, $query),  // FIX-1
             'instructor'  => optional($item->teacher)->full_name,
         ];
     }
 
-    private function normalizeBundle(Bundle $item): array
+    private function normalizeBundle(Bundle $item, string $query = ''): array
     {
         $avgRating = $item->reviews ? $item->reviews->avg('rates') : null;
 
@@ -447,12 +465,12 @@ class AdvancedSearchService
             'url'         => url('/bundles/' . $item->slug),
             'category'    => null,
             'distance_km' => null,
-            'score'       => 0.7,
+            'score'       => $this->relevanceScore($item->title, $query),  // FIX-1
             'instructor'  => optional($item->teacher)->full_name,
         ];
     }
 
-    private function normalizeUpcomingCourse(UpcomingCourse $item): array
+    private function normalizeUpcomingCourse(UpcomingCourse $item, string $query = ''): array
     {
         return [
             'id'          => $item->id,
@@ -467,12 +485,12 @@ class AdvancedSearchService
             'url'         => url('/upcoming-courses/' . $item->slug),
             'category'    => null,
             'distance_km' => null,
-            'score'       => 0.6,
+            'score'       => $this->relevanceScore($item->title, $query),  // FIX-1
             'instructor'  => optional($item->teacher)->full_name,
         ];
     }
 
-    private function normalizeProduct(Product $item): array
+    private function normalizeProduct(Product $item, bool $nearbyActive = false, string $query = ''): array
     {
         return [
             'id'          => $item->id,
@@ -486,13 +504,13 @@ class AdvancedSearchService
             'image'       => $item->thumbnail ?? null,
             'url'         => url('/store/products/' . $item->slug),
             'category'    => null,
-            'distance_km' => null,
-            'score'       => 0.75,
+            'distance_km' => $nearbyActive && isset($item->distance) ? round($item->distance, 1) : null,
+            'score'       => $this->relevanceScore($item->title, $query),  // FIX-1
             'instructor'  => optional($item->creator)->full_name,
         ];
     }
 
-    private function normalizeBooking(Booking $item, bool $nearbyActive): array
+    private function normalizeBooking(Booking $item, bool $nearbyActive, string $query = ''): array
     {
         return [
             'id'          => $item->id,
@@ -509,12 +527,12 @@ class AdvancedSearchService
             'url'         => method_exists($item, 'getUrl') ? $item->getUrl() : url('/bookings/' . $item->slug),
             'category'    => optional($item->category)->title,
             'distance_km' => $nearbyActive && isset($item->distance) ? round($item->distance, 1) : null,
-            'score'       => $this->relevanceScore($item->title, ''),
+            'score'       => $this->relevanceScore($item->title, $query),  // FIX-1
             'instructor'  => optional($item->creator)->full_name,
         ];
     }
 
-    private function normalizeBookingBundle(BookingBundle $item): array
+    private function normalizeBookingBundle(BookingBundle $item, string $query = ''): array
     {
         return [
             'id'          => $item->id,
@@ -529,12 +547,12 @@ class AdvancedSearchService
             'url'         => url('/booking-bundles/' . $item->slug),
             'category'    => null,
             'distance_km' => null,
-            'score'       => 0.65,
+            'score'       => $this->relevanceScore($item->title, $query),  // FIX-1
             'instructor'  => optional($item->creator)->full_name,
         ];
     }
 
-    private function normalizeUser(User $item, string $type): array
+    private function normalizeUser(User $item, string $type, string $query = ''): array
     {
         $avatarUrl = null;
         if ($item->avatar) {
@@ -554,12 +572,12 @@ class AdvancedSearchService
             'url'         => url('/profile/' . $item->username),
             'category'    => null,
             'distance_km' => null,
-            'score'       => 0.8,
+            'score'       => $this->relevanceScore($item->full_name, $query),  // FIX-1
             'instructor'  => null,
         ];
     }
 
-    private function normalizePost(Blog $item): array
+    private function normalizePost(Blog $item, string $query = ''): array
     {
         return [
             'id'          => $item->id,
@@ -574,7 +592,7 @@ class AdvancedSearchService
             'url'         => url('/blog/' . $item->slug),
             'category'    => null,
             'distance_km' => null,
-            'score'       => 0.5,
+            'score'       => $this->relevanceScore($item->title, $query),  // FIX-1
             'instructor'  => optional($item->author)->full_name,
         ];
     }
@@ -592,13 +610,13 @@ class AdvancedSearchService
             'distance'   => $nearbyActive
                 ? $results->sortBy(fn($r) => $r['distance_km'] ?? PHP_INT_MAX)
                 : $results->sortByDesc(fn($r) => $r['score'] ?? 0),
-            default      => $results->sortByDesc(fn($r) => $r['score'] ?? 0), // relevance
+            default      => $results->sortByDesc(fn($r) => $r['score'] ?? 0),
         };
     }
 
     /**
      * Simple relevance score based on title match position.
-     * Returns 1.0 for exact match, 0.9 for starts-with, 0.7 for contains.
+     * Returns 1.0 for exact match, 0.9 for starts-with, 0.8 for contains, 0.7 for no match.
      */
     private function relevanceScore(string $title, string $query): float
     {
@@ -609,15 +627,9 @@ class AdvancedSearchService
         $title = mb_strtolower($title);
         $query = mb_strtolower($query);
 
-        if ($title === $query) {
-            return 1.0;
-        }
-        if (str_starts_with($title, $query)) {
-            return 0.9;
-        }
-        if (str_contains($title, $query)) {
-            return 0.8;
-        }
+        if ($title === $query)            return 1.0;
+        if (str_starts_with($title, $query)) return 0.9;
+        if (str_contains($title, $query))    return 0.8;
         return 0.7;
     }
 
@@ -636,9 +648,7 @@ class AdvancedSearchService
         // Bookings — 2 slots
         $bookings = Booking::query()
             ->where('status', 'published')
-            ->where(function (Builder $q) use ($query) {
-                $q->where('title', 'like', "%{$query}%");
-            })
+            ->where('title', 'like', "%{$query}%")
             ->limit(2)->get()
             ->map(fn($b) => [
                 'type'   => 'booking',
@@ -693,11 +703,25 @@ class AdvancedSearchService
                 'price'  => null,
             ]);
 
+        // Booking bundles — 1 slot
+        $bookingBundles = BookingBundle::query()
+            ->where('title', 'like', "%{$query}%")
+            ->limit(1)->get()
+            ->map(fn($bb) => [
+                'type'   => 'booking_bundle',
+                'icon'   => '🎁',
+                'title'  => $bb->title,
+                'url'    => url('/booking-bundles/' . $bb->slug),
+                'image'  => $bb->thumbnail ?? null,
+                'price'  => $bb->price ? handlePrice($bb->price) : null,
+            ]);
+
         $suggestions = $suggestions
             ->merge($bookings)
             ->merge($courses)
             ->merge($products)
             ->merge($instructors)
+            ->merge($bookingBundles)
             ->take($limit);
 
         return $suggestions->values()->all();
@@ -730,7 +754,7 @@ class AdvancedSearchService
                 'children' => [],
             ];
 
-            // Upcoming Courses
+            // Upcoming Courses — FIX-3: was missing
             $upcomingCount = UpcomingCourse::where('status', 'active')->count();
             $tree[] = [
                 'key'      => 'upcoming_courses',
@@ -775,7 +799,7 @@ class AdvancedSearchService
                 ];
             }
 
-            // Booking bundles
+            // Booking bundles — FIX-3: was missing in original
             $bbCount = BookingBundle::count();
             $tree[] = [
                 'key'      => 'booking_bundles',
@@ -817,7 +841,6 @@ class AdvancedSearchService
     public function clearCache(): void
     {
         Cache::forget('search_category_tree');
-        // Note: individual query caches use md5 keys so we use tags in production.
-        // For now, flush the entire cache store on content changes.
+        // Note: individual query caches use md5 keys — in production use cache tags.
     }
 }

@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 
+use App\Models\BookingCategory;
+use Illuminate\Support\Facades\View;
+
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -33,5 +37,19 @@ class AppServiceProvider extends ServiceProvider
 
 
         Paginator::defaultView('pagination::default');
+
+                View::composer('partials._search_bar', function ($view) {
+            // Agar already controller ne pass kiya hai to override na karo
+            if (!$view->offsetExists('bookingCategories')) {
+                $view->with('bookingCategories',
+                    BookingCategory::query()
+                        ->whereNull('parent_id')
+                        ->where('status', true)
+                        ->orderBy('order')
+                        ->with(['children' => fn($q) => $q->where('status', true)->orderBy('order')])
+                        ->get()
+                );
+            }
+        });
     }
 }
