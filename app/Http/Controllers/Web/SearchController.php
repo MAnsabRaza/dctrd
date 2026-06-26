@@ -335,7 +335,7 @@ $this->applySort($upcomingQuery, $request, false, 'price', 'created_at');
 
             $this->applyPriceFilter($productsQuery, $request, 'price');
             $productsNearby = $this->applyNearby($productsQuery, $request, Product::class);
-            $this->applySort($productsQuery, $request, $productsNearby, 'price', 'avg_rating');
+            $this->applySort($productsQuery, $request, $productsNearby, 'price', 'created_at');
 
             $productsCount = (clone $productsQuery)->count();
             $products      = $productsQuery->limit(20)->get();
