@@ -361,8 +361,8 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 1678], ['role_id' => 2, 'section_id' => 1678, 'allow' => 1]);
 
         // Agora History 1700 - 1724
-        \App\Models\Permission::updateOrCreate(['id' => 1701], ['role_id' => 2, 'section_id' => 1701, 'allow' => 1]);
-        \App\Models\Permission::updateOrCreate(['id' => 1702], ['role_id' => 2, 'section_id' => 1702, 'allow' => 1]);
+        // \App\Models\Permission::updateOrCreate(['id' => 1701], ['role_id' => 2, 'section_id' => 1701, 'allow' => 1]);
+        // \App\Models\Permission::updateOrCreate(['id' => 1702], ['role_id' => 2, 'section_id' => 1702, 'allow' => 1]);
 
         // Regions 1725 - 1749
         \App\Models\Permission::updateOrCreate(['id' => 1725], ['role_id' => 2, 'section_id' => 1725, 'allow' => 1]);
