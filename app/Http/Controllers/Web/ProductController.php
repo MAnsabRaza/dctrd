@@ -274,6 +274,36 @@ class ProductController extends Controller
         if (empty($sort) or $sort == "newest") {
             $query->orderBy('created_at', 'desc');
         }
+        // ── Location / radius filter ──────────────────────────
+$lat    = $request->get('lat');
+$lng    = $request->get('lng');
+$radius = (float) ($request->get('radius', 25));
+
+if (!empty($lat) && !empty($lng)) {
+    $lat = (float) $lat;
+    $lng = (float) $lng;
+
+    $haversine = "(
+        6371 * ACOS(
+            COS(RADIANS($lat))
+            * COS(RADIANS(products.lat))
+            * COS(RADIANS(products.lng) - RADIANS($lng))
+            + SIN(RADIANS($lat))
+            * SIN(RADIANS(products.lat))
+        )
+    )";
+
+    $query
+        ->whereNotNull('products.lat')
+        ->whereNotNull('products.lng')
+        ->whereRaw("{$haversine} <= ?", [$radius])
+        ->selectRaw("products.*, {$haversine} AS distance_km");
+
+    if (empty($sort)) {
+        $query->orderByRaw('distance_km ASC');
+    }
+}
+// ─────────────────────────────────────────────────────
 
         return $query;
     }
