@@ -380,18 +380,19 @@ $this->applySort($upcomingQuery, $request, false, 'price', 'created_at');
                       ->when($searchOrganizations, fn($q) => $q->orWhere('role_name', Role::$organization));
                 });
 
-            $this->applyRatingFilter($usersBaseQuery, $request, 'avg_rating');
-            $usersNearby = $this->applyNearby($usersBaseQuery, $request, User::class);
+            
+          // applyRatingFilter removed — users table mein avg_rating nahi
+$usersNearby = $this->applyNearby($usersBaseQuery, $request, User::class);
 
-          if ($searchInstructors) {
+if ($searchInstructors) {
     $instructorsQuery = (clone $usersBaseQuery)->where('role_name', Role::$teacher);
-    $this->applySort($instructorsQuery, $request, $usersNearby, 'created_at', 'avg_rating');
+    $this->applySort($instructorsQuery, $request, $usersNearby, 'created_at', 'created_at');
     $instructors = $instructorsQuery->limit(20)->get();
 }
 
 if ($searchOrganizations) {
     $organizationsQuery = (clone $usersBaseQuery)->where('role_name', Role::$organization);
-    $this->applySort($organizationsQuery, $request, $usersNearby, 'created_at', 'avg_rating');
+    $this->applySort($organizationsQuery, $request, $usersNearby, 'created_at', 'created_at');
     $organizations = $organizationsQuery->limit(20)->get();
 }
 
@@ -431,7 +432,7 @@ if ($searchOrganizations) {
                 ->with(['creator']);
 
             $this->applyPriceFilter($bookingBundlesQuery, $request, 'price');
-            $this->applySort($bookingBundlesQuery, $request, false, 'price', 'avg_rating');
+            $this->applySort($bookingBundlesQuery, $request, false, 'price', 'created_at');
 
             $bookingBundlesCount = (clone $bookingBundlesQuery)->count();
             $bookingBundles      = $bookingBundlesQuery->limit(20)->get();
