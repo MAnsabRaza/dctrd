@@ -548,6 +548,37 @@ public function directPayment(Request $request)
                 $query->orderBy('bookings.created_at', 'desc');
         }
 
+        $lat    = $request->get('lat');
+$lng    = $request->get('lng');
+$radius = (float) ($request->get('radius', 25)); // km, default 25
+
+if (!empty($lat) && !empty($lng)) {
+    $lat    = (float) $lat;
+    $lng    = (float) $lng;
+
+    // Haversine formula — distance in km
+    $haversine = "(
+        6371 * ACOS(
+            COS(RADIANS($lat))
+            * COS(RADIANS(bookings.lat))
+            * COS(RADIANS(bookings.lng) - RADIANS($lng))
+            + SIN(RADIANS($lat))
+            * SIN(RADIANS(bookings.lat))
+        )
+    )";
+
+    $query
+        ->whereNotNull('bookings.lat')
+        ->whereNotNull('bookings.lng')
+        ->whereRaw("{$haversine} <= ?", [$radius])
+        ->selectRaw("bookings.*, {$haversine} AS distance_km");
+
+    // Agar sort already set nahi hai toh distance se sort karo
+    if (empty($sort)) {
+        $query->orderByRaw('distance_km ASC');
+    }
+}
+
         return $query;
     }
 

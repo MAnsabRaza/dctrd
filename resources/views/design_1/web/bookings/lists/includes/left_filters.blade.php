@@ -144,6 +144,59 @@
             </div>
         </div>
 
+        {{-- Location / Nearby --}}
+<div class="accordion card-before-line card-before-line__4-12 p-16 mt-16">
+    <div class="accordion__title d-flex align-items-center justify-content-between">
+        <div class="font-14 font-weight-bold text-dark cursor-pointer"
+             href="#bookingLocationFilter" data-parent="#bookingLeftFiltersAccordion"
+             role="button" data-toggle="collapse">
+            {{ trans('update.location') }}
+        </div>
+        <span class="collapse-arrow-icon d-flex cursor-pointer"
+              href="#bookingLocationFilter" data-parent="#bookingLeftFiltersAccordion"
+              role="button" data-toggle="collapse">
+            <x-iconsax-lin-arrow-up-1 class="icons text-gray-500" width="16"/>
+        </span>
+    </div>
+
+    <div id="bookingLocationFilter" class="accordion__collapse show pt-0 mt-0 border-0" role="tabpanel">
+
+        {{-- "Use my location" button --}}
+        <button type="button" id="btn-use-my-location"
+                class="btn btn-sm btn-outline-primary w-100 mt-16">
+            <i class="fa fa-crosshairs mr-1"></i>
+            {{ trans('update.use_my_location') }}
+        </button>
+
+        {{-- Address input (optional manual entry) --}}
+        <div class="form-group mt-12 mb-0">
+            <input type="text"
+                   id="location-address-input"
+                   placeholder="{{ trans('update.enter_location') }}"
+                   class="form-control bg-white">
+        </div>
+
+        {{-- Radius select --}}
+        <div class="form-group mt-12 mb-0">
+            <select name="radius" class="form-control bg-white js-range-input-view-data">
+                @foreach([5, 10, 25, 50, 100] as $km)
+                    <option value="{{ $km }}" {{ request('radius', 25) == $km ? 'selected' : '' }}>
+                        {{ $km }} km
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        {{-- Hidden lat/lng sent with filter --}}
+        <input type="hidden" name="lat" id="filter-lat"
+               value="{{ request('lat') }}" class="js-range-input-view-data">
+        <input type="hidden" name="lng" id="filter-lng"
+               value="{{ request('lng') }}" class="js-range-input-view-data">
+
+    </div>
+</div>
+
+
         {{-- Provider --}}
         <div class="accordion card-before-line card-before-line__4-12 p-16">
             <div class="accordion__title d-flex align-items-center justify-content-between">
