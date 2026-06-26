@@ -13,20 +13,19 @@ class CreateSettingTranslationsTable extends Migration
      */
     public function up()
     {
-        Schema::create('setting_translations', function (Blueprint $table) {
-            $table->engine = "InnoDB";
+       Schema::create('setting_translations', function (Blueprint $table) {
+    $table->engine = 'InnoDB';
 
-            $table->bigIncrements('id');
-            $table->integer('setting_id'); // Changed from unsignedInteger to match settings.id
-            $table->string('locale', 191)->index();
-            $table->longText('value');
+    $table->increments('id');
+    $table->unsignedInteger('setting_id');
+    $table->string('locale', 191)->index();
+    $table->longText('value');
 
-            try {
-                $table->foreign('setting_id')->on('settings')->references('id')->onDelete('cascade');
-            } catch (\Exception $e) {
-                // Foreign key might fail, continue anyway
-            }
-        });
+    $table->foreign('setting_id')
+          ->references('id')
+          ->on('settings')
+          ->onDelete('cascade');
+});
 
         Schema::table('settings', function (Blueprint $table) {
             $table->dropColumn('value');
