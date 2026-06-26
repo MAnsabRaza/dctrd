@@ -846,10 +846,28 @@
 @endsection
 
 @push('scripts_bottom')
-     <script src="/assets/vendors/wrunner-html-range-slider-with-2-handles/js/wrunner-jquery.js"></script>
+    {{--
+        REMOVED FROM THIS PAGE:
+          - wrunner-jquery.js         (crashes: "$ is not defined" — breaks
+                                       every script that loads after it)
+          - summernote-bs4.min.js     (admin-only rich text editor, not
+                                       needed on the public search page)
+          - bootstrap-colorpicker.min.js (admin-only color picker widget)
+
+        These three scripts were the root cause of the page rendering
+        broken/unstyled — wrunner-jquery.js crashed before defining "$",
+        so every later script (summernote, colorpicker, search.min.js,
+        and this page's own jQuery code) failed silently. JS-driven parts
+        of the page (header, hero, sidebar, result cards) never rendered,
+        leaving only the static footer visible.
+
+        The main layout (design_1.web.layouts.app) already loads the
+        project's real jQuery + Bootstrap bundle — this page doesn't need
+        its own copy. If you need the slider widget back, re-add ONLY
+        wrunner-jquery.js once it's fixed/confirmed compatible — never on
+        a page that doesn't use a slider.
+    --}}
     <script src="/assets/default/vendors/swiper/swiper-bundle.min.js"></script>
-    <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
-    <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
 
     <script src="{{ getDesign1ScriptPath("search") }}"></script>
 
