@@ -77,14 +77,13 @@ class CheckoutModulesSeeder extends Seeder
             [
                 'name'        => 'persons_children',
                 'input_type'  => 'stepper',
-                'config'      => json_encode([
-                    'adults'   => ['min' => 1, 'max' => 20],
-                    'children' => ['min' => 0, 'max' => 10],
-                    'rooms'    => ['min' => 1, 'max' => 10],
-                ]),
+                  'config'      => json_encode([
+        'adults'   => ['min' => 1, 'max' => 20, 'price' => 10], // ← price per adult
+        'children' => ['min' => 0, 'max' => 10, 'price' => 5],  // ← price per child
+        'rooms'    => ['min' => 1, 'max' => 10, 'price' => 0],   // ← rooms ka price nahi
+    ]),
                 'price_rule'  => json_encode([
                     'type'   => 'per_person',
-                    'amount' => 0, // org sets actual price
                 ]),
                 'order_index' => 4,
                 'is_active'   => true,
