@@ -100,4 +100,62 @@
 
     <script src="{{ getDesign1ScriptPath("range_slider_helpers") }}"></script>
     <script src="{{ getDesign1ScriptPath("courses_lists") }}"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function () {
+    var btnGeo    = document.getElementById('btn-course-use-my-location');
+    var inputLat  = document.getElementById('course-filter-lat');
+    var inputLng  = document.getElementById('course-filter-lng');
+    var addrInput = document.getElementById('course-location-address-input');
+
+    if (btnGeo) {
+        btnGeo.addEventListener('click', function () {
+            if (!navigator.geolocation) {
+                alert('{{ trans("update.geolocation_not_supported") }}');
+                return;
+            }
+            btnGeo.disabled = true;
+            btnGeo.textContent = '{{ trans("update.detecting") }}...';
+
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    inputLat.value = pos.coords.latitude.toFixed(6);
+                    inputLng.value = pos.coords.longitude.toFixed(6);
+                    btnGeo.disabled = false;
+                    btnGeo.innerHTML = '<i class="fa fa-check mr-1"></i> {{ trans("update.location_detected") }}';
+                    inputLat.dispatchEvent(new Event('change', { bubbles: true }));
+                },
+                function () {
+                    btnGeo.disabled = false;
+                    btnGeo.innerHTML = '<i class="fa fa-crosshairs mr-1"></i> {{ trans("update.use_my_location") }}';
+                    alert('{{ trans("update.location_permission_denied") }}');
+                }
+            );
+        });
+    }
+
+    if (addrInput) {
+        var debounceTimer;
+        addrInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            var q = addrInput.value.trim();
+            if (q.length < 4) return;
+
+            debounceTimer = setTimeout(function () {
+                fetch('https://nominatim.openstreetmap.org/search?format=json&q='
+                    + encodeURIComponent(q) + '&limit=1', {
+                    headers: { 'Accept-Language': 'en' }
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data && data[0]) {
+                        inputLat.value = parseFloat(data[0].lat).toFixed(6);
+                        inputLng.value = parseFloat(data[0].lon).toFixed(6);
+                        inputLat.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            }, 600);
+        });
+    }
+});
+</script>
 @endpush

@@ -221,6 +221,36 @@ class ClassesController extends Controller
 
             $query->whereIn("{$this->tableName}.id", $webinarIdsFilterOptions);
         }
+        // ── Location / radius filter ──────────────────────────
+$lat    = $request->get('lat');
+$lng    = $request->get('lng');
+$radius = (float) ($request->get('radius', 25));
+
+if (!empty($lat) && !empty($lng)) {
+    $lat = (float) $lat;
+    $lng = (float) $lng;
+
+    $haversine = "(
+        6371 * ACOS(
+            COS(RADIANS($lat))
+            * COS(RADIANS({$this->tableName}.lat))
+            * COS(RADIANS({$this->tableName}.lng) - RADIANS($lng))
+            + SIN(RADIANS($lat))
+            * SIN(RADIANS({$this->tableName}.lat))
+        )
+    )";
+
+    $query
+        ->whereNotNull("{$this->tableName}.lat")
+        ->whereNotNull("{$this->tableName}.lng")
+        ->whereRaw("{$haversine} <= ?", [$radius])
+        ->selectRaw("{$this->tableName}.*, {$haversine} AS distance_km");
+
+    if (empty($sort)) {
+        $query->orderByRaw('distance_km ASC');
+    }
+}
+// ─────────────────────────────────────────────────────
 
         return $query;
     }
