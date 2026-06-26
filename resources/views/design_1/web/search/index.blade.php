@@ -1,25 +1,6 @@
 @extends("design_1.web.layouts.app")
 
-@push("scripts_top")
-    {{--
-        ROOT CAUSE (confirmed via app.blade.php layout):
-        Layout's <body> bottom loads app.js, jquery.toast.min.js, and
-        main.min.js — all of which need jQuery ($) to already exist.
-        Previously, jQuery was being supplied by wrunner-jquery.js, which
-        we removed because it was crashing ("$ is not defined"). Removing
-        it without replacing it broke jQuery site-wide, not just on this
-        page — app.js / jquery.toast.min.js / search.min.js / main.min.js
-        all started throwing "jQuery is not defined".
-
-        FIX: load a clean jQuery CDN here, inside scripts_top, which the
-        layout renders in <head> — i.e. BEFORE app.js, jquery.toast.min.js,
-        and every other script in <body>. This guarantees jQuery exists
-        before anything that needs it runs.
-    --}}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-@endpush
-@section("content")
-
+@push("styles_top")
     <link rel="stylesheet" href="{{ getDesign1StylePath("search") }}">
     <style>
         /* ── Section headings ─────────────────────────────── */
@@ -98,7 +79,9 @@
 
         .cursor-pointer { cursor: pointer; }
     </style>
+@endpush
 
+@section("content")
 <main class="pb-80">
 
     {{-- ═══════════════════════════════════════════════════════════
@@ -869,15 +852,22 @@
         hai — uske andar (function ($) {...})(jQuery) hai. Yeh hum edit nahi
         kar sakte (compiled/minified asset hai).
 
-        jQuery ab @push("scripts_top") mein, layout ke <head> mein, sabse
-        pehle load ho rahi hai (oopar dekhein) — isi liye yahan dobara load
-        karne ki zaroorat nahi.
-
         Pehle humne wrunner-jquery.js hata di thi kyunke wo crash kar rahi thi
         ("$ is not defined"), lekin uski jaga koi jQuery load nahi ki thi —
         is liye theme ki search.js bhi crash ho rahi thi ("jQuery is not
         defined"), jo aage page ka baqi JS execution bhi tor deti thi.
+
+        Yahan jQuery ko scripts_bottom ke bilkul shuru mein daal rahe hain
+        (NOTE: app.blade.php mein @stack('scripts_bottom') app.js aur
+        jquery.toast.min.js ke BAAD render hota hai — agar woh dono already
+        jQuery use karte hain to woh apni khud ki jQuery source rakhte
+        hain ya is se pehle se available honi chahiye thi via
+        wrunner-jquery.js, jo humne hata di. Is liye yeh line yahan rakhi
+        hai taake search.min.js (jo isi push ke andar load hoti hai) ko
+        zaroor jQuery mil jaye.)
     --}}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
     <script src="/assets/default/vendors/swiper/swiper-bundle.min.js"></script>
 
     <script src="{{ getDesign1ScriptPath("search") }}"></script>
