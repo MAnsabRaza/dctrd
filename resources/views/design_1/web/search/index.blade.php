@@ -690,7 +690,7 @@
     </div>{{-- /container --}}
 
     {{-- ═══════════════════════════════════════════════════════════
-         PAGE SCRIPTS
+         PAGE SCRIPTS (sort, type tabs, sidebar geocoding for THIS page)
     ═══════════════════════════════════════════════════════════ --}}
     <script>
     (function () {
@@ -798,22 +798,9 @@
             });
         }
 
-        // ── Auto-detect city from IP (only when no lat already set) ───────────
-        @if(!request()->filled('lat'))
-        fetch('https://ip-api.com/json/?fields=city,lat,lon')
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (data && data.city && cityInput && !cityInput.value) {
-                    cityInput.value     = data.city;
-                    if (latField)    latField.value    = data.lat;
-                    if (lngField)    lngField.value    = data.lon;
-                    if (cityNameFld) cityNameFld.value = data.city;
-                }
-            })
-            .catch(function () {});
-        @endif
-
         // ── Geocode as user types city name (Nominatim) ───────────────────────
+        // NOTE: IP-based auto-detect via ip-api.com removed — that endpoint is
+        // HTTPS-blocked on the free plan (403 Forbidden) and was failing silently.
         if (cityInput) {
             cityInput.addEventListener('input', function () {
                 var city = this.value.trim();
@@ -859,9 +846,531 @@
 @endsection
 
 @push('scripts_bottom')
-     <script src="/assets/vendors/wrunner-html-range-slider-with-2-handles/js/wrunner-jquery.js"></script>
+    {{--
+        REMOVED FROM THIS PAGE:
+          - wrunner-jquery.js         (crashes: "$ is not defined" — breaks
+                                       every script that loads after it)
+          - summernote-bs4.min.js     (admin-only rich text editor, not
+                                       needed on the public search page)
+          - bootstrap-colorpicker.min.js (admin-only color picker widget)
+
+        These three scripts were the root cause of the page rendering
+        broken/unstyled — wrunner-jquery.js crashed before defining "$",
+        so every later script (summernote, colorpicker, search.min.js)
+        failed silently. JS-driven parts of the page (header, hero,
+        sidebar, result cards) never rendered, leaving only the static
+        footer visible.
+
+        FIX: the inline script below was also rewritten from jQuery to
+        plain vanilla JavaScript, so this page no longer depends on
+        jQuery being loaded at all — removing that fragile dependency
+        entirely instead of just hoping load order stays correct.
+    --}}
     <script src="/assets/default/vendors/swiper/swiper-bundle.min.js"></script>
-    
+
     <script src="{{ getDesign1ScriptPath("search") }}"></script>
-    <script src="{{ asset('js/advanced_search.js') }}"></script>
+
+    {{-- ═══════════════════════════════════════════════════════════
+         advanced_search.js INLINE — vanilla JS, no jQuery required.
+         Separate file 404 de raha tha, is liye seedha yahan daal diya.
+         Pure JavaScript hone ki wajah se ab is page ko kisi jQuery
+         library ke load hone ka intezar nahi karna — koi dependency
+         crash nahi karegi.
+    ═══════════════════════════════════════════════════════════ --}}
+    <script>
+    (function () {
+        'use strict';
+
+        /* ═══════════════════════════════════════════════════════════
+           1. ELEMENTS + HELPERS
+        ═══════════════════════════════════════════════════════════ */
+
+        var wrapper        = document.getElementById('advanced-search-wrapper');
+        var categoryPanel  = document.getElementById('advCategoryPanel');
+        var suggestionsBox = document.getElementById('advSearchSuggestions');
+        var input          = document.getElementById('advSearchInput');
+        var toggle         = document.getElementById('advSearchCategoryToggle');
+        var form           = document.getElementById('advancedSearchForm');
+
+        function openCategoryPanel() {
+            if (!categoryPanel) return;
+            categoryPanel.classList.remove('d-none');
+            if (suggestionsBox) suggestionsBox.classList.add('d-none');
+            var caret = toggle ? toggle.querySelector('.category-caret') : null;
+            if (caret) caret.textContent = '▴';
+        }
+
+        function closeCategoryPanel() {
+            if (!categoryPanel) return;
+            categoryPanel.classList.add('d-none');
+            var caret = toggle ? toggle.querySelector('.category-caret') : null;
+            if (caret) caret.textContent = '▾';
+        }
+
+        function hideSuggestions() {
+            if (!suggestionsBox) return;
+            suggestionsBox.classList.add('d-none');
+            suggestionsBox.innerHTML = '';
+            activeIdx = -1;
+        }
+
+        function escHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           2. DROPDOWN OPEN / CLOSE
+        ═══════════════════════════════════════════════════════════ */
+
+        if (toggle) {
+            toggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (categoryPanel && categoryPanel.classList.contains('d-none')) {
+                    openCategoryPanel();
+                } else {
+                    closeCategoryPanel();
+                }
+            });
+        }
+
+        if (input) {
+            input.addEventListener('focus', function () {
+                if (this.value.trim().length < 2) {
+                    openCategoryPanel();
+                }
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (!wrapper || !wrapper.contains(e.target)) {
+                closeCategoryPanel();
+                hideSuggestions();
+            }
+        });
+
+        if (categoryPanel) {
+            categoryPanel.addEventListener('click', function (e) { e.stopPropagation(); });
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeCategoryPanel();
+                hideSuggestions();
+            }
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           3. HIERARCHICAL CHECKBOXES
+        ═══════════════════════════════════════════════════════════ */
+
+        function syncParentState(parentEl) {
+            if (!parentEl) return;
+            var groupId  = parentEl.dataset.group;
+            var children = document.querySelectorAll('.adv-child-checkbox[data-parent="' + groupId + '"]');
+            if (!children.length) return;
+
+            var total   = children.length;
+            var checked = 0;
+            children.forEach(function (c) { if (c.checked) checked++; });
+
+            if (checked === 0) {
+                parentEl.checked = false;
+                parentEl.indeterminate = false;
+            } else if (checked === total) {
+                parentEl.checked = true;
+                parentEl.indeterminate = false;
+            } else {
+                parentEl.checked = false;
+                parentEl.indeterminate = true;
+            }
+            updateCategoryCount();
+        }
+
+        document.addEventListener('change', function (e) {
+            if (e.target.matches('.adv-parent-checkbox')) {
+                var groupId   = e.target.dataset.group;
+                var isChecked = e.target.checked;
+                document.querySelectorAll('.adv-child-checkbox[data-parent="' + groupId + '"]')
+                    .forEach(function (c) {
+                        c.checked = isChecked;
+                        c.indeterminate = false;
+                    });
+                updateCategoryCount();
+            }
+
+            if (e.target.matches('.adv-child-checkbox')) {
+                var parentEl = document.querySelector('.adv-parent-checkbox[data-group="' + e.target.dataset.parent + '"]');
+                syncParentState(parentEl);
+            }
+
+            if (e.target.matches('.adv-top-checkbox')) {
+                updateCategoryCount();
+            }
+        });
+
+        function updateCategoryCount() {
+            var all     = document.querySelectorAll('.adv-cat-checkbox');
+            var total   = all.length;
+            var checked = document.querySelectorAll('.adv-cat-checkbox:checked').length;
+            var badge   = document.getElementById('advCategoryCount');
+            if (!badge) return;
+
+            if (!checked || checked === total) {
+                badge.textContent = '';
+            } else {
+                badge.textContent = checked + '/' + total;
+            }
+        }
+
+        document.addEventListener('click', function (e) {
+            var toggleBtn = e.target.closest('.adv-toggle-btn');
+            if (!toggleBtn) return;
+            e.preventDefault();
+
+            var target = document.getElementById(toggleBtn.dataset.target);
+            var icon   = toggleBtn.querySelector('.adv-expand-icon');
+            if (!target) return;
+
+            var isVisible = target.style.display !== 'none' &&
+                             getComputedStyle(target).display !== 'none';
+
+            if (isVisible) {
+                target.style.display = 'none';
+                if (icon) icon.classList.remove('open');
+            } else {
+                target.style.display = 'block';
+                if (icon) icon.classList.add('open');
+            }
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           4. SELECT ALL / NONE / EXPAND ALL / COLLAPSE ALL
+        ═══════════════════════════════════════════════════════════ */
+
+        var selectAllBtn   = document.getElementById('advSelectAll');
+        var selectNoneBtn  = document.getElementById('advSelectNone');
+        var expandAllBtn   = document.getElementById('advExpandAll');
+        var collapseAllBtn = document.getElementById('advCollapseAll');
+
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function () {
+                document.querySelectorAll('.adv-cat-checkbox').forEach(function (cb) {
+                    cb.checked = true;
+                    cb.indeterminate = false;
+                });
+                updateCategoryCount();
+            });
+        }
+
+        if (selectNoneBtn) {
+            selectNoneBtn.addEventListener('click', function () {
+                document.querySelectorAll('.adv-cat-checkbox').forEach(function (cb) {
+                    cb.checked = false;
+                    cb.indeterminate = false;
+                });
+                updateCategoryCount();
+            });
+        }
+
+        if (expandAllBtn) {
+            expandAllBtn.addEventListener('click', function () {
+                document.querySelectorAll('.adv-children-panel').forEach(function (el) {
+                    el.style.display = 'block';
+                });
+                document.querySelectorAll('.adv-expand-icon').forEach(function (el) {
+                    el.classList.add('open');
+                });
+            });
+        }
+
+        if (collapseAllBtn) {
+            collapseAllBtn.addEventListener('click', function () {
+                document.querySelectorAll('.adv-children-panel').forEach(function (el) {
+                    el.style.display = 'none';
+                });
+                document.querySelectorAll('.adv-expand-icon').forEach(function (el) {
+                    el.classList.remove('open');
+                });
+            });
+        }
+
+        updateCategoryCount();
+
+        /* ═══════════════════════════════════════════════════════════
+           5. LIVE SUGGESTIONS  (fetch, 300ms debounce, keyboard nav)
+        ═══════════════════════════════════════════════════════════ */
+
+        var suggestTimer;
+        var activeIdx = -1;
+
+        var TYPE_ICONS = {
+            booking:         '🏨',
+            course:          '📚',
+            webinar:         '📚',
+            bundle:          '📦',
+            product:         '🛍️',
+            upcoming_course: '🗓️',
+            booking_bundle:  '🎁',
+            instructor:      '👨‍🏫',
+            organization:    '🏢',
+            post:            '📰',
+        };
+
+        if (input) {
+            input.addEventListener('keyup', function (e) {
+                if (['ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Tab'].indexOf(e.key) !== -1) return;
+
+                var query = this.value.trim();
+                closeCategoryPanel();
+                clearTimeout(suggestTimer);
+
+                if (query.length < 2) {
+                    hideSuggestions();
+                    return;
+                }
+
+                suggestTimer = setTimeout(function () {
+                    fetch('/search/suggestions?q=' + encodeURIComponent(query))
+                        .then(function (r) {
+                            if (!r.ok) throw new Error('Request failed');
+                            return r.json();
+                        })
+                        .then(function (response) {
+                            renderSuggestions(response.suggestions || [], query);
+                        })
+                        .catch(function () {
+                            hideSuggestions();
+                        });
+                }, 300);
+            });
+        }
+
+        function renderSuggestions(suggestions, query) {
+            if (!suggestionsBox) return;
+            suggestionsBox.innerHTML = '';
+            activeIdx = -1;
+
+            if (!suggestions.length) {
+                hideSuggestions();
+                return;
+            }
+
+            suggestions.forEach(function (s) {
+                var icon  = TYPE_ICONS[s.type] || '🔍';
+                var price = s.price
+                    ? '<span class="adv-suggestion-price">' + escHtml(s.price) + '</span>'
+                    : '';
+
+                var a = document.createElement('a');
+                a.href = s.url || '#';
+                a.className = 'adv-suggestion-row text-decoration-none text-dark';
+                a.innerHTML =
+                    '<span class="adv-suggestion-icon">' + icon + '</span>' +
+                    '<span class="adv-suggestion-body">' +
+                        '<div class="adv-suggestion-title">' + escHtml(s.title || '') + '</div>' +
+                        '<div class="adv-suggestion-meta">' + escHtml(s.type || '') + '</div>' +
+                    '</span>' + price;
+
+                suggestionsBox.appendChild(a);
+            });
+
+            var seeAll = document.createElement('a');
+            seeAll.href = '/search?search=' + encodeURIComponent(query);
+            seeAll.className = 'adv-see-all';
+            seeAll.innerHTML = 'See all results for "<strong>' + escHtml(query) + '</strong>" →';
+            suggestionsBox.appendChild(seeAll);
+
+            suggestionsBox.classList.remove('d-none');
+        }
+
+        if (input) {
+            input.addEventListener('keydown', function (e) {
+                if (!suggestionsBox) return;
+                var rows = suggestionsBox.querySelectorAll('.adv-suggestion-row');
+                if (!rows.length) return;
+
+                var rowsArr = Array.prototype.slice.call(rows);
+                var activeRow = suggestionsBox.querySelector('.adv-suggestion-row.adv-active');
+                var activeIndex = activeRow ? rowsArr.indexOf(activeRow) : -1;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (activeRow) activeRow.classList.remove('adv-active');
+                    var nextIndex = (activeIndex + 1 < rowsArr.length) ? activeIndex + 1 : 0;
+                    rowsArr[nextIndex].classList.add('adv-active');
+                    activeIdx = nextIndex;
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (activeRow) activeRow.classList.remove('adv-active');
+                    var prevIndex = (activeIndex - 1 >= 0) ? activeIndex - 1 : rowsArr.length - 1;
+                    rowsArr[prevIndex].classList.add('adv-active');
+                    activeIdx = prevIndex;
+                } else if (e.key === 'Enter') {
+                    if (activeRow) {
+                        e.preventDefault();
+                        window.location.href = activeRow.getAttribute('href');
+                    }
+                }
+            });
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           6. NEARBY / CITY GEOCODING + GPS
+           NOTE: ip-api.com auto-detect REMOVED — that's an HTTP-only
+           free-tier endpoint and returns 403 Forbidden on HTTPS pages.
+           City detection now relies on the GPS button (reverse geocode
+           via Nominatim) or manual typing (forward geocode via Nominatim).
+        ═══════════════════════════════════════════════════════════ */
+
+        var cityInput  = document.getElementById('advNearbyCity');
+        var clearCity  = document.getElementById('advClearCity');
+        var latField   = document.getElementById('advLat');
+        var lngField   = document.getElementById('advLng');
+        var cityHidden = document.getElementById('advCity');
+        var geocodeTimer;
+
+        function setLatLng(lat, lng, cityName) {
+            if (latField) latField.value = parseFloat(lat).toFixed(6);
+            if (lngField) lngField.value = parseFloat(lng).toFixed(6);
+            if (cityName && cityHidden) cityHidden.value = cityName;
+            if (clearCity) clearCity.style.display = 'block';
+        }
+
+        function clearLatLng() {
+            if (latField) latField.value = '';
+            if (lngField) lngField.value = '';
+            if (cityHidden) cityHidden.value = '';
+            if (clearCity) clearCity.style.display = 'none';
+        }
+
+        var useMyLocationBtn = document.getElementById('advUseMyLocation');
+        if (useMyLocationBtn) {
+            useMyLocationBtn.addEventListener('click', function () {
+                if (!navigator.geolocation) {
+                    alert('Geolocation is not supported by your browser.');
+                    return;
+                }
+                var btn = this;
+                btn.disabled = true;
+                btn.textContent = 'Detecting…';
+
+                navigator.geolocation.getCurrentPosition(
+                    function (pos) {
+                        var lat = pos.coords.latitude;
+                        var lng = pos.coords.longitude;
+
+                        fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json')
+                            .then(function (r) {
+                                if (!r.ok) throw new Error('Reverse geocode failed');
+                                return r.json();
+                            })
+                            .then(function (data) {
+                                var city = (data && data.address)
+                                    ? (data.address.city || data.address.town || data.address.village || '')
+                                    : '';
+                                if (city) {
+                                    if (cityInput) cityInput.value = city;
+                                    setLatLng(lat, lng, city);
+                                } else {
+                                    setLatLng(lat, lng, '');
+                                }
+                                btn.disabled = false;
+                                btn.innerHTML = '✓ Location detected';
+                            })
+                            .catch(function () {
+                                setLatLng(lat, lng, '');
+                                btn.disabled = false;
+                                btn.innerHTML = '✓ Location detected';
+                            });
+                    },
+                    function (err) {
+                        btn.disabled = false;
+                        btn.innerHTML = '📍 Use my location';
+                        console.warn('Geolocation error:', err.message);
+                    }
+                );
+            });
+        }
+
+        if (cityInput) {
+            cityInput.addEventListener('input', function () {
+                var city = this.value.trim();
+                clearTimeout(geocodeTimer);
+                if (clearCity) clearCity.style.display = city.length > 0 ? 'block' : 'none';
+                if (cityHidden) cityHidden.value = city;
+
+                if (city.length < 2) {
+                    clearLatLng();
+                    return;
+                }
+
+                geocodeTimer = setTimeout(function () {
+                    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(city))
+                        .then(function (r) { return r.json(); })
+                        .then(function (results) {
+                            if (results && results[0]) {
+                                setLatLng(results[0].lat, results[0].lon, city);
+                            }
+                        })
+                        .catch(function () {});
+                }, 500);
+            });
+        }
+
+        if (clearCity) {
+            clearCity.addEventListener('click', function () {
+                if (cityInput) cityInput.value = '';
+                clearLatLng();
+            });
+        }
+
+        if (latField && latField.value) {
+            if (clearCity) clearCity.style.display = 'block';
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           7. FORM SUBMIT — strip empty lat/lng for clean URL
+        ═══════════════════════════════════════════════════════════ */
+
+        if (form) {
+            form.addEventListener('submit', function () {
+                var allTypes = form.querySelectorAll('.adv-top-checkbox');
+                var checkedTypes = Array.prototype.filter.call(allTypes, function (c) { return c.checked; });
+
+                if (checkedTypes.length === 0 || checkedTypes.length === allTypes.length) {
+                    allTypes.forEach(function (c) { c.disabled = true; });
+                }
+
+                var allBCats = form.querySelectorAll('.adv-cat-checkbox:not(.adv-top-checkbox)');
+                var checkedBCats = Array.prototype.filter.call(allBCats, function (c) { return c.checked; });
+                if (checkedBCats.length === 0 || checkedBCats.length === allBCats.length) {
+                    allBCats.forEach(function (c) { c.disabled = true; });
+                }
+
+                if (latField && !latField.value) latField.disabled = true;
+                if (lngField && !lngField.value) lngField.disabled = true;
+                if (cityHidden && !cityHidden.value) cityHidden.disabled = true;
+            });
+        }
+
+        window.addEventListener('pageshow', function () {
+            var formInputs = document.querySelectorAll('#advancedSearchForm input');
+            formInputs.forEach(function (el) { el.disabled = false; });
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           8. RESULTS PAGE INTERACTIONS
+           NOTE: sort / type-tab / price / rating / category-checkbox /
+           sidebar-city handlers for THIS results page already live in
+           the inline <script> block inside @section('content') above.
+           They are not duplicated here to avoid double-binding the same
+           elements twice.
+        ═══════════════════════════════════════════════════════════ */
+
+    })();
+    </script>
 @endpush
