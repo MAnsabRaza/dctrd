@@ -384,17 +384,17 @@ class SearchController extends Controller
             $this->applyRatingFilter($usersBaseQuery, $request, 'avg_rating');
             $usersNearby = $this->applyNearby($usersBaseQuery, $request, User::class);
 
-            if ($searchInstructors) {
-                $instructorsQuery = (clone $usersBaseQuery)->where('role_name', Role::$teacher);
-                $this->applySort($instructorsQuery, $request, $usersNearby, 'price', 'avg_rating');
-                $instructors = $instructorsQuery->limit(20)->get();
-            }
+          if ($searchInstructors) {
+    $instructorsQuery = (clone $usersBaseQuery)->where('role_name', Role::$teacher);
+    $this->applySort($instructorsQuery, $request, $usersNearby, 'created_at', 'avg_rating');
+    $instructors = $instructorsQuery->limit(20)->get();
+}
 
-            if ($searchOrganizations) {
-                $organizationsQuery = (clone $usersBaseQuery)->where('role_name', Role::$organization);
-                $this->applySort($organizationsQuery, $request, $usersNearby, 'price', 'avg_rating');
-                $organizations = $organizationsQuery->limit(20)->get();
-            }
+if ($searchOrganizations) {
+    $organizationsQuery = (clone $usersBaseQuery)->where('role_name', Role::$organization);
+    $this->applySort($organizationsQuery, $request, $usersNearby, 'created_at', 'avg_rating');
+    $organizations = $organizationsQuery->limit(20)->get();
+}
 
             $usersCount = $instructors->count() + $organizations->count();
         }
