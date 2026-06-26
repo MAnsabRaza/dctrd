@@ -18,8 +18,8 @@
     --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 @endpush
+@section("content")
 
-@push("styles_top")
     <link rel="stylesheet" href="{{ getDesign1StylePath("search") }}">
     <style>
         /* ── Section headings ─────────────────────────────── */
@@ -98,9 +98,7 @@
 
         .cursor-pointer { cursor: pointer; }
     </style>
-@endpush
 
-@section("content")
 <main class="pb-80">
 
     {{-- ═══════════════════════════════════════════════════════════
