@@ -690,7 +690,7 @@
     </div>{{-- /container --}}
 
     {{-- ═══════════════════════════════════════════════════════════
-         PAGE SCRIPTS
+         PAGE SCRIPTS (sort, type tabs, sidebar geocoding for THIS page)
     ═══════════════════════════════════════════════════════════ --}}
     <script>
     (function () {
@@ -798,22 +798,9 @@
             });
         }
 
-        // ── Auto-detect city from IP (only when no lat already set) ───────────
-        @if(!request()->filled('lat'))
-        fetch('https://ip-api.com/json/?fields=city,lat,lon')
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (data && data.city && cityInput && !cityInput.value) {
-                    cityInput.value     = data.city;
-                    if (latField)    latField.value    = data.lat;
-                    if (lngField)    lngField.value    = data.lon;
-                    if (cityNameFld) cityNameFld.value = data.city;
-                }
-            })
-            .catch(function () {});
-        @endif
-
         // ── Geocode as user types city name (Nominatim) ───────────────────────
+        // NOTE: IP-based auto-detect via ip-api.com removed — that endpoint is
+        // HTTPS-blocked on the free plan (403 Forbidden) and was failing silently.
         if (cityInput) {
             cityInput.addEventListener('input', function () {
                 var city = this.value.trim();
@@ -861,7 +848,547 @@
 @push('scripts_bottom')
      <script src="/assets/vendors/wrunner-html-range-slider-with-2-handles/js/wrunner-jquery.js"></script>
     <script src="/assets/default/vendors/swiper/swiper-bundle.min.js"></script>
-    
+    <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
+    <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
+
     <script src="{{ getDesign1ScriptPath("search") }}"></script>
-    <script src="{{ asset('js/advanced_search.js') }}"></script>
+
+    {{-- ═══════════════════════════════════════════════════════════
+         advanced_search.js INLINE — separate file 404 de raha tha,
+         is liye seedha yahan, jQuery load hone ke baad, daal diya.
+         scripts_bottom stack layout mein </body> se pehle render hota
+         hai, to jQuery iss waqt tak ready hoga.
+    ═══════════════════════════════════════════════════════════ --}}
+    <script>
+    (function ($) {
+        'use strict';
+
+        if (typeof $ === 'undefined') {
+            console.error('advanced_search.js: jQuery not loaded yet — script load order check karein.');
+            return;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           1. ELEMENTS + HELPERS
+        ═══════════════════════════════════════════════════════════ */
+
+        var $wrapper        = $('#advanced-search-wrapper');
+        var $categoryPanel  = $('#advCategoryPanel');
+        var $suggestionsBox = $('#advSearchSuggestions');
+        var $input          = $('#advSearchInput');
+        var $toggle         = $('#advSearchCategoryToggle');
+        var $form           = $('#advancedSearchForm');
+
+        function openCategoryPanel() {
+            $categoryPanel.removeClass('d-none');
+            $suggestionsBox.addClass('d-none');
+            $toggle.find('.category-caret').text('▴');
+        }
+
+        function closeCategoryPanel() {
+            $categoryPanel.addClass('d-none');
+            $toggle.find('.category-caret').text('▾');
+        }
+
+        function hideSuggestions() {
+            $suggestionsBox.addClass('d-none').empty();
+            activeIdx = -1;
+        }
+
+        function escHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           2. DROPDOWN OPEN / CLOSE
+        ═══════════════════════════════════════════════════════════ */
+
+        $toggle.on('click', function (e) {
+            e.stopPropagation();
+            $categoryPanel.hasClass('d-none') ? openCategoryPanel() : closeCategoryPanel();
+        });
+
+        $input.on('focus', function () {
+            if ($(this).val().trim().length < 2) {
+                openCategoryPanel();
+            }
+        });
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#advanced-search-wrapper').length) {
+                closeCategoryPanel();
+                hideSuggestions();
+            }
+        });
+
+        $categoryPanel.on('click', function (e) { e.stopPropagation(); });
+
+        $(document).on('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeCategoryPanel();
+                hideSuggestions();
+            }
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           3. HIERARCHICAL CHECKBOXES
+        ═══════════════════════════════════════════════════════════ */
+
+        function syncParentState($parent) {
+            var groupId   = $parent.data('group');
+            var $children = $('.adv-child-checkbox[data-parent="' + groupId + '"]');
+            if (!$children.length) return;
+
+            var total   = $children.length;
+            var checked = $children.filter(':checked').length;
+
+            if (checked === 0) {
+                $parent.prop({ checked: false, indeterminate: false });
+            } else if (checked === total) {
+                $parent.prop({ checked: true, indeterminate: false });
+            } else {
+                $parent.prop({ checked: false, indeterminate: true });
+            }
+            updateCategoryCount();
+        }
+
+        $(document).on('change', '.adv-parent-checkbox', function () {
+            var groupId   = $(this).data('group');
+            var isChecked = this.checked;
+            $('.adv-child-checkbox[data-parent="' + groupId + '"]')
+                .prop({ checked: isChecked, indeterminate: false });
+            updateCategoryCount();
+        });
+
+        $(document).on('change', '.adv-child-checkbox', function () {
+            syncParentState($('.adv-parent-checkbox[data-group="' + $(this).data('parent') + '"]'));
+        });
+
+        $(document).on('change', '.adv-top-checkbox', updateCategoryCount);
+
+        function updateCategoryCount() {
+            var total   = $('.adv-cat-checkbox').length;
+            var checked = $('.adv-cat-checkbox:checked').length;
+            var $badge  = $('#advCategoryCount');
+
+            if (!checked || checked === total) {
+                $badge.text('');
+            } else {
+                $badge.text(checked + '/' + total);
+            }
+        }
+
+        $(document).on('click', '.adv-toggle-btn', function (e) {
+            e.preventDefault();
+            var $target = $('#' + $(this).data('target'));
+            var $icon   = $(this).find('.adv-expand-icon');
+
+            if ($target.is(':visible')) {
+                $target.slideUp(150);
+                $icon.removeClass('open');
+            } else {
+                $target.slideDown(150);
+                $icon.addClass('open');
+            }
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           4. SELECT ALL / NONE / EXPAND ALL / COLLAPSE ALL
+        ═══════════════════════════════════════════════════════════ */
+
+        $('#advSelectAll').on('click', function () {
+            $('.adv-cat-checkbox').prop({ checked: true, indeterminate: false });
+            updateCategoryCount();
+        });
+
+        $('#advSelectNone').on('click', function () {
+            $('.adv-cat-checkbox').prop({ checked: false, indeterminate: false });
+            updateCategoryCount();
+        });
+
+        $('#advExpandAll').on('click', function () {
+            $('.adv-children-panel').slideDown(150);
+            $('.adv-expand-icon').addClass('open');
+        });
+
+        $('#advCollapseAll').on('click', function () {
+            $('.adv-children-panel').slideUp(150);
+            $('.adv-expand-icon').removeClass('open');
+        });
+
+        updateCategoryCount();
+
+        /* ═══════════════════════════════════════════════════════════
+           5. LIVE SUGGESTIONS  (AJAX, 300ms debounce, keyboard nav)
+        ═══════════════════════════════════════════════════════════ */
+
+        var suggestTimer;
+        var activeIdx = -1;
+
+        var TYPE_ICONS = {
+            booking:         '🏨',
+            course:          '📚',
+            webinar:         '📚',
+            bundle:          '📦',
+            product:         '🛍️',
+            upcoming_course: '🗓️',
+            booking_bundle:  '🎁',
+            instructor:      '👨‍🏫',
+            organization:    '🏢',
+            post:            '📰',
+        };
+
+        $input.on('keyup', function (e) {
+            if (['ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Tab'].indexOf(e.key) !== -1) return;
+
+            var query = $(this).val().trim();
+            closeCategoryPanel();
+            clearTimeout(suggestTimer);
+
+            if (query.length < 2) {
+                hideSuggestions();
+                return;
+            }
+
+            suggestTimer = setTimeout(function () {
+                $.ajax({
+                    url:     '/search/suggestions',
+                    method:  'GET',
+                    data:    { q: query },
+                    success: function (response) {
+                        renderSuggestions(response.suggestions || [], query);
+                    },
+                    error: function () {
+                        hideSuggestions();
+                    },
+                });
+            }, 300);
+        });
+
+        function renderSuggestions(suggestions, query) {
+            $suggestionsBox.empty();
+            activeIdx = -1;
+
+            if (!suggestions.length) {
+                hideSuggestions();
+                return;
+            }
+
+            suggestions.forEach(function (s) {
+                var icon  = TYPE_ICONS[s.type] || '🔍';
+                var price = s.price
+                    ? '<span class="adv-suggestion-price">' + escHtml(s.price) + '</span>'
+                    : '';
+
+                $suggestionsBox.append(
+                    $('<a>')
+                        .attr('href', s.url || '#')
+                        .addClass('adv-suggestion-row text-decoration-none text-dark')
+                        .html(
+                            '<span class="adv-suggestion-icon">' + icon + '</span>' +
+                            '<span class="adv-suggestion-body">' +
+                                '<div class="adv-suggestion-title">' + escHtml(s.title || '') + '</div>' +
+                                '<div class="adv-suggestion-meta">' + escHtml(s.type || '') + '</div>' +
+                            '</span>' + price
+                        )
+                );
+            });
+
+            $suggestionsBox.append(
+                '<a href="/search?search=' + encodeURIComponent(query) + '" class="adv-see-all">' +
+                'See all results for "<strong>' + escHtml(query) + '</strong>" →</a>'
+            );
+
+            $suggestionsBox.removeClass('d-none');
+        }
+
+        $input.on('keydown', function (e) {
+            var $rows = $suggestionsBox.find('.adv-suggestion-row');
+            if (!$rows.length) return;
+
+            var $active = $rows.filter('.adv-active');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                $active.removeClass('adv-active');
+                var $next = $active.length && $active.next('.adv-suggestion-row').length
+                    ? $active.next('.adv-suggestion-row')
+                    : $rows.first();
+                $next.addClass('adv-active');
+                activeIdx++;
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                $active.removeClass('adv-active');
+                var $prev = $active.length && $active.prev('.adv-suggestion-row').length
+                    ? $active.prev('.adv-suggestion-row')
+                    : $rows.last();
+                $prev.addClass('adv-active');
+                activeIdx--;
+            } else if (e.key === 'Enter') {
+                var $activeRow = $rows.filter('.adv-active');
+                if ($activeRow.length) {
+                    e.preventDefault();
+                    window.location.href = $activeRow.attr('href');
+                }
+            }
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           6. NEARBY / CITY GEOCODING + GPS
+           NOTE: ip-api.com auto-detect REMOVED — that's an HTTP-only
+           free-tier endpoint and returns 403 Forbidden on HTTPS pages.
+           City detection now relies on the GPS button (reverse geocode
+           via Nominatim) or manual typing (forward geocode via Nominatim).
+        ═══════════════════════════════════════════════════════════ */
+
+        var $cityInput  = $('#advNearbyCity');
+        var $clearCity  = $('#advClearCity');
+        var $latField   = $('#advLat');
+        var $lngField   = $('#advLng');
+        var $cityHidden = $('#advCity');
+        var geocodeTimer;
+
+        function setLatLng(lat, lng, cityName) {
+            $latField.val(parseFloat(lat).toFixed(6));
+            $lngField.val(parseFloat(lng).toFixed(6));
+            if (cityName) $cityHidden.val(cityName);
+            $clearCity.show();
+        }
+
+        function clearLatLng() {
+            $latField.val('');
+            $lngField.val('');
+            $cityHidden.val('');
+            $clearCity.hide();
+        }
+
+        $('#advUseMyLocation').on('click', function () {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser.');
+                return;
+            }
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('Detecting…');
+
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    var lat = pos.coords.latitude;
+                    var lng = pos.coords.longitude;
+
+                    $.getJSON(
+                        'https://nominatim.openstreetmap.org/reverse',
+                        { lat: lat, lon: lng, format: 'json' },
+                        function (data) {
+                            var city = (data && data.address)
+                                ? (data.address.city || data.address.town || data.address.village || '')
+                                : '';
+                            if (city) {
+                                $cityInput.val(city);
+                                setLatLng(lat, lng, city);
+                            } else {
+                                setLatLng(lat, lng, '');
+                            }
+                            $btn.prop('disabled', false).html('✓ Location detected');
+                        }
+                    ).fail(function () {
+                        setLatLng(lat, lng, '');
+                        $btn.prop('disabled', false).html('✓ Location detected');
+                    });
+                },
+                function (err) {
+                    $btn.prop('disabled', false).html('📍 Use my location');
+                    console.warn('Geolocation error:', err.message);
+                }
+            );
+        });
+
+        $cityInput.on('input', function () {
+            var city = $(this).val().trim();
+            clearTimeout(geocodeTimer);
+            $clearCity.toggle(city.length > 0);
+            $cityHidden.val(city);
+
+            if (city.length < 2) {
+                clearLatLng();
+                return;
+            }
+
+            geocodeTimer = setTimeout(function () {
+                $.getJSON(
+                    'https://nominatim.openstreetmap.org/search',
+                    { q: city, format: 'json', limit: 1 },
+                    function (results) {
+                        if (results && results[0]) {
+                            setLatLng(results[0].lat, results[0].lon, city);
+                        }
+                    }
+                );
+            }, 500);
+        });
+
+        $clearCity.on('click', function () {
+            $cityInput.val('');
+            clearLatLng();
+        });
+
+        if ($latField.val()) { $clearCity.show(); }
+
+        /* ═══════════════════════════════════════════════════════════
+           7. FORM SUBMIT — strip empty lat/lng for clean URL
+        ═══════════════════════════════════════════════════════════ */
+
+        $form.on('submit', function () {
+            var $allTypes = $form.find('.adv-top-checkbox');
+            var $checked  = $allTypes.filter(':checked');
+
+            if ($checked.length === 0 || $checked.length === $allTypes.length) {
+                $allTypes.prop('disabled', true);
+            }
+
+            var $allBCats    = $form.find('.adv-cat-checkbox:not(.adv-top-checkbox)');
+            var $checkedBCat = $allBCats.filter(':checked');
+            if ($checkedBCat.length === 0 || $checkedBCat.length === $allBCats.length) {
+                $allBCats.prop('disabled', true);
+            }
+
+            if (!$latField.val()) $latField.prop('disabled', true);
+            if (!$lngField.val()) $lngField.prop('disabled', true);
+            if (!$cityHidden.val()) $cityHidden.prop('disabled', true);
+        });
+
+        $(window).on('pageshow', function () {
+            $('#advancedSearchForm input').prop('disabled', false);
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           8. RESULTS PAGE INTERACTIONS
+           NOTE: most of these duplicate the inline <script> block
+           already in search.blade.php's @section('content'). jQuery
+           handlers below are harmless if both run (idempotent), but
+           if you see double-submits, remove the duplicate block from
+           the @section('content') script and keep this one only.
+        ═══════════════════════════════════════════════════════════ */
+
+        function reloadWithParam(key, value) {
+            var url = new URL(window.location.href);
+            url.searchParams.set(key, value);
+            window.location.href = url.toString();
+        }
+
+        $('#advSortSelect').on('change', function () {
+            reloadWithParam('sort', $(this).val());
+        });
+
+        $(document).on('click', '.adv-type-tab', function () {
+            var type = $(this).data('type');
+
+            $(this).addClass('btn-primary active')
+                   .removeClass('btn-outline-secondary')
+                   .siblings('.adv-type-tab')
+                   .removeClass('btn-primary active')
+                   .addClass('btn-outline-secondary');
+
+            if (type === 'all') {
+                $('.adv-result-section').show();
+            } else {
+                $('.adv-result-section').hide();
+                $('#section-' + type).show();
+            }
+        });
+
+        $(document).on('change', '#advPriceMin', function () { reloadWithParam('price_min', $(this).val()); });
+        $(document).on('change', '#advPriceMax', function () { reloadWithParam('price_max', $(this).val()); });
+
+        $(document).on('click', '.adv-rating-btn, .js-rating-btn', function () {
+            var $field = $('#filterRatingValue');
+            if ($field.length) {
+                $field.val($(this).data('rating'));
+                var $f = $('#filterForm');
+                if ($f.length) $f.submit();
+            } else {
+                reloadWithParam('rating', $(this).data('rating'));
+            }
+        });
+
+        $(document).on('click', '.js-rating-clear', function () {
+            var $field = $('#filterRatingValue');
+            if ($field.length) {
+                $field.val('');
+                var $f = $('#filterForm');
+                if ($f.length) $f.submit();
+            }
+        });
+
+        $(document).on('change', '.js-cat-checkbox, .js-bcat-checkbox', function () {
+            var $f = $('#filterForm');
+            if ($f.length) $f.submit();
+        });
+
+        $(document).on('click', '.js-select-all-cats', function () {
+            $('.js-cat-checkbox, .js-bcat-checkbox').prop('checked', true);
+            var $f = $('#filterForm'); if ($f.length) $f.submit();
+        });
+
+        $(document).on('click', '.js-clear-all-cats', function () {
+            $('.js-cat-checkbox, .js-bcat-checkbox').prop('checked', false);
+            var $f = $('#filterForm'); if ($f.length) $f.submit();
+        });
+
+        $(document).on('click', '.js-toggle-all-cats', function () {
+            $('.subcats-list').each(function () {
+                var hidden = $(this).css('display') === 'none';
+                $(this).css('display', hidden ? 'block' : 'none');
+            });
+        });
+
+        // ── Results page sidebar: city geocoding ─────────────────────────────
+        // NOTE: ip-api.com auto-detect block REMOVED here too — same 403 reason.
+        var $sidebarCity    = $('#sidebarCityInput');
+        var $sidebarLat     = $('#filterLat');
+        var $sidebarLng     = $('#filterLng');
+        var $sidebarCityFld = $('#filterCityName');
+        var $sidebarClear   = $('#sidebarClearCity');
+        var sidebarGeoTimer;
+
+        $sidebarCity.on('input', function () {
+            var city = $(this).val().trim();
+            clearTimeout(sidebarGeoTimer);
+
+            if ($sidebarCityFld.length) $sidebarCityFld.val(city);
+
+            if (city.length < 2) {
+                if ($sidebarLat.length)     $sidebarLat.val('');
+                if ($sidebarLng.length)     $sidebarLng.val('');
+                if ($sidebarCityFld.length) $sidebarCityFld.val('');
+                return;
+            }
+
+            sidebarGeoTimer = setTimeout(function () {
+                $.getJSON(
+                    'https://nominatim.openstreetmap.org/search',
+                    { q: city, format: 'json', limit: 1 },
+                    function (results) {
+                        if (results && results[0]) {
+                            if ($sidebarLat.length)     $sidebarLat.val(results[0].lat);
+                            if ($sidebarLng.length)     $sidebarLng.val(results[0].lon);
+                            if ($sidebarCityFld.length) $sidebarCityFld.val(city);
+                        }
+                    }
+                );
+            }, 500);
+        });
+
+        $sidebarClear.on('click', function () {
+            if ($sidebarCity.length)    $sidebarCity.val('');
+            if ($sidebarLat.length)     $sidebarLat.val('');
+            if ($sidebarLng.length)     $sidebarLng.val('');
+            if ($sidebarCityFld.length) $sidebarCityFld.val('');
+        });
+
+    })(jQuery);
+    </script>
 @endpush
