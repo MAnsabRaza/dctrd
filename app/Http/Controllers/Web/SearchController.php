@@ -313,8 +313,8 @@ $this->applySort($bundlesQuery, $request, false, 'price', 'created_at');
                     'teacher' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
                 ]);
 
-            $this->applyPriceFilter($upcomingQuery, $request, 'price');
-            $this->applySort($upcomingQuery, $request, false, 'price', 'avg_rating');
+        $this->applyPriceFilter($upcomingQuery, $request, 'price');
+$this->applySort($upcomingQuery, $request, false, 'price', 'created_at');
 
             $upcomingCount   = (clone $upcomingQuery)->count();
             $upcomingCourses = $upcomingQuery->limit(20)->get();
