@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Models\BookingCategory;
 use App\Models\BookingOrder;
 use App\Models\Role;
+use App\Services\BookingTemplateConfig;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class BookingController extends Controller
 {
+    // ── Index / New Booking Form ───────────────────────────────────────
+
     public function index(Request $request)
     {
         $this->authorize('admin_booking');
@@ -38,21 +41,15 @@ class BookingController extends Controller
             ->orderBy('title')
             ->get();
 
-        $bookingTypes = Booking::query()
-            ->select('booking_type')
-            ->distinct()
-            ->orderBy('booking_type')
-            ->pluck('booking_type');
+        $bookingTypes           = array_keys(BookingTemplateConfig::allTypes());
+        $bookingTypeLabels      = BookingTemplateConfig::allTypes();
+        $bookingTypeCategoryMap = $this->buildTypeCategoryMap($parentCategories);
+        $allCategories          = BookingCategory::orderBy('order')->get();
+        $userLanguages          = $this->getUserLanguages();
+        $instructors            = $this->getInstructors();
 
-        $bookingTypeCategoryMap = [];
-        foreach ($parentCategories as $category) {
-            $bookingTypeCategoryMap[Str::slug($category->slug)]  = $category->id;
-            $bookingTypeCategoryMap[Str::slug($category->title)] = $category->id;
-        }
-
-        $allCategories = BookingCategory::orderBy('order')->get();
-        $userLanguages = $this->getUserLanguages();
-        $instructors   = $this->getInstructors();
+        // Template configs as JSON for JS dynamic field switching
+        $templateConfigs = $this->buildTemplateConfigsForJs();
 
         return view('admin.booking.booking', [
             'pageTitle'              => trans('admin/main.create_booking'),
@@ -61,13 +58,17 @@ class BookingController extends Controller
             'parentCategories'       => $parentCategories,
             'childCategories'        => $childCategories,
             'bookingTypes'           => $bookingTypes,
+            'bookingTypeLabels'      => $bookingTypeLabels,
             'bookingTypeCategoryMap' => $bookingTypeCategoryMap,
             'categories'             => $parentCategories,
             'allCategories'          => $allCategories,
             'userLanguages'          => $userLanguages,
             'instructors'            => $instructors,
+            'templateConfigs'        => json_encode($templateConfigs),
         ]);
     }
+
+    // ── List ──────────────────────────────────────────────────────────
 
     public function list(Request $request)
     {
@@ -83,144 +84,30 @@ class BookingController extends Controller
         return $this->buildBookingListView($request, true);
     }
 
-    // ── Shared list builder ───────────────────────────────────────────
-    private function buildBookingListView(Request $request, bool $inHouseOnly)
-    {
-        removeContentLocale();
-
-        $productCategories = BookingCategory::query()
-            ->whereNull('parent_id')
-            ->with('children')
-            ->orderBy('order')
-            ->get();
-
-        $query = Booking::query();
-
-        if ($inHouseOnly) {
-            $adminRoleIds = Role::where('is_admin', true)->pluck('id')->toArray();
-
-            $query->whereHas('creator', function ($q) use ($adminRoleIds) {
-                $q->whereIn('role_id', $adminRoleIds);
-            });
-        }
-
-        $topStatData = $this->getTopPageStats(deepClone($query));
-
-        $query = $this->handleFilters($query, $request)
-            ->with([
-                'category',
-                'creator' => function ($qu) {
-                    $qu->select('id', 'full_name');
-                },
-            ])
-            // sales_count = confirmed/completed orders count for this booking
-            ->withCount([
-                'orders as sales_count' => function ($qu) {
-                    $qu->whereIn('status', ['confirmed', 'completed']);
-                },
-            ])
-            // booking_income = sum of sales.total_amount for confirmed/completed orders.
-            // NOTE: total_amount lives on the `sales` table (not booking_orders), linked
-            // via booking_orders.sale_id -> sales.id — same pattern as ProductsController.
-            ->addSelect(['booking_income' => BookingOrder::query()
-                ->selectRaw('coalesce(sum(sales.total_amount), 0)')
-                ->join('sales', function ($join) {
-                    $join->on('sales.id', '=', 'booking_orders.sale_id')
-                        ->whereNull('sales.refund_at');
-                })
-                ->whereColumn('booking_orders.booking_id', 'bookings.id')
-                ->whereIn('booking_orders.status', ['confirmed', 'completed'])
-            ]);
-
-        $bookings        = $query->paginate(15);
-        $categories      = BookingCategory::where('status', 1)->orderBy('order')->get();
-        $allCategories   = BookingCategory::orderBy('order')->get();
-        $userLanguages   = $this->getUserLanguages();
-        $instructors     = $this->getInstructors();
-        $selectedSellers = $this->getSelectedSellers($request);
-
-        $data = [
-            'pageTitle'         => $inHouseOnly
-                                    ? trans('update.in-house-bookings')
-                                    : trans('admin/main.booking_list'),
-            'bookingPageMode'   => 'list',
-            'inHouseBookings'   => $inHouseOnly,
-            'bookings'          => $bookings,
-            'categories'        => $categories,
-            'productCategories' => $productCategories,
-            'allCategories'     => $allCategories,
-            'userLanguages'     => $userLanguages,
-            'instructors'       => $instructors,
-            'teachers'          => $selectedSellers,
-        ];
-
-        return view('admin.booking.booking', array_merge($data, $topStatData));
-    }
-
-    // ── Export Excel ──────────────────────────────────────────────────
-    public function exportExcel(Request $request)
-    {
-        $this->authorize('admin_booking');
-
-        $query = Booking::query();
-
-        if (!empty($request->get('in_house_bookings'))) {
-            $adminRoleIds = Role::where('is_admin', true)->pluck('id')->toArray();
-
-            $query->whereHas('creator', function ($q) use ($adminRoleIds) {
-                $q->whereIn('role_id', $adminRoleIds);
-            });
-        }
-
-        $bookings = $this->handleFilters($query, $request)
-            ->with([
-                'category',
-                'creator' => function ($qu) {
-                    $qu->select('id', 'full_name');
-                },
-            ])
-            ->withCount([
-                'orders as sales_count' => function ($qu) {
-                    $qu->whereIn('status', ['confirmed', 'completed']);
-                },
-            ])
-            // booking_income via sales table (sale_id link) — same as buildBookingListView()
-            ->addSelect(['booking_income' => BookingOrder::query()
-                ->selectRaw('coalesce(sum(sales.total_amount), 0)')
-                ->join('sales', function ($join) {
-                    $join->on('sales.id', '=', 'booking_orders.sale_id')
-                        ->whereNull('sales.refund_at');
-                })
-                ->whereColumn('booking_orders.booking_id', 'bookings.id')
-                ->whereIn('booking_orders.status', ['confirmed', 'completed'])
-            ])
-            ->get();
-
-        return Excel::download(new BookingsExport($bookings), 'bookings.xlsx');
-    }
-
     // ── Store ─────────────────────────────────────────────────────────
+
     public function store(Request $request)
     {
         $this->authorize('admin_booking_create');
 
-        $this->validate($request, [
-            'title'          => 'required|string|max:255',
-            'category_id'    => 'nullable|exists:booking_categories,id',
-            'language'       => 'nullable|string|max:10',
-            'booking_type'   => 'required|string|max:255',
-            'price'          => 'required|numeric|min:0',
-            'price_per'      => 'nullable|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'slug'           => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')],
-            'creator_id'     => 'nullable|exists:users,id',
-            'status'         => 'nullable|in:draft,pending,published,rejected,inactive',
-            'tax'            => 'nullable|numeric|min:0|max:999.99',
-            'commission'     => 'nullable|numeric|min:0|max:999.99',
-            'deposit_amount' => 'nullable|numeric|min:0',
-        ]);
+        // 1. Get template config for selected booking type
+        $templateConfig = BookingTemplateConfig::for($request->booking_type ?? '');
+
+        // 2. Build validation rules: global rules merged with template-specific rules
+        $validationRules = array_merge(
+            $this->globalValidationRules($request),
+            $templateConfig->rules()
+        );
+
+        $this->validate($request, $validationRules);
 
         $nextOrder = (Booking::max('order') ?? 0) + 1;
+
+        // 3. Build meta: global meta + template-specific meta fields from request
+        $meta = array_merge(
+            $this->bookingMeta($request),
+            $this->extractTemplateMeta($request, $templateConfig)
+        );
 
         $booking = Booking::create([
             'creator_id'       => $request->creator_id ?: auth()->id(),
@@ -242,7 +129,7 @@ class BookingController extends Controller
             // Pricing
             'price'            => $request->price,
             'price_per'        => $request->price_per ?: null,
-            'price_unit'       => $request->price_unit,
+            'price_unit'       => $request->price_unit ?: $templateConfig->priceUnitLabel(),
             'discount_price'   => $request->discount_price ?: null,
             'currency'         => $request->currency ?? 'USD',
             'tax'              => $request->tax ?? 0,
@@ -292,7 +179,7 @@ class BookingController extends Controller
             'review_count'     => 0,
             'reviewer_message' => $request->reviewer_message ?: null,
             'checkout_message' => $request->checkout_message ?: null,
-            'meta'             => $this->bookingMeta($request),
+            'meta'             => $meta,
         ]);
 
         $this->sendBookingNotification($booking, 'booking_created');
@@ -302,6 +189,7 @@ class BookingController extends Controller
     }
 
     // ── Edit ──────────────────────────────────────────────────────────
+
     public function edit($id)
     {
         $this->authorize('admin_booking_edit');
@@ -309,6 +197,10 @@ class BookingController extends Controller
 
         $editBooking = Booking::findOrFail($id);
         $bookings    = Booking::orderBy('created_at', 'desc')->paginate(15);
+
+        // Load template config for this booking's type
+        $templateConfig  = BookingTemplateConfig::for($editBooking->booking_type ?? '');
+        $templateConfigs = $this->buildTemplateConfigsForJs();
 
         $parentCategories = BookingCategory::whereNull('parent_id')
             ->where('status', 1)
@@ -320,78 +212,63 @@ class BookingController extends Controller
             ->orderBy('title')
             ->get();
 
-        $bookingTypes = Booking::query()
-            ->select('booking_type')
-            ->distinct()
-            ->orderBy('booking_type')
-            ->pluck('booking_type');
-
-        $bookingTypeCategoryMap = [];
-        foreach ($parentCategories as $category) {
-            $bookingTypeCategoryMap[Str::slug($category->slug)]  = $category->id;
-            $bookingTypeCategoryMap[Str::slug($category->title)] = $category->id;
-        }
-
-        $allCategories = BookingCategory::orderBy('order')->get();
-        $userLanguages = $this->getUserLanguages();
-        $instructors   = $this->getInstructors($editBooking->creator_id);
+        $bookingTypes           = array_keys(BookingTemplateConfig::allTypes());
+        $bookingTypeLabels      = BookingTemplateConfig::allTypes();
+        $bookingTypeCategoryMap = $this->buildTypeCategoryMap($parentCategories);
+        $allCategories          = BookingCategory::orderBy('order')->get();
+        $userLanguages          = $this->getUserLanguages();
+        $instructors            = $this->getInstructors($editBooking->creator_id);
 
         return view('admin.booking.booking', [
             'pageTitle'              => trans('admin/main.edit_booking'),
             'bookingPageMode'        => 'form',
             'bookings'               => $bookings,
             'editBooking'            => $editBooking,
+            'activeTemplateConfig'   => $templateConfig,
             'parentCategories'       => $parentCategories,
             'childCategories'        => $childCategories,
             'bookingTypes'           => $bookingTypes,
+            'bookingTypeLabels'      => $bookingTypeLabels,
             'bookingTypeCategoryMap' => $bookingTypeCategoryMap,
             'categories'             => $parentCategories,
             'allCategories'          => $allCategories,
             'userLanguages'          => $userLanguages,
             'instructors'            => $instructors,
+            'templateConfigs'        => json_encode($templateConfigs),
         ]);
     }
 
     // ── Update ────────────────────────────────────────────────────────
+
     public function update(Request $request, $id)
     {
         $this->authorize('admin_booking_edit');
 
-        $booking = Booking::findOrFail($id);
+        $booking        = Booking::findOrFail($id);
+        $templateConfig = BookingTemplateConfig::for($request->booking_type ?? $booking->booking_type ?? '');
 
-        $this->validate($request, [
-            'title'          => 'required|string|max:255',
-            'category_id'    => 'nullable|exists:booking_categories,id',
-            'language'       => 'nullable|string|max:10',
-            'booking_type'   => 'required|string|max:255',
-            'price'          => 'required|numeric|min:0',
-            'price_per'      => 'nullable|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'slug'           => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')->ignore($booking->id)],
-            'creator_id'     => 'nullable|exists:users,id',
-            'status'         => 'nullable|in:draft,pending,published,rejected,inactive',
-            'tax'            => 'nullable|numeric|min:0|max:999.99',
-            'commission'     => 'nullable|numeric|min:0|max:999.99',
-            'deposit_amount' => 'nullable|numeric|min:0',
-        ]);
+        $validationRules = array_merge(
+            $this->globalValidationRules($request, $booking->id),
+            $templateConfig->rules()
+        );
+
+        $this->validate($request, $validationRules);
+
+        // Merge existing meta with new template meta (preserve non-overwritten keys)
+        $existingMeta = $booking->meta ?? [];
+        $newMeta      = array_merge(
+            $existingMeta,
+            $this->bookingMeta($request),
+            $this->extractTemplateMeta($request, $templateConfig)
+        );
 
         $booking->update([
             'creator_id'       => $request->creator_id ?: $booking->creator_id,
             'category_id'      => $request->category_id,
             'title'            => $request->title,
             'language'         => $request->language ?? $booking->language,
-            'slug'             => $request->slug
-                                    ? Str::slug($request->slug)
-                                    : $booking->slug,
+            'slug'             => $request->slug ? Str::slug($request->slug) : $booking->slug,
             'booking_type'     => $request->booking_type,
-            // FIX: this was previously defined a SECOND time further down as
-            // 'status' => 'draft' (hardcoded). In a PHP array literal the last
-            // occurrence of a duplicate key wins, so that line was silently
-            // overwriting whatever status the admin picked in the form —
-            // every update was forced back to "draft" no matter what.
-            // It has been removed below; this single line is now the only
-            // place 'status' is set, and it correctly falls back to the
-            // booking's current status if nothing was submitted.
             'status'           => $request->status ?: $booking->status,
             'sub_type'         => $request->sub_type,
             'description'      => $request->description,
@@ -400,10 +277,9 @@ class BookingController extends Controller
             'cover'            => $request->cover,
             'order'            => $request->has('order') ? $request->order : $booking->order,
 
-            // Pricing
             'price'            => $request->price,
             'price_per'        => $request->price_per ?: null,
-            'price_unit'       => $request->price_unit,
+            'price_unit'       => $request->price_unit ?: $templateConfig->priceUnitLabel(),
             'discount_price'   => $request->discount_price ?: null,
             'currency'         => $request->currency ?? 'USD',
             'tax'              => $request->tax ?? 0,
@@ -412,14 +288,12 @@ class BookingController extends Controller
             'deposit_amount'   => $request->boolean('deposit_enabled') ? ($request->deposit_amount ?: null) : null,
             'deposit_type'     => $request->boolean('deposit_enabled') ? $request->deposit_type : null,
 
-            // Capacity
             'min_persons'      => $request->min_persons ?? 1,
             'max_persons'      => $request->max_persons ?: null,
             'max_children'     => $request->max_children ?: null,
             'children_allowed' => $request->boolean('children_allowed'),
             'capacity'         => $request->capacity ?: null,
 
-            // Duration
             'duration_minutes'        => $request->duration_minutes ?: null,
             'buffer_before'           => $request->buffer_before ?? 0,
             'buffer_after'            => $request->buffer_after ?? 0,
@@ -432,7 +306,6 @@ class BookingController extends Controller
             'waitlist_enabled'        => $request->boolean('waitlist_enabled'),
             'inventory'               => $request->inventory ?: null,
 
-            // Location
             'location_enabled' => $request->boolean('location_enabled'),
             'address_line'     => $request->address_line,
             'city'             => $request->city,
@@ -442,14 +315,13 @@ class BookingController extends Controller
             'lat'              => $request->lat ?: null,
             'lng'              => $request->lng ?: null,
 
-            // Status & misc
             'featured'         => $request->boolean('featured'),
             'forum_enabled'    => $request->boolean('forum_enabled'),
             'comments_enabled' => $request->boolean('comments_enabled'),
             'reviews_enabled'  => $request->boolean('reviews_enabled'),
             'reviewer_message' => $request->reviewer_message ?: null,
             'checkout_message' => $request->checkout_message ?: null,
-            'meta'             => $this->bookingMeta($request),
+            'meta'             => $newMeta,
         ]);
 
         $this->sendBookingNotification($booking, 'booking_updated');
@@ -459,6 +331,7 @@ class BookingController extends Controller
     }
 
     // ── Delete ────────────────────────────────────────────────────────
+
     public function delete($id)
     {
         $this->authorize('admin_booking_delete');
@@ -469,78 +342,178 @@ class BookingController extends Controller
             ->with('success', trans('admin/main.deleted_successfully'));
     }
 
-    // ── Private helpers ───────────────────────────────────────────────
+    // ── Export Excel ──────────────────────────────────────────────────
 
-    private function sendBookingNotification(Booking $booking, string $template): void
+    public function exportExcel(Request $request)
     {
-        $notifyOptions = [
-            '[c.title]'    => $booking->title,
-            '[item_title]' => $booking->title,
-            '[u.name]'     => optional(auth()->user())->full_name,
+        $this->authorize('admin_booking');
+
+        $query = Booking::query();
+
+        if (!empty($request->get('in_house_bookings'))) {
+            $adminRoleIds = Role::where('is_admin', true)->pluck('id')->toArray();
+            $query->whereHas('creator', fn($q) => $q->whereIn('role_id', $adminRoleIds));
+        }
+
+        $bookings = $this->handleFilters($query, $request)
+            ->with(['category', 'creator' => fn($qu) => $qu->select('id', 'full_name')])
+            ->withCount(['orders as sales_count' => fn($qu) => $qu->whereIn('status', ['confirmed', 'completed'])])
+            ->addSelect(['booking_income' => BookingOrder::query()
+                ->selectRaw('coalesce(sum(sales.total_amount), 0)')
+                ->join('sales', fn($join) => $join->on('sales.id', '=', 'booking_orders.sale_id')->whereNull('sales.refund_at'))
+                ->whereColumn('booking_orders.booking_id', 'bookings.id')
+                ->whereIn('booking_orders.status', ['confirmed', 'completed'])
+            ])
+            ->get();
+
+        return Excel::download(new BookingsExport($bookings), 'bookings.xlsx');
+    }
+
+    // ── Private: Shared list builder ──────────────────────────────────
+
+    private function buildBookingListView(Request $request, bool $inHouseOnly)
+    {
+        removeContentLocale();
+
+        $productCategories = BookingCategory::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('order')
+            ->get();
+
+        $query = Booking::query();
+
+        if ($inHouseOnly) {
+            $adminRoleIds = Role::where('is_admin', true)->pluck('id')->toArray();
+            $query->whereHas('creator', fn($q) => $q->whereIn('role_id', $adminRoleIds));
+        }
+
+        $topStatData = $this->getTopPageStats(deepClone($query));
+
+        $query = $this->handleFilters($query, $request)
+            ->with(['category', 'creator' => fn($qu) => $qu->select('id', 'full_name')])
+            ->withCount(['orders as sales_count' => fn($qu) => $qu->whereIn('status', ['confirmed', 'completed'])])
+            ->addSelect(['booking_income' => BookingOrder::query()
+                ->selectRaw('coalesce(sum(sales.total_amount), 0)')
+                ->join('sales', fn($join) => $join->on('sales.id', '=', 'booking_orders.sale_id')->whereNull('sales.refund_at'))
+                ->whereColumn('booking_orders.booking_id', 'bookings.id')
+                ->whereIn('booking_orders.status', ['confirmed', 'completed'])
+            ]);
+
+        $bookings        = $query->paginate(15);
+        $categories      = BookingCategory::where('status', 1)->orderBy('order')->get();
+        $allCategories   = BookingCategory::orderBy('order')->get();
+        $userLanguages   = $this->getUserLanguages();
+        $instructors     = $this->getInstructors();
+        $selectedSellers = $this->getSelectedSellers($request);
+
+        $data = [
+            'pageTitle'         => $inHouseOnly
+                                    ? trans('update.in-house-bookings')
+                                    : trans('admin/main.booking_list'),
+            'bookingPageMode'   => 'list',
+            'inHouseBookings'   => $inHouseOnly,
+            'bookings'          => $bookings,
+            'categories'        => $categories,
+            'productCategories' => $productCategories,
+            'allCategories'     => $allCategories,
+            'userLanguages'     => $userLanguages,
+            'instructors'       => $instructors,
+            'teachers'          => $selectedSellers,
+            'bookingTypeLabels' => BookingTemplateConfig::allTypes(),
         ];
 
-        sendNotification($template, $notifyOptions, 1);
+        return view('admin.booking.booking', array_merge($data, $topStatData));
+    }
 
-        if (!empty($booking->creator_id) && $booking->creator_id !== auth()->id()) {
-            sendNotification($template, $notifyOptions, $booking->creator_id);
+    // ── Private: Template config for JavaScript ───────────────────────
+
+    /**
+     * Build a JS-friendly array of all template configs.
+     * Used by the frontend to switch form fields dynamically.
+     */
+    private function buildTemplateConfigsForJs(): array
+    {
+        $configs = [];
+        foreach (BookingTemplateConfig::allTypes() as $slug => $label) {
+            $config                = BookingTemplateConfig::for($slug);
+            $configs[$slug] = [
+                'label'             => $label,
+                'fields'            => $config->fields(),
+                'field_labels'      => $config->fieldLabels(),
+                'required'          => $config->required(),
+                'pricing_mode'      => $config->pricingMode(),
+                'availability_mode' => $config->availabilityMode(),
+                'price_unit_label'  => $config->priceUnitLabel(),
+                'has_staff'         => $config->hasStaff(),
+                'has_date_range'    => $config->hasDateRange(),
+                'has_time_slot'     => $config->hasTimeSlot(),
+                'has_extras'        => $config->hasExtras(),
+                'filters'           => $config->filters(),
+                'meta'              => $config->meta(),
+            ];
         }
+        return $configs;
     }
 
     /**
-     * Top-of-page stats — uses booking_orders only.
-     *
-     * booking_orders columns used:
-     *   booking_id  — which booking this order is for
-     *   seller_id   — seller (creator) of the booking
-     *   buyer_id    — customer who placed the order
-     *   status      — confirmed / completed / cancelled / pending
+     * Extract template-specific meta fields from request.
+     * Fields prefixed with meta.* in the template config get saved to booking->meta.
      */
-    private function getTopPageStats($query): array
+    private function extractTemplateMeta(Request $request, BookingTemplateConfig $config): array
     {
-        // Total bookings count
-        $totalBookings = deepClone($query)->count();
+        $meta         = [];
+        $metaFields   = array_filter($config->fields(), fn($f) => str_starts_with($f, 'meta.'));
+        $requestMeta  = $request->input('meta', []);
 
-        // Pluck IDs of bookings in this query scope
-        $bookingIds = deepClone($query)->pluck('bookings.id');
-
-        // Total sales = confirmed/completed orders count
-        $totalBookingSales = 0;
-        $totalCustomers    = 0;
-
-        if ($bookingIds->count()) {
-            $totalBookingSales = BookingOrder::whereIn('booking_id', $bookingIds)
-                ->whereIn('status', ['confirmed', 'completed'])
-                ->count();
-
-            // Unique customers (buyer_id) across those orders
-            $totalCustomers = BookingOrder::whereIn('booking_id', $bookingIds)
-                ->whereIn('status', ['confirmed', 'completed'])
-                ->whereNotNull('buyer_id')
-                ->distinct('buyer_id')
-                ->count('buyer_id');
+        // staff_id is special — stored as meta.staff_id
+        if ($config->hasStaff() && $request->filled('staff_id')) {
+            $meta['staff_id'] = $request->staff_id;
         }
 
-        // Total unique sellers (creators) in this booking scope
-        $totalSellers = deepClone($query)
-            ->whereNotNull('creator_id')
-            ->distinct('creator_id')
-            ->count('creator_id');
+        // extras
+        if ($config->hasExtras() && $request->has('extras')) {
+            $meta['extras'] = $request->input('extras', []);
+        }
+
+        // All meta.* fields from template config
+        foreach ($metaFields as $field) {
+            $key = str_replace('meta.', '', $field);
+            if (array_key_exists($key, $requestMeta)) {
+                $meta[$key] = $requestMeta[$key];
+            }
+        }
+
+        return $meta;
+    }
+
+    // ── Private: Validation rules ─────────────────────────────────────
+
+    private function globalValidationRules(Request $request, ?int $ignoreId = null): array
+    {
+        $slugRule = ['nullable', 'string', 'max:255'];
+        $slugRule[] = $ignoreId
+            ? Rule::unique('bookings', 'slug')->ignore($ignoreId)
+            : Rule::unique('bookings', 'slug');
 
         return [
-            'totalBookings'         => $totalBookings,
-            'totalBookingSales'     => $totalBookingSales,
-            'totalBookingSellers'   => $totalSellers,
-            'totalBookingCustomers' => $totalCustomers,
+            'title'          => 'required|string|max:255',
+            'slug'           => $slugRule,
+            'category_id'    => 'nullable|exists:booking_categories,id',
+            'language'       => 'nullable|string|max:10',
+            'booking_type'   => 'required|string|max:255',
+            'status'         => 'nullable|in:draft,pending,published,rejected,inactive',
+            'creator_id'     => 'nullable|exists:users,id',
+            'tax'            => 'nullable|numeric|min:0|max:999.99',
+            'commission'     => 'nullable|numeric|min:0|max:999.99',
+            'deposit_amount' => 'nullable|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'price_per'      => 'nullable|numeric|min:0',
         ];
     }
 
-    /**
-     * Query filters — sort cases now use booking_orders instead of booking_order_items.
-     *
-     * total_amount lives on the `sales` table (not booking_orders), linked via
-     * booking_orders.sale_id -> sales.id — same join pattern ProductsController
-     * uses for its income_asc / income_desc sorts.
-     */
+    // ── Private: Filters ──────────────────────────────────────────────
+
     private function handleFilters($query, Request $request)
     {
         $from        = $request->get('from', null);
@@ -558,7 +531,7 @@ class BookingController extends Controller
             $query->where('title', 'like', '%' . $title . '%');
         }
 
-        if (!empty($creatorIds) && is_array($creatorIds) && count($creatorIds)) {
+        if (!empty($creatorIds) && is_array($creatorIds)) {
             $query->whereIn('creator_id', $creatorIds);
         }
 
@@ -572,6 +545,29 @@ class BookingController extends Controller
 
         if (!empty($status)) {
             $query->where('status', $status);
+        }
+
+        // City filter (applies to all types)
+        if ($request->filled('city')) {
+            $query->where('city', 'like', '%' . $request->city . '%');
+        }
+
+        // Price range filter
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->price_max);
+        }
+
+        // sub_type filter (online/in-person, rental/service)
+        if ($request->filled('sub_type')) {
+            $query->where('sub_type', $request->sub_type);
+        }
+
+        // Language filter
+        if ($request->filled('language')) {
+            $query->where('language', $request->language);
         }
 
         switch ($sort) {
@@ -643,7 +639,6 @@ class BookingController extends Controller
                 $query->orderBy('bookings.updated_at', 'desc');
                 break;
 
-            case 'created_at_desc':
             default:
                 $query->orderBy('bookings.created_at', 'desc');
                 break;
@@ -652,28 +647,81 @@ class BookingController extends Controller
         return $query;
     }
 
+    // ── Private: Helpers ──────────────────────────────────────────────
+
+    private function buildTypeCategoryMap($parentCategories): array
+    {
+        $map = [];
+        foreach ($parentCategories as $category) {
+            $map[Str::slug($category->slug)]  = $category->id;
+            $map[Str::slug($category->title)] = $category->id;
+        }
+        return $map;
+    }
+
+    private function sendBookingNotification(Booking $booking, string $template): void
+    {
+        $notifyOptions = [
+            '[c.title]'    => $booking->title,
+            '[item_title]' => $booking->title,
+            '[u.name]'     => optional(auth()->user())->full_name,
+        ];
+
+        sendNotification($template, $notifyOptions, 1);
+
+        if (!empty($booking->creator_id) && $booking->creator_id !== auth()->id()) {
+            sendNotification($template, $notifyOptions, $booking->creator_id);
+        }
+    }
+
+    private function getTopPageStats($query): array
+    {
+        $totalBookings = deepClone($query)->count();
+        $bookingIds    = deepClone($query)->pluck('bookings.id');
+
+        $totalBookingSales = 0;
+        $totalCustomers    = 0;
+
+        if ($bookingIds->count()) {
+            $totalBookingSales = BookingOrder::whereIn('booking_id', $bookingIds)
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->count();
+
+            $totalCustomers = BookingOrder::whereIn('booking_id', $bookingIds)
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->whereNotNull('buyer_id')
+                ->distinct('buyer_id')
+                ->count('buyer_id');
+        }
+
+        $totalSellers = deepClone($query)
+            ->whereNotNull('creator_id')
+            ->distinct('creator_id')
+            ->count('creator_id');
+
+        return [
+            'totalBookings'         => $totalBookings,
+            'totalBookingSales'     => $totalBookingSales,
+            'totalBookingSellers'   => $totalSellers,
+            'totalBookingCustomers' => $totalCustomers,
+        ];
+    }
+
     private function getSelectedSellers(Request $request)
     {
         $creatorIds = $request->get('creator_ids', []);
-
         if (empty($creatorIds) || !is_array($creatorIds)) {
             return collect();
         }
-
-        return User::query()
-            ->select('id', 'full_name')
-            ->whereIn('id', $creatorIds)
-            ->get();
+        return User::query()->select('id', 'full_name')->whereIn('id', $creatorIds)->get();
     }
 
     private function getUserLanguages(): array
     {
         $userLanguages = getGeneralSettings('user_languages');
-
         if (!empty($userLanguages) && is_array($userLanguages)) {
             return getLanguages($userLanguages);
         }
-
         return [app()->getLocale() => ucfirst(app()->getLocale())];
     }
 
@@ -684,7 +732,7 @@ class BookingController extends Controller
             'commission_type'      => $request->commission_type ?? 'percent',
             'seo_meta_description' => $request->seo_meta_description,
             'tags'                 => collect(explode(',', (string) $request->tags))
-                                        ->map(fn ($tag) => trim($tag))
+                                        ->map(fn($tag) => trim($tag))
                                         ->filter()
                                         ->take(10)
                                         ->values()
@@ -699,7 +747,6 @@ class BookingController extends Controller
             ->select('id', 'full_name', 'role_name')
             ->where(function ($query) use ($selectedUserId) {
                 $query->whereIn('role_name', [Role::$teacher, Role::$organization]);
-
                 if (!empty($selectedUserId)) {
                     $query->orWhere('id', $selectedUserId);
                 }
