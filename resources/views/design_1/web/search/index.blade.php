@@ -856,60 +856,61 @@
 
         These three scripts were the root cause of the page rendering
         broken/unstyled — wrunner-jquery.js crashed before defining "$",
-        so every later script (summernote, colorpicker, search.min.js,
-        and this page's own jQuery code) failed silently. JS-driven parts
-        of the page (header, hero, sidebar, result cards) never rendered,
-        leaving only the static footer visible.
+        so every later script (summernote, colorpicker, search.min.js)
+        failed silently. JS-driven parts of the page (header, hero,
+        sidebar, result cards) never rendered, leaving only the static
+        footer visible.
 
-        The main layout (design_1.web.layouts.app) already loads the
-        project's real jQuery + Bootstrap bundle — this page doesn't need
-        its own copy. If you need the slider widget back, re-add ONLY
-        wrunner-jquery.js once it's fixed/confirmed compatible — never on
-        a page that doesn't use a slider.
+        FIX: the inline script below was also rewritten from jQuery to
+        plain vanilla JavaScript, so this page no longer depends on
+        jQuery being loaded at all — removing that fragile dependency
+        entirely instead of just hoping load order stays correct.
     --}}
     <script src="/assets/default/vendors/swiper/swiper-bundle.min.js"></script>
 
     <script src="{{ getDesign1ScriptPath("search") }}"></script>
 
     {{-- ═══════════════════════════════════════════════════════════
-         advanced_search.js INLINE — separate file 404 de raha tha,
-         is liye seedha yahan, jQuery load hone ke baad, daal diya.
-         scripts_bottom stack layout mein </body> se pehle render hota
-         hai, to jQuery iss waqt tak ready hoga.
+         advanced_search.js INLINE — vanilla JS, no jQuery required.
+         Separate file 404 de raha tha, is liye seedha yahan daal diya.
+         Pure JavaScript hone ki wajah se ab is page ko kisi jQuery
+         library ke load hone ka intezar nahi karna — koi dependency
+         crash nahi karegi.
     ═══════════════════════════════════════════════════════════ --}}
     <script>
-    (function ($) {
+    (function () {
         'use strict';
-
-        if (typeof $ === 'undefined') {
-            console.error('advanced_search.js: jQuery not loaded yet — script load order check karein.');
-            return;
-        }
 
         /* ═══════════════════════════════════════════════════════════
            1. ELEMENTS + HELPERS
         ═══════════════════════════════════════════════════════════ */
 
-        var $wrapper        = $('#advanced-search-wrapper');
-        var $categoryPanel  = $('#advCategoryPanel');
-        var $suggestionsBox = $('#advSearchSuggestions');
-        var $input          = $('#advSearchInput');
-        var $toggle         = $('#advSearchCategoryToggle');
-        var $form           = $('#advancedSearchForm');
+        var wrapper        = document.getElementById('advanced-search-wrapper');
+        var categoryPanel  = document.getElementById('advCategoryPanel');
+        var suggestionsBox = document.getElementById('advSearchSuggestions');
+        var input          = document.getElementById('advSearchInput');
+        var toggle         = document.getElementById('advSearchCategoryToggle');
+        var form           = document.getElementById('advancedSearchForm');
 
         function openCategoryPanel() {
-            $categoryPanel.removeClass('d-none');
-            $suggestionsBox.addClass('d-none');
-            $toggle.find('.category-caret').text('▴');
+            if (!categoryPanel) return;
+            categoryPanel.classList.remove('d-none');
+            if (suggestionsBox) suggestionsBox.classList.add('d-none');
+            var caret = toggle ? toggle.querySelector('.category-caret') : null;
+            if (caret) caret.textContent = '▴';
         }
 
         function closeCategoryPanel() {
-            $categoryPanel.addClass('d-none');
-            $toggle.find('.category-caret').text('▾');
+            if (!categoryPanel) return;
+            categoryPanel.classList.add('d-none');
+            var caret = toggle ? toggle.querySelector('.category-caret') : null;
+            if (caret) caret.textContent = '▾';
         }
 
         function hideSuggestions() {
-            $suggestionsBox.addClass('d-none').empty();
+            if (!suggestionsBox) return;
+            suggestionsBox.classList.add('d-none');
+            suggestionsBox.innerHTML = '';
             activeIdx = -1;
         }
 
@@ -925,27 +926,37 @@
            2. DROPDOWN OPEN / CLOSE
         ═══════════════════════════════════════════════════════════ */
 
-        $toggle.on('click', function (e) {
-            e.stopPropagation();
-            $categoryPanel.hasClass('d-none') ? openCategoryPanel() : closeCategoryPanel();
-        });
+        if (toggle) {
+            toggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (categoryPanel && categoryPanel.classList.contains('d-none')) {
+                    openCategoryPanel();
+                } else {
+                    closeCategoryPanel();
+                }
+            });
+        }
 
-        $input.on('focus', function () {
-            if ($(this).val().trim().length < 2) {
-                openCategoryPanel();
-            }
-        });
+        if (input) {
+            input.addEventListener('focus', function () {
+                if (this.value.trim().length < 2) {
+                    openCategoryPanel();
+                }
+            });
+        }
 
-        $(document).on('click', function (e) {
-            if (!$(e.target).closest('#advanced-search-wrapper').length) {
+        document.addEventListener('click', function (e) {
+            if (!wrapper || !wrapper.contains(e.target)) {
                 closeCategoryPanel();
                 hideSuggestions();
             }
         });
 
-        $categoryPanel.on('click', function (e) { e.stopPropagation(); });
+        if (categoryPanel) {
+            categoryPanel.addEventListener('click', function (e) { e.stopPropagation(); });
+        }
 
-        $(document).on('keydown', function (e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 closeCategoryPanel();
                 hideSuggestions();
@@ -956,61 +967,83 @@
            3. HIERARCHICAL CHECKBOXES
         ═══════════════════════════════════════════════════════════ */
 
-        function syncParentState($parent) {
-            var groupId   = $parent.data('group');
-            var $children = $('.adv-child-checkbox[data-parent="' + groupId + '"]');
-            if (!$children.length) return;
+        function syncParentState(parentEl) {
+            if (!parentEl) return;
+            var groupId  = parentEl.dataset.group;
+            var children = document.querySelectorAll('.adv-child-checkbox[data-parent="' + groupId + '"]');
+            if (!children.length) return;
 
-            var total   = $children.length;
-            var checked = $children.filter(':checked').length;
+            var total   = children.length;
+            var checked = 0;
+            children.forEach(function (c) { if (c.checked) checked++; });
 
             if (checked === 0) {
-                $parent.prop({ checked: false, indeterminate: false });
+                parentEl.checked = false;
+                parentEl.indeterminate = false;
             } else if (checked === total) {
-                $parent.prop({ checked: true, indeterminate: false });
+                parentEl.checked = true;
+                parentEl.indeterminate = false;
             } else {
-                $parent.prop({ checked: false, indeterminate: true });
+                parentEl.checked = false;
+                parentEl.indeterminate = true;
             }
             updateCategoryCount();
         }
 
-        $(document).on('change', '.adv-parent-checkbox', function () {
-            var groupId   = $(this).data('group');
-            var isChecked = this.checked;
-            $('.adv-child-checkbox[data-parent="' + groupId + '"]')
-                .prop({ checked: isChecked, indeterminate: false });
-            updateCategoryCount();
-        });
+        document.addEventListener('change', function (e) {
+            if (e.target.matches('.adv-parent-checkbox')) {
+                var groupId   = e.target.dataset.group;
+                var isChecked = e.target.checked;
+                document.querySelectorAll('.adv-child-checkbox[data-parent="' + groupId + '"]')
+                    .forEach(function (c) {
+                        c.checked = isChecked;
+                        c.indeterminate = false;
+                    });
+                updateCategoryCount();
+            }
 
-        $(document).on('change', '.adv-child-checkbox', function () {
-            syncParentState($('.adv-parent-checkbox[data-group="' + $(this).data('parent') + '"]'));
-        });
+            if (e.target.matches('.adv-child-checkbox')) {
+                var parentEl = document.querySelector('.adv-parent-checkbox[data-group="' + e.target.dataset.parent + '"]');
+                syncParentState(parentEl);
+            }
 
-        $(document).on('change', '.adv-top-checkbox', updateCategoryCount);
+            if (e.target.matches('.adv-top-checkbox')) {
+                updateCategoryCount();
+            }
+        });
 
         function updateCategoryCount() {
-            var total   = $('.adv-cat-checkbox').length;
-            var checked = $('.adv-cat-checkbox:checked').length;
-            var $badge  = $('#advCategoryCount');
+            var all     = document.querySelectorAll('.adv-cat-checkbox');
+            var total   = all.length;
+            var checked = document.querySelectorAll('.adv-cat-checkbox:checked').length;
+            var badge   = document.getElementById('advCategoryCount');
+            if (!badge) return;
 
             if (!checked || checked === total) {
-                $badge.text('');
+                badge.textContent = '';
             } else {
-                $badge.text(checked + '/' + total);
+                badge.textContent = checked + '/' + total;
             }
         }
 
-        $(document).on('click', '.adv-toggle-btn', function (e) {
+        document.addEventListener('click', function (e) {
+            var toggleBtn = e.target.closest('.adv-toggle-btn');
+            if (!toggleBtn) return;
             e.preventDefault();
-            var $target = $('#' + $(this).data('target'));
-            var $icon   = $(this).find('.adv-expand-icon');
 
-            if ($target.is(':visible')) {
-                $target.slideUp(150);
-                $icon.removeClass('open');
+            var target = document.getElementById(toggleBtn.dataset.target);
+            var icon   = toggleBtn.querySelector('.adv-expand-icon');
+            if (!target) return;
+
+            var isVisible = target.style.display !== 'none' &&
+                             getComputedStyle(target).display !== 'none';
+
+            if (isVisible) {
+                target.style.display = 'none';
+                if (icon) icon.classList.remove('open');
             } else {
-                $target.slideDown(150);
-                $icon.addClass('open');
+                target.style.display = 'block';
+                if (icon) icon.classList.add('open');
             }
         });
 
@@ -1018,30 +1051,57 @@
            4. SELECT ALL / NONE / EXPAND ALL / COLLAPSE ALL
         ═══════════════════════════════════════════════════════════ */
 
-        $('#advSelectAll').on('click', function () {
-            $('.adv-cat-checkbox').prop({ checked: true, indeterminate: false });
-            updateCategoryCount();
-        });
+        var selectAllBtn   = document.getElementById('advSelectAll');
+        var selectNoneBtn  = document.getElementById('advSelectNone');
+        var expandAllBtn   = document.getElementById('advExpandAll');
+        var collapseAllBtn = document.getElementById('advCollapseAll');
 
-        $('#advSelectNone').on('click', function () {
-            $('.adv-cat-checkbox').prop({ checked: false, indeterminate: false });
-            updateCategoryCount();
-        });
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function () {
+                document.querySelectorAll('.adv-cat-checkbox').forEach(function (cb) {
+                    cb.checked = true;
+                    cb.indeterminate = false;
+                });
+                updateCategoryCount();
+            });
+        }
 
-        $('#advExpandAll').on('click', function () {
-            $('.adv-children-panel').slideDown(150);
-            $('.adv-expand-icon').addClass('open');
-        });
+        if (selectNoneBtn) {
+            selectNoneBtn.addEventListener('click', function () {
+                document.querySelectorAll('.adv-cat-checkbox').forEach(function (cb) {
+                    cb.checked = false;
+                    cb.indeterminate = false;
+                });
+                updateCategoryCount();
+            });
+        }
 
-        $('#advCollapseAll').on('click', function () {
-            $('.adv-children-panel').slideUp(150);
-            $('.adv-expand-icon').removeClass('open');
-        });
+        if (expandAllBtn) {
+            expandAllBtn.addEventListener('click', function () {
+                document.querySelectorAll('.adv-children-panel').forEach(function (el) {
+                    el.style.display = 'block';
+                });
+                document.querySelectorAll('.adv-expand-icon').forEach(function (el) {
+                    el.classList.add('open');
+                });
+            });
+        }
+
+        if (collapseAllBtn) {
+            collapseAllBtn.addEventListener('click', function () {
+                document.querySelectorAll('.adv-children-panel').forEach(function (el) {
+                    el.style.display = 'none';
+                });
+                document.querySelectorAll('.adv-expand-icon').forEach(function (el) {
+                    el.classList.remove('open');
+                });
+            });
+        }
 
         updateCategoryCount();
 
         /* ═══════════════════════════════════════════════════════════
-           5. LIVE SUGGESTIONS  (AJAX, 300ms debounce, keyboard nav)
+           5. LIVE SUGGESTIONS  (fetch, 300ms debounce, keyboard nav)
         ═══════════════════════════════════════════════════════════ */
 
         var suggestTimer;
@@ -1060,35 +1120,38 @@
             post:            '📰',
         };
 
-        $input.on('keyup', function (e) {
-            if (['ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Tab'].indexOf(e.key) !== -1) return;
+        if (input) {
+            input.addEventListener('keyup', function (e) {
+                if (['ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Tab'].indexOf(e.key) !== -1) return;
 
-            var query = $(this).val().trim();
-            closeCategoryPanel();
-            clearTimeout(suggestTimer);
+                var query = this.value.trim();
+                closeCategoryPanel();
+                clearTimeout(suggestTimer);
 
-            if (query.length < 2) {
-                hideSuggestions();
-                return;
-            }
+                if (query.length < 2) {
+                    hideSuggestions();
+                    return;
+                }
 
-            suggestTimer = setTimeout(function () {
-                $.ajax({
-                    url:     '/search/suggestions',
-                    method:  'GET',
-                    data:    { q: query },
-                    success: function (response) {
-                        renderSuggestions(response.suggestions || [], query);
-                    },
-                    error: function () {
-                        hideSuggestions();
-                    },
-                });
-            }, 300);
-        });
+                suggestTimer = setTimeout(function () {
+                    fetch('/search/suggestions?q=' + encodeURIComponent(query))
+                        .then(function (r) {
+                            if (!r.ok) throw new Error('Request failed');
+                            return r.json();
+                        })
+                        .then(function (response) {
+                            renderSuggestions(response.suggestions || [], query);
+                        })
+                        .catch(function () {
+                            hideSuggestions();
+                        });
+                }, 300);
+            });
+        }
 
         function renderSuggestions(suggestions, query) {
-            $suggestionsBox.empty();
+            if (!suggestionsBox) return;
+            suggestionsBox.innerHTML = '';
             activeIdx = -1;
 
             if (!suggestions.length) {
@@ -1102,58 +1165,58 @@
                     ? '<span class="adv-suggestion-price">' + escHtml(s.price) + '</span>'
                     : '';
 
-                $suggestionsBox.append(
-                    $('<a>')
-                        .attr('href', s.url || '#')
-                        .addClass('adv-suggestion-row text-decoration-none text-dark')
-                        .html(
-                            '<span class="adv-suggestion-icon">' + icon + '</span>' +
-                            '<span class="adv-suggestion-body">' +
-                                '<div class="adv-suggestion-title">' + escHtml(s.title || '') + '</div>' +
-                                '<div class="adv-suggestion-meta">' + escHtml(s.type || '') + '</div>' +
-                            '</span>' + price
-                        )
-                );
+                var a = document.createElement('a');
+                a.href = s.url || '#';
+                a.className = 'adv-suggestion-row text-decoration-none text-dark';
+                a.innerHTML =
+                    '<span class="adv-suggestion-icon">' + icon + '</span>' +
+                    '<span class="adv-suggestion-body">' +
+                        '<div class="adv-suggestion-title">' + escHtml(s.title || '') + '</div>' +
+                        '<div class="adv-suggestion-meta">' + escHtml(s.type || '') + '</div>' +
+                    '</span>' + price;
+
+                suggestionsBox.appendChild(a);
             });
 
-            $suggestionsBox.append(
-                '<a href="/search?search=' + encodeURIComponent(query) + '" class="adv-see-all">' +
-                'See all results for "<strong>' + escHtml(query) + '</strong>" →</a>'
-            );
+            var seeAll = document.createElement('a');
+            seeAll.href = '/search?search=' + encodeURIComponent(query);
+            seeAll.className = 'adv-see-all';
+            seeAll.innerHTML = 'See all results for "<strong>' + escHtml(query) + '</strong>" →';
+            suggestionsBox.appendChild(seeAll);
 
-            $suggestionsBox.removeClass('d-none');
+            suggestionsBox.classList.remove('d-none');
         }
 
-        $input.on('keydown', function (e) {
-            var $rows = $suggestionsBox.find('.adv-suggestion-row');
-            if (!$rows.length) return;
+        if (input) {
+            input.addEventListener('keydown', function (e) {
+                if (!suggestionsBox) return;
+                var rows = suggestionsBox.querySelectorAll('.adv-suggestion-row');
+                if (!rows.length) return;
 
-            var $active = $rows.filter('.adv-active');
+                var rowsArr = Array.prototype.slice.call(rows);
+                var activeRow = suggestionsBox.querySelector('.adv-suggestion-row.adv-active');
+                var activeIndex = activeRow ? rowsArr.indexOf(activeRow) : -1;
 
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                $active.removeClass('adv-active');
-                var $next = $active.length && $active.next('.adv-suggestion-row').length
-                    ? $active.next('.adv-suggestion-row')
-                    : $rows.first();
-                $next.addClass('adv-active');
-                activeIdx++;
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                $active.removeClass('adv-active');
-                var $prev = $active.length && $active.prev('.adv-suggestion-row').length
-                    ? $active.prev('.adv-suggestion-row')
-                    : $rows.last();
-                $prev.addClass('adv-active');
-                activeIdx--;
-            } else if (e.key === 'Enter') {
-                var $activeRow = $rows.filter('.adv-active');
-                if ($activeRow.length) {
+                if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    window.location.href = $activeRow.attr('href');
+                    if (activeRow) activeRow.classList.remove('adv-active');
+                    var nextIndex = (activeIndex + 1 < rowsArr.length) ? activeIndex + 1 : 0;
+                    rowsArr[nextIndex].classList.add('adv-active');
+                    activeIdx = nextIndex;
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (activeRow) activeRow.classList.remove('adv-active');
+                    var prevIndex = (activeIndex - 1 >= 0) ? activeIndex - 1 : rowsArr.length - 1;
+                    rowsArr[prevIndex].classList.add('adv-active');
+                    activeIdx = prevIndex;
+                } else if (e.key === 'Enter') {
+                    if (activeRow) {
+                        e.preventDefault();
+                        window.location.href = activeRow.getAttribute('href');
+                    }
                 }
-            }
-        });
+            });
+        }
 
         /* ═══════════════════════════════════════════════════════════
            6. NEARBY / CITY GEOCODING + GPS
@@ -1163,250 +1226,151 @@
            via Nominatim) or manual typing (forward geocode via Nominatim).
         ═══════════════════════════════════════════════════════════ */
 
-        var $cityInput  = $('#advNearbyCity');
-        var $clearCity  = $('#advClearCity');
-        var $latField   = $('#advLat');
-        var $lngField   = $('#advLng');
-        var $cityHidden = $('#advCity');
+        var cityInput  = document.getElementById('advNearbyCity');
+        var clearCity  = document.getElementById('advClearCity');
+        var latField   = document.getElementById('advLat');
+        var lngField   = document.getElementById('advLng');
+        var cityHidden = document.getElementById('advCity');
         var geocodeTimer;
 
         function setLatLng(lat, lng, cityName) {
-            $latField.val(parseFloat(lat).toFixed(6));
-            $lngField.val(parseFloat(lng).toFixed(6));
-            if (cityName) $cityHidden.val(cityName);
-            $clearCity.show();
+            if (latField) latField.value = parseFloat(lat).toFixed(6);
+            if (lngField) lngField.value = parseFloat(lng).toFixed(6);
+            if (cityName && cityHidden) cityHidden.value = cityName;
+            if (clearCity) clearCity.style.display = 'block';
         }
 
         function clearLatLng() {
-            $latField.val('');
-            $lngField.val('');
-            $cityHidden.val('');
-            $clearCity.hide();
+            if (latField) latField.value = '';
+            if (lngField) lngField.value = '';
+            if (cityHidden) cityHidden.value = '';
+            if (clearCity) clearCity.style.display = 'none';
         }
 
-        $('#advUseMyLocation').on('click', function () {
-            if (!navigator.geolocation) {
-                alert('Geolocation is not supported by your browser.');
-                return;
-            }
-            var $btn = $(this);
-            $btn.prop('disabled', true).text('Detecting…');
-
-            navigator.geolocation.getCurrentPosition(
-                function (pos) {
-                    var lat = pos.coords.latitude;
-                    var lng = pos.coords.longitude;
-
-                    $.getJSON(
-                        'https://nominatim.openstreetmap.org/reverse',
-                        { lat: lat, lon: lng, format: 'json' },
-                        function (data) {
-                            var city = (data && data.address)
-                                ? (data.address.city || data.address.town || data.address.village || '')
-                                : '';
-                            if (city) {
-                                $cityInput.val(city);
-                                setLatLng(lat, lng, city);
-                            } else {
-                                setLatLng(lat, lng, '');
-                            }
-                            $btn.prop('disabled', false).html('✓ Location detected');
-                        }
-                    ).fail(function () {
-                        setLatLng(lat, lng, '');
-                        $btn.prop('disabled', false).html('✓ Location detected');
-                    });
-                },
-                function (err) {
-                    $btn.prop('disabled', false).html('📍 Use my location');
-                    console.warn('Geolocation error:', err.message);
+        var useMyLocationBtn = document.getElementById('advUseMyLocation');
+        if (useMyLocationBtn) {
+            useMyLocationBtn.addEventListener('click', function () {
+                if (!navigator.geolocation) {
+                    alert('Geolocation is not supported by your browser.');
+                    return;
                 }
-            );
-        });
+                var btn = this;
+                btn.disabled = true;
+                btn.textContent = 'Detecting…';
 
-        $cityInput.on('input', function () {
-            var city = $(this).val().trim();
-            clearTimeout(geocodeTimer);
-            $clearCity.toggle(city.length > 0);
-            $cityHidden.val(city);
+                navigator.geolocation.getCurrentPosition(
+                    function (pos) {
+                        var lat = pos.coords.latitude;
+                        var lng = pos.coords.longitude;
 
-            if (city.length < 2) {
-                clearLatLng();
-                return;
-            }
-
-            geocodeTimer = setTimeout(function () {
-                $.getJSON(
-                    'https://nominatim.openstreetmap.org/search',
-                    { q: city, format: 'json', limit: 1 },
-                    function (results) {
-                        if (results && results[0]) {
-                            setLatLng(results[0].lat, results[0].lon, city);
-                        }
+                        fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json')
+                            .then(function (r) {
+                                if (!r.ok) throw new Error('Reverse geocode failed');
+                                return r.json();
+                            })
+                            .then(function (data) {
+                                var city = (data && data.address)
+                                    ? (data.address.city || data.address.town || data.address.village || '')
+                                    : '';
+                                if (city) {
+                                    if (cityInput) cityInput.value = city;
+                                    setLatLng(lat, lng, city);
+                                } else {
+                                    setLatLng(lat, lng, '');
+                                }
+                                btn.disabled = false;
+                                btn.innerHTML = '✓ Location detected';
+                            })
+                            .catch(function () {
+                                setLatLng(lat, lng, '');
+                                btn.disabled = false;
+                                btn.innerHTML = '✓ Location detected';
+                            });
+                    },
+                    function (err) {
+                        btn.disabled = false;
+                        btn.innerHTML = '📍 Use my location';
+                        console.warn('Geolocation error:', err.message);
                     }
                 );
-            }, 500);
-        });
+            });
+        }
 
-        $clearCity.on('click', function () {
-            $cityInput.val('');
-            clearLatLng();
-        });
+        if (cityInput) {
+            cityInput.addEventListener('input', function () {
+                var city = this.value.trim();
+                clearTimeout(geocodeTimer);
+                if (clearCity) clearCity.style.display = city.length > 0 ? 'block' : 'none';
+                if (cityHidden) cityHidden.value = city;
 
-        if ($latField.val()) { $clearCity.show(); }
+                if (city.length < 2) {
+                    clearLatLng();
+                    return;
+                }
+
+                geocodeTimer = setTimeout(function () {
+                    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(city))
+                        .then(function (r) { return r.json(); })
+                        .then(function (results) {
+                            if (results && results[0]) {
+                                setLatLng(results[0].lat, results[0].lon, city);
+                            }
+                        })
+                        .catch(function () {});
+                }, 500);
+            });
+        }
+
+        if (clearCity) {
+            clearCity.addEventListener('click', function () {
+                if (cityInput) cityInput.value = '';
+                clearLatLng();
+            });
+        }
+
+        if (latField && latField.value) {
+            if (clearCity) clearCity.style.display = 'block';
+        }
 
         /* ═══════════════════════════════════════════════════════════
            7. FORM SUBMIT — strip empty lat/lng for clean URL
         ═══════════════════════════════════════════════════════════ */
 
-        $form.on('submit', function () {
-            var $allTypes = $form.find('.adv-top-checkbox');
-            var $checked  = $allTypes.filter(':checked');
+        if (form) {
+            form.addEventListener('submit', function () {
+                var allTypes = form.querySelectorAll('.adv-top-checkbox');
+                var checkedTypes = Array.prototype.filter.call(allTypes, function (c) { return c.checked; });
 
-            if ($checked.length === 0 || $checked.length === $allTypes.length) {
-                $allTypes.prop('disabled', true);
-            }
+                if (checkedTypes.length === 0 || checkedTypes.length === allTypes.length) {
+                    allTypes.forEach(function (c) { c.disabled = true; });
+                }
 
-            var $allBCats    = $form.find('.adv-cat-checkbox:not(.adv-top-checkbox)');
-            var $checkedBCat = $allBCats.filter(':checked');
-            if ($checkedBCat.length === 0 || $checkedBCat.length === $allBCats.length) {
-                $allBCats.prop('disabled', true);
-            }
+                var allBCats = form.querySelectorAll('.adv-cat-checkbox:not(.adv-top-checkbox)');
+                var checkedBCats = Array.prototype.filter.call(allBCats, function (c) { return c.checked; });
+                if (checkedBCats.length === 0 || checkedBCats.length === allBCats.length) {
+                    allBCats.forEach(function (c) { c.disabled = true; });
+                }
 
-            if (!$latField.val()) $latField.prop('disabled', true);
-            if (!$lngField.val()) $lngField.prop('disabled', true);
-            if (!$cityHidden.val()) $cityHidden.prop('disabled', true);
-        });
+                if (latField && !latField.value) latField.disabled = true;
+                if (lngField && !lngField.value) lngField.disabled = true;
+                if (cityHidden && !cityHidden.value) cityHidden.disabled = true;
+            });
+        }
 
-        $(window).on('pageshow', function () {
-            $('#advancedSearchForm input').prop('disabled', false);
+        window.addEventListener('pageshow', function () {
+            var formInputs = document.querySelectorAll('#advancedSearchForm input');
+            formInputs.forEach(function (el) { el.disabled = false; });
         });
 
         /* ═══════════════════════════════════════════════════════════
            8. RESULTS PAGE INTERACTIONS
-           NOTE: most of these duplicate the inline <script> block
-           already in search.blade.php's @section('content'). jQuery
-           handlers below are harmless if both run (idempotent), but
-           if you see double-submits, remove the duplicate block from
-           the @section('content') script and keep this one only.
+           NOTE: sort / type-tab / price / rating / category-checkbox /
+           sidebar-city handlers for THIS results page already live in
+           the inline <script> block inside @section('content') above.
+           They are not duplicated here to avoid double-binding the same
+           elements twice.
         ═══════════════════════════════════════════════════════════ */
 
-        function reloadWithParam(key, value) {
-            var url = new URL(window.location.href);
-            url.searchParams.set(key, value);
-            window.location.href = url.toString();
-        }
-
-        $('#advSortSelect').on('change', function () {
-            reloadWithParam('sort', $(this).val());
-        });
-
-        $(document).on('click', '.adv-type-tab', function () {
-            var type = $(this).data('type');
-
-            $(this).addClass('btn-primary active')
-                   .removeClass('btn-outline-secondary')
-                   .siblings('.adv-type-tab')
-                   .removeClass('btn-primary active')
-                   .addClass('btn-outline-secondary');
-
-            if (type === 'all') {
-                $('.adv-result-section').show();
-            } else {
-                $('.adv-result-section').hide();
-                $('#section-' + type).show();
-            }
-        });
-
-        $(document).on('change', '#advPriceMin', function () { reloadWithParam('price_min', $(this).val()); });
-        $(document).on('change', '#advPriceMax', function () { reloadWithParam('price_max', $(this).val()); });
-
-        $(document).on('click', '.adv-rating-btn, .js-rating-btn', function () {
-            var $field = $('#filterRatingValue');
-            if ($field.length) {
-                $field.val($(this).data('rating'));
-                var $f = $('#filterForm');
-                if ($f.length) $f.submit();
-            } else {
-                reloadWithParam('rating', $(this).data('rating'));
-            }
-        });
-
-        $(document).on('click', '.js-rating-clear', function () {
-            var $field = $('#filterRatingValue');
-            if ($field.length) {
-                $field.val('');
-                var $f = $('#filterForm');
-                if ($f.length) $f.submit();
-            }
-        });
-
-        $(document).on('change', '.js-cat-checkbox, .js-bcat-checkbox', function () {
-            var $f = $('#filterForm');
-            if ($f.length) $f.submit();
-        });
-
-        $(document).on('click', '.js-select-all-cats', function () {
-            $('.js-cat-checkbox, .js-bcat-checkbox').prop('checked', true);
-            var $f = $('#filterForm'); if ($f.length) $f.submit();
-        });
-
-        $(document).on('click', '.js-clear-all-cats', function () {
-            $('.js-cat-checkbox, .js-bcat-checkbox').prop('checked', false);
-            var $f = $('#filterForm'); if ($f.length) $f.submit();
-        });
-
-        $(document).on('click', '.js-toggle-all-cats', function () {
-            $('.subcats-list').each(function () {
-                var hidden = $(this).css('display') === 'none';
-                $(this).css('display', hidden ? 'block' : 'none');
-            });
-        });
-
-        // ── Results page sidebar: city geocoding ─────────────────────────────
-        // NOTE: ip-api.com auto-detect block REMOVED here too — same 403 reason.
-        var $sidebarCity    = $('#sidebarCityInput');
-        var $sidebarLat     = $('#filterLat');
-        var $sidebarLng     = $('#filterLng');
-        var $sidebarCityFld = $('#filterCityName');
-        var $sidebarClear   = $('#sidebarClearCity');
-        var sidebarGeoTimer;
-
-        $sidebarCity.on('input', function () {
-            var city = $(this).val().trim();
-            clearTimeout(sidebarGeoTimer);
-
-            if ($sidebarCityFld.length) $sidebarCityFld.val(city);
-
-            if (city.length < 2) {
-                if ($sidebarLat.length)     $sidebarLat.val('');
-                if ($sidebarLng.length)     $sidebarLng.val('');
-                if ($sidebarCityFld.length) $sidebarCityFld.val('');
-                return;
-            }
-
-            sidebarGeoTimer = setTimeout(function () {
-                $.getJSON(
-                    'https://nominatim.openstreetmap.org/search',
-                    { q: city, format: 'json', limit: 1 },
-                    function (results) {
-                        if (results && results[0]) {
-                            if ($sidebarLat.length)     $sidebarLat.val(results[0].lat);
-                            if ($sidebarLng.length)     $sidebarLng.val(results[0].lon);
-                            if ($sidebarCityFld.length) $sidebarCityFld.val(city);
-                        }
-                    }
-                );
-            }, 500);
-        });
-
-        $sidebarClear.on('click', function () {
-            if ($sidebarCity.length)    $sidebarCity.val('');
-            if ($sidebarLat.length)     $sidebarLat.val('');
-            if ($sidebarLng.length)     $sidebarLng.val('');
-            if ($sidebarCityFld.length) $sidebarCityFld.val('');
-        });
-
-    })(jQuery);
+    })();
     </script>
 @endpush
