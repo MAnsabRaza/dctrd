@@ -1,6 +1,7 @@
 @php
     $unitService = app(\App\Services\UnitConversionService::class);
     $authUser = $user ?? (auth()->check() ? auth()->user() : null);
+    $errors = $errors ?? session()->get('errors', new \Illuminate\Support\ViewErrorBag);
     $isHeaderPicker = !empty($isHeaderPicker);
     $isDrawerPicker = !empty($isDrawerPicker);
     $isAutoSubmit = $isHeaderPicker || $isDrawerPicker;
