@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Booking;
+namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\BookingAvailability;
