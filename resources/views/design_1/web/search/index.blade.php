@@ -859,6 +859,9 @@
 @endsection
 
 @push('scripts_bottom')
+     <script src="/assets/vendors/wrunner-html-range-slider-with-2-handles/js/wrunner-jquery.js"></script>
+    <script src="/assets/default/vendors/swiper/swiper-bundle.min.js"></script>
+    
     <script src="{{ getDesign1ScriptPath("search") }}"></script>
     <script src="{{ asset('js/advanced_search.js') }}"></script>
 @endpush
