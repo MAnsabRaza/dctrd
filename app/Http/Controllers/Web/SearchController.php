@@ -271,10 +271,9 @@ class SearchController extends Controller
                 $webinarsQuery->whereIn('category_id', $selectedCategories);
             }
 
-            $this->applyPriceFilter($webinarsQuery, $request, 'price');
-            $this->applyRatingFilter($webinarsQuery, $request, 'avg_rating');
-            $webinarsNearby = $this->applyNearby($webinarsQuery, $request, Webinar::class);
-            $this->applySort($webinarsQuery, $request, $webinarsNearby, 'price', 'avg_rating');
+           $this->applyRatingFilter($webinarsQuery, $request, 'price');
+$webinarsNearby = $this->applyNearby($webinarsQuery, $request, Webinar::class);
+$this->applySort($webinarsQuery, $request, $webinarsNearby, 'price', 'created_at');
 
             $webinarsCount = (clone $webinarsQuery)->count();
             $webinars      = $webinarsQuery->limit(20)->get();
