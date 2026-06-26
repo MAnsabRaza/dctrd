@@ -1,5 +1,24 @@
 @extends("design_1.web.layouts.app")
 
+@push("scripts_top")
+    {{--
+        ROOT CAUSE (confirmed via app.blade.php layout):
+        Layout's <body> bottom loads app.js, jquery.toast.min.js, and
+        main.min.js — all of which need jQuery ($) to already exist.
+        Previously, jQuery was being supplied by wrunner-jquery.js, which
+        we removed because it was crashing ("$ is not defined"). Removing
+        it without replacing it broke jQuery site-wide, not just on this
+        page — app.js / jquery.toast.min.js / search.min.js / main.min.js
+        all started throwing "jQuery is not defined".
+
+        FIX: load a clean jQuery CDN here, inside scripts_top, which the
+        layout renders in <head> — i.e. BEFORE app.js, jquery.toast.min.js,
+        and every other script in <body>. This guarantees jQuery exists
+        before anything that needs it runs.
+    --}}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+@endpush
+
 @push("styles_top")
     <link rel="stylesheet" href="{{ getDesign1StylePath("search") }}">
     <style>
@@ -847,24 +866,19 @@
 
 @push('scripts_bottom')
     {{--
-        REMOVED FROM THIS PAGE:
-          - wrunner-jquery.js         (crashes: "$ is not defined" — breaks
-                                       every script that loads after it)
-          - summernote-bs4.min.js     (admin-only rich text editor, not
-                                       needed on the public search page)
-          - bootstrap-colorpicker.min.js (admin-only color picker widget)
+        FIX: Theme ki apni built-in script (getDesign1ScriptPath("search"),
+        compiled se /assets/design_1/js/parts/search.js) jQuery REQUIRE karti
+        hai — uske andar (function ($) {...})(jQuery) hai. Yeh hum edit nahi
+        kar sakte (compiled/minified asset hai).
 
-        These three scripts were the root cause of the page rendering
-        broken/unstyled — wrunner-jquery.js crashed before defining "$",
-        so every later script (summernote, colorpicker, search.min.js)
-        failed silently. JS-driven parts of the page (header, hero,
-        sidebar, result cards) never rendered, leaving only the static
-        footer visible.
+        jQuery ab @push("scripts_top") mein, layout ke <head> mein, sabse
+        pehle load ho rahi hai (oopar dekhein) — isi liye yahan dobara load
+        karne ki zaroorat nahi.
 
-        FIX: the inline script below was also rewritten from jQuery to
-        plain vanilla JavaScript, so this page no longer depends on
-        jQuery being loaded at all — removing that fragile dependency
-        entirely instead of just hoping load order stays correct.
+        Pehle humne wrunner-jquery.js hata di thi kyunke wo crash kar rahi thi
+        ("$ is not defined"), lekin uski jaga koi jQuery load nahi ki thi —
+        is liye theme ki search.js bhi crash ho rahi thi ("jQuery is not
+        defined"), jo aage page ka baqi JS execution bhi tor deti thi.
     --}}
     <script src="/assets/default/vendors/swiper/swiper-bundle.min.js"></script>
 
