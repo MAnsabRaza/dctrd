@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Landing;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -10,7 +11,23 @@ class HomeController extends Controller
     public function index()
     {
         $activeTheme = getActiveTheme();
-        $homeLanding = $activeTheme->homeLanding;
+        $homeLanding = null;
+
+        if (!empty($activeTheme)) {
+            $homeLanding = $activeTheme->homeLanding;
+        }
+
+        if (empty($homeLanding)) {
+            $homeLanding = Landing::query()
+                ->where('enable', true)
+                ->with([
+                    'components' => function ($query) {
+                        $query->with(['landingBuilderComponent']);
+                        $query->orderBy('order', 'asc');
+                    }
+                ])
+                ->first();
+        }
 
         $seoSettings = getSeoMetas('home');
         $pageTitle = !empty($seoSettings['title']) ? $seoSettings['title'] : trans('home.home_title');
