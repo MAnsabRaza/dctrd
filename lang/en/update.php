@@ -4911,7 +4911,18 @@ return [
     'location_quality'=>'Location Quality',
     'book_now'=>'Book Now',
     'check_slots'=>'Check Slots',
-    'edit_booking'=>'Edit Booking',    
+    'edit_booking'=>'Edit Booking', 
+    'please_change_filters_or_search_another_booking'=>'Please change filters or search another booking',
+    'booking_purchases_no_result' => 'No Results Found',
+    'no_bookings_found'=> 'No bookings found',
+    'booking_purchases_no_result_hint' => 'Try adjusting your filters or search criteria',
+    'location'                   => 'Location',
+'use_my_location'            => 'Use my location',
+'enter_location'             => 'Enter city or address',
+'detecting'                  => 'Detecting',
+'location_detected'          => 'Location detected',
+'geolocation_not_supported'  => 'Geolocation is not supported by your browser.',
+'location_permission_denied' => 'Location permission denied.',   
 
     
 ];
