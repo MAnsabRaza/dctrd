@@ -258,8 +258,8 @@ class SearchController extends Controller
                 ->where('private', false)
                 ->where('only_for_students', false)
                 ->where(function (Builder $q) use ($search) {
-                    $q->where('title', 'like', "%$search%")
-                      ->orWhere('description', 'like', "%$search%");
+                 $q->whereTranslationLike('title', "%$search%")
+  ->orWhereTranslationLike('description', "%$search%");
                 })
                 ->with([
                     'teacher' => fn($q) => $q->select('id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
