@@ -661,15 +661,26 @@ $(document).on('checkout:priceUpdate', function () {
         });
 
         // --- Persons / Children (per_person module) ---
-        var $paxCard = $shell.find('[data-module-name="persons_children"]');
-        if ($paxCard.length) {
-            var perPerson = parseFloat($paxCard.data('price-amount') || 0);
-            if (perPerson > 0) {
-                var adults   = parseInt($shell.find('[id^="pax_adults_"]').val()   || 0, 10);
-                var children = parseInt($shell.find('[id^="pax_children_"]').val() || 0, 10);
-                personsTotal += (adults + children) * perPerson;
-            }
-        }
+      // --- Persons / Children (per_person module) ---
+var $paxCard = $shell.find('[data-module-name="persons_children"]');
+if ($paxCard.length) {
+    var perPerson = parseFloat($paxCard.attr('data-price-amount') || 0);
+    
+    // DEBUG: Console mein dekho kya aa raha hai
+    console.log('Per person price:', perPerson);
+    console.log('PAX card found:', $paxCard.length);
+    
+    if (perPerson > 0) {
+        var itemKey  = $shell.data('item-key');
+        var adults   = parseInt($('#pax_adults_'   + itemKey).val() || 0, 10);
+        var children = parseInt($('#pax_children_' + itemKey).val() || 0, 10);
+        var paxAmt   = (adults + children) * perPerson;
+        
+        console.log('Adults:', adults, 'Children:', children, 'Amount:', paxAmt);
+        
+        personsTotal += paxAmt;
+    }
+}
 
         // --- Days module (per_day) ---
         var $daysCard = $shell.find('[data-module-name="days"]');
