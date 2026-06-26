@@ -294,8 +294,8 @@ $this->applySort($webinarsQuery, $request, $webinarsNearby, 'price', 'created_at
                     'reviews',
                 ]);
 
-            $this->applyPriceFilter($bundlesQuery, $request, 'price');
-            $this->applySort($bundlesQuery, $request, false, 'price', 'avg_rating');
+           $this->applyPriceFilter($bundlesQuery, $request, 'price');
+$this->applySort($bundlesQuery, $request, false, 'price', 'created_at');
 
             $bundlesCount = (clone $bundlesQuery)->count();
             $bundles      = $bundlesQuery->limit(20)->get();
