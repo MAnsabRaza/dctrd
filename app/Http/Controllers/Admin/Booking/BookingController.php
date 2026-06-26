@@ -8,7 +8,7 @@ use App\Models\Booking;
 use App\Models\BookingCategory;
 use App\Models\BookingOrder;
 use App\Models\Role;
-use App\Services\BookingTemplateConfig;
+use App\Services\Booking\BookingTemplateConfig;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
