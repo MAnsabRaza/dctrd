@@ -643,6 +643,91 @@
         $(document).on('change', '[id^="cp_agree_"]', function () {
             $(document).trigger('checkout:priceUpdate');
         });
+        /* ════════════════════════════════════════
+   PRICE UPDATER — Extra Services + Persons → Summary
+════════════════════════════════════════ */
+$(document).on('checkout:priceUpdate', function () {
+
+    var extrasTotal = 0;
+    var personsTotal = 0;
+
+    // Loop har active booking shell ke liye
+    $('[data-item-key]').each(function () {
+        var $shell = $(this);
+
+        // --- Extra Services ---
+        $shell.find('.bmod-extra-chk:checked').each(function () {
+            extrasTotal += parseFloat($(this).data('price') || 0);
+        });
+
+        // --- Persons / Children (per_person module) ---
+        var $paxCard = $shell.find('[data-module-name="persons_children"]');
+        if ($paxCard.length) {
+            var perPerson = parseFloat($paxCard.data('price-amount') || 0);
+            if (perPerson > 0) {
+                var adults   = parseInt($shell.find('[id^="pax_adults_"]').val()   || 0, 10);
+                var children = parseInt($shell.find('[id^="pax_children_"]').val() || 0, 10);
+                personsTotal += (adults + children) * perPerson;
+            }
+        }
+
+        // --- Days module (per_day) ---
+        var $daysCard = $shell.find('[data-module-name="days"]');
+        if ($daysCard.length) {
+            var perDay  = parseFloat($daysCard.data('price-amount') || 0);
+            var itemKey = $shell.data('item-key');
+            var nights  = parseInt($('#bmod_nights_' + itemKey).text() || '0', 10);
+            extrasTotal += nights * perDay;
+        }
+
+        // --- Hours module (per_hour) ---
+        var $hoursCard = $shell.find('[data-module-name="hours"]');
+        if ($hoursCard.length) {
+            var perHour = parseFloat($hoursCard.data('price-amount') || 0);
+            var itemKeyH = $shell.data('item-key');
+            var selectedHour = $('#bmod_time_' + itemKeyH).val();
+            if (selectedHour) {
+                extrasTotal += perHour; // 1 slot = 1 hour
+            }
+        }
+    });
+
+    var moduleAdditions = extrasTotal + personsTotal;
+
+    // Summary mein update karo
+    var $extrasEl = $('.js-cart-extras');
+    $extrasEl.text(handlePriceJS(moduleAdditions));
+    $extrasEl.data('amount', moduleAdditions);
+
+    // Total recalculate karo
+    recalcCartTotal();
+});
+
+function recalcCartTotal() {
+    var subtotal  = parseFloat($('.js-cart-subtotal').data('amount') || 0);
+    var discount  = parseFloat($('.js-cart-discount').data('amount') || 0);
+    var extras    = parseFloat($('.js-cart-extras').data('amount')   || 0);
+    var tax       = parseFloat($('.js-cart-tax').data('amount')      || 0);
+    var delivery  = parseFloat($('.js-cart-delivery_fee').data('amount') || 0);
+
+    var total = subtotal - discount + extras + tax + delivery;
+
+    $('.js-cart-total').text(handlePriceJS(total));
+    $('.js-cart-total').data('amount', total);
+}
+
+// Currency format helper (Laravel handlePrice() ka JS version)
+// Agar tumhara currency symbol alag ha to yahan change karo
+function handlePriceJS(amount) {
+    // Try karo pehle se rendered price se symbol detect karna
+    var existingPrice = $('.js-cart-subtotal').text().trim();
+    var symbol = existingPrice.replace(/[\d,. ]+/g, '').trim() || '$';
+
+    return symbol + parseFloat(amount).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
 
     })(jQuery);
     </script>
