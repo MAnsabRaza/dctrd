@@ -1,3 +1,5 @@
+
+@extends('design_1.panel.layouts.panel')
 @extends('design_1.panel.layouts.panel')
 
 @section('content')
