@@ -801,14 +801,15 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3298], ['name' => 'admin_booking_orders_edit', 'section_group_id' => 3240, 'caption' => 'Booking Orders Edit']);
         Section::updateOrCreate(['id' => 3299], ['name' => 'admin_booking_orders_delete', 'section_group_id' => 3240, 'caption' => 'Booking Orders Delete']);
 
-      Section::updateOrCreate(['id' => 3311], ['name' => 'admin_booking_imports', 'group' => 'admin_booking']);
-Section::updateOrCreate(['id' => 3312], ['name' => 'admin_booking_imports_create', 'group' => 'admin_booking']);
-Section::updateOrCreate(['id' => 3313], ['name' => 'admin_booking_imports_delete', 'group' => 'admin_booking']);
+      Section::updateOrCreate(['id' => 3311], ['name' => 'admin_booking_imports', 'section_group_id' => 3240, 'caption' => 'Booking Imports']);
+Section::updateOrCreate(['id' => 3312], ['name' => 'admin_booking_imports_create', 'section_group_id' => 3240, 'caption' => 'Booking Imports Create']);
+Section::updateOrCreate(['id' => 3313], ['name' => 'admin_booking_imports_delete', 'section_group_id' => 3240, 'caption' => 'Booking Imports Delete']);
 
-Section::updateOrCreate(['id' => 3320], ['name' => 'admin_booking_review', 'group' => 'admin_booking']);
-Section::updateOrCreate(['id' => 3321], ['name' => 'admin_booking_review_create', 'group' => 'admin_booking']);
-Section::updateOrCreate(['id' => 3322], ['name' => 'admin_booking_review_edit', 'group' => 'admin_booking']);
-Section::updateOrCreate(['id' => 3323], ['name' => 'admin_booking_review_delete', 'group' => 'admin_booking']);
+
+Section::updateOrCreate(['id' => 3320], ['name' => 'admin_booking_review', 'section_group_id' => 3240, 'caption' => 'Booking Review']);
+Section::updateOrCreate(['id' => 3321], ['name' => 'admin_booking_review_create', 'section_group_id' => 3240, 'caption' => 'Booking Review Create']);
+Section::updateOrCreate(['id' => 3322], ['name' => 'admin_booking_review_edit', 'section_group_id' => 3240, 'caption' => 'Booking Review Edit']);
+Section::updateOrCreate(['id' => 3323], ['name' => 'admin_booking_review_delete', 'section_group_id' => 3240, 'caption' => 'Booking Review Delete']);
 
 
 
@@ -844,7 +845,7 @@ Section::updateOrCreate(['id' => 3704], [
 
      
 
-        Section::updateOrCreate(['id' => 3330], ['name' => 'admin_booking_favorite', 'section_group_id' => 3240, 'caption' => 'Booking Favorite']);
+  Section::updateOrCreate(['id' => 3330], ['name' => 'admin_booking_favorite', 'section_group_id' => 3240, 'caption' => 'Booking Favorite']);
 Section::updateOrCreate(['id' => 3331], ['name' => 'admin_booking_favorite_create', 'section_group_id' => 3240, 'caption' => 'Booking Favorite Create']);
 Section::updateOrCreate(['id' => 3332], ['name' => 'admin_booking_favorite_edit', 'section_group_id' => 3240, 'caption' => 'Booking Favorite Edit']);
 Section::updateOrCreate(['id' => 3333], ['name' => 'admin_booking_favorite_delete', 'section_group_id' => 3240, 'caption' => 'Booking Favorite Delete']);
@@ -862,27 +863,13 @@ Section::updateOrCreate(['id' => 3605], ['name' => 'admin_booking_orders_export'
     Section::updateOrCreate(['id' => 3611], ['name' => 'admin_booking_sellers_list', 'section_group_id' => 3610, 'caption' => 'Booking Sellers List']);
     Section::updateOrCreate(['id' => 3612], ['name' => 'admin_booking_sellers_view', 'section_group_id' => 3610, 'caption' => 'Booking Sellers View']);
 
-        Section::updateOrCreate(
-            ['id' => 3332],
-            [
-                'name' => 'admin_booking_favorite_edit',
-                'group' => 'admin_booking'
-            ]
-        );
-
-        Section::updateOrCreate(
-            ['id' => 3333],
-            [
-                'name' => 'admin_booking_favorite_delete',
-                'group' => 'admin_booking'
-            ]
-        );
+      
         Section::updateOrCreate(['id' => 3340], ['name' => 'admin_booking_comments', 'section_group_id' => 3240, 'caption' => 'Booking Comments']);
         Section::updateOrCreate(['id' => 3341], ['name' => 'admin_booking_comments_list', 'section_group_id' => 3240, 'caption' => 'Booking Comments List']);
         Section::updateOrCreate(['id' => 3342], ['name' => 'admin_booking_comments_edit', 'section_group_id' => 3240, 'caption' => 'Booking Comments Edit']);
         Section::updateOrCreate(['id' => 3343], ['name' => 'admin_booking_comments_delete', 'section_group_id' => 3240, 'caption' => 'Booking Comments Delete']);
 
-        Section::updateOrCreate(['id' => 3350], ['name' => 'admin_booking_package', 'section_group_id' => 3240, 'caption' => 'Booking Package']);
+       Section::updateOrCreate(['id' => 3350], ['name' => 'admin_booking_package', 'section_group_id' => 3240, 'caption' => 'Booking Package']);
 Section::updateOrCreate(['id' => 3351], ['name' => 'admin_booking_package_create', 'section_group_id' => 3240, 'caption' => 'Booking Package Create']);
 Section::updateOrCreate(['id' => 3352], ['name' => 'admin_booking_package_edit', 'section_group_id' => 3240, 'caption' => 'Booking Package Edit']);
 Section::updateOrCreate(['id' => 3353], ['name' => 'admin_booking_package_delete', 'section_group_id' => 3240, 'caption' => 'Booking Package Delete']);
