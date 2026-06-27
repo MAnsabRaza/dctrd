@@ -1,10 +1,9 @@
 @extends('landingBuilder.front.landing.index', [
     'landingItem' => $homeLanding
 ])
-
 @section('content')
-    @if(!empty($landingItem))
-        @foreach($landingItem->components as $component)
+    @if(!empty($homeLanding))
+        @foreach($homeLanding->components as $component)
             @includeIf("landingBuilder.front.components.{$component->landingBuilderComponent->name}.index", ['landingComponent' => $component])
         @endforeach
     @else
@@ -14,4 +13,3 @@
         </section>
     @endif
 @endsection
-
