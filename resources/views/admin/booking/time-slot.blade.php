@@ -222,7 +222,7 @@
                                                             {{ empty($selBook) ? 'disabled' : '' }}>
 
                                                         @if(empty($selBook))
-                                                            <option value="">-- Pehle Booking Select Karein --</option>
+                                                            <option value="">First Select Booking</option>
                                                         @else
                                                             {{-- Edit mode: controller ne already resources bheje hain --}}
                                                             <option value="">-- Resource Select Karein --</option>
