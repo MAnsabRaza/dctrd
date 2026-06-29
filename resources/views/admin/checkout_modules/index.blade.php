@@ -259,11 +259,11 @@
                                                                 <div class="d-flex mb-2 js-config-row">
                                                                     <input type="text" name="config_keys[]"
                                                                            class="form-control mr-2"
-                                                                           placeholder="{{ trans('admin/pages/checkout_modules.key') }}"
+                                                                           placeholder="Key"
                                                                            value="{{ $k }}">
                                                                     <input type="text" name="config_values[]"
                                                                            class="form-control mr-2"
-                                                                           placeholder="{{ trans('admin/pages/checkout_modules.value') }}"
+                                                                           placeholder="Value"
                                                                            value="{{ is_scalar($v) ? $v : json_encode($v) }}">
                                                                     <button type="button"
                                                                             class="btn btn-sm btn-danger js-remove-config">&minus;</button>
@@ -273,10 +273,10 @@
                                                             <div class="d-flex mb-2 js-config-row">
                                                                 <input type="text" name="config_keys[]"
                                                                        class="form-control mr-2"
-                                                                       placeholder="{{ trans('admin/pages/checkout_modules.key') }}">
+                                                                       placeholder="Key">
                                                                 <input type="text" name="config_values[]"
                                                                        class="form-control mr-2"
-                                                                       placeholder="{{ trans('admin/pages/checkout_modules.value') }}">
+                                                                       placeholder="Value">
                                                                 <button type="button"
                                                                         class="btn btn-sm btn-danger js-remove-config">&minus;</button>
                                                             </div>
@@ -321,11 +321,11 @@
                                                             <div class="d-flex mb-2 js-price-row">
                                                                 <input type="text" name="price_keys[]"
                                                                        class="form-control mr-2"
-                                                                       placeholder="{{ trans('admin/pages/checkout_modules.key') }}"
+                                                                       placeholder="Key"
                                                                        value="{{ $k }}">
                                                                 <input type="text" name="price_values[]"
                                                                        class="form-control mr-2"
-                                                                       placeholder="{{ trans('admin/pages/checkout_modules.value') }}"
+                                                                       placeholder="Value"
                                                                        value="{{ is_scalar($v) ? $v : json_encode($v) }}">
                                                                 <button type="button"
                                                                         class="btn btn-sm btn-danger js-remove-price">&minus;</button>
@@ -470,8 +470,8 @@
         var d = document.createElement('div');
         d.className = 'd-flex mb-2 ' + rowClass;
         d.innerHTML =
-            '<input type="text" name="' + keyName + '" class="form-control mr-2" placeholder="{{ trans('admin/pages/checkout_modules.key') }}">' +
-            '<input type="text" name="' + valueName + '" class="form-control mr-2" placeholder="{{ trans('admin/pages/checkout_modules.value') }}">' +
+            '<input type="text" name="' + keyName + '" class="form-control mr-2" placeholder="Key">' +
+            '<input type="text" name="' + valueName + '" class="form-control mr-2" placeholder="Value">' +
             '<button type="button" class="btn btn-sm btn-danger ' + removeClass + '">&minus;</button>';
         c.appendChild(d);
     }

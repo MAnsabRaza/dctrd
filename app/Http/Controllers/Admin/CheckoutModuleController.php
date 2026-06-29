@@ -48,7 +48,7 @@ class CheckoutModuleController extends Controller
             'inputTypes'           => $this->getInputTypes(),
             'locales'              => $this->getSupportedLocales(),
             'translationsByLocale' => collect(),
-            'openCreateTab'        => true,
+            'openCreateTab'        => true,create_titlecreate_title
         ]);
     }
 
