@@ -3,13 +3,14 @@
 --}}
 @php
     $existingPlans = $booking->ratePlans ?? collect();
+    $tplFields = $config->fields();
 @endphp
 
 <div class="section-head">
     <div class="badge-icon"><i class="fa fa-tags"></i></div>
     <div>
         <h6>Pricing &amp; Availability</h6>
-        <p class="section-sub">Set the base price and seasonal rate overrides.</p>
+        <p class="section-sub">Set the base price and seasonal rate overrides for {{ $config->label() }}.</p>
     </div>
 </div>
 
@@ -22,9 +23,10 @@
     <div class="row">
         <div class="col-12 col-md-3">
             <div class="form-group">
-                <label>Base Price</label>
+                <label>Base Price <span class="text-danger">*</span></label>
                 <input name="price" type="number" step="0.01" min="0" class="form-control"
                        value="{{ old('price', $booking->price ?? '') }}" placeholder="0.00">
+                <small class="text-muted">{{ $config->priceUnitLabel() }}</small>
             </div>
         </div>
 
@@ -51,21 +53,117 @@
             <div class="form-group">
                 <label>Price Unit</label>
                 <input name="price_unit" type="text" class="form-control"
-                       value="{{ old('price_unit', $booking->price_unit ?? 'booking') }}" placeholder="per night, per adult">
+                       value="{{ old('price_unit', $booking->price_unit ?? $config->priceUnitLabel()) }}" placeholder="per night, per adult">
             </div>
         </div>
 
-        <div class="col-12 col-md-4">
-            <div class="form-group mb-0">
-                <label>Duration (minutes)</label>
-                <input name="duration_minutes" type="number" min="0" class="form-control"
-                       value="{{ old('duration_minutes', $booking->duration_minutes ?? '') }}">
+        @if(in_array('price_per', $tplFields))
+            <div class="col-12 col-md-4">
+                <div class="form-group">
+                    <label>Price per Extra Person / Hour</label>
+                    <input name="price_per" type="number" step="0.01" min="0" class="form-control"
+                           value="{{ old('price_per', $booking->price_per ?? '') }}" placeholder="0.00">
+                </div>
             </div>
-        </div>
+        @endif
+
+        @if(in_array('duration_minutes', $tplFields))
+            <div class="col-12 col-md-4">
+                <div class="form-group mb-0">
+                    <label>Duration (minutes) <span class="text-danger">*</span></label>
+                    <input name="duration_minutes" type="number" min="0" class="form-control"
+                           value="{{ old('duration_minutes', $booking->duration_minutes ?? '') }}">
+                </div>
+            </div>
+        @endif
     </div>
 </div>
 
-<div class="panel-card">
+{{-- ── Capacity & Inventory ────────────────────────────────────────────
+     Only relevant for templates that declare 'capacity' and/or 'inventory'
+     in BookingTemplateConfig (events ticket count, beauty-spa group service,
+     accommodation room capacity). Driving this off $tplFields means a future
+     template added to the config picks this panel up automatically. --}}
+@if(in_array('capacity', $tplFields) || in_array('inventory', $tplFields))
+    <div class="panel-card">
+        <div class="section-head mb-3">
+            <div class="badge-icon"><i class="fa fa-users"></i></div>
+            <div>
+                <h6>Capacity &amp; Inventory</h6>
+                <p class="section-sub">
+                    @if($booking->booking_type === \App\Services\BookingTemplateConfig::EVENTS)
+                        Total seats and how many tickets are currently available to sell.
+                    @elseif($booking->booking_type === \App\Services\BookingTemplateConfig::ACCOMMODATION)
+                        Maximum guests this room/unit can hold.
+                    @else
+                        Maximum people that can join this service at the same time.
+                    @endif
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            @if(in_array('capacity', $tplFields))
+                <div class="col-12 col-md-6">
+                    <div class="form-group mb-0">
+                        <label>Capacity {{ in_array('capacity', $config->required()) ? '*' : '' }}</label>
+                        <input name="capacity" type="number" min="1" class="form-control"
+                               value="{{ old('capacity', $booking->capacity ?? '') }}" placeholder="Leave empty for unlimited">
+                    </div>
+                </div>
+            @endif
+            @if(in_array('inventory', $tplFields))
+                <div class="col-12 col-md-6">
+                    <div class="form-group mb-0">
+                        <label>Available Tickets / Seats</label>
+                        <input name="inventory" type="number" min="0" class="form-control"
+                               value="{{ old('inventory', $booking->inventory ?? '') }}" placeholder="Leave empty for unlimited">
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+@endif
+
+{{-- ── Deposit ──────────────────────────────────────────────────────────
+     Relevant for accommodation and automotive (both define deposit_enabled
+     /deposit_amount/deposit_type as fields). --}}
+@if(in_array('deposit_enabled', $tplFields))
+    @php $depositEnabled = old('deposit_enabled', $booking->deposit_enabled ?? false); @endphp
+    <div class="panel-card">
+        <div class="booking-switch-row">
+            <label class="booking-switch" for="depositSwitch">
+                <input type="checkbox" id="depositSwitch" name="deposit_enabled"
+                       {{ $depositEnabled ? 'checked' : '' }}
+                       onchange="document.getElementById('depositFields').style.display = this.checked ? 'flex' : 'none'">
+                <span class="booking-switch-slider"></span>
+            </label>
+            <label class="booking-switch-label mb-0" for="depositSwitch">
+                Require a deposit
+                <small>Charge a portion of the price upfront, refundable on return/checkout</small>
+            </label>
+        </div>
+        <div id="depositFields" class="row mt-2" style="{{ $depositEnabled ? 'display:flex' : 'display:none' }}">
+            <div class="col-12 col-md-6">
+                <div class="form-group mb-0">
+                    <label>Deposit Amount</label>
+                    <input name="deposit_amount" type="number" step="0.01" min="0" class="form-control"
+                           value="{{ old('deposit_amount', $booking->deposit_amount ?? '') }}">
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="form-group mb-0">
+                    <label>Deposit Type</label>
+                    <select name="deposit_type" class="form-control">
+                        <option value="fixed" {{ old('deposit_type', $booking->deposit_type ?? '') === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
+                        <option value="percentage" {{ old('deposit_type', $booking->deposit_type ?? '') === 'percentage' ? 'selected' : '' }}>Percentage of Price</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
+
+<div class="panel-card mb-0">
     <div class="section-head mb-3">
         <div class="badge-icon"><i class="fa fa-calendar"></i></div>
         <div>

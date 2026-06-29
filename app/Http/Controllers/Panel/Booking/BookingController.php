@@ -10,6 +10,7 @@ use App\Models\BookingTimeSlot;
 use App\Models\BookingFaq;
 use App\Models\BookingSpecification;
 use App\Models\OrgAvailabilityRule;
+use App\Services\BookingTemplateConfig;
 use App\Services\PricingEngine;
 use App\Services\SlotEngine;
 use App\Services\NightlyAvailability;
@@ -79,7 +80,7 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | CREATE — step 1, brand new booking (no record yet)
+    | CREATE — step 1, brand new booking (no record yet, no template chosen yet)
     |--------------------------------------------------------------------------
     */
 
@@ -104,8 +105,13 @@ class BookingController extends Controller
             'currentStep' => 1,
             'stepCount'   => 8,
             'booking'     => null,
+            'config'      => null, // no template selected yet on a brand-new booking
             'allCategoryLists' => $allCategoryLists,
             'userLanguages'    => $this->getUserLanguages(),
+            // Single source of truth for which booking templates exist —
+            // pulled straight from BookingTemplateConfig so step 1 never drifts
+            // out of sync with the config class again.
+            'templateOptions'  => BookingTemplateConfig::allTypes(),
             'bookingDefaults'  => [
                 'currency'         => $user->booking_default_currency ?? $user->currency ?? 'USD',
                 'price_unit'       => $user->booking_default_price_unit ?? 'booking',
@@ -134,7 +140,8 @@ class BookingController extends Controller
             'slug'         => 'nullable|string|max:255|unique:bookings,slug',
             'category_id'  => 'nullable|exists:booking_categories,id',
             'language'     => 'nullable|string|max:10',
-            'booking_type' => 'required|in:tour,activity,rental,event,service,accommodation',
+            // booking_type is now always one of the 7 BookingTemplateConfig slugs.
+            'booking_type' => 'required|in:' . implode(',', array_keys(BookingTemplateConfig::allTypes())),
             'sub_type'     => 'nullable|string|max:255',
             'description'  => 'nullable|string',
             'requirements' => 'nullable|string',
@@ -204,7 +211,7 @@ class BookingController extends Controller
                 $q->orderBy('id', 'asc');
             }]);
         } elseif ($step == 7) {
-            // location fields already load with the base query
+            $query->with(['resources']); // needed to list "staff" type resources in template-details panel
         }
 
         $booking = $query->first();
@@ -218,6 +225,11 @@ class BookingController extends Controller
             ->orderBy('title')
             ->get();
 
+        // The selected template (from step 1) now drives every later step's
+        // fields/required/rules/filters — this is the single object every
+        // step view consults to know what to render.
+        $config = BookingTemplateConfig::for($booking->booking_type);
+
         $data = [
             'pageTitle'        => (trans('update.edit_booking') ?: 'Edit Booking') . ' | ' . $booking->title,
             'booking'          => $booking,
@@ -225,6 +237,8 @@ class BookingController extends Controller
             'stepCount'        => $stepCount,
             'allCategoryLists' => $allCategoryLists,
             'userLanguages'    => $this->getUserLanguages(),
+            'config'           => $config,
+            'templateOptions'  => BookingTemplateConfig::allTypes(),
         ];
 
         if ($step == 1) {
@@ -237,6 +251,13 @@ class BookingController extends Controller
                 : collect();
 
             $data['selectedSpecValueIds'] = $booking->meta['specification_value_ids'] ?? [];
+
+            // "Staff" entries are just BookingResource rows with type = 'staff'
+            // (added/removed via the existing Step 3 Resources block) — reused
+            // here instead of introducing a brand new Staff table/model.
+            $data['staffResources'] = $booking->resources
+                ? $booking->resources->where('type', 'staff')
+                : collect();
         } elseif ($step == 5) {
             $data['allBookings'] = Booking::query()
                 ->where('creator_id', $user->id)
@@ -275,6 +296,10 @@ class BookingController extends Controller
             abort(404);
         }
 
+        // Template config for the booking_type chosen back on step 1 —
+        // drives which extra fields/rules apply on steps 2 & 7 below.
+        $config = BookingTemplateConfig::for($booking->booking_type);
+
         $rules = [];
 
         if ($currentStep == 1) {
@@ -283,13 +308,17 @@ class BookingController extends Controller
                 'slug'         => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')->ignore($booking->id)],
                 'category_id'  => 'nullable|exists:booking_categories,id',
                 'language'     => 'nullable|string|max:10',
-                'booking_type' => 'required|in:tour,activity,rental,event,service,accommodation',
+                'booking_type' => 'required|in:' . implode(',', array_keys(BookingTemplateConfig::allTypes())),
                 'sub_type'     => 'nullable|string|max:255',
                 'description'  => 'nullable|string',
                 'requirements' => 'nullable|string',
             ];
         } elseif ($currentStep == 2) {
-            $rules = [
+            // capacity / inventory rules only exist in the config for templates
+            // that actually need them (events, beauty-spa group service, etc.)
+            $extraRules = collect($config->rules())->only(['capacity', 'inventory'])->toArray();
+
+            $rules = array_merge([
                 'price'            => 'nullable|numeric|min:0',
                 'discount_price'   => 'nullable|numeric|min:0',
                 'currency'         => 'nullable|string|max:10',
@@ -297,12 +326,16 @@ class BookingController extends Controller
                 'price_unit'       => 'nullable|string|max:64',
                 'duration_minutes' => 'nullable|integer|min:0',
 
+                'deposit_enabled'  => 'nullable|in:on',
+                'deposit_amount'   => 'nullable|numeric|min:0',
+                'deposit_type'     => 'nullable|in:fixed,percentage',
+
                 'rate_plans'         => 'nullable|array',
                 'rate_plans.*.name'  => 'required_with:rate_plans|string|max:255',
                 'rate_plans.*.from'  => 'nullable|string',
                 'rate_plans.*.to'    => 'nullable|string',
                 'rate_plans.*.price' => 'required_with:rate_plans|numeric|min:0',
-            ];
+            ], $extraRules);
         } elseif ($currentStep == 3) {
             $rules = [
                 'min_persons'      => 'nullable|integer|min:0',
@@ -325,7 +358,14 @@ class BookingController extends Controller
         } elseif ($currentStep == 6) {
             // FAQ rows are managed via storeFaq()/destroyFaq(); nothing to validate here
         } elseif ($currentStep == 7) {
-            $rules = [
+            // Pull every "meta.xxx" validation rule the selected template defines
+            // (online_link, room_type, amenities, vehicle_specs, level, ...) straight
+            // out of BookingTemplateConfig — no need to hand-duplicate them per type.
+            $metaRules = collect($config->rules())
+                ->filter(fn ($rule, $key) => str_starts_with($key, 'meta.'))
+                ->toArray();
+
+            $rules = array_merge([
                 'location_enabled' => 'nullable|in:on',
                 'address_line'     => 'nullable|string|max:255',
                 'city'             => 'nullable|string|max:100',
@@ -337,7 +377,7 @@ class BookingController extends Controller
 
                 'specification_values'   => 'nullable|array',
                 'specification_values.*' => 'integer|exists:booking_specification_values,id',
-            ];
+            ], $metaRules);
 
             $data['location_enabled'] = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
         } elseif ($currentStep == 8) {
@@ -380,6 +420,16 @@ class BookingController extends Controller
                 'price_per'        => $data['price_per'] ?? null,
                 'price_unit'       => $data['price_unit'] ?? $booking->price_unit,
                 'duration_minutes' => $data['duration_minutes'] ?? null,
+
+                // Only meaningful for templates whose config actually lists them
+                // (events => capacity+inventory, accommodation => room capacity, etc.)
+                // — saved as null otherwise so switching templates can't leave stale data.
+                'capacity'  => in_array('capacity', $config->fields()) ? ($data['capacity'] ?? null) : null,
+                'inventory' => in_array('inventory', $config->fields()) ? ($data['inventory'] ?? null) : null,
+
+                'deposit_enabled' => !empty($data['deposit_enabled']) && $data['deposit_enabled'] === 'on',
+                'deposit_amount'  => $data['deposit_amount'] ?? null,
+                'deposit_type'    => $data['deposit_type'] ?? null,
             ]);
 
             $booking->ratePlans()->delete();
@@ -408,9 +458,10 @@ class BookingController extends Controller
                 'children_allowed' => !empty($data['children_allowed']) && $data['children_allowed'] === 'on',
             ]);
 
-            // Resources, Assets (BookingResource rows) and Recurring (BookingTimeSlot rows)
-            // are added/removed live via storeResource()/destroyResource() and
-            // storeTimeSlot()/destroyTimeSlot() — nothing bulk to save here.
+            // Resources, Assets, Staff (all BookingResource rows distinguished by `type`)
+            // and Recurring (BookingTimeSlot rows) are added/removed live via
+            // storeResource()/destroyResource() and storeTimeSlot()/destroyTimeSlot()
+            // — nothing bulk to save here.
 
             $meta = $booking->meta ?? [];
             $meta['participants_enabled'] = !empty($data['participants_enabled']) && $data['participants_enabled'] === 'on';
@@ -445,6 +496,39 @@ class BookingController extends Controller
 
             $meta = $booking->meta ?? [];
             $meta['specification_value_ids'] = $specValueIds;
+
+            // Data-driven meta save: walk the selected template's own field list
+            // and only touch the "meta.xxx" keys it actually declares. This means
+            // every template (current + any future one added to BookingTemplateConfig)
+            // is supported automatically without editing this controller again, and
+            // multi-select fields (amenities, extra_fees, ticket_types) correctly
+            // reset to empty when nothing is checked instead of keeping stale data.
+            $multiValueKeys = ['amenities', 'extra_fees', 'ticket_types', 'extras'];
+
+            foreach ($config->fields() as $field) {
+                if (!str_starts_with($field, 'meta.')) {
+                    continue;
+                }
+
+                $metaKey = substr($field, 5); // strip "meta." prefix
+                $submitted = $data['meta'][$metaKey] ?? null;
+
+                $meta[$metaKey] = $submitted !== null
+                    ? $submitted
+                    : (in_array($metaKey, $multiValueKeys) ? [] : null);
+            }
+
+            // 'staff_id' and beauty-spa's 'extras' are declared in the config's
+            // fields() list WITHOUT the "meta." prefix (they're still stored in
+            // meta though) — handled explicitly here since the loop above only
+            // walks prefixed keys.
+            if ($config->hasStaff()) {
+                $meta['staff_id'] = $data['meta']['staff_id'] ?? null;
+            }
+            if (in_array('extras', $config->fields())) {
+                $meta['extras'] = $data['meta']['extras'] ?? [];
+            }
+
             $booking->meta = $meta;
         } elseif ($currentStep == 8) {
             $booking->fill([
@@ -577,7 +661,8 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | SUB-RESOURCE: RESOURCES & ASSETS (both live in booking_resources, AJAX add/remove inside step 3)
+    | SUB-RESOURCE: RESOURCES, ASSETS & STAFF (all live in booking_resources,
+    | distinguished by `type`, AJAX add/remove inside step 3)
     |--------------------------------------------------------------------------
     */
 
@@ -659,22 +744,22 @@ class BookingController extends Controller
     |--------------------------------------------------------------------------
     */
 
-  public function storeFaq(Request $request, $bookingId)
-{
-    $booking = $this->findOwnBooking($bookingId);
+    public function storeFaq(Request $request, $bookingId)
+    {
+        $booking = $this->findOwnBooking($bookingId);
 
-    $data = $request->validate([
-        'title'  => 'required|string|max:255',
-        'answer' => 'required|string',
-    ]);
+        $data = $request->validate([
+            'title'  => 'required|string|max:255',
+            'answer' => 'required|string',
+        ]);
 
-    $data['creator_id'] = auth()->id();
-    $data['locale']     = app()->getLocale();
+        $data['creator_id'] = auth()->id();
+        $data['locale']     = app()->getLocale();
 
-    $faq = $booking->faqs()->create($data);
+        $faq = $booking->faqs()->create($data);
 
-    return response()->json(['success' => true, 'faq' => $faq]);
-}
+        return response()->json(['success' => true, 'faq' => $faq]);
+    }
 
     public function destroyFaq($faqId)
     {
@@ -718,6 +803,10 @@ class BookingController extends Controller
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('booking_type')) {
+            $query->where('booking_type', $request->booking_type);
         }
 
         if ($request->filled('status')) {
