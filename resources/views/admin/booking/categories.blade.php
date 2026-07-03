@@ -211,6 +211,34 @@
                                                             @endforeach
                                                         </select>
                                                     </div>
+                                                    <div class="form-group" id="rootBookingTypeGroup">
+    <label class="input-label">
+        {{ trans('admin/main.booking_type') }} <span class="text-danger">*</span>
+    </label>
+    <select name="booking_type" id="rootBookingTypeSelect" class="form-control @error('booking_type') is-invalid @enderror">
+        <option value="">{{ trans('admin/main.select_booking_type') }}</option>
+        @foreach($bookingTypes as $slug => $label)
+            <option value="{{ $slug }}"
+                {{ (!empty($editCategory) && $editCategory->booking_type == $slug) ? 'selected' : '' }}>
+                {{ $label }}
+            </option>
+        @endforeach
+    </select>
+    @error('booking_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+</div>
+{-- Shown when a parent IS selected — this category is one of the 23 Templates, filtered by parent's type --}}
+<div class="form-group" id="childTemplateGroup" style="display:none">
+    <label class="input-label">
+        {{ trans('admin/main.template') }} <span class="text-danger">*</span>
+    </label>
+    <select name="template_key" id="childTemplateSelect" class="form-control @error('template_key') is-invalid @enderror">
+        <option value="">{{ trans('admin/main.select_template') }}</option>
+    </select>
+    <div class="text-gray-500 text-small mt-1">
+        {{ trans('admin/main.only_templates_matching_parent_type_shown') }}
+    </div>
+    @error('template_key')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+</div>
 
                                                     <div class="form-group">
                                                         <div class="custom-control custom-switch">
@@ -252,4 +280,52 @@
 
 @push('scripts_bottom')
     <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
+    <script>
+(function () {
+    // 23 templates with their parent type, passed from controller
+    var ALL_TEMPLATES = {!! json_encode($allTemplates ?? []) !!};
+    var SELECTED_TEMPLATE_KEY = {!! !empty($editCategory) && $editCategory->template_key ? json_encode($editCategory->template_key) : 'null' !!};
+ 
+    var parentSelect   = document.getElementById('categoryParentSelect');
+    var rootTypeGroup  = document.getElementById('rootBookingTypeGroup');
+    var rootTypeSelect = document.getElementById('rootBookingTypeSelect');
+    var childGroup     = document.getElementById('childTemplateGroup');
+    var childSelect    = document.getElementById('childTemplateSelect');
+ 
+    function populateTemplates(parentBookingType) {
+        childSelect.innerHTML = '<option value="">Select Template</option>';
+        Object.keys(ALL_TEMPLATES).forEach(function (key) {
+            var tpl = ALL_TEMPLATES[key];
+            if (tpl.parent === parentBookingType) {
+                var opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = tpl.label;
+                if (SELECTED_TEMPLATE_KEY === key) opt.selected = true;
+                childSelect.appendChild(opt);
+            }
+        });
+    }
+ 
+    function toggle() {
+        var selectedOption = parentSelect.options[parentSelect.selectedIndex];
+        var hasParent = parentSelect.value !== '';
+ 
+        if (hasParent) {
+            rootTypeGroup.style.display = 'none';
+            rootTypeSelect.removeAttribute('required');
+            childGroup.style.display = '';
+            populateTemplates(selectedOption.dataset.bookingType || '');
+        } else {
+            rootTypeGroup.style.display = '';
+            childGroup.style.display = 'none';
+            childSelect.innerHTML = '';
+        }
+    }
+ 
+    if (parentSelect) {
+        parentSelect.addEventListener('change', toggle);
+        toggle(); // run on load (handles edit page pre-selection)
+    }
+})();
+</script>
 @endpush
