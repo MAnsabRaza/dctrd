@@ -49,6 +49,7 @@ class BookingController extends Controller
             ->with([
                 'children' => fn ($q) => $q->where('status', 'active')->orderBy('order', 'asc'),
             ])
+            ->orderBy('order', 'asc')
             ->get();
 
         $categoryId = $request->get('category_id', null);
@@ -85,23 +86,22 @@ class BookingController extends Controller
         }
 
         $booking = Booking::query()
-    ->where('slug', $slug)
-    ->where('status', 'published')
-    ->with([
-        'creator' => fn ($q) => $q->select(
-            'id','full_name','username','role_id','role_name',
-            'avatar','avatar_settings','bio','about','cover_img','profile_secondary_image'
-        ),
-        'category',
-        'resources'  => fn ($q) => $q->where('status', true)->orderBy('order'),
-        'variants'   => fn ($q) => $q->where('status', true)->orderBy('sort_order'),
-        'policy',
-        'faqs',
-        'reviews'  => fn ($q) => $q->where('status', 'active')->latest(),
-        'comments' => fn ($q) => $q->where('is_active', true)->with('user')->latest(),
-        // ← 'specifications.specification' hata diya
-    ])
-    ->first();
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->with([
+                'creator' => fn ($q) => $q->select(
+                    'id', 'full_name', 'username', 'role_id', 'role_name',
+                    'avatar', 'avatar_settings', 'bio', 'about', 'cover_img', 'profile_secondary_image'
+                ),
+                'category',
+                'resources' => fn ($q) => $q->where('status', true)->orderBy('order'),
+                'variants'  => fn ($q) => $q->where('status', true)->orderBy('sort_order'),
+                'policy',
+                'faqs',
+                'reviews'  => fn ($q) => $q->where('status', 'active')->latest(),
+                'comments' => fn ($q) => $q->where('is_active', true)->with('user')->latest(),
+            ])
+            ->first();
 
         if (empty($booking)) {
             abort(404);
@@ -233,148 +233,141 @@ class BookingController extends Controller
        BUY WITH POINT
     ══════════════════════════════════════════════ */
 
-    /* ══════════════════════════════════════════════
-   BUY WITH POINT
-══════════════════════════════════════════════ */
+    public function buyWithPoint(Request $request, $slug)
+    {
+        if (!auth()->check()) {
+            return redirect('/login');
+        }
 
-public function buyWithPoint(Request $request, $slug)
-{
-    if (!auth()->check()) {
-        return redirect('/login');
-    }
+        $user    = auth()->user();
+        $data    = $request->all();
+        $booking = Booking::where('slug', $slug)->where('status', 'published')->first();
 
-    $user    = auth()->user();
-    $data    = $request->all();
-    $booking = Booking::where('slug', $slug)->where('status', 'published')->first();
+        if (empty($booking) || ($data['item_id'] ?? null) != $booking->id) {
+            abort(404);
+        }
 
-    if (empty($booking) || ($data['item_id'] ?? null) != $booking->id) {
-        abort(404);
-    }
+        if (empty($booking->point)) {
+            return back()->with(['toast' => [
+                'title' => '', 'msg' => trans('update.can_not_buy_this_booking_with_point'), 'status' => 'error',
+            ]]);
+        }
 
-    if (empty($booking->point)) {
-        return back()->with(['toast' => [
-            'title' => '', 'msg' => trans('update.can_not_buy_this_booking_with_point'), 'status' => 'error',
-        ]]);
-    }
+        $quantity        = (int) ($data['quantity'] ?? 1);
+        $availablePoints = $user->getRewardPoints();
+        $needPoints      = $booking->point * $quantity;
 
-    $quantity        = (int) ($data['quantity'] ?? 1);
-    $availablePoints = $user->getRewardPoints();
-    $needPoints      = $booking->point * $quantity;
+        if ($availablePoints < $needPoints) {
+            return back()->with(['toast' => [
+                'title' => '', 'msg' => trans('update.you_have_no_enough_points_for_this_product'), 'status' => 'error',
+            ]]);
+        }
 
-    if ($availablePoints < $needPoints) {
-        return back()->with(['toast' => [
-            'title' => '', 'msg' => trans('update.you_have_no_enough_points_for_this_product'), 'status' => 'error',
-        ]]);
-    }
-
-    // ✅ FIX: created_at integer timestamp use karo, updated_at nahi hai table mein
-    $bookingOrder = BookingOrder::create([
-        'booking_id' => $booking->id,
-        'seller_id'  => $booking->creator_id,
-        'buyer_id'   => $user->id,
-        'quantity'   => $quantity,
-        'status'     => BookingOrder::$pending,
-        'created_at' => time(),  // integer timestamp
-    ]);
-
-    $sale = Sale::create([
-        'buyer_id'         => $user->id,
-        'seller_id'        => $booking->creator_id,
-        'booking_order_id' => $bookingOrder->id,
-        'type'             => 'booking',
-        'payment_method'   => Sale::$credit,
-        'amount'           => 0,
-        'total_amount'     => 0,
-        'created_at'       => time(),
-    ]);
-
-    $bookingOrder->update([
-        'sale_id' => $sale->id,
-        'status'  => BookingOrder::$success,
-    ]);
-
-    // ✅ FIX: existing order_items table use karo, BookingOrderItem nahi
-    \App\Models\OrderItem::create([
-        'user_id'          => $user->id,
-        'booking_order_id' => $bookingOrder->id,
-        'quantity'         => $quantity,
-        'amount'           => 0,
-        'total_amount'     => 0,
-        'created_at'       => time(),
-    ]);
-
-    RewardAccounting::makeRewardAccounting(
-        $user->id, $needPoints, 'withdraw', null, false, RewardAccounting::DEDUCTION
-    );
-
-    return back()->with(['toast' => [
-        'title' => '', 'msg' => trans('update.success_pay_product_with_point_msg'), 'status' => 'success',
-    ]]);
-}
-
-/* ══════════════════════════════════════════════
-   DIRECT PAYMENT  (AJAX)
-══════════════════════════════════════════════ */
-
-public function directPayment(Request $request)
-{
-    $user = auth()->user();
-
-    if (empty($user) || empty(getFeaturesSettings('direct_bookings_payment_button_status'))) {
-        return response()->json([], 422);
-    }
-
-    $this->validate($request, ['item_id' => 'required']);
-
-    $data       = $request->except('_token');
-    $bookingId  = $data['item_id'];
-    $quantity   = (int) ($data['quantity'] ?? 1);
-
-    $booking = Booking::query()->where('id', $bookingId)->where('status', 'published')->first();
-
-    if (empty($booking)) {
-        return response()->json([], 422);
-    }
-
-    $activeDiscount = method_exists($booking, 'getActiveDiscount') ? $booking->getActiveDiscount() : null;
-
-    // ✅ FIX: updateOrCreate mein updated_at nahi, sirf created_at integer
-    $bookingOrder = BookingOrder::where([
-        'booking_id' => $booking->id,
-        'seller_id'  => $booking->creator_id,
-        'buyer_id'   => $user->id,
-    ])->first();
-
-    if ($bookingOrder) {
-        $bookingOrder->update([
-            'quantity'            => $quantity,
-            'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
-            'status'              => BookingOrder::$pending,
-        ]);
-    } else {
         $bookingOrder = BookingOrder::create([
-            'booking_id'          => $booking->id,
-            'seller_id'           => $booking->creator_id,
-            'buyer_id'            => $user->id,
-            'quantity'            => $quantity,
-            'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
-            'status'              => BookingOrder::$pending,
-            'created_at'          => time(),  // integer timestamp
+            'booking_id' => $booking->id,
+            'seller_id'  => $booking->creator_id,
+            'buyer_id'   => $user->id,
+            'quantity'   => $quantity,
+            'status'     => BookingOrder::$pending,
+            'created_at' => time(),
         ]);
+
+        $sale = Sale::create([
+            'buyer_id'         => $user->id,
+            'seller_id'        => $booking->creator_id,
+            'booking_order_id' => $bookingOrder->id,
+            'type'             => 'booking',
+            'payment_method'   => Sale::$credit,
+            'amount'           => 0,
+            'total_amount'     => 0,
+            'created_at'       => time(),
+        ]);
+
+        $bookingOrder->update([
+            'sale_id' => $sale->id,
+            'status'  => BookingOrder::$success,
+        ]);
+
+        \App\Models\OrderItem::create([
+            'user_id'          => $user->id,
+            'booking_order_id' => $bookingOrder->id,
+            'quantity'         => $quantity,
+            'amount'           => 0,
+            'total_amount'     => 0,
+            'created_at'       => time(),
+        ]);
+
+        RewardAccounting::makeRewardAccounting(
+            $user->id, $needPoints, 'withdraw', null, false, RewardAccounting::DEDUCTION
+        );
+
+        return back()->with(['toast' => [
+            'title' => '', 'msg' => trans('update.success_pay_product_with_point_msg'), 'status' => 'success',
+        ]]);
     }
 
-    Cart::updateOrCreate(
-        ['creator_id' => $user->id, 'booking_order_id' => $bookingOrder->id],
-        ['created_at' => time()]
-    );
+    /* ══════════════════════════════════════════════
+       DIRECT PAYMENT  (AJAX)
+    ══════════════════════════════════════════════ */
 
-    return response()->json([
-        'code'        => 200,
-        'title'       => trans('cart.cart_add_success_title'),
-        'msg'         => trans('cart.cart_add_success_msg'),
-        'redirect_to' => '/cart',
-    ]);
-}
+    public function directPayment(Request $request)
+    {
+        $user = auth()->user();
+
+        if (empty($user) || empty(getFeaturesSettings('direct_bookings_payment_button_status'))) {
+            return response()->json([], 422);
+        }
+
+        $this->validate($request, ['item_id' => 'required']);
+
+        $data       = $request->except('_token');
+        $bookingId  = $data['item_id'];
+        $quantity   = (int) ($data['quantity'] ?? 1);
+
+        $booking = Booking::query()->where('id', $bookingId)->where('status', 'published')->first();
+
+        if (empty($booking)) {
+            return response()->json([], 422);
+        }
+
+        $activeDiscount = method_exists($booking, 'getActiveDiscount') ? $booking->getActiveDiscount() : null;
+
+        $bookingOrder = BookingOrder::where([
+            'booking_id' => $booking->id,
+            'seller_id'  => $booking->creator_id,
+            'buyer_id'   => $user->id,
+        ])->first();
+
+        if ($bookingOrder) {
+            $bookingOrder->update([
+                'quantity'            => $quantity,
+                'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
+                'status'              => BookingOrder::$pending,
+            ]);
+        } else {
+            $bookingOrder = BookingOrder::create([
+                'booking_id'          => $booking->id,
+                'seller_id'           => $booking->creator_id,
+                'buyer_id'            => $user->id,
+                'quantity'            => $quantity,
+                'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
+                'status'              => BookingOrder::$pending,
+                'created_at'          => time(),
+            ]);
+        }
+
+        Cart::updateOrCreate(
+            ['creator_id' => $user->id, 'booking_order_id' => $bookingOrder->id],
+            ['created_at' => time()]
+        );
+
+        return response()->json([
+            'code'        => 200,
+            'title'       => trans('cart.cart_add_success_title'),
+            'msg'         => trans('cart.cart_add_success_msg'),
+            'redirect_to' => '/cart',
+        ]);
+    }
 
     /* ══════════════════════════════════════════════
        FAVOURITE TOGGLE  (AJAX)
@@ -441,38 +434,70 @@ public function directPayment(Request $request)
         return null;
     }
 
+    /**
+     * Booking Type filter now sends real BookingCategory ids (parent and/or
+     * child). If a parent id is selected, we also include all of its
+     * children ids, since bookings are normally attached to a leaf/child
+     * category rather than the parent itself.
+     */
+    private function expandCategoryIdsWithChildren(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        $childIds = BookingCategory::query()
+            ->whereIn('parent_id', $ids)
+            ->pluck('id')
+            ->toArray();
+
+        return array_values(array_unique(array_merge($ids, $childIds)));
+    }
+
     private function getBookingFeaturedContents(): array
-{
-    $data = [];
+    {
+        $data = [];
 
-    // Top Categories
-    $data['topCategories'] = BookingTopCategory::query()
-        ->with([
-            'category' => fn ($q) => $q->withCount('bookings'),
-        ])
-        ->get();
+        $data['topCategories'] = BookingTopCategory::query()
+            ->with([
+                'category' => fn ($q) => $q->withCount('bookings'),
+            ])
+            ->get();
 
-    // Featured Categories
-    $data['featuredCategories'] = BookingFeatureCategory::query()
-        ->with([
-            'category' => fn ($q) => $q->withCount('bookings'),
-        ])
-        ->get();
+        $data['featuredCategories'] = BookingFeatureCategory::query()
+            ->with([
+                'category' => fn ($q) => $q->withCount('bookings'),
+            ])
+            ->get();
 
-    // Featured Bookings — settings check skip, sirf featured=true wale lo
-    $data['featuredBookings'] = Booking::query()
-        ->where('status', 'published')
-        ->where('featured', true)
-        ->with([
-            'creator' => fn ($q) => $q->select('id','full_name','role_id','username','avatar','avatar_settings','bio'),
-            'category',
-        ])
-        ->limit(10)
-        ->get();
+        $data['featuredBookings'] = Booking::query()
+            ->where('status', 'published')
+            ->where('featured', true)
+            ->with([
+                'creator' => fn ($q) => $q->select('id', 'full_name', 'role_id', 'username', 'avatar', 'avatar_settings', 'bio'),
+                'category',
+            ])
+            ->limit(10)
+            ->get();
 
-    return $data;
-}
+        return $data;
+    }
 
+    /**
+     * NOTE ON MILESTONE 3.4 (Nearby / Spatial filter):
+     * Previously the `default` sort case always applied
+     * `orderBy('bookings.created_at', 'desc')`, even when a lat/lng radius
+     * search was active and no explicit `sort` was requested. Because SQL
+     * applies ORDER BY clauses in the order they're added, the results ended
+     * up sorted primarily by created_at, and the distance order-by was
+     * effectively ignored. The radius WHERE filter did work, but the
+     * "closest first" sorting did not.
+     *
+     * Fix: lat/lng + radius are now read up-front, and we only fall back to
+     * the default created_at sort when we are NOT about to sort by distance.
+     */
     private function handleFilters(Request $request, Builder $query): Builder
     {
         $search       = $request->get('search');
@@ -483,6 +508,9 @@ public function directPayment(Request $request)
         $maxPrice     = $request->get('max_price');
         $sort         = $request->get('sort');
         $provider     = $request->get('provider');
+        $lat          = $request->get('lat');
+        $lng          = $request->get('lng');
+        $radius       = (float) ($request->get('radius', 25)); // km, default 25
 
         if (!empty($search)) {
             $query->where('title', 'like', '%' . $search . '%');
@@ -493,7 +521,14 @@ public function directPayment(Request $request)
         }
 
         if (!empty($bookingTypes) && is_array($bookingTypes)) {
-            $query->whereIn('booking_type', $bookingTypes);
+            // $bookingTypes now holds BookingCategory ids (parent and/or
+            // child) coming from the "Booking Type" checkbox tree, which is
+            // rendered from the real admin categories in the database.
+            $bookingTypeCategoryIds = $this->expandCategoryIdsWithChildren($bookingTypes);
+
+            if (!empty($bookingTypeCategoryIds)) {
+                $query->whereIn('category_id', $bookingTypeCategoryIds);
+            }
         }
 
         if (!empty($provider)) {
@@ -524,6 +559,9 @@ public function directPayment(Request $request)
             $query->where('price', '<=', $maxPrice);
         }
 
+        $hasLocationFilter  = !empty($lat) && !empty($lng);
+        $willSortByDistance = $hasLocationFilter && empty($sort);
+
         switch ($sort) {
             case 'expensive':
                 $query->orderBy('price', 'desc');
@@ -545,39 +583,38 @@ public function directPayment(Request $request)
                 ->orderBy('sales_count', 'desc');
                 break;
             default:
-                $query->orderBy('bookings.created_at', 'desc');
+                // Only fall back to created_at DESC when we're not about
+                // to order the results by distance instead.
+                if (!$willSortByDistance) {
+                    $query->orderBy('bookings.created_at', 'desc');
+                }
         }
 
-        $lat    = $request->get('lat');
-$lng    = $request->get('lng');
-$radius = (float) ($request->get('radius', 25)); // km, default 25
+        if ($hasLocationFilter) {
+            $lat = (float) $lat;
+            $lng = (float) $lng;
 
-if (!empty($lat) && !empty($lng)) {
-    $lat    = (float) $lat;
-    $lng    = (float) $lng;
+            // Haversine formula — distance in km
+            $haversine = "(
+                6371 * ACOS(
+                    COS(RADIANS($lat))
+                    * COS(RADIANS(bookings.lat))
+                    * COS(RADIANS(bookings.lng) - RADIANS($lng))
+                    + SIN(RADIANS($lat))
+                    * SIN(RADIANS(bookings.lat))
+                )
+            )";
 
-    // Haversine formula — distance in km
-    $haversine = "(
-        6371 * ACOS(
-            COS(RADIANS($lat))
-            * COS(RADIANS(bookings.lat))
-            * COS(RADIANS(bookings.lng) - RADIANS($lng))
-            + SIN(RADIANS($lat))
-            * SIN(RADIANS(bookings.lat))
-        )
-    )";
+            $query
+                ->whereNotNull('bookings.lat')
+                ->whereNotNull('bookings.lng')
+                ->whereRaw("{$haversine} <= ?", [$radius])
+                ->selectRaw("bookings.*, {$haversine} AS distance_km");
 
-    $query
-        ->whereNotNull('bookings.lat')
-        ->whereNotNull('bookings.lng')
-        ->whereRaw("{$haversine} <= ?", [$radius])
-        ->selectRaw("bookings.*, {$haversine} AS distance_km");
-
-    // Agar sort already set nahi hai toh distance se sort karo
-    if (empty($sort)) {
-        $query->orderByRaw('distance_km ASC');
-    }
-}
+            if ($willSortByDistance) {
+                $query->orderByRaw('distance_km ASC');
+            }
+        }
 
         return $query;
     }
@@ -594,7 +631,7 @@ if (!empty($lat) && !empty($lng)) {
 
         $bookings = $query->with([
             'creator' => fn ($q) => $q->select(
-                'id','full_name','username','bio','role_id','role_name','avatar','avatar_settings'
+                'id', 'full_name', 'username', 'bio', 'role_id', 'role_name', 'avatar', 'avatar_settings'
             ),
             'category',
         ])
