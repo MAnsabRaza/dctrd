@@ -794,118 +794,74 @@
      JavaScript — Dynamic form behavior
      ══════════════════════════════════════════════════════════════════ --}}
 <script>
-// Replace the whole <script> block at the bottom of new_booking_form.blade.php with this.
-// TEMPLATE_CONFIGS is now keyed by template_key (23 entries), not booking_type (7 entries).
 (function () {
     'use strict';
 
-    var TEMPLATE_CONFIGS   = {!! $templateConfigs ?? '{}' !!};   // keyed by template_key (23)
-    var CATEGORIES_BY_TYPE = {!! $categoriesByType ?? '{}' !!};  // keyed by booking_type (7) -> [{id,title,template_key}]
-    var SELECTED_CATEGORY_ID = {{ !empty($booking) && $booking->category_id ? $booking->category_id : 'null' }};
+    // Template configs passed from controller as JSON
+    var TEMPLATE_CONFIGS = {!! $templateConfigs ?? '{}' !!};
 
-    // data-template-section values map 1:1 to the sections used across templates.
-    // A template's config.required / config.optional (from BookingTemplateConfig)
-    // tells us which sections to reveal — we translate a handful of field keys
-    // into the section they visually belong to.
-    var FIELD_TO_SECTION = {
-        staff_id:                'staff',
-        time_slot:                'time-slot',
-        duration_minutes:         'time-slot',
-        check_in_date:             'date-range',
-        check_out_date:            'date-range',
-        pickup_datetime:           'date-range',
-        return_datetime:           'date-range',
-        room_type:                 'accommodation',
-        max_persons:               'accommodation',
-        venue_type:                'events',
-        capacity:                  'events',
-        vehicle_type:              'automotive',
-        service_type:              'automotive',
-        level:                     'education',
-        prerequisites:             'education',
-        required_docs:             'professional',
-        appointment_type:          'doctors',
-        consultation_type:         'sub-type',
-        sub_type:                  'sub-type',
-        extras:                    'beauty-extras',
+    // Which sections to show per template type
+    var TYPE_SECTIONS = {
+        'beauty-spa': ['staff', 'time-slot', 'beauty-extras'],
+        'doctors-clinics': ['staff', 'sub-type', 'time-slot', 'doctors'],
+        'events': ['time-slot', 'events'],
+        'accommodation': ['date-range', 'accommodation'],
+        'automotive': ['sub-type', 'automotive'],
+        'professional-services': ['staff', 'sub-type', 'time-slot', 'professional'],
+        'education-training': ['staff', 'sub-type', 'time-slot', 'education'],
     };
 
-    function sectionsForTemplate(config) {
-        var sections = {};
-        (config.required || []).concat(config.optional || []).forEach(function (fieldKey) {
-            var section = FIELD_TO_SECTION[fieldKey];
-            if (section) sections[section] = true;
-        });
-        return Object.keys(sections);
-    }
+    // Sub-type options per template
+    var SUB_TYPE_OPTIONS = {
+        'doctors-clinics':        [['physical','Physical'],['online','Online'],['both','Both']],
+        'automotive':             [['rental','Rental / Car Hire'],['service','Mechanic / Service Appointment']],
+        'professional-services':  [['in-person','In-person'],['online','Online'],['both','Both']],
+        'education-training':     [['in-person','In-person'],['online','Online'],['both','Both']],
+    };
 
-    // ─── Step 1: Category dropdown filtered by selected Booking Type ──
+    // Section heading overrides per template
+    var SECTION_TITLES = {
+        'accommodation': { 'date-range': 'Availability Period (Check-in / Check-out)' },
+        'automotive':    { 'date-range': 'Pickup & Return Period',
+                           'sub-type':   'Booking Sub-type (Rental or Service)' },
+    };
 
-    function populateCategoryOptions(bookingType) {
-        var select = document.getElementById('bookingCategorySelect');
-        if (!select) return;
+    // ─── Main switch function ─────────────────────────────────────────
 
-        var options = CATEGORIES_BY_TYPE[bookingType] || [];
-
-        select.innerHTML = options.length
-            ? '<option value="">Select Subcategory / Template</option>'
-            : '<option value="">No subcategories found for this Booking Type</option>';
-
-        options.forEach(function (cat) {
-            var opt = document.createElement('option');
-            opt.value = cat.id;
-            opt.textContent = cat.title;
-            opt.dataset.templateKey = cat.template_key || '';
-            if (SELECTED_CATEGORY_ID && String(SELECTED_CATEGORY_ID) === String(cat.id)) {
-                opt.selected = true;
-            }
-            select.appendChild(opt);
-        });
-
-        if (window.jQuery && jQuery.fn.selectTwo) {
-            jQuery(select).trigger('change.select2');
-        }
-
-        // If editing and this category is already selected, apply its template immediately
-        var selectedOpt = select.options[select.selectedIndex];
-        if (selectedOpt && selectedOpt.value) {
-            applyTemplateForCategory(selectedOpt.dataset.templateKey);
-        } else {
+    function applyTemplate(type) {
+        if (!type) {
             hideAllSections();
-        }
-    }
-
-    // ─── Step 2: Field sections switched by the selected Category's template ──
-
-    function applyTemplateForCategory(templateKey) {
-        hideAllSections();
-
-        if (!templateKey || !TEMPLATE_CONFIGS[templateKey]) {
             return;
         }
 
-        var config   = TEMPLATE_CONFIGS[templateKey];
-        var sections = sectionsForTemplate(config);
+        var config   = TEMPLATE_CONFIGS[type] || {};
+        var sections = TYPE_SECTIONS[type]    || [];
 
+        // 1. Hide all type-specific sections
+        hideAllSections();
+
+        // 2. Show relevant sections for this type
         sections.forEach(function (sectionKey) {
             var el = document.querySelector('[data-template-section="' + sectionKey + '"]');
             if (el) el.style.display = '';
         });
 
-        // Price unit label
+        // 3. Update price unit label
+        var priceLabel = config.price_unit_label || 'per booking';
         document.querySelectorAll('.js-price-unit-label').forEach(function (el) {
-            el.textContent = config.price_unit_label || 'per booking';
+            el.textContent = priceLabel;
         });
         var priceUnitInput = document.querySelector('.js-price-unit-input');
         if (priceUnitInput && !priceUnitInput.value) {
-            priceUnitInput.value = config.price_unit_label || '';
+            priceUnitInput.value = priceLabel;
         }
 
-        // Field labels
+        // 4. Update field labels from config
         if (config.field_labels) {
             document.querySelectorAll('.js-field-label').forEach(function (el) {
                 var fieldKey = el.dataset.field;
                 if (config.field_labels[fieldKey]) {
+                    // Keep the asterisk span if it exists
                     var star = el.querySelector('.text-danger');
                     el.textContent = config.field_labels[fieldKey] + ' ';
                     if (star) el.appendChild(star);
@@ -913,14 +869,20 @@
             });
         }
 
-        // Mark required fields for THIS template (drives live validation)
-        document.querySelectorAll('[data-required-field]').forEach(function (el) {
-            el.removeAttribute('required');
+        // 5. Build sub-type select options
+        buildSubTypeOptions(type);
+
+        // 6. Apply section title overrides
+        var titleOverrides = SECTION_TITLES[type] || {};
+        Object.keys(titleOverrides).forEach(function (sectionKey) {
+            var el = document.querySelector('[data-template-section="' + sectionKey + '"] .booking-section-title');
+            if (el) el.textContent = titleOverrides[sectionKey];
         });
-        (config.required || []).forEach(function (fieldKey) {
-            var el = document.querySelector('[data-required-field="' + fieldKey + '"]');
-            if (el) el.setAttribute('required', 'required');
-        });
+
+        // 7. Update the type note under the select
+        var note = config.meta && config.meta.filter_note ? config.meta.filter_note : '';
+        var noteEl = document.getElementById('bookingTypeNote');
+        if (noteEl) noteEl.textContent = note;
     }
 
     function hideAllSections() {
@@ -929,29 +891,49 @@
         });
     }
 
-    // ─── Wire booking_type -> category filter -> template fields ──────
+    // ─── Sub-type options ─────────────────────────────────────────────
 
-    var typeSelect = document.getElementById('bookingTypeSelect');
-    var categorySelect = document.getElementById('bookingCategorySelect');
+    function buildSubTypeOptions(type) {
+        var select  = document.querySelector('.js-sub-type-select');
+        var options = SUB_TYPE_OPTIONS[type];
 
-    if (typeSelect) {
-        typeSelect.addEventListener('change', function () {
-            populateCategoryOptions(this.value);
+        if (!select || !options) return;
+
+        // Clear existing options except blank
+        select.innerHTML = '<option value="">Select Type</option>';
+        options.forEach(function (opt) {
+            var option    = document.createElement('option');
+            option.value  = opt[0];
+            option.textContent = opt[1];
+            select.appendChild(option);
         });
 
-        if (typeSelect.value) {
-            populateCategoryOptions(typeSelect.value); // pre-load on edit page
-        }
-    }
-
-    if (categorySelect) {
-        categorySelect.addEventListener('change', function () {
-            var opt = this.options[this.selectedIndex];
-            applyTemplateForCategory(opt ? opt.dataset.templateKey : '');
+        // Show/hide online link when online selected
+        select.addEventListener('change', function () {
+            toggleOnlineLink(this.value);
+            // Automotive: show rental vs service fields
+            if (type === 'automotive') {
+                toggleAutomotiveFields(this.value);
+            }
         });
     }
 
-    // ─── Slug auto-generation (unchanged) ──────────────────────────────
+    function toggleOnlineLink(val) {
+        document.querySelectorAll('.js-online-link-field').forEach(function (el) {
+            el.style.display = (val === 'online' || val === 'both') ? '' : 'none';
+        });
+    }
+
+    function toggleAutomotiveFields(val) {
+        document.querySelectorAll('.js-automotive-rental').forEach(function (el) {
+            el.style.display = val === 'rental' ? '' : 'none';
+        });
+        document.querySelectorAll('.js-automotive-service').forEach(function (el) {
+            el.style.display = val === 'service' ? '' : 'none';
+        });
+    }
+
+    // ─── Slug auto-generation ─────────────────────────────────────────
 
     function slugify(str) {
         return str.toLowerCase().trim()
@@ -975,25 +957,29 @@
         });
     }
 
-    // ─── Location / deposit toggles (unchanged) ────────────────────────
+    // ─── Location panel toggle ────────────────────────────────────────
 
     var locationSwitch = document.getElementById('newBookingLocationSwitch');
     var locationPanel  = document.getElementById('newBookingLocationPanel');
+
     if (locationSwitch && locationPanel) {
         locationSwitch.addEventListener('change', function () {
             locationPanel.style.display = this.checked ? '' : 'none';
         });
     }
 
+    // ─── Deposit panel toggle ─────────────────────────────────────────
+
     var depositSwitch = document.getElementById('booking_deposit_enabled');
     var depositPanel  = document.getElementById('bookingDepositPanel');
+
     if (depositSwitch && depositPanel) {
         depositSwitch.addEventListener('change', function () {
             depositPanel.style.display = this.checked ? '' : 'none';
         });
     }
 
-    // ─── Extras (unchanged) ─────────────────────────────────────────────
+    // ─── Extras (Beauty/Spa) ──────────────────────────────────────────
 
     var extrasContainer = document.getElementById('extrasContainer');
     var addExtraBtn     = document.getElementById('addExtraBtn');
@@ -1018,7 +1004,32 @@
         });
     }
 
-    // ─── Tags: auto-comma on Enter (unchanged) ─────────────────────────
+    // ─── Booking type change ──────────────────────────────────────────
+
+    var typeSelect = document.getElementById('bookingTypeSelect');
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', function () {
+            applyTemplate(this.value);
+        });
+
+        // On edit page — apply saved type on load
+        if (typeSelect.value) {
+            applyTemplate(typeSelect.value);
+
+            // Restore sub_type if editing
+            @if(!empty($booking) && $booking->sub_type)
+                var subTypeSelect = document.querySelector('.js-sub-type-select');
+                if (subTypeSelect) {
+                    subTypeSelect.value = '{{ $booking->sub_type }}';
+                    toggleOnlineLink('{{ $booking->sub_type }}');
+                    toggleAutomotiveFields('{{ $booking->sub_type }}');
+                }
+            @endif
+        }
+    }
+
+    // ─── Tags: auto-comma on Enter ────────────────────────────────────
 
     var tagsInput = document.querySelector('input[name="tags"]');
     if (tagsInput) {
@@ -1027,59 +1038,6 @@
                 e.preventDefault();
                 var val = this.value.trim();
                 if (val && !val.endsWith(',')) this.value = val + ', ';
-            }
-        });
-    }
-
-    // ─── Live required-field validation (every step, not just submit) ──
-
-    var bookingForm = document.getElementById('bookingAdminForm');
-
-    function markInvalid(el, message) {
-        el.classList.add('is-invalid');
-        var feedback = el.parentElement.querySelector('.invalid-feedback');
-        if (!feedback) {
-            feedback = document.createElement('div');
-            feedback.className = 'invalid-feedback d-block';
-            el.parentElement.appendChild(feedback);
-        }
-        feedback.textContent = message;
-    }
-
-    function clearInvalid(el) {
-        el.classList.remove('is-invalid');
-        var feedback = el.parentElement.querySelector('.invalid-feedback');
-        if (feedback) feedback.textContent = '';
-    }
-
-    function validateField(el) {
-        if (el.hasAttribute('required') && !el.value.trim()) {
-            markInvalid(el, 'This field is required.');
-            return false;
-        }
-        clearInvalid(el);
-        return true;
-    }
-
-    if (bookingForm) {
-        bookingForm.addEventListener('blur', function (e) {
-            if (e.target.matches('input[required], select[required], textarea[required]')) {
-                validateField(e.target);
-            }
-        }, true);
-
-        bookingForm.addEventListener('submit', function (e) {
-            var visibleRequired = bookingForm.querySelectorAll(
-                '.booking-section:not([style*="display: none"]) [required], ' +
-                '.booking-type-section:not([style*="display: none"]) [required]'
-            );
-            var firstInvalid = null;
-            visibleRequired.forEach(function (el) {
-                if (!validateField(el) && !firstInvalid) firstInvalid = el;
-            });
-            if (firstInvalid) {
-                e.preventDefault();
-                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });
     }

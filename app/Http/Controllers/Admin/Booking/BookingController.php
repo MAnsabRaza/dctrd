@@ -41,24 +41,30 @@ class BookingController extends Controller
             ->orderBy('title')
             ->get();
 
+        $bookingTypes           = array_keys(BookingTemplateConfig::allTypes());
+        $bookingTypeLabels      = BookingTemplateConfig::allTypes();
+        $bookingTypeCategoryMap = $this->buildTypeCategoryMap($parentCategories);
+        $allCategories          = BookingCategory::orderBy('order')->get();
+        $userLanguages          = $this->getUserLanguages();
+        $instructors            = $this->getInstructors();
+
+        // Template configs as JSON for JS dynamic field switching
+        $templateConfigs = $this->buildTemplateConfigsForJs();
+
         return view('admin.booking.booking', [
-            'pageTitle'         => trans('admin/main.create_booking'),
-            'bookingPageMode'   => 'form',
-            'productCategories' => $productCategories,
-            'parentCategories'  => $parentCategories,
-            'childCategories'   => $childCategories,
-            'bookingTypes'      => BookingTemplateConfig::allTypes(),           // 7, for the top-level select
-            'categories'        => $parentCategories,
-            'allCategories'     => BookingCategory::orderBy('order')->get(),
-            'userLanguages'     => $this->getUserLanguages(),
-            'instructors'       => $this->getInstructors(),
-
-            // NEW: subcategories grouped by their parent booking type,
-            // so the Category dropdown can be filtered client-side
-            'categoriesByType'  => json_encode($this->buildCategoriesByType($childCategories)),
-
-            // NEW: 23-template field configs, keyed by template_key (not booking_type)
-            'templateConfigs'   => json_encode($this->buildTemplateConfigsForJs()),
+            'pageTitle'              => trans('admin/main.create_booking'),
+            'bookingPageMode'        => 'form',
+            'productCategories'      => $productCategories,
+            'parentCategories'       => $parentCategories,
+            'childCategories'        => $childCategories,
+            'bookingTypes'           => $bookingTypes,
+            'bookingTypeLabels'      => $bookingTypeLabels,
+            'bookingTypeCategoryMap' => $bookingTypeCategoryMap,
+            'categories'             => $parentCategories,
+            'allCategories'          => $allCategories,
+            'userLanguages'          => $userLanguages,
+            'instructors'            => $instructors,
+            'templateConfigs'        => json_encode($templateConfigs),
         ]);
     }
 
@@ -84,16 +90,12 @@ class BookingController extends Controller
     {
         $this->authorize('admin_booking_create');
 
-        // Resolve the template from the selected category (subcategory),
-        // NOT just from booking_type — this is what drives the 23 distinct field sets.
-        $category       = BookingCategory::find($request->category_id);
-        $templateConfig = $category && $category->template_key
-            ? BookingTemplateConfig::for($category->template_key)
-            : BookingTemplateConfig::for('');
+        // 1. Get template config for selected booking type
+        $templateConfig = BookingTemplateConfig::for($request->booking_type ?? '');
 
+        // 2. Build validation rules: global rules merged with template-specific rules
         $validationRules = array_merge(
             $this->globalValidationRules($request),
-            $this->categoryMatchesTypeRule($request),
             $templateConfig->rules()
         );
 
@@ -101,6 +103,7 @@ class BookingController extends Controller
 
         $nextOrder = (Booking::max('order') ?? 0) + 1;
 
+        // 3. Build meta: global meta + template-specific meta fields from request
         $meta = array_merge(
             $this->bookingMeta($request),
             $this->extractTemplateMeta($request, $templateConfig)
@@ -123,6 +126,7 @@ class BookingController extends Controller
             'cover'            => $request->cover,
             'order'            => $request->order ?: $nextOrder,
 
+            // Pricing
             'price'            => $request->price,
             'price_per'        => $request->price_per ?: null,
             'price_unit'       => $request->price_unit ?: $templateConfig->priceUnitLabel(),
@@ -134,12 +138,14 @@ class BookingController extends Controller
             'deposit_amount'   => $request->boolean('deposit_enabled') ? ($request->deposit_amount ?: null) : null,
             'deposit_type'     => $request->boolean('deposit_enabled') ? $request->deposit_type : null,
 
+            // Capacity
             'min_persons'      => $request->min_persons ?? 1,
             'max_persons'      => $request->max_persons ?: null,
             'max_children'     => $request->max_children ?: null,
             'children_allowed' => $request->boolean('children_allowed'),
             'capacity'         => $request->capacity ?: null,
 
+            // Duration
             'duration_minutes'        => $request->duration_minutes ?: null,
             'buffer_before'           => $request->buffer_before ?? 0,
             'buffer_after'            => $request->buffer_after ?? 0,
@@ -152,6 +158,7 @@ class BookingController extends Controller
             'waitlist_enabled'        => $request->boolean('waitlist_enabled'),
             'inventory'               => $request->inventory ?: null,
 
+            // Location
             'location_enabled' => $request->boolean('location_enabled'),
             'address_line'     => $request->address_line,
             'city'             => $request->city,
@@ -161,6 +168,7 @@ class BookingController extends Controller
             'lat'              => $request->lat ?: null,
             'lng'              => $request->lng ?: null,
 
+            // Status & misc
             'featured'         => $request->boolean('featured'),
             'forum_enabled'    => $request->boolean('forum_enabled'),
             'comments_enabled' => $request->boolean('comments_enabled'),
@@ -190,10 +198,9 @@ class BookingController extends Controller
         $editBooking = Booking::findOrFail($id);
         $bookings    = Booking::orderBy('created_at', 'desc')->paginate(15);
 
-        $category       = $editBooking->category;
-        $templateConfig = $category && $category->template_key
-            ? BookingTemplateConfig::for($category->template_key)
-            : BookingTemplateConfig::for('');
+        // Load template config for this booking's type
+        $templateConfig  = BookingTemplateConfig::for($editBooking->booking_type ?? '');
+        $templateConfigs = $this->buildTemplateConfigsForJs();
 
         $parentCategories = BookingCategory::whereNull('parent_id')
             ->where('status', 1)
@@ -205,21 +212,29 @@ class BookingController extends Controller
             ->orderBy('title')
             ->get();
 
+        $bookingTypes           = array_keys(BookingTemplateConfig::allTypes());
+        $bookingTypeLabels      = BookingTemplateConfig::allTypes();
+        $bookingTypeCategoryMap = $this->buildTypeCategoryMap($parentCategories);
+        $allCategories          = BookingCategory::orderBy('order')->get();
+        $userLanguages          = $this->getUserLanguages();
+        $instructors            = $this->getInstructors($editBooking->creator_id);
+
         return view('admin.booking.booking', [
-            'pageTitle'            => trans('admin/main.edit_booking'),
-            'bookingPageMode'      => 'form',
-            'bookings'             => $bookings,
-            'editBooking'          => $editBooking,
-            'activeTemplateConfig' => $templateConfig,
-            'parentCategories'     => $parentCategories,
-            'childCategories'      => $childCategories,
-            'bookingTypes'         => BookingTemplateConfig::allTypes(),
-            'categories'           => $parentCategories,
-            'allCategories'        => BookingCategory::orderBy('order')->get(),
-            'userLanguages'        => $this->getUserLanguages(),
-            'instructors'          => $this->getInstructors($editBooking->creator_id),
-            'categoriesByType'     => json_encode($this->buildCategoriesByType($childCategories)),
-            'templateConfigs'      => json_encode($this->buildTemplateConfigsForJs()),
+            'pageTitle'              => trans('admin/main.edit_booking'),
+            'bookingPageMode'        => 'form',
+            'bookings'               => $bookings,
+            'editBooking'            => $editBooking,
+            'activeTemplateConfig'   => $templateConfig,
+            'parentCategories'       => $parentCategories,
+            'childCategories'        => $childCategories,
+            'bookingTypes'           => $bookingTypes,
+            'bookingTypeLabels'      => $bookingTypeLabels,
+            'bookingTypeCategoryMap' => $bookingTypeCategoryMap,
+            'categories'             => $parentCategories,
+            'allCategories'          => $allCategories,
+            'userLanguages'          => $userLanguages,
+            'instructors'            => $instructors,
+            'templateConfigs'        => json_encode($templateConfigs),
         ]);
     }
 
@@ -229,21 +244,17 @@ class BookingController extends Controller
     {
         $this->authorize('admin_booking_edit');
 
-        $booking  = Booking::findOrFail($id);
-        $category = BookingCategory::find($request->category_id ?? $booking->category_id);
-
-        $templateConfig = $category && $category->template_key
-            ? BookingTemplateConfig::for($category->template_key)
-            : BookingTemplateConfig::for('');
+        $booking        = Booking::findOrFail($id);
+        $templateConfig = BookingTemplateConfig::for($request->booking_type ?? $booking->booking_type ?? '');
 
         $validationRules = array_merge(
             $this->globalValidationRules($request, $booking->id),
-            $this->categoryMatchesTypeRule($request),
             $templateConfig->rules()
         );
 
         $this->validate($request, $validationRules);
 
+        // Merge existing meta with new template meta (preserve non-overwritten keys)
         $existingMeta = $booking->meta ?? [];
         $newMeta      = array_merge(
             $existingMeta,
@@ -415,21 +426,22 @@ class BookingController extends Controller
         return view('admin.booking.booking', array_merge($data, $topStatData));
     }
 
-    // ── Private: Template config for JavaScript (23 templates, not 7 types) ──
+    // ── Private: Template config for JavaScript ───────────────────────
 
+    /**
+     * Build a JS-friendly array of all template configs.
+     * Used by the frontend to switch form fields dynamically.
+     */
     private function buildTemplateConfigsForJs(): array
     {
         $configs = [];
-        foreach (BookingTemplateConfig::TEMPLATES as $key => $definition) {
-            $config          = BookingTemplateConfig::for($key);
-            $configs[$key] = [
-                'label'             => $config->label(),
-                'parent_type'       => $config->parentType(),
+        foreach (BookingTemplateConfig::allTypes() as $slug => $label) {
+            $config                = BookingTemplateConfig::for($slug);
+            $configs[$slug] = [
+                'label'             => $label,
                 'fields'            => $config->fields(),
                 'field_labels'      => $config->fieldLabels(),
                 'required'          => $config->required(),
-                'optional'          => $config->optional(),
-                'checkout_modules'  => $config->checkoutModules(),
                 'pricing_mode'      => $config->pricingMode(),
                 'availability_mode' => $config->availabilityMode(),
                 'price_unit_label'  => $config->priceUnitLabel(),
@@ -437,52 +449,40 @@ class BookingController extends Controller
                 'has_date_range'    => $config->hasDateRange(),
                 'has_time_slot'     => $config->hasTimeSlot(),
                 'has_extras'        => $config->hasExtras(),
+                'filters'           => $config->filters(),
+                'meta'              => $config->meta(),
             ];
         }
         return $configs;
     }
 
-    /** Subcategories grouped by their parent booking_type, for client-side Category filtering */
-    private function buildCategoriesByType($childCategories): array
-    {
-        $map = [];
-        foreach ($childCategories as $child) {
-            $type = $child->effective_booking_type;
-            if (empty($type)) {
-                continue; // orphan child without a resolvable type — admin must fix in Categories screen
-            }
-            $map[$type][] = [
-                'id'           => $child->id,
-                'title'        => $child->title,
-                'template_key' => $child->template_key,
-            ];
-        }
-        return $map;
-    }
-
+    /**
+     * Extract template-specific meta fields from request.
+     * Fields prefixed with meta.* in the template config get saved to booking->meta.
+     */
     private function extractTemplateMeta(Request $request, BookingTemplateConfig $config): array
     {
         $meta         = [];
         $metaFields   = array_filter($config->fields(), fn($f) => str_starts_with($f, 'meta.'));
         $requestMeta  = $request->input('meta', []);
 
+        // staff_id is special — stored as meta.staff_id
         if ($config->hasStaff() && $request->filled('staff_id')) {
             $meta['staff_id'] = $request->staff_id;
         }
 
+        // extras
         if ($config->hasExtras() && $request->has('extras')) {
             $meta['extras'] = $request->input('extras', []);
         }
 
+        // All meta.* fields from template config
         foreach ($metaFields as $field) {
             $key = str_replace('meta.', '', $field);
             if (array_key_exists($key, $requestMeta)) {
                 $meta[$key] = $requestMeta[$key];
             }
         }
-
-        // Persist which template produced this booking, useful for reporting/debugging
-        $meta['template_key'] = $config->key();
 
         return $meta;
     }
@@ -499,9 +499,9 @@ class BookingController extends Controller
         return [
             'title'          => 'required|string|max:255',
             'slug'           => $slugRule,
-            'category_id'    => 'required|exists:booking_categories,id',
+            'category_id'    => 'nullable|exists:booking_categories,id',
             'language'       => 'nullable|string|max:10',
-            'booking_type'   => ['required', 'string', Rule::in(array_keys(BookingTemplateConfig::allTypes()))],
+            'booking_type'   => 'required|string|max:255',
             'status'         => 'nullable|in:draft,pending,published,rejected,inactive',
             'creator_id'     => 'nullable|exists:users,id',
             'tax'            => 'nullable|numeric|min:0|max:999.99',
@@ -509,29 +509,6 @@ class BookingController extends Controller
             'deposit_amount' => 'nullable|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
             'price_per'      => 'nullable|numeric|min:0',
-            'requirements'   => 'required|string', // Cancellation / Rescheduling Policy — required per spec
-        ];
-    }
-
-    /**
-     * Guard against invalid combinations, e.g. Doctors/Clinics booking_type
-     * with a category whose parent booking_type is Automotive.
-     */
-    private function categoryMatchesTypeRule(Request $request): array
-    {
-        return [
-            'category_id' => [
-                'bail',
-                function ($attr, $value, $fail) use ($request) {
-                    $category = BookingCategory::find($value);
-                    if ($category && $category->effective_booking_type !== $request->booking_type) {
-                        $fail(trans('admin/main.category_does_not_match_booking_type'));
-                    }
-                    if ($category && empty($category->template_key) && $category->parent_id) {
-                        $fail(trans('admin/main.category_missing_template'));
-                    }
-                },
-            ],
         ];
     }
 
@@ -570,10 +547,12 @@ class BookingController extends Controller
             $query->where('status', $status);
         }
 
+        // City filter (applies to all types)
         if ($request->filled('city')) {
             $query->where('city', 'like', '%' . $request->city . '%');
         }
 
+        // Price range filter
         if ($request->filled('price_min')) {
             $query->where('price', '>=', $request->price_min);
         }
@@ -581,10 +560,12 @@ class BookingController extends Controller
             $query->where('price', '<=', $request->price_max);
         }
 
+        // sub_type filter (online/in-person, rental/service)
         if ($request->filled('sub_type')) {
             $query->where('sub_type', $request->sub_type);
         }
 
+        // Language filter
         if ($request->filled('language')) {
             $query->where('language', $request->language);
         }
@@ -667,6 +648,16 @@ class BookingController extends Controller
     }
 
     // ── Private: Helpers ──────────────────────────────────────────────
+
+    private function buildTypeCategoryMap($parentCategories): array
+    {
+        $map = [];
+        foreach ($parentCategories as $category) {
+            $map[Str::slug($category->slug)]  = $category->id;
+            $map[Str::slug($category->title)] = $category->id;
+        }
+        return $map;
+    }
 
     private function sendBookingNotification(Booking $booking, string $template): void
     {
