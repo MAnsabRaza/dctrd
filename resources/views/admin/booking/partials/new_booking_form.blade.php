@@ -57,6 +57,36 @@
                     </select>
                 </div>
             </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="form-group" data-field-key="category_id">
+                    <label class="input-label js-field-label" data-field="category_id">Category (Subcategory / Template) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <select id="bookingCategorySelect" name="category_id" data-plugin-selectTwo
+                                class="form-control @error('category_id') is-invalid @enderror"
+                                {{ empty($currentType) ? 'disabled' : '' }}>
+                            <option value="">
+                                {{ empty($currentType) ? 'Pehle Booking Type select karein' : 'Select a Category' }}
+                            </option>
+                            @if(!empty($booking) && $booking->category)
+                                <option value="{{ $booking->category->id }}" data-slug="{{ $booking->category->slug }}" selected>
+                                    {{ $booking->category->title }}
+                                </option>
+                            @endif
+                        </select>
+                        <div class="input-group-append">
+                            <a href="{{ getAdminPanelUrl('/booking/categories') }}" class="btn btn-primary add-button">
+                                <i class="fa fa-plus"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="text-gray-500 text-small mt-1">
+                        Sirf usi Booking Type ki subcategories yahan dikhengi jo upar select ki gayi hai.
+                    </div>
+                    <div class="text-primary text-small mt-1" id="subTemplateNote"></div>
+                    @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                </div>
+            </div>
         </div>
     </div>
 
@@ -81,35 +111,6 @@
                            class="form-control @error('slug') is-invalid @enderror">
                     <div class="text-gray-500 text-small mt-1">Auto-generated from title. Must be unique.</div>
                     @error('slug')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="form-group" data-field-key="category_id">
-                    <label class="input-label js-field-label" data-field="category_id">Category (Subcategory / Template) <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                     
-                        <select id="bookingCategorySelect" name="category_id" data-plugin-selectTwo
-                                class="form-control @error('category_id') is-invalid @enderror"
-                                {{ empty($currentType) ? 'disabled' : '' }}>
-                            <option value="">
-                                {{ empty($currentType) ? 'Pehle Booking Type select karein' : 'Select a Category' }}
-                            </option>
-                            @if(!empty($booking) && $booking->category)
-                                <option value="{{ $booking->category->id }}" data-slug="{{ $booking->category->slug }}" selected>
-                                    {{ $booking->category->title }}
-                                </option>
-                            @endif
-                        </select>
-                        <div class="input-group-append">
-                            <a href="{{ getAdminPanelUrl('/booking/categories') }}" class="btn btn-primary add-button">
-                                <i class="fa fa-plus"></i>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="text-gray-500 text-small mt-1">
-                        Sirf usi Booking Type ki subcategories yahan dikhengi jo upar select ki gayi hai.
-                    </div>
-                    <div class="text-primary text-small mt-1" id="subTemplateNote"></div>
-                    @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="form-group">
@@ -800,6 +801,7 @@
     var TYPE_CATEGORY_MAP    = {!! json_encode($bookingTypeCategoryMap ?? []) !!};
     var CATEGORIES_BY_PARENT = {!! $categoriesByParent ?? '{}' !!};
     var CURRENT_CATEGORY_ID  = {!! !empty($currentCategoryId) ? json_encode((string) $currentCategoryId) : 'null' !!};
+    var CURRENT_SUB_TYPE     = {!! json_encode(old('sub_type', $booking->sub_type ?? '')) !!};
 
     // ── FIX: ye fields kabhi hide nahi hoti — chahe kisi bhi sub-template
     // (category level) ke required/optional array mein likhi hon ya na hon.
@@ -915,12 +917,20 @@
 
     // ─── Main switch function (Booking Type level) ─────────────────────
 
-    function applyTemplate(type) {
+    function applyTemplate(type, options) {
+        options = options || {};
+        var shouldPopulateCategory = options.populateCategory !== false;
+        var shouldResetSubTemplate = options.resetSubTemplate !== false;
+
         if (!type) {
             hideAllSections();
-            populateCategoryOptions('', null);
+            if (shouldPopulateCategory) {
+                populateCategoryOptions('', null);
+            }
             CURRENT_TYPE_FIELD_LABELS = {};
-            resetSubTemplate();
+            if (shouldResetSubTemplate) {
+                resetSubTemplate();
+            }
             return;
         }
 
@@ -964,7 +974,9 @@
         buildSubTypeOptions(type);
 
         // 6. Category dropdown ko sirf isi parent ke children se filter karo
-        populateCategoryOptions(type, CURRENT_CATEGORY_ID);
+        if (shouldPopulateCategory) {
+            populateCategoryOptions(type, CURRENT_CATEGORY_ID);
+        }
 
         // 7. Apply section title overrides
         var titleOverrides = SECTION_TITLES[type] || {};
@@ -980,7 +992,9 @@
 
         // 9. Booking Type badalte hi purana category-level (sub-template)
         //    filtering reset kar do — jab tak naya category select na ho.
-        resetSubTemplate();
+        if (shouldResetSubTemplate) {
+            resetSubTemplate();
+        }
     }
 
     function hideAllSections() {
@@ -1093,6 +1107,56 @@
         if (noteEl) noteEl.textContent = '';
     }
 
+    function prepareCategoryPicker(type, selectedCategoryId) {
+        var config = type ? (TEMPLATE_CONFIGS[type] || {}) : {};
+        CURRENT_TYPE_FIELD_LABELS = config.field_labels || {};
+
+        hideAllSections();
+        resetSubTemplate();
+        populateCategoryOptions(type, selectedCategoryId || null);
+
+        var note = config.meta && config.meta.filter_note ? config.meta.filter_note : '';
+        var noteEl = document.getElementById('bookingTypeNote');
+        if (noteEl) noteEl.textContent = note;
+
+        var priceLabel = config.price_unit_label || 'per booking';
+        document.querySelectorAll('.js-price-unit-label').forEach(function (el) {
+            el.textContent = priceLabel;
+        });
+        var priceUnitInput = document.querySelector('.js-price-unit-input');
+        if (priceUnitInput) {
+            priceUnitInput.value = priceLabel;
+        }
+    }
+
+    function selectedCategorySlug() {
+        var select = document.getElementById('bookingCategorySelect');
+        if (!select) return null;
+
+        var selectedOption = select.options[select.selectedIndex];
+        return selectedOption ? (selectedOption.dataset.slug || null) : null;
+    }
+
+    function applySelectedCategoryTemplate() {
+        var typeSelect = document.getElementById('bookingTypeSelect');
+        var categorySelect = document.getElementById('bookingCategorySelect');
+        var type = typeSelect ? typeSelect.value : '';
+        var slug = selectedCategorySlug();
+
+        CURRENT_CATEGORY_ID = categorySelect && categorySelect.value ? categorySelect.value : null;
+
+        if (!type || !slug) {
+            prepareCategoryPicker(type, CURRENT_CATEGORY_ID);
+            return;
+        }
+
+        applyTemplate(type, {
+            populateCategory: false,
+            resetSubTemplate: false
+        });
+        applySubTemplate(slug);
+    }
+
     // Ek field-group ke andar required/optional star show/hide karo, aur
     // agar iske andar koi actual input/select/textarea hai to uska
     // `required` attribute bhi set/remove karo (checkbox/switch fields
@@ -1128,11 +1192,23 @@
             select.appendChild(option);
         });
 
+        if (CURRENT_SUB_TYPE) {
+            select.value = CURRENT_SUB_TYPE;
+            CURRENT_SUB_TYPE = select.value;
+            toggleOnlineLink(CURRENT_SUB_TYPE);
+            if (type === 'automotive') {
+                toggleAutomotiveFields(CURRENT_SUB_TYPE);
+            }
+        }
+
         // Show/hide online link when online selected
+        if (select.dataset.templateListenerBound === 'true') return;
+        select.dataset.templateListenerBound = 'true';
         select.addEventListener('change', function () {
+            CURRENT_SUB_TYPE = this.value;
             toggleOnlineLink(this.value);
             // Automotive: show rental vs service fields
-            if (type === 'automotive') {
+            if ((document.getElementById('bookingTypeSelect') || {}).value === 'automotive') {
                 toggleAutomotiveFields(this.value);
             }
         });
@@ -1233,11 +1309,11 @@
             // Naya Booking Type select hote hi purani category selection clear
             // karo (kyunki wo purane parent ki thi, naye parent se match nahi karti).
             CURRENT_CATEGORY_ID = null;
-            applyTemplate(this.value);
+            prepareCategoryPicker(this.value, null);
         });
 
         // On load (create ya edit dono par) — apply saved/selected type
-        applyTemplate(typeSelect.value);
+        prepareCategoryPicker(typeSelect.value, CURRENT_CATEGORY_ID);
 
         // Restore sub_type if editing
         @if(!empty($booking) && $booking->sub_type)
@@ -1256,29 +1332,21 @@
 
     if (categorySelect) {
         categorySelect.addEventListener('change', function () {
-            var selectedOption = this.options[this.selectedIndex];
-            var slug = selectedOption ? selectedOption.dataset.slug : null;
-            applySubTemplate(slug || null);
+            applySelectedCategoryTemplate();
         });
 
         // select2 use hone ki wajah se native 'change' kabhi kabhi select2's
         // apne event se replace ho jata hai — is liye select2 ka event bhi sunte hain.
         if (window.jQuery) {
-            window.jQuery(categorySelect).on('select2:select', function (e) {
-                var slug = e.params && e.params.data ? e.params.data.slug : null;
-                if (!slug) {
-                    var opt = categorySelect.querySelector('option[value="' + e.params.data.id + '"]');
-                    slug = opt ? opt.dataset.slug : null;
-                }
-                applySubTemplate(slug || null);
+            window.jQuery(categorySelect).on('select2:select', function () {
+                applySelectedCategoryTemplate();
             });
         }
 
         // Page load par (edit mode mein) agar category pehle se selected hai
         // to uska sub-template bhi turant apply karo.
-        var preSelectedOption = categorySelect.options[categorySelect.selectedIndex];
-        if (preSelectedOption && preSelectedOption.dataset.slug) {
-            applySubTemplate(preSelectedOption.dataset.slug);
+        if (selectedCategorySlug()) {
+            applySelectedCategoryTemplate();
         }
     }
 
