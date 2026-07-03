@@ -16,8 +16,12 @@ class BookingCategoryController extends Controller
 
         removeContentLocale();
 
+        // NOTE: 'children' eager-loaded hai taake tree view (parent bold + niche children)
+        // blade mein bina extra query ke render ho sake. Order dono levels par lagaya hua hai.
         $bookingCategories = BookingCategory::whereNull('parent_id')
-            ->with('children')
+            ->with(['children' => function ($query) {
+                $query->orderBy('order');
+            }])
             ->orderBy('order')
             ->get();
 
@@ -78,15 +82,20 @@ class BookingCategoryController extends Controller
         $this->authorize('admin_booking_categories_edit');
 
         $editCategory = BookingCategory::findOrFail($id);
+
         $bookingCategories = BookingCategory::whereNull('parent_id')
-            ->with('children')
+            ->with(['children' => function ($query) {
+                $query->orderBy('order');
+            }])
             ->orderBy('order')
             ->get();
+
         $bookingTypes = Booking::select('booking_type')
             ->distinct()
             ->orderBy('booking_type')
             ->pluck('booking_type')
             ->toArray();
+
         $parentCategories  = BookingCategory::roots()->get();
         $nextOrder         = (BookingCategory::max('order') ?? 0) + 1;
 
@@ -119,6 +128,11 @@ class BookingCategoryController extends Controller
         ]);
 
         $data = $request->all();
+
+        // Ek category apne aap ki parent nahi ban sakti (loop se bachne ke liye)
+        if (!empty($data['parent_id']) && (int) $data['parent_id'] === (int) $category->id) {
+            return back()->withErrors(['parent_id' => 'Ek category khud apni parent nahi ho sakti.'])->withInput();
+        }
 
         $category->update([
             'parent_id'   => $data['parent_id'] ?? null,

@@ -5,9 +5,11 @@
     1. Template-specific field sections show/hide ho jaate hain
     2. Required attributes dynamically set hote hain
     3. Field labels update hote hain
-    4. Form puri tarah reset hoti hai naye booking pe
+    4. Category dropdown SIRF selected Booking Type (parent) ke children/subcategories
+       se filter ho ke populate hoti hai — ye is fix ka core hissa hai.
+    5. Form puri tarah reset hoti hai naye booking pe
 
-  templateConfigs (JSON) controller se pass hota hai.
+  templateConfigs (JSON) aur categoriesByParent (JSON) controller se pass hote hain.
 --}}
 
 @php
@@ -15,6 +17,7 @@
     $meta    = old('meta', $booking->meta ?? []);
     $tags    = old('tags', !empty($meta['tags']) ? implode(', ', (array)$meta['tags']) : '');
     $currentType = old('booking_type', $booking->booking_type ?? '');
+    $currentCategoryId = old('category_id', $booking->category_id ?? '');
 
     $field = fn($name, $default = null) => old($name, !empty($booking) ? $booking->{$name} : $default);
     $metaField = fn($key, $default = null) => old("meta.$key", $meta[$key] ?? $default);
@@ -32,6 +35,7 @@
 
     {{-- ══════════════════════════════════════════════════════════════
          SECTION 1 — Booking Type Selection (always visible, loads first)
+         Ye dropdown sirf PARENT categories / booking types dikhata hai.
          ══════════════════════════════════════════════════════════════ --}}
     <div class="booking-section">
         <h3 class="booking-section-title">Booking Type</h3>
@@ -101,15 +105,27 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="input-label">Category</label>
+                    <label class="input-label">Category (Subcategory / Template) <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <select id="bookingCategorySelect" name="category_id" data-plugin-selectTwo class="form-control">
-                            <option value="">Select a Category</option>
-                            @foreach($parentCategories ?? [] as $cat)
-                                <option value="{{ $cat->id }}" {{ $field('category_id') == $cat->id ? 'selected' : '' }}>
-                                    {{ $cat->title }}
+                        {{--
+                            NAYA BEHAVIOUR:
+                            Ye select PEHLE khali/disabled hai. Jaise hi upar Booking Type
+                            select hoga, JS isko usi parent ke children (subcategories) se
+                            populate kar dega. Isliye yahan par server se sirf currently
+                            saved value (edit mode mein) ek option ki tarah pre-inject ki
+                            jaati hai, JS load hote hi ise repopulate/validate kar dega.
+                        --}}
+                        <select id="bookingCategorySelect" name="category_id" data-plugin-selectTwo
+                                class="form-control @error('category_id') is-invalid @enderror"
+                                {{ empty($currentType) ? 'disabled' : '' }}>
+                            <option value="">
+                                {{ empty($currentType) ? 'Pehle Booking Type select karein' : 'Select a Category' }}
+                            </option>
+                            @if(!empty($booking) && $booking->category)
+                                <option value="{{ $booking->category->id }}" selected>
+                                    {{ $booking->category->title }}
                                 </option>
-                            @endforeach
+                            @endif
                         </select>
                         <div class="input-group-append">
                             <a href="{{ getAdminPanelUrl('/booking/categories') }}" class="btn btn-primary add-button">
@@ -117,6 +133,10 @@
                             </a>
                         </div>
                     </div>
+                    <div class="text-gray-500 text-small mt-1">
+                        Sirf usi Booking Type ki subcategories yahan dikhengi jo upar select ki gayi hai.
+                    </div>
+                    @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="form-group">
@@ -800,6 +820,13 @@
     // Template configs passed from controller as JSON
     var TEMPLATE_CONFIGS = {!! $templateConfigs ?? '{}' !!};
 
+    // NAYA: Booking Type (slug) => parent category id map, aur
+    // parent category id => uske children [{id,title}] map.
+    // Ye dono milke Category dropdown ko dynamically filter karte hain.
+    var TYPE_CATEGORY_MAP    = {!! json_encode($bookingTypeCategoryMap ?? []) !!};
+    var CATEGORIES_BY_PARENT = {!! $categoriesByParent ?? '{}' !!};
+    var CURRENT_CATEGORY_ID  = {!! !empty($currentCategoryId) ? json_encode((string) $currentCategoryId) : 'null' !!};
+
     // Which sections to show per template type
     var TYPE_SECTIONS = {
         'beauty-spa': ['staff', 'time-slot', 'beauty-extras'],
@@ -826,11 +853,68 @@
                            'sub-type':   'Booking Sub-type (Rental or Service)' },
     };
 
+    // ─── Category dropdown — filtered by selected Booking Type ────────
+
+    function populateCategoryOptions(type, selectedCategoryId) {
+        var select = document.getElementById('bookingCategorySelect');
+        if (!select) return;
+
+        var parentId = TYPE_CATEGORY_MAP[type];
+        var children = (parentId && CATEGORIES_BY_PARENT[parentId]) ? CATEGORIES_BY_PARENT[parentId] : [];
+
+        select.innerHTML = '';
+
+        if (!type) {
+            select.disabled = true;
+            select.appendChild(makeOption('', 'Pehle Booking Type select karein'));
+            triggerSelectTwoRefresh(select);
+            return;
+        }
+
+        select.disabled = false;
+
+        if (!children.length) {
+            select.appendChild(makeOption('', 'Is Booking Type ke liye koi subcategory nahi mili'));
+            triggerSelectTwoRefresh(select);
+            return;
+        }
+
+        select.appendChild(makeOption('', 'Select a Category'));
+        children.forEach(function (cat) {
+            var isSelected = selectedCategoryId && String(selectedCategoryId) === String(cat.id);
+            select.appendChild(makeOption(cat.id, cat.title, isSelected));
+        });
+
+        triggerSelectTwoRefresh(select);
+    }
+
+    function makeOption(value, label, selected) {
+        var opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = label;
+        if (selected) opt.selected = true;
+        return opt;
+    }
+
+    function triggerSelectTwoRefresh(select) {
+        // Agar select2 (data-plugin-selectTwo) is field par init ho chuka hai,
+        // to naye options ke baad usko refresh karna zaroori hai.
+        if (window.jQuery) {
+            var $select = window.jQuery(select);
+            if ($select.data('select2')) {
+                $select.trigger('change.select2');
+            } else {
+                $select.trigger('change');
+            }
+        }
+    }
+
     // ─── Main switch function ─────────────────────────────────────────
 
     function applyTemplate(type) {
         if (!type) {
             hideAllSections();
+            populateCategoryOptions('', null);
             return;
         }
 
@@ -872,14 +956,17 @@
         // 5. Build sub-type select options
         buildSubTypeOptions(type);
 
-        // 6. Apply section title overrides
+        // 6. NAYA: Category dropdown ko sirf isi parent ke children se filter karo
+        populateCategoryOptions(type, CURRENT_CATEGORY_ID);
+
+        // 7. Apply section title overrides
         var titleOverrides = SECTION_TITLES[type] || {};
         Object.keys(titleOverrides).forEach(function (sectionKey) {
             var el = document.querySelector('[data-template-section="' + sectionKey + '"] .booking-section-title');
             if (el) el.textContent = titleOverrides[sectionKey];
         });
 
-        // 7. Update the type note under the select
+        // 8. Update the type note under the select
         var note = config.meta && config.meta.filter_note ? config.meta.filter_note : '';
         var noteEl = document.getElementById('bookingTypeNote');
         if (noteEl) noteEl.textContent = note;
@@ -1010,23 +1097,24 @@
 
     if (typeSelect) {
         typeSelect.addEventListener('change', function () {
+            // Naya Booking Type select hote hi purani category selection clear
+            // karo (kyunki wo purane parent ki thi, naye parent se match nahi karti).
+            CURRENT_CATEGORY_ID = null;
             applyTemplate(this.value);
         });
 
-        // On edit page — apply saved type on load
-        if (typeSelect.value) {
-            applyTemplate(typeSelect.value);
+        // On load (create ya edit dono par) — apply saved/selected type
+        applyTemplate(typeSelect.value);
 
-            // Restore sub_type if editing
-            @if(!empty($booking) && $booking->sub_type)
-                var subTypeSelect = document.querySelector('.js-sub-type-select');
-                if (subTypeSelect) {
-                    subTypeSelect.value = '{{ $booking->sub_type }}';
-                    toggleOnlineLink('{{ $booking->sub_type }}');
-                    toggleAutomotiveFields('{{ $booking->sub_type }}');
-                }
-            @endif
-        }
+        // Restore sub_type if editing
+        @if(!empty($booking) && $booking->sub_type)
+            var subTypeSelect = document.querySelector('.js-sub-type-select');
+            if (subTypeSelect) {
+                subTypeSelect.value = '{{ $booking->sub_type }}';
+                toggleOnlineLink('{{ $booking->sub_type }}');
+                toggleAutomotiveFields('{{ $booking->sub_type }}');
+            }
+        @endif
     }
 
     // ─── Tags: auto-comma on Enter ────────────────────────────────────

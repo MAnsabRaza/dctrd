@@ -51,6 +51,11 @@ class BookingController extends Controller
         // Template configs as JSON for JS dynamic field switching
         $templateConfigs = $this->buildTemplateConfigsForJs();
 
+        // NAYA: har parent (booking type) ke child categories ka JS-friendly map.
+        // Booking Type select hone par JS isi map se sirf usi parent ke children
+        // Category dropdown mein dikhata hai.
+        $categoriesByParent = $this->buildCategoriesByParentMap($childCategories);
+
         return view('admin.booking.booking', [
             'pageTitle'              => trans('admin/main.create_booking'),
             'bookingPageMode'        => 'form',
@@ -65,6 +70,7 @@ class BookingController extends Controller
             'userLanguages'          => $userLanguages,
             'instructors'            => $instructors,
             'templateConfigs'        => json_encode($templateConfigs),
+            'categoriesByParent'     => json_encode($categoriesByParent),
         ]);
     }
 
@@ -94,12 +100,16 @@ class BookingController extends Controller
         $templateConfig = BookingTemplateConfig::for($request->booking_type ?? '');
 
         // 2. Build validation rules: global rules merged with template-specific rules
+        //    + category_id rule jo booking_type (parent) se match karta ho
         $validationRules = array_merge(
             $this->globalValidationRules($request),
             $templateConfig->rules()
         );
+        $validationRules['category_id'] = $this->categoryValidationRule($request->booking_type ?? '');
 
-        $this->validate($request, $validationRules);
+        $this->validate($request, $validationRules, [
+            'category_id.exists' => 'Selected category is Booking Type se match nahi karti. Pehle sahi Booking Type select karein, phir usi ki subcategory chunein.',
+        ]);
 
         $nextOrder = (Booking::max('order') ?? 0) + 1;
 
@@ -219,6 +229,10 @@ class BookingController extends Controller
         $userLanguages          = $this->getUserLanguages();
         $instructors            = $this->getInstructors($editBooking->creator_id);
 
+        // NAYA: edit form ke liye bhi parent->children map chahiye taake
+        // saved booking_type ke hisab se sahi children dropdown mein aayein.
+        $categoriesByParent = $this->buildCategoriesByParentMap($childCategories);
+
         return view('admin.booking.booking', [
             'pageTitle'              => trans('admin/main.edit_booking'),
             'bookingPageMode'        => 'form',
@@ -235,6 +249,7 @@ class BookingController extends Controller
             'userLanguages'          => $userLanguages,
             'instructors'            => $instructors,
             'templateConfigs'        => json_encode($templateConfigs),
+            'categoriesByParent'     => json_encode($categoriesByParent),
         ]);
     }
 
@@ -251,8 +266,11 @@ class BookingController extends Controller
             $this->globalValidationRules($request, $booking->id),
             $templateConfig->rules()
         );
+        $validationRules['category_id'] = $this->categoryValidationRule($request->booking_type ?? $booking->booking_type ?? '');
 
-        $this->validate($request, $validationRules);
+        $this->validate($request, $validationRules, [
+            'category_id.exists' => 'Selected category is Booking Type se match nahi karti. Pehle sahi Booking Type select karein, phir usi ki subcategory chunein.',
+        ]);
 
         // Merge existing meta with new template meta (preserve non-overwritten keys)
         $existingMeta = $booking->meta ?? [];
@@ -457,6 +475,50 @@ class BookingController extends Controller
     }
 
     /**
+     * NAYA: har parent category id ke against uske active children
+     * (id + title) ka array — Category dropdown JS se filter karne ke liye.
+     * Format: [ parent_id => [ ['id'=>.., 'title'=>..], ... ], ... ]
+     */
+    private function buildCategoriesByParentMap($childCategories): array
+    {
+        $map = [];
+        foreach ($childCategories as $child) {
+            $map[$child->parent_id][] = [
+                'id'    => $child->id,
+                'title' => $child->title,
+            ];
+        }
+        return $map;
+    }
+
+    /**
+     * NAYA: category_id validation rule — sirf usi parent ke children allow
+     * hote hain jo selected booking_type se map hote hain. Invalid combination
+     * (e.g. Doctors booking_type + Beauty subcategory) validation fail karega.
+     */
+    private function categoryValidationRule(string $bookingType): array
+    {
+        $parentCategories = BookingCategory::whereNull('parent_id')
+            ->where('status', 1)
+            ->get();
+
+        $typeMap  = $this->buildTypeCategoryMap($parentCategories);
+        $parentId = $typeMap[$bookingType] ?? null;
+
+        return [
+            'nullable',
+            Rule::exists('booking_categories', 'id')->where(function ($q) use ($parentId) {
+                if (!empty($parentId)) {
+                    $q->where('parent_id', $parentId);
+                } else {
+                    // booking_type map nahi hua to koi bhi category valid na maani jaye
+                    $q->whereRaw('1 = 0');
+                }
+            }),
+        ];
+    }
+
+    /**
      * Extract template-specific meta fields from request.
      * Fields prefixed with meta.* in the template config get saved to booking->meta.
      */
@@ -499,7 +561,8 @@ class BookingController extends Controller
         return [
             'title'          => 'required|string|max:255',
             'slug'           => $slugRule,
-            'category_id'    => 'nullable|exists:booking_categories,id',
+            // NOTE: category_id ka rule ab yahan se nahi, categoryValidationRule() se
+            // controller mein overwrite hota hai (booking_type ke hisab se filtered).
             'language'       => 'nullable|string|max:10',
             'booking_type'   => 'required|string|max:255',
             'status'         => 'nullable|in:draft,pending,published,rejected,inactive',
