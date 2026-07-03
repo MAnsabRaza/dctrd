@@ -9,6 +9,7 @@ use App\Models\BookingCategory;
 use App\Models\BookingOrder;
 use App\Models\Role;
 use App\Services\BookingTemplateConfig;
+use App\Services\BookingSubTemplateConfig;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,12 +49,17 @@ class BookingController extends Controller
         $userLanguages          = $this->getUserLanguages();
         $instructors            = $this->getInstructors();
 
-        // Template configs as JSON for JS dynamic field switching
+        // Template configs as JSON for JS dynamic field switching (Booking Type level)
         $templateConfigs = $this->buildTemplateConfigsForJs();
 
-        // NAYA: har parent (booking type) ke child categories ka JS-friendly map.
-        // Booking Type select hone par JS isi map se sirf usi parent ke children
-        // Category dropdown mein dikhata hai.
+        // NAYA: Category (subcategory/template) level config — 23 templates
+        // (Doctor Appointment, Clinic Visit, Event Tickets, ...). Key = category slug.
+        $subTemplateConfigs = $this->buildSubTemplateConfigsForJs();
+
+        // Har parent (booking type) ke child categories ka JS-friendly map
+        // (id + title + slug). Booking Type select hone par JS isi map se
+        // sirf usi parent ke children Category dropdown mein dikhata hai,
+        // aur slug se sahi sub-template (23 templates mein se) match karta hai.
         $categoriesByParent = $this->buildCategoriesByParentMap($childCategories);
 
         return view('admin.booking.booking', [
@@ -70,6 +76,7 @@ class BookingController extends Controller
             'userLanguages'          => $userLanguages,
             'instructors'            => $instructors,
             'templateConfigs'        => json_encode($templateConfigs),
+            'subTemplateConfigs'     => json_encode($subTemplateConfigs),
             'categoriesByParent'     => json_encode($categoriesByParent),
         ]);
     }
@@ -96,14 +103,22 @@ class BookingController extends Controller
     {
         $this->authorize('admin_booking_create');
 
-        // 1. Get template config for selected booking type
+        // 1. Get template config for selected booking type (parent level)
         $templateConfig = BookingTemplateConfig::for($request->booking_type ?? '');
 
-        // 2. Build validation rules: global rules merged with template-specific rules
-        //    + category_id rule jo booking_type (parent) se match karta ho
+        // 2. NAYA: agar selected category kisi specific sub-template (23
+        //    templates mein se) se match karti hai, uski config bhi lo.
+        $categorySlug   = $this->categorySlugFromId($request->category_id);
+        $subTemplate    = BookingSubTemplateConfig::forSlug($categorySlug);
+
+        // 3. Build validation rules: global + booking-type rules + (agar
+        //    mila to) sub-template rules. Sub-template rules baad mein
+        //    merge hoti hain taake wo required/optional ko override kar
+        //    saken (zyada specific config jeetni chahiye).
         $validationRules = array_merge(
             $this->globalValidationRules($request),
-            $templateConfig->rules()
+            $templateConfig->rules(),
+            $subTemplate ? $subTemplate->rules() : []
         );
         $validationRules['category_id'] = $this->categoryValidationRule($request->booking_type ?? '');
 
@@ -113,11 +128,16 @@ class BookingController extends Controller
 
         $nextOrder = (Booking::max('order') ?? 0) + 1;
 
-        // 3. Build meta: global meta + template-specific meta fields from request
+        // 4. Build meta: global meta + template-specific meta fields from request
         $meta = array_merge(
             $this->bookingMeta($request),
             $this->extractTemplateMeta($request, $templateConfig)
         );
+
+        // NAYA: price_unit — agar sub-template mila to uski price_unit ko
+        // priority do (booking-type level se zyada specific).
+        $resolvedPriceUnit = $request->price_unit
+            ?: ($subTemplate ? $subTemplate->priceUnit() : $templateConfig->priceUnitLabel());
 
         $booking = Booking::create([
             'creator_id'       => $request->creator_id ?: auth()->id(),
@@ -139,7 +159,7 @@ class BookingController extends Controller
             // Pricing
             'price'            => $request->price,
             'price_per'        => $request->price_per ?: null,
-            'price_unit'       => $request->price_unit ?: $templateConfig->priceUnitLabel(),
+            'price_unit'       => $resolvedPriceUnit,
             'discount_price'   => $request->discount_price ?: null,
             'currency'         => $request->currency ?? 'USD',
             'tax'              => $request->tax ?? 0,
@@ -209,8 +229,9 @@ class BookingController extends Controller
         $bookings    = Booking::orderBy('created_at', 'desc')->paginate(15);
 
         // Load template config for this booking's type
-        $templateConfig  = BookingTemplateConfig::for($editBooking->booking_type ?? '');
-        $templateConfigs = $this->buildTemplateConfigsForJs();
+        $templateConfig     = BookingTemplateConfig::for($editBooking->booking_type ?? '');
+        $templateConfigs    = $this->buildTemplateConfigsForJs();
+        $subTemplateConfigs = $this->buildSubTemplateConfigsForJs();
 
         $parentCategories = BookingCategory::whereNull('parent_id')
             ->where('status', 1)
@@ -229,8 +250,9 @@ class BookingController extends Controller
         $userLanguages          = $this->getUserLanguages();
         $instructors            = $this->getInstructors($editBooking->creator_id);
 
-        // NAYA: edit form ke liye bhi parent->children map chahiye taake
-        // saved booking_type ke hisab se sahi children dropdown mein aayein.
+        // Edit form ke liye bhi parent->children (id+title+slug) map chahiye
+        // taake saved booking_type + category ke hisab se sahi dropdown aur
+        // sahi sub-template (23 templates) dono load hon.
         $categoriesByParent = $this->buildCategoriesByParentMap($childCategories);
 
         return view('admin.booking.booking', [
@@ -249,6 +271,7 @@ class BookingController extends Controller
             'userLanguages'          => $userLanguages,
             'instructors'            => $instructors,
             'templateConfigs'        => json_encode($templateConfigs),
+            'subTemplateConfigs'     => json_encode($subTemplateConfigs),
             'categoriesByParent'     => json_encode($categoriesByParent),
         ]);
     }
@@ -262,9 +285,14 @@ class BookingController extends Controller
         $booking        = Booking::findOrFail($id);
         $templateConfig = BookingTemplateConfig::for($request->booking_type ?? $booking->booking_type ?? '');
 
+        // NAYA: sub-template (category level) config
+        $categorySlug = $this->categorySlugFromId($request->category_id ?? $booking->category_id);
+        $subTemplate  = BookingSubTemplateConfig::forSlug($categorySlug);
+
         $validationRules = array_merge(
             $this->globalValidationRules($request, $booking->id),
-            $templateConfig->rules()
+            $templateConfig->rules(),
+            $subTemplate ? $subTemplate->rules() : []
         );
         $validationRules['category_id'] = $this->categoryValidationRule($request->booking_type ?? $booking->booking_type ?? '');
 
@@ -279,6 +307,9 @@ class BookingController extends Controller
             $this->bookingMeta($request),
             $this->extractTemplateMeta($request, $templateConfig)
         );
+
+        $resolvedPriceUnit = $request->price_unit
+            ?: ($subTemplate ? $subTemplate->priceUnit() : $templateConfig->priceUnitLabel());
 
         $booking->update([
             'creator_id'       => $request->creator_id ?: $booking->creator_id,
@@ -297,7 +328,7 @@ class BookingController extends Controller
 
             'price'            => $request->price,
             'price_per'        => $request->price_per ?: null,
-            'price_unit'       => $request->price_unit ?: $templateConfig->priceUnitLabel(),
+            'price_unit'       => $resolvedPriceUnit,
             'discount_price'   => $request->discount_price ?: null,
             'currency'         => $request->currency ?? 'USD',
             'tax'              => $request->tax ?? 0,
@@ -447,8 +478,8 @@ class BookingController extends Controller
     // ── Private: Template config for JavaScript ───────────────────────
 
     /**
-     * Build a JS-friendly array of all template configs.
-     * Used by the frontend to switch form fields dynamically.
+     * Build a JS-friendly array of all Booking Type (parent level) configs.
+     * Used by the frontend to switch form sections dynamically.
      */
     private function buildTemplateConfigsForJs(): array
     {
@@ -475,9 +506,38 @@ class BookingController extends Controller
     }
 
     /**
+     * NAYA: Build a JS-friendly array of all 23 Category-level (sub-template)
+     * configs, keyed by category slug — e.g. 'doctor-appointment' => [...].
+     * Frontend JS isko use karke, jab admin category select kare, required/
+     * optional fields aur price unit ko further filter karta hai.
+     */
+    private function buildSubTemplateConfigsForJs(): array
+    {
+        $configs = [];
+        foreach (BookingSubTemplateConfig::all() as $slug => $raw) {
+            $sub            = BookingSubTemplateConfig::forSlug($slug);
+            $configs[$slug] = $sub->toArray();
+        }
+        return $configs;
+    }
+
+    /**
+     * NAYA: category_id se uska slug nikalna — sub-template match karne
+     * ke liye zaroori hai (validation + price_unit resolve karne ke liye).
+     */
+    private function categorySlugFromId($categoryId): ?string
+    {
+        if (empty($categoryId)) {
+            return null;
+        }
+        return BookingCategory::where('id', $categoryId)->value('slug');
+    }
+
+    /**
      * NAYA: har parent category id ke against uske active children
-     * (id + title) ka array — Category dropdown JS se filter karne ke liye.
-     * Format: [ parent_id => [ ['id'=>.., 'title'=>..], ... ], ... ]
+     * (id + title + slug) ka array — Category dropdown JS se filter
+     * karne ke liye, aur slug se 23-template config match karne ke liye.
+     * Format: [ parent_id => [ ['id'=>.., 'title'=>.., 'slug'=>..], ... ], ... ]
      */
     private function buildCategoriesByParentMap($childCategories): array
     {
@@ -486,13 +546,14 @@ class BookingController extends Controller
             $map[$child->parent_id][] = [
                 'id'    => $child->id,
                 'title' => $child->title,
+                'slug'  => $child->slug,
             ];
         }
         return $map;
     }
 
     /**
-     * NAYA: category_id validation rule — sirf usi parent ke children allow
+     * category_id validation rule — sirf usi parent ke children allow
      * hote hain jo selected booking_type se map hote hain. Invalid combination
      * (e.g. Doctors booking_type + Beauty subcategory) validation fail karega.
      */

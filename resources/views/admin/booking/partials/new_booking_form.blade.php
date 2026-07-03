@@ -1,17 +1,3 @@
-{{--
-  resources/views/admin/booking/partials/new_booking_form.blade.php
-
-  Dynamic form — booking_type select ke change par:
-    1. Template-specific field sections show/hide ho jaate hain
-    2. Required attributes dynamically set hote hain
-    3. Field labels update hote hain
-    4. Category dropdown SIRF selected Booking Type (parent) ke children/subcategories
-       se filter ho ke populate hoti hai — ye is fix ka core hissa hai.
-    5. Form puri tarah reset hoti hai naye booking pe
-
-  templateConfigs (JSON) aur categoriesByParent (JSON) controller se pass hote hain.
---}}
-
 @php
     $booking = $editBooking ?? null;
     $meta    = old('meta', $booking->meta ?? []);
@@ -33,10 +19,6 @@
     {{ csrf_field() }}
     <input type="hidden" name="creator_id" value="{{ auth()->id() }}">
 
-    {{-- ══════════════════════════════════════════════════════════════
-         SECTION 1 — Booking Type Selection (always visible, loads first)
-         Ye dropdown sirf PARENT categories / booking types dikhata hai.
-         ══════════════════════════════════════════════════════════════ --}}
     <div class="booking-section">
         <h3 class="booking-section-title">Booking Type</h3>
 
@@ -78,15 +60,12 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════════════════════════
-         SECTION 2 — Basic Information (always visible)
-         ══════════════════════════════════════════════════════════════ --}}
     <div class="booking-section" id="section-basic">
         <h3 class="booking-section-title">Basic Information</h3>
         <div class="row">
             <div class="col-12 col-lg-6">
 
-                <div class="form-group">
+                <div class="form-group" data-field-key="title">
                     <label class="input-label js-field-label" data-field="title">Title <span class="text-danger">*</span></label>
                     <input type="text" name="title" id="newBookingTitle"
                            value="{{ $field('title') }}"
@@ -104,17 +83,10 @@
                     @error('slug')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" data-field-key="category_id">
                     <label class="input-label">Category (Subcategory / Template) <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        {{--
-                            NAYA BEHAVIOUR:
-                            Ye select PEHLE khali/disabled hai. Jaise hi upar Booking Type
-                            select hoga, JS isko usi parent ke children (subcategories) se
-                            populate kar dega. Isliye yahan par server se sirf currently
-                            saved value (edit mode mein) ek option ki tarah pre-inject ki
-                            jaati hai, JS load hote hi ise repopulate/validate kar dega.
-                        --}}
+                     
                         <select id="bookingCategorySelect" name="category_id" data-plugin-selectTwo
                                 class="form-control @error('category_id') is-invalid @enderror"
                                 {{ empty($currentType) ? 'disabled' : '' }}>
@@ -122,7 +94,7 @@
                                 {{ empty($currentType) ? 'Pehle Booking Type select karein' : 'Select a Category' }}
                             </option>
                             @if(!empty($booking) && $booking->category)
-                                <option value="{{ $booking->category->id }}" selected>
+                                <option value="{{ $booking->category->id }}" data-slug="{{ $booking->category->slug }}" selected>
                                     {{ $booking->category->title }}
                                 </option>
                             @endif
@@ -136,6 +108,7 @@
                     <div class="text-gray-500 text-small mt-1">
                         Sirf usi Booking Type ki subcategories yahan dikhengi jo upar select ki gayi hai.
                     </div>
+                    <div class="text-primary text-small mt-1" id="subTemplateNote"></div>
                     @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
@@ -190,16 +163,16 @@
             </div>
 
             <div class="col-12 col-lg-6">
-                <div class="form-group">
+                <div class="form-group" data-field-key="requirements">
                     <label class="input-label js-field-label" data-field="requirements">
-                        Cancellation / Policy
+                        Cancellation / Policy <span class="text-danger js-dynamic-required" style="display:none">*</span>
                     </label>
                     <textarea name="requirements" class="form-control" rows="4"
                               placeholder="Cancellation or rescheduling policy...">{{ $field('requirements') }}</textarea>
                 </div>
 
-                <div class="form-group">
-                    <label class="input-label">Description</label>
+                <div class="form-group" data-field-key="description">
+                    <label class="input-label">Description <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <textarea name="description" class="summernote form-control"
                               placeholder="Detailed description (min 300 words)">{{ $field('description') }}</textarea>
                 </div>
@@ -207,11 +180,9 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════════════════════════
-         SECTION 3 — Location (toggle)
-         ══════════════════════════════════════════════════════════════ --}}
-    <div class="booking-section" id="section-location">
-        <h3 class="booking-section-title">Location</h3>
+   
+    <div class="booking-section" id="section-location" data-field-key="location_enabled">
+        <h3 class="booking-section-title">Location <span class="text-danger js-dynamic-required" style="display:none">*</span></h3>
         <div class="form-group d-flex align-items-center">
             <div class="custom-control custom-switch">
                 <input type="checkbox" name="location_enabled" id="newBookingLocationSwitch"
@@ -244,8 +215,8 @@
         <h3 class="booking-section-title js-section-title" data-section="staff">Staff / Provider</h3>
         <div class="row">
             <div class="col-12 col-md-6">
-                <div class="form-group">
-                    <label class="input-label js-field-label" data-field="staff_id">Staff / Provider</label>
+                <div class="form-group" data-field-key="staff_id">
+                    <label class="input-label js-field-label" data-field="staff_id">Staff / Provider <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="staff_id" data-plugin-selectTwo class="form-control">
                         <option value="">Select Staff / Provider</option>
                         @foreach($instructors ?? [] as $instructor)
@@ -265,8 +236,8 @@
         <h3 class="booking-section-title js-section-title" data-section="sub-type">Appointment / Service Type</h3>
         <div class="row">
             <div class="col-12 col-md-6">
-                <div class="form-group">
-                    <label class="input-label js-field-label" data-field="sub_type">Type</label>
+                <div class="form-group" data-field-key="sub_type">
+                    <label class="input-label js-field-label" data-field="sub_type">Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="sub_type" class="form-control js-sub-type-select">
                         <option value="">Select Type</option>
                         {{-- Options populated by JS based on template config --}}
@@ -275,9 +246,9 @@
             </div>
 
             {{-- Online meeting link (shown when sub_type=online) --}}
-            <div class="col-12 col-md-6 js-online-link-field" style="display:none">
+            <div class="col-12 col-md-6 js-online-link-field" style="display:none" data-field-key="meta.online_link">
                 <div class="form-group">
-                    <label class="input-label">Online Meeting Link</label>
+                    <label class="input-label">Online Meeting Link <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="url" name="meta[online_link]"
                            value="{{ $metaField('online_link') }}"
                            class="form-control" placeholder="https://meet.example.com/...">
@@ -293,10 +264,10 @@
             Time slots are managed separately after saving. Set duration and buffer times here.
         </p>
         <div class="row">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="duration_minutes">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="duration_minutes">
-                        Duration (minutes) <span class="text-danger js-required-star" style="display:none">*</span>
+                        Duration (minutes) <span class="text-danger js-dynamic-required" style="display:none">*</span>
                     </label>
                     <input type="number" name="duration_minutes" min="5" max="480"
                            value="{{ $field('duration_minutes') }}" class="form-control"
@@ -341,16 +312,16 @@
             Set the default date range for this listing. Customers will pick their own dates at checkout.
         </p>
         <div class="row">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.check_in_date">
                 <div class="form-group">
-                    <label class="input-label js-field-label" data-field="meta.check_in_date">Check-in / Pickup Date</label>
+                    <label class="input-label js-field-label" data-field="meta.check_in_date">Check-in / Pickup Date <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="date" name="meta[check_in_date]"
                            value="{{ $metaField('check_in_date') }}" class="form-control">
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.check_out_date">
                 <div class="form-group">
-                    <label class="input-label js-field-label" data-field="meta.check_out_date">Check-out / Return Date</label>
+                    <label class="input-label js-field-label" data-field="meta.check_out_date">Check-out / Return Date <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="date" name="meta[check_out_date]"
                            value="{{ $metaField('check_out_date') }}" class="form-control">
                 </div>
@@ -362,15 +333,15 @@
     <div class="booking-section booking-type-section" data-template-section="accommodation" style="display:none">
         <h3 class="booking-section-title">Accommodation Details</h3>
         <div class="row">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.room_type">
                 <div class="form-group">
-                    <label class="input-label">Room / Unit Type</label>
+                    <label class="input-label">Room / Unit Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[room_type]"
                            value="{{ $metaField('room_type') }}"
                            class="form-control" placeholder="e.g. Deluxe Room, Studio, Villa">
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="price">
                 <div class="form-group">
                     <label class="input-label">Price per Night <span class="text-danger">*</span></label>
                     <input type="number" name="price" step="0.01" min="0"
@@ -386,37 +357,37 @@
                            value="{{ $field('price_per') }}" class="form-control">
                 </div>
             </div>
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-3" data-field-key="min_persons">
                 <div class="form-group">
                     <label class="input-label">Min Guests</label>
                     <input type="number" name="min_persons" min="1"
                            value="{{ $field('min_persons', 1) }}" class="form-control">
                 </div>
             </div>
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-3" data-field-key="max_persons">
                 <div class="form-group">
-                    <label class="input-label">Max Guests (Adults) <span class="text-danger">*</span></label>
+                    <label class="input-label">Max Guests (Adults) <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="number" name="max_persons" min="1"
                            value="{{ $field('max_persons') }}" class="form-control js-required-for-type" data-type="accommodation">
                 </div>
             </div>
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-3" data-field-key="max_children">
                 <div class="form-group">
                     <label class="input-label">Max Children</label>
                     <input type="number" name="max_children" min="0"
                            value="{{ $field('max_children') }}" class="form-control">
                 </div>
             </div>
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-3" data-field-key="capacity">
                 <div class="form-group">
-                    <label class="input-label">Room Capacity</label>
+                    <label class="input-label">Room Capacity <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="number" name="capacity" min="1"
                            value="{{ $field('capacity') }}" class="form-control">
                 </div>
             </div>
-            <div class="col-12">
+            <div class="col-12" data-field-key="meta.amenities">
                 <div class="form-group">
-                    <label class="input-label">Amenities</label>
+                    <label class="input-label">Amenities <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <div class="d-flex flex-wrap gap-2" id="amenitiesCheckboxes">
                         @php
                             $amenityOptions = ['wifi','pool','parking','gym','spa','breakfast','ac','kitchen','tv','washer'];
@@ -450,9 +421,9 @@
                            value="{{ $field('capacity') }}" class="form-control">
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="inventory">
                 <div class="form-group">
-                    <label class="input-label">Available Tickets</label>
+                    <label class="input-label">Available Tickets <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="number" name="inventory" min="0"
                            value="{{ $field('inventory') }}" class="form-control"
                            placeholder="Leave blank = same as capacity">
@@ -465,9 +436,9 @@
                            value="{{ $field('duration_minutes') }}" class="form-control">
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.venue_type">
                 <div class="form-group">
-                    <label class="input-label">Venue Type</label>
+                    <label class="input-label">Venue Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="meta[venue_type]" class="form-control">
                         <option value="">Select</option>
                         <option value="indoor"   {{ $metaField('venue_type') == 'indoor'   ? 'selected' : '' }}>Indoor</option>
@@ -477,16 +448,16 @@
                     </select>
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.organizer">
                 <div class="form-group">
-                    <label class="input-label">Organizer / Provider</label>
+                    <label class="input-label">Organizer / Provider <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[organizer]"
                            value="{{ $metaField('organizer') }}" class="form-control">
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.specifications">
                 <div class="form-group">
-                    <label class="input-label">Specifications</label>
+                    <label class="input-label">Specifications <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[specifications]"
                            value="{{ $metaField('specifications') }}"
                            class="form-control" placeholder="e.g. Family-friendly, 18+, Outdoor shoes required">
@@ -499,9 +470,9 @@
     <div class="booking-section booking-type-section" data-template-section="automotive" style="display:none">
         <h3 class="booking-section-title">Automotive Details</h3>
         <div class="row">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.vehicle_type">
                 <div class="form-group">
-                    <label class="input-label">Vehicle Type</label>
+                    <label class="input-label">Vehicle Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[vehicle_type]"
                            value="{{ $metaField('vehicle_type') }}"
                            class="form-control" placeholder="e.g. Sedan, SUV, Motorcycle">
@@ -511,23 +482,23 @@
             {{-- Rental fields --}}
             <div class="col-12 js-automotive-rental" style="display:none">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-4" data-field-key="meta.pickup_location">
                         <div class="form-group">
-                            <label class="input-label">Pickup Location</label>
+                            <label class="input-label">Pickup Location <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[pickup_location]"
                                    value="{{ $metaField('pickup_location') }}" class="form-control">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4" data-field-key="meta.dropoff_location">
                         <div class="form-group">
-                            <label class="input-label">Drop-off Location</label>
+                            <label class="input-label">Drop-off Location <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[dropoff_location]"
                                    value="{{ $metaField('dropoff_location') }}" class="form-control">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4" data-field-key="meta.vehicle_specs">
                         <div class="form-group">
-                            <label class="input-label">Vehicle Specs</label>
+                            <label class="input-label">Vehicle Specs <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[vehicle_specs]"
                                    value="{{ $metaField('vehicle_specs') }}"
                                    class="form-control" placeholder="e.g. 5 seats, automatic, petrol">
@@ -539,17 +510,17 @@
             {{-- Service / mechanic fields --}}
             <div class="col-12 js-automotive-service" style="display:none">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-6" data-field-key="meta.service_type">
                         <div class="form-group">
-                            <label class="input-label">Service Type</label>
+                            <label class="input-label">Service Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[service_type]"
                                    value="{{ $metaField('service_type') }}"
                                    class="form-control" placeholder="e.g. Oil change, Brake service, AC repair">
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" data-field-key="meta.required_notes">
                         <div class="form-group">
-                            <label class="input-label">Required Notes / Vehicle Details</label>
+                            <label class="input-label">Required Notes / Vehicle Details <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[required_notes]"
                                    value="{{ $metaField('required_notes') }}"
                                    class="form-control" placeholder="License plate, model year, issue description">
@@ -564,9 +535,9 @@
     <div class="booking-section booking-type-section" data-template-section="education" style="display:none">
         <h3 class="booking-section-title">Education / Training Details</h3>
         <div class="row">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.level">
                 <div class="form-group">
-                    <label class="input-label">Level</label>
+                    <label class="input-label">Level <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="meta[level]" class="form-control">
                         <option value="">Select Level</option>
                         <option value="beginner"     {{ $metaField('level') == 'beginner'     ? 'selected' : '' }}>Beginner</option>
@@ -591,9 +562,9 @@
                            value="{{ $field('inventory') }}" class="form-control">
                 </div>
             </div>
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-6" data-field-key="meta.prerequisites">
                 <div class="form-group">
-                    <label class="input-label">Prerequisites</label>
+                    <label class="input-label">Prerequisites <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[prerequisites]"
                            value="{{ $metaField('prerequisites') }}"
                            class="form-control" placeholder="e.g. Basic English required">
@@ -606,9 +577,9 @@
     <div class="booking-section booking-type-section" data-template-section="professional" style="display:none">
         <h3 class="booking-section-title">Professional Service Details</h3>
         <div class="row">
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-6" data-field-key="meta.required_docs">
                 <div class="form-group">
-                    <label class="input-label">Required Notes / Documents</label>
+                    <label class="input-label">Required Notes / Documents <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <textarea name="meta[required_docs]" class="form-control" rows="3"
                               placeholder="e.g. Please bring your last tax return, NDA required">{{ $metaField('required_docs') }}</textarea>
                 </div>
@@ -620,9 +591,9 @@
     <div class="booking-section booking-type-section" data-template-section="doctors" style="display:none">
         <h3 class="booking-section-title">Doctor / Clinic Details</h3>
         <div class="row">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.appointment_type">
                 <div class="form-group">
-                    <label class="input-label">Service Type</label>
+                    <label class="input-label">Service Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="meta[appointment_type]" class="form-control">
                         <option value="">Select</option>
                         <option value="consultation" {{ $metaField('appointment_type') == 'consultation' ? 'selected' : '' }}>Consultation</option>
@@ -632,9 +603,9 @@
                     </select>
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="meta.payment_option">
                 <div class="form-group">
-                    <label class="input-label">Payment Option</label>
+                    <label class="input-label">Payment Option <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="meta[payment_option]" class="form-control">
                         <option value="">Select</option>
                         <option value="per_appointment" {{ $metaField('payment_option') == 'per_appointment' ? 'selected' : '' }}>Per Appointment</option>
@@ -647,8 +618,8 @@
     </div>
 
     {{-- ─── 4k: Beauty/Spa — extras ─── --}}
-    <div class="booking-section booking-type-section" data-template-section="beauty-extras" style="display:none">
-        <h3 class="booking-section-title">Extras / Add-ons</h3>
+    <div class="booking-section booking-type-section" data-template-section="beauty-extras" style="display:none" data-field-key="extras">
+        <h3 class="booking-section-title">Extras / Add-ons <span class="text-danger js-dynamic-required" style="display:none">*</span></h3>
         <p class="text-muted text-small mb-3">
             Add optional extras customers can select at checkout.
         </p>
@@ -722,7 +693,7 @@
             </div>
 
             {{-- Deposit --}}
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-3" data-field-key="deposit_enabled">
                 <div class="form-group d-flex align-items-center mt-4">
                     <div class="custom-control custom-switch">
                         <input type="checkbox" name="deposit_enabled" id="booking_deposit_enabled"
@@ -817,12 +788,15 @@
 (function () {
     'use strict';
 
-    // Template configs passed from controller as JSON
+    // Template configs passed from controller as JSON (Booking Type level)
     var TEMPLATE_CONFIGS = {!! $templateConfigs ?? '{}' !!};
 
-    // NAYA: Booking Type (slug) => parent category id map, aur
-    // parent category id => uske children [{id,title}] map.
-    // Ye dono milke Category dropdown ko dynamically filter karte hain.
+    // NAYA: Sub-template configs (Category level) — key = category slug.
+    // Ye woh 23 templates hain (Doctor Appointment, Clinic Visit, ...).
+    var SUB_TEMPLATE_CONFIGS = {!! $subTemplateConfigs ?? '{}' !!};
+
+    // Booking Type (slug) => parent category id map, aur
+    // parent category id => uske children [{id,title,slug}] map.
     var TYPE_CATEGORY_MAP    = {!! json_encode($bookingTypeCategoryMap ?? []) !!};
     var CATEGORIES_BY_PARENT = {!! $categoriesByParent ?? '{}' !!};
     var CURRENT_CATEGORY_ID  = {!! !empty($currentCategoryId) ? json_encode((string) $currentCategoryId) : 'null' !!};
@@ -882,17 +856,18 @@
         select.appendChild(makeOption('', 'Select a Category'));
         children.forEach(function (cat) {
             var isSelected = selectedCategoryId && String(selectedCategoryId) === String(cat.id);
-            select.appendChild(makeOption(cat.id, cat.title, isSelected));
+            select.appendChild(makeOption(cat.id, cat.title, isSelected, cat.slug));
         });
 
         triggerSelectTwoRefresh(select);
     }
 
-    function makeOption(value, label, selected) {
+    function makeOption(value, label, selected, slug) {
         var opt = document.createElement('option');
         opt.value = value;
         opt.textContent = label;
         if (selected) opt.selected = true;
+        if (slug) opt.dataset.slug = slug;
         return opt;
     }
 
@@ -909,12 +884,13 @@
         }
     }
 
-    // ─── Main switch function ─────────────────────────────────────────
+    // ─── Main switch function (Booking Type level) ─────────────────────
 
     function applyTemplate(type) {
         if (!type) {
             hideAllSections();
             populateCategoryOptions('', null);
+            resetSubTemplate();
             return;
         }
 
@@ -930,7 +906,7 @@
             if (el) el.style.display = '';
         });
 
-        // 3. Update price unit label
+        // 3. Update price unit label (default, category select ye override kar sakta hai)
         var priceLabel = config.price_unit_label || 'per booking';
         document.querySelectorAll('.js-price-unit-label').forEach(function (el) {
             el.textContent = priceLabel;
@@ -945,10 +921,10 @@
             document.querySelectorAll('.js-field-label').forEach(function (el) {
                 var fieldKey = el.dataset.field;
                 if (config.field_labels[fieldKey]) {
-                    // Keep the asterisk span if it exists
-                    var star = el.querySelector('.text-danger');
+                    // Keep the asterisk span(s) if they exist
+                    var stars = el.querySelectorAll('.text-danger');
                     el.textContent = config.field_labels[fieldKey] + ' ';
-                    if (star) el.appendChild(star);
+                    stars.forEach(function (star) { el.appendChild(star); });
                 }
             });
         }
@@ -956,7 +932,7 @@
         // 5. Build sub-type select options
         buildSubTypeOptions(type);
 
-        // 6. NAYA: Category dropdown ko sirf isi parent ke children se filter karo
+        // 6. Category dropdown ko sirf isi parent ke children se filter karo
         populateCategoryOptions(type, CURRENT_CATEGORY_ID);
 
         // 7. Apply section title overrides
@@ -970,12 +946,111 @@
         var note = config.meta && config.meta.filter_note ? config.meta.filter_note : '';
         var noteEl = document.getElementById('bookingTypeNote');
         if (noteEl) noteEl.textContent = note;
+
+        // 9. Booking Type badalte hi purana category-level (sub-template)
+        //    filtering reset kar do — jab tak naya category select na ho.
+        resetSubTemplate();
     }
 
     function hideAllSections() {
         document.querySelectorAll('[data-template-section]').forEach(function (el) {
             el.style.display = 'none';
         });
+    }
+
+    // ─── NAYA: Sub-template (Category level) switch function ───────────
+    //
+    // Jab admin Category select kare (e.g. "Doctor Appointment"), is
+    // function ko us category ke `slug` ke sath call kiya jata hai.
+    // Ye SUB_TEMPLATE_CONFIGS se us template ki config nikalta hai aur:
+    //   - jo fields us template ke "required" mein hain -> show + required
+    //   - jo fields "optional" mein hain               -> show, required nahi
+    //   - jo fields dono mein nahi hain (irrelevant)     -> hide kar deta hai
+    //   - price unit ko template ke price_unit se update karta hai
+    //
+    // Agar category kisi bhi known template se match na ho (custom
+    // category jo 23 wali list mein nahi), to sub-template filtering
+    // skip ho jati hai aur sab kuch Booking-Type level par hi chalta hai.
+
+    function applySubTemplate(categorySlug) {
+        var allFieldEls = document.querySelectorAll('[data-field-key]');
+        var subConfig   = categorySlug ? SUB_TEMPLATE_CONFIGS[categorySlug] : null;
+
+        var noteEl = document.getElementById('subTemplateNote');
+
+        if (!subConfig) {
+            // Koi specific sub-template match nahi hua -> sab visible rehne do,
+            // koi extra required mat lagao (sirf booking-type level fields
+            // ke defaults chalte rahenge).
+            allFieldEls.forEach(function (el) {
+                el.style.display = '';
+                setDynamicRequired(el, false);
+            });
+            if (noteEl) noteEl.textContent = '';
+            return;
+        }
+
+        var required = subConfig.required || [];
+        var optional = subConfig.optional || [];
+
+        allFieldEls.forEach(function (el) {
+            var key = el.dataset.fieldKey;
+            if (required.indexOf(key) !== -1) {
+                el.style.display = '';
+                setDynamicRequired(el, true);
+            } else if (optional.indexOf(key) !== -1) {
+                el.style.display = '';
+                setDynamicRequired(el, false);
+            } else {
+                el.style.display = 'none';
+                setDynamicRequired(el, false);
+            }
+        });
+
+        // Price unit: template ki value se override karo
+        if (subConfig.price_unit) {
+            document.querySelectorAll('.js-price-unit-label').forEach(function (el) {
+                el.textContent = subConfig.price_unit;
+            });
+            var priceUnitInput = document.querySelector('.js-price-unit-input');
+            if (priceUnitInput) {
+                priceUnitInput.value = subConfig.price_unit;
+            }
+        }
+
+        // Informational note: label + checkout modules
+        if (noteEl) {
+            var modules = (subConfig.checkout_modules || []).join(', ');
+            noteEl.textContent = 'Template: ' + subConfig.label +
+                (modules ? ' — Checkout modules: ' + modules : '');
+        }
+    }
+
+    function resetSubTemplate() {
+        document.querySelectorAll('[data-field-key]').forEach(function (el) {
+            el.style.display = '';
+            setDynamicRequired(el, false);
+        });
+        var noteEl = document.getElementById('subTemplateNote');
+        if (noteEl) noteEl.textContent = '';
+    }
+
+    // Ek field-group ke andar required/optional star show/hide karo, aur
+    // agar iske andar koi actual input/select/textarea hai to uska
+    // `required` attribute bhi set/remove karo (checkbox/switch fields
+    // ko required attribute nahi diya jata).
+    function setDynamicRequired(fieldGroupEl, isRequired) {
+        var star = fieldGroupEl.querySelector('.js-dynamic-required');
+        if (star) star.style.display = isRequired ? '' : 'none';
+
+        var input = fieldGroupEl.querySelector('input, select, textarea');
+        if (input && input.type !== 'checkbox' && input.type !== 'hidden') {
+            if (isRequired) {
+                input.setAttribute('required', 'required');
+            } else {
+                input.removeAttribute('required');
+            }
+        }
     }
 
     // ─── Sub-type options ─────────────────────────────────────────────
@@ -1115,6 +1190,38 @@
                 toggleAutomotiveFields('{{ $booking->sub_type }}');
             }
         @endif
+    }
+
+    // ─── NAYA: Category (subcategory/template) change ──────────────────
+
+    var categorySelect = document.getElementById('bookingCategorySelect');
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function () {
+            var selectedOption = this.options[this.selectedIndex];
+            var slug = selectedOption ? selectedOption.dataset.slug : null;
+            applySubTemplate(slug || null);
+        });
+
+        // select2 use hone ki wajah se native 'change' kabhi kabhi select2's
+        // apne event se replace ho jata hai — is liye select2 ka event bhi sunte hain.
+        if (window.jQuery) {
+            window.jQuery(categorySelect).on('select2:select', function (e) {
+                var slug = e.params && e.params.data ? e.params.data.slug : null;
+                if (!slug) {
+                    var opt = categorySelect.querySelector('option[value="' + e.params.data.id + '"]');
+                    slug = opt ? opt.dataset.slug : null;
+                }
+                applySubTemplate(slug || null);
+            });
+        }
+
+        // Page load par (edit mode mein) agar category pehle se selected hai
+        // to uska sub-template bhi turant apply karo.
+        var preSelectedOption = categorySelect.options[categorySelect.selectedIndex];
+        if (preSelectedOption && preSelectedOption.dataset.slug) {
+            applySubTemplate(preSelectedOption.dataset.slug);
+        }
     }
 
     // ─── Tags: auto-comma on Enter ────────────────────────────────────
