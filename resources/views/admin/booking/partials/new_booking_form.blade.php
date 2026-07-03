@@ -1075,6 +1075,8 @@
             }
         });
 
+        syncDynamicContainers();
+
         // Price unit: template ki value se override karo
         if (subConfig.price_unit) {
             document.querySelectorAll('.js-price-unit-label').forEach(function (el) {
@@ -1092,6 +1094,30 @@
             noteEl.textContent = 'Template: ' + subConfig.label +
                 (modules ? ' — Checkout modules: ' + modules : '');
         }
+    }
+
+    function syncDynamicContainers() {
+        document.querySelectorAll('[data-field-key]').forEach(function (fieldEl) {
+            if (fieldEl.style.display === 'none') return;
+
+            var conditionalWrapper = fieldEl.closest('.js-automotive-rental, .js-automotive-service');
+            if (conditionalWrapper) {
+                conditionalWrapper.style.display = '';
+            }
+
+            var section = fieldEl.closest('[data-template-section]');
+            if (section) {
+                section.style.display = '';
+
+                if (section.dataset.templateSection === 'automotive') {
+                    var typeSelect = document.getElementById('bookingTypeSelect');
+                    var title = section.querySelector('.booking-section-title');
+                    if (title && typeSelect && typeSelect.value !== 'automotive') {
+                        title.textContent = 'Service Details';
+                    }
+                }
+            }
+        });
     }
 
     function resetSubTemplate() {

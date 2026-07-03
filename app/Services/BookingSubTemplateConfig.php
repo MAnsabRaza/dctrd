@@ -22,13 +22,42 @@ namespace App\Services;
  */
 class BookingSubTemplateConfig
 {
+    private const ALIASES = [
+        'beauty-salon' => 'salon-appointment',
+        'spa-massage' => 'spa-treatment',
+        'wellness-therapy' => 'beauty-package-membership',
+        'fitness-trainer-class' => 'group-fitness-class',
+        'fitness-trainer' => 'group-fitness-class',
+        'fitness-class' => 'group-fitness-class',
+        'medical-test' => 'medical-test-diagnostic',
+        'diagnostic' => 'medical-test-diagnostic',
+        'therapy-rehab' => 'therapy-rehabilitation',
+        'entertainment' => 'entertainment-activity',
+        'activity' => 'entertainment-activity',
+        'tour' => 'tour-experience',
+        'experience' => 'tour-experience',
+        'hotel-room' => 'hotel-room-booking',
+        'bnb' => 'bnb-guesthouse',
+        'guesthouse' => 'bnb-guesthouse',
+        'mechanic-repair' => 'mechanic-repair-appointment',
+        'repair-appointment' => 'mechanic-repair-appointment',
+        'technical-support' => 'technical-support-inspection',
+        'inspection' => 'technical-support-inspection',
+        'legal' => 'legal-appointment',
+        'accounting-finance' => 'accounting-finance-insurance',
+        'finance-insurance' => 'accounting-finance-insurance',
+        'private-lesson' => 'tutoring-private-lesson',
+        'training-class' => 'training-class-workshop',
+        'workshop' => 'training-class-workshop',
+    ];
+
     private const TEMPLATES = [
 
         // ── Doctors / Clinics ───────────────────────────────────────
         'doctor-appointment' => [
             'label'       => 'Doctor Appointment',
             'parent_type' => 'doctors-clinics',
-            'required'    => ['staff_id', 'meta.appointment_type', 'duration_minutes'],
+            'required'    => ['staff_id', 'meta.appointment_type', 'duration_minutes', 'price'],
             'optional'    => ['description', 'meta.payment_option', 'meta.online_link', 'meta.required_docs'],
             'field_labels' => [
                 'title'                 => 'Doctor / Clinic Name',
@@ -48,7 +77,7 @@ class BookingSubTemplateConfig
         'clinic-visit' => [
             'label'       => 'Clinic Visit',
             'parent_type' => 'doctors-clinics',
-            'required'    => ['meta.service_type', 'staff_id'],
+            'required'    => ['meta.service_type', 'duration_minutes', 'staff_id', 'price'],
             'optional'    => ['meta.room_type', 'capacity', 'meta.prerequisites', 'location_enabled'],
             'field_labels' => [
                 'title'               => 'Clinic / Department Name',
@@ -67,7 +96,7 @@ class BookingSubTemplateConfig
         'medical-test-diagnostic' => [
             'label'       => 'Medical Test / Diagnostic',
             'parent_type' => 'doctors-clinics',
-            'required'    => ['meta.service_type', 'location_enabled', 'duration_minutes'],
+            'required'    => ['meta.service_type', 'location_enabled', 'duration_minutes', 'price'],
             'optional'    => ['requirements', 'meta.required_notes', 'meta.payment_option'],
             'field_labels' => [
                 'title'                => 'Test / Diagnostic Name',
@@ -86,7 +115,7 @@ class BookingSubTemplateConfig
         'therapy-rehabilitation' => [
             'label'       => 'Therapy / Rehabilitation',
             'parent_type' => 'doctors-clinics',
-            'required'    => ['meta.service_type', 'staff_id', 'duration_minutes'],
+            'required'    => ['meta.service_type', 'staff_id', 'duration_minutes', 'price'],
             'optional'    => ['extras', 'meta.prerequisites', 'requirements'],
             'field_labels' => [
                 'title'               => 'Therapy / Program Name',
@@ -106,7 +135,7 @@ class BookingSubTemplateConfig
         'event-tickets' => [
             'label'       => 'Event Tickets',
             'parent_type' => 'events',
-            'required'    => ['location_enabled', 'capacity'],
+            'required'    => ['location_enabled', 'capacity', 'price'],
             'optional'    => ['sub_type', 'meta.specifications', 'meta.venue_type', 'extras', 'requirements'],
             'field_labels' => [
                 'title'                => 'Event Title',
@@ -126,7 +155,7 @@ class BookingSubTemplateConfig
         'venue-booking' => [
             'label'       => 'Venue Booking',
             'parent_type' => 'events',
-            'required'    => ['location_enabled', 'capacity'],
+            'required'    => ['meta.room_type', 'location_enabled', 'capacity', 'price'],
             'optional'    => ['meta.specifications', 'deposit_enabled', 'extras', 'requirements'],
             'field_labels' => [
                 'title'                => 'Venue Name',
@@ -145,7 +174,7 @@ class BookingSubTemplateConfig
         'entertainment-activity' => [
             'label'       => 'Entertainment / Activity',
             'parent_type' => 'events',
-            'required'    => ['meta.service_type', 'duration_minutes', 'capacity', 'staff_id'],
+            'required'    => ['meta.service_type', 'duration_minutes', 'capacity', 'staff_id', 'price'],
             'optional'    => ['extras', 'meta.level', 'meta.required_notes', 'requirements'],
             'field_labels' => [
                 'title'                => 'Activity Name',
@@ -166,7 +195,7 @@ class BookingSubTemplateConfig
         'tour-experience' => [
             'label'       => 'Tour / Experience',
             'parent_type' => 'events',
-            'required'    => ['location_enabled', 'meta.pickup_location', 'staff_id', 'capacity'],
+            'required'    => ['location_enabled', 'meta.pickup_location', 'staff_id', 'capacity', 'price'],
             'optional'    => ['requirements', 'extras', 'meta.dropoff_location', 'meta.prerequisites'],
             'field_labels' => [
                 'title'                  => 'Tour Name',
@@ -188,7 +217,7 @@ class BookingSubTemplateConfig
         'hotel-room-booking' => [
             'label'       => 'Hotel Room Booking',
             'parent_type' => 'accommodation',
-            'required'    => ['meta.check_in_date', 'meta.check_out_date', 'meta.room_type', 'max_persons'],
+            'required'    => ['meta.check_in_date', 'meta.check_out_date', 'meta.room_type', 'max_persons', 'price'],
             'optional'    => ['meta.amenities', 'extras', 'max_children', 'requirements'],
             'field_labels' => [
                 'title'                => 'Hotel / Room Name',
@@ -209,7 +238,7 @@ class BookingSubTemplateConfig
         'short-term-rental' => [
             'label'       => 'Short-term Rental',
             'parent_type' => 'accommodation',
-            'required'    => ['meta.room_type', 'meta.check_in_date', 'meta.check_out_date', 'max_persons'],
+            'required'    => ['meta.room_type', 'meta.check_in_date', 'meta.check_out_date', 'max_persons', 'price'],
             'optional'    => ['deposit_enabled', 'extras', 'requirements', 'location_enabled'],
             'field_labels' => [
                 'title'                => 'Property Name',
@@ -230,7 +259,7 @@ class BookingSubTemplateConfig
         'bnb-guesthouse' => [
             'label'       => 'B&B / Guesthouse',
             'parent_type' => 'accommodation',
-            'required'    => ['meta.room_type', 'meta.check_in_date', 'meta.check_out_date', 'max_persons'],
+            'required'    => ['meta.room_type', 'meta.check_in_date', 'meta.check_out_date', 'max_persons', 'price'],
             'optional'    => ['meta.amenities', 'requirements', 'extras'],
             'field_labels' => [
                 'title'                => 'Guesthouse Name',
@@ -251,7 +280,7 @@ class BookingSubTemplateConfig
         'mechanic-repair-appointment' => [
             'label'       => 'Mechanic / Repair Appointment',
             'parent_type' => 'automotive',
-            'required'    => ['meta.service_type', 'meta.vehicle_type', 'duration_minutes', 'staff_id'],
+            'required'    => ['meta.service_type', 'meta.vehicle_type', 'duration_minutes', 'staff_id', 'price'],
             'optional'    => ['meta.required_notes', 'meta.pickup_location', 'meta.dropoff_location'],
             'field_labels' => [
                 'title'                  => 'Service Title',
@@ -271,7 +300,7 @@ class BookingSubTemplateConfig
         'vehicle-rental' => [
             'label'       => 'Vehicle Rental',
             'parent_type' => 'automotive',
-            'required'    => ['meta.vehicle_type', 'meta.pickup_location', 'meta.dropoff_location'],
+            'required'    => ['meta.vehicle_type', 'meta.pickup_location', 'meta.dropoff_location', 'price'],
             'optional'    => ['deposit_enabled', 'meta.vehicle_specs', 'extras', 'requirements'],
             'field_labels' => [
                 'title'                  => 'Vehicle Name',
@@ -291,7 +320,7 @@ class BookingSubTemplateConfig
         'technical-support-inspection' => [
             'label'       => 'Technical Support / Inspection',
             'parent_type' => 'automotive',
-            'required'    => ['meta.vehicle_type', 'location_enabled', 'staff_id', 'duration_minutes'],
+            'required'    => ['meta.vehicle_type', 'location_enabled', 'staff_id', 'duration_minutes', 'price'],
             'optional'    => ['meta.required_notes', 'sub_type'],
             'field_labels' => [
                 'title'                => 'Inspection / Support Title',
@@ -311,7 +340,7 @@ class BookingSubTemplateConfig
         'consulting-session' => [
             'label'       => 'Consulting Session',
             'parent_type' => 'professional-services',
-            'required'    => ['staff_id', 'meta.service_type'],
+            'required'    => ['staff_id', 'meta.service_type', 'duration_minutes', 'price'],
             'optional'    => ['sub_type', 'meta.prerequisites', 'meta.online_link', 'meta.required_docs'],
             'field_labels' => [
                 'title'               => 'Consulting Service Name',
@@ -330,7 +359,7 @@ class BookingSubTemplateConfig
         'legal-appointment' => [
             'label'       => 'Legal Appointment',
             'parent_type' => 'professional-services',
-            'required'    => ['staff_id', 'meta.service_type', 'sub_type'],
+            'required'    => ['staff_id', 'meta.service_type', 'sub_type', 'duration_minutes', 'price'],
             'optional'    => ['meta.required_docs', 'meta.online_link'],
             'field_labels' => [
                 'title'                => 'Legal Service Name',
@@ -348,7 +377,7 @@ class BookingSubTemplateConfig
         'accounting-finance-insurance' => [
             'label'       => 'Accounting / Finance / Insurance',
             'parent_type' => 'professional-services',
-            'required'    => ['meta.service_type', 'staff_id', 'duration_minutes'],
+            'required'    => ['meta.service_type', 'staff_id', 'duration_minutes', 'price'],
             'optional'    => ['meta.required_docs', 'meta.prerequisites'],
             'field_labels' => [
                 'title'                => 'Service Name',
@@ -367,7 +396,7 @@ class BookingSubTemplateConfig
         'tutoring-private-lesson' => [
             'label'       => 'Tutoring / Private Lesson',
             'parent_type' => 'education-training',
-            'required'    => ['staff_id', 'meta.level', 'duration_minutes'],
+            'required'    => ['staff_id', 'meta.level', 'duration_minutes', 'price'],
             'optional'    => ['sub_type', 'requirements', 'meta.prerequisites'],
             'field_labels' => [
                 'title'               => 'Subject / Lesson Title',
@@ -386,7 +415,7 @@ class BookingSubTemplateConfig
         'training-class-workshop' => [
             'label'       => 'Training Class / Workshop',
             'parent_type' => 'education-training',
-            'required'    => ['staff_id', 'capacity'],
+            'required'    => ['staff_id', 'capacity', 'price'],
             'optional'    => ['meta.level', 'extras', 'meta.prerequisites', 'requirements'],
             'field_labels' => [
                 'title'               => 'Workshop / Class Title',
@@ -405,75 +434,86 @@ class BookingSubTemplateConfig
         // ── Beauty / Spa ─────────────────────────────────────────────
         // NOTE: proposed by extrapolation — screenshot table wasn't shared for this group.
         'salon-appointment' => [
-            'label'       => 'Salon Appointment (Haircut / Styling)',
+            'label'       => 'Beauty Salon',
             'parent_type' => 'beauty-spa',
-            'required'    => ['staff_id', 'duration_minutes'],
-            'optional'    => ['description', 'requirements', 'extras'],
+            'required'    => ['meta.service_type', 'staff_id', 'duration_minutes', 'price'],
+            'optional'    => ['extras', 'meta.room_type', 'buffer_before', 'buffer_after', 'location_enabled'],
             'field_labels' => [
                 'title'              => 'Service Name',
-                'staff_id'           => 'Stylist / Provider',
-                'duration_minutes'   => 'Service Duration',
+                'meta.service_type'  => 'Service Type',
+                'staff_id'           => 'Staff / Provider',
+                'duration_minutes'   => 'Duration',
                 'price'              => 'Base Price',
-                'description'        => 'Service Notes',
-                'requirements'       => 'Cancellation Policy',
+                'meta.room_type'     => 'Room / Chair Resource',
+                'buffer_before'      => 'Buffer Time Before',
+                'buffer_after'       => 'Buffer Time After',
+                'location_enabled'   => 'Location',
                 'extras'             => 'Add-ons',
             ],
-            'price_unit'       => 'per appointment',
-            'checkout_modules' => ['Hours', 'Staff Member', 'Extra Services', 'Cancellation Policy'],
+            'price_unit'       => 'per service / per appointment',
+            'checkout_modules' => ['Hours', 'Staff Member', 'Extra Services', 'Cancellation Policy', 'Message'],
         ],
 
         'spa-treatment' => [
-            'label'       => 'Spa / Massage Treatment',
+            'label'       => 'Spa / Massage',
             'parent_type' => 'beauty-spa',
-            'required'    => ['staff_id', 'duration_minutes'],
-            'optional'    => ['extras', 'requirements', 'capacity'],
+            'required'    => ['meta.service_type', 'staff_id', 'duration_minutes', 'price'],
+            'optional'    => ['meta.room_type', 'meta.required_notes', 'extras', 'meta.prerequisites', 'location_enabled'],
             'field_labels' => [
                 'title'             => 'Treatment Name',
+                'meta.service_type' => 'Treatment Type',
                 'staff_id'          => 'Therapist',
-                'duration_minutes'  => 'Treatment Duration',
+                'duration_minutes'  => 'Duration',
                 'price'             => 'Base Price',
+                'meta.room_type'    => 'Room / Resource',
+                'meta.required_notes' => 'Contraindications',
                 'extras'            => 'Add-ons',
-                'requirements'      => 'Cancellation Policy',
-                'capacity'          => 'Group Size',
+                'meta.prerequisites' => 'Package Option',
+                'location_enabled'  => 'Location',
             ],
-            'price_unit'       => 'per session',
+            'price_unit'       => 'per treatment / per session',
             'checkout_modules' => ['Hours', 'Staff Member', 'Extra Services', 'Cancellation Policy'],
         ],
 
         'group-fitness-class' => [
-            'label'       => 'Group Fitness / Wellness Class',
+            'label'       => 'Fitness Trainer / Class',
             'parent_type' => 'beauty-spa',
-            'required'    => ['staff_id', 'duration_minutes', 'capacity'],
-            'optional'    => ['extras', 'meta.level', 'requirements'],
+            'required'    => ['meta.service_type', 'staff_id', 'duration_minutes', 'capacity', 'price'],
+            'optional'    => ['meta.level', 'extras', 'requirements', 'max_children'],
             'field_labels' => [
-                'title'             => 'Class Name',
-                'staff_id'          => 'Instructor',
-                'duration_minutes'  => 'Class Duration',
-                'capacity'          => 'Class Capacity',
+                'title'             => 'Class / Training Name',
+                'meta.service_type' => 'Class / Training Type',
+                'staff_id'          => 'Trainer',
+                'duration_minutes'  => 'Duration',
+                'capacity'          => 'Capacity',
                 'price'             => 'Base Price',
-                'extras'            => 'Add-ons',
                 'meta.level'        => 'Level',
-                'requirements'      => 'Cancellation Policy',
+                'extras'            => 'Equipment',
+                'requirements'      => 'Recurring Schedule',
+                'max_children'      => 'Children Allowed',
             ],
             'price_unit'       => 'per class / per person',
-            'checkout_modules' => ['Hours', 'Staff Member', 'Persons/Guests', 'Extra Services'],
+            'checkout_modules' => ['Hours', 'Staff Member', 'Persons/Guests', 'Cancellation Policy'],
         ],
 
         'beauty-package-membership' => [
-            'label'       => 'Beauty Package / Membership',
+            'label'       => 'Wellness / Therapy',
             'parent_type' => 'beauty-spa',
-            'required'    => ['extras'],
-            'optional'    => ['staff_id', 'duration_minutes', 'requirements'],
+            'required'    => ['meta.service_type', 'staff_id', 'duration_minutes', 'price'],
+            'optional'    => ['meta.online_link', 'location_enabled', 'meta.prerequisites', 'requirements'],
             'field_labels' => [
-                'title'             => 'Package / Membership Name',
-                'extras'            => 'Package Items',
-                'price'             => 'Base Price',
-                'staff_id'          => 'Provider (optional)',
+                'title'             => 'Session Name',
+                'meta.service_type' => 'Session Type',
+                'staff_id'          => 'Practitioner',
                 'duration_minutes'  => 'Duration',
-                'requirements'      => 'Terms',
+                'price'             => 'Base Price',
+                'meta.online_link'  => 'Online / Offline',
+                'location_enabled'  => 'Location',
+                'meta.prerequisites' => 'Prerequisites',
+                'requirements'      => 'Recurring Sessions / Notes',
             ],
-            'price_unit'       => 'per package',
-            'checkout_modules' => ['Extra Services', 'Cancellation Policy', 'Message'],
+            'price_unit'       => 'per session',
+            'checkout_modules' => ['Hours', 'Staff Member', 'Cancellation Policy', 'Message'],
         ],
     ];
 
@@ -490,6 +530,9 @@ class BookingSubTemplateConfig
         'location_enabled'        => 'boolean',
         'deposit_enabled'         => 'boolean',
         'extras'                  => 'array',
+        'price'                   => 'numeric|min:0',
+        'buffer_before'           => 'integer|min:0',
+        'buffer_after'            => 'integer|min:0',
         'meta.appointment_type'   => 'string|max:100',
         'meta.payment_option'     => 'string|max:100',
         'meta.online_link'        => 'url',
@@ -522,20 +565,44 @@ class BookingSubTemplateConfig
 
     public static function forSlug(?string $slug): ?self
     {
-        if (empty($slug) || !isset(self::TEMPLATES[$slug])) {
+        if (empty($slug)) {
             return null;
         }
-        return new self($slug, self::TEMPLATES[$slug]);
+
+        $slug = self::normalizeSlug($slug);
+        $templateSlug = self::ALIASES[$slug] ?? $slug;
+
+        if (!isset(self::TEMPLATES[$templateSlug])) {
+            return null;
+        }
+
+        return new self($templateSlug, self::TEMPLATES[$templateSlug]);
     }
 
     public static function exists(string $slug): bool
     {
-        return isset(self::TEMPLATES[$slug]);
+        $slug = self::normalizeSlug($slug);
+        return isset(self::TEMPLATES[$slug]) || isset(self::ALIASES[$slug]);
     }
 
     public static function all(): array
     {
-        return self::TEMPLATES;
+        $templates = self::TEMPLATES;
+
+        foreach (self::ALIASES as $alias => $templateSlug) {
+            if (isset(self::TEMPLATES[$templateSlug])) {
+                $templates[$alias] = self::TEMPLATES[$templateSlug];
+            }
+        }
+
+        return $templates;
+    }
+
+    private static function normalizeSlug(string $slug): string
+    {
+        $slug = strtolower(trim($slug));
+        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+        return trim($slug, '-');
     }
 
     public static function slugsForParentType(string $parentType): array
