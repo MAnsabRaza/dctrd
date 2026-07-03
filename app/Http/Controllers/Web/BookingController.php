@@ -43,13 +43,17 @@ class BookingController extends Controller
             return $getListData;
         }
 
+        // NOTE: BookingCategory casts `status` as boolean (1/0 in the DB).
+        // Filtering with the string 'active' (as before) never matches any
+        // row, so parent categories (and their children) silently vanished
+        // from every filter. We now use the model's own active()/roots()
+        // scopes, which compare against boolean true correctly.
         $categories = BookingCategory::query()
-            ->whereNull('parent_id')
-            ->where('status', 'active')
+            ->roots()
+            ->active()
             ->with([
-                'children' => fn ($q) => $q->where('status', 'active')->orderBy('order', 'asc'),
+                'children' => fn ($q) => $q->active()->orderBy('order', 'asc'),
             ])
-            ->orderBy('order', 'asc')
             ->get();
 
         $categoryId = $request->get('category_id', null);
@@ -450,6 +454,7 @@ class BookingController extends Controller
 
         $childIds = BookingCategory::query()
             ->whereIn('parent_id', $ids)
+            ->active()
             ->pluck('id')
             ->toArray();
 
