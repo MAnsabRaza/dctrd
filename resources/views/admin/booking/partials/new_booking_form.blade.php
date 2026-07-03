@@ -84,7 +84,7 @@
                 </div>
 
                 <div class="form-group" data-field-key="category_id">
-                    <label class="input-label">Category (Subcategory / Template) <span class="text-danger">*</span></label>
+                    <label class="input-label js-field-label" data-field="category_id">Category (Subcategory / Template) <span class="text-danger">*</span></label>
                     <div class="input-group">
                      
                         <select id="bookingCategorySelect" name="category_id" data-plugin-selectTwo
@@ -172,7 +172,7 @@
                 </div>
 
                 <div class="form-group" data-field-key="description">
-                    <label class="input-label">Description <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="description">Description <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <textarea name="description" class="summernote form-control"
                               placeholder="Detailed description (min 300 words)">{{ $field('description') }}</textarea>
                 </div>
@@ -248,7 +248,7 @@
             {{-- Online meeting link (shown when sub_type=online) --}}
             <div class="col-12 col-md-6 js-online-link-field" style="display:none" data-field-key="meta.online_link">
                 <div class="form-group">
-                    <label class="input-label">Online Meeting Link <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.online_link">Online Meeting Link <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="url" name="meta[online_link]"
                            value="{{ $metaField('online_link') }}"
                            class="form-control" placeholder="https://meet.example.com/...">
@@ -335,7 +335,7 @@
         <div class="row">
             <div class="col-12 col-md-4" data-field-key="meta.room_type">
                 <div class="form-group">
-                    <label class="input-label">Room / Unit Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.room_type">Room / Unit Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[room_type]"
                            value="{{ $metaField('room_type') }}"
                            class="form-control" placeholder="e.g. Deluxe Room, Studio, Villa">
@@ -343,7 +343,7 @@
             </div>
             <div class="col-12 col-md-4" data-field-key="price">
                 <div class="form-group">
-                    <label class="input-label">Price per Night <span class="text-danger">*</span></label>
+                    <label class="input-label js-field-label" data-field="price">Price per Night <span class="text-danger">*</span></label>
                     <input type="number" name="price" step="0.01" min="0"
                            value="{{ $field('price', '0.00') }}"
                            class="form-control @error('price') is-invalid @enderror">
@@ -366,7 +366,7 @@
             </div>
             <div class="col-12 col-md-3" data-field-key="max_persons">
                 <div class="form-group">
-                    <label class="input-label">Max Guests (Adults) <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="max_persons">Max Guests (Adults) <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="number" name="max_persons" min="1"
                            value="{{ $field('max_persons') }}" class="form-control js-required-for-type" data-type="accommodation">
                 </div>
@@ -380,14 +380,14 @@
             </div>
             <div class="col-12 col-md-3" data-field-key="capacity">
                 <div class="form-group">
-                    <label class="input-label">Room Capacity <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="capacity">Room Capacity <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="number" name="capacity" min="1"
                            value="{{ $field('capacity') }}" class="form-control">
                 </div>
             </div>
             <div class="col-12" data-field-key="meta.amenities">
                 <div class="form-group">
-                    <label class="input-label">Amenities <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.amenities">Amenities <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <div class="d-flex flex-wrap gap-2" id="amenitiesCheckboxes">
                         @php
                             $amenityOptions = ['wifi','pool','parking','gym','spa','breakfast','ac','kitchen','tv','washer'];
@@ -423,7 +423,7 @@
             </div>
             <div class="col-12 col-md-4" data-field-key="inventory">
                 <div class="form-group">
-                    <label class="input-label">Available Tickets <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="inventory">Available Tickets <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="number" name="inventory" min="0"
                            value="{{ $field('inventory') }}" class="form-control"
                            placeholder="Leave blank = same as capacity">
@@ -438,7 +438,7 @@
             </div>
             <div class="col-12 col-md-4" data-field-key="meta.venue_type">
                 <div class="form-group">
-                    <label class="input-label">Venue Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.venue_type">Venue Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="meta[venue_type]" class="form-control">
                         <option value="">Select</option>
                         <option value="indoor"   {{ $metaField('venue_type') == 'indoor'   ? 'selected' : '' }}>Indoor</option>
@@ -450,14 +450,14 @@
             </div>
             <div class="col-12 col-md-4" data-field-key="meta.organizer">
                 <div class="form-group">
-                    <label class="input-label">Organizer / Provider <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.organizer">Organizer / Provider <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[organizer]"
                            value="{{ $metaField('organizer') }}" class="form-control">
                 </div>
             </div>
             <div class="col-12 col-md-4" data-field-key="meta.specifications">
                 <div class="form-group">
-                    <label class="input-label">Specifications <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.specifications">Specifications <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[specifications]"
                            value="{{ $metaField('specifications') }}"
                            class="form-control" placeholder="e.g. Family-friendly, 18+, Outdoor shoes required">
@@ -472,7 +472,7 @@
         <div class="row">
             <div class="col-12 col-md-4" data-field-key="meta.vehicle_type">
                 <div class="form-group">
-                    <label class="input-label">Vehicle Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.vehicle_type">Vehicle Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[vehicle_type]"
                            value="{{ $metaField('vehicle_type') }}"
                            class="form-control" placeholder="e.g. Sedan, SUV, Motorcycle">
@@ -484,21 +484,21 @@
                 <div class="row">
                     <div class="col-md-4" data-field-key="meta.pickup_location">
                         <div class="form-group">
-                            <label class="input-label">Pickup Location <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                            <label class="input-label js-field-label" data-field="meta.pickup_location">Pickup Location <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[pickup_location]"
                                    value="{{ $metaField('pickup_location') }}" class="form-control">
                         </div>
                     </div>
                     <div class="col-md-4" data-field-key="meta.dropoff_location">
                         <div class="form-group">
-                            <label class="input-label">Drop-off Location <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                            <label class="input-label js-field-label" data-field="meta.dropoff_location">Drop-off Location <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[dropoff_location]"
                                    value="{{ $metaField('dropoff_location') }}" class="form-control">
                         </div>
                     </div>
                     <div class="col-md-4" data-field-key="meta.vehicle_specs">
                         <div class="form-group">
-                            <label class="input-label">Vehicle Specs <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                            <label class="input-label js-field-label" data-field="meta.vehicle_specs">Vehicle Specs <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[vehicle_specs]"
                                    value="{{ $metaField('vehicle_specs') }}"
                                    class="form-control" placeholder="e.g. 5 seats, automatic, petrol">
@@ -512,7 +512,7 @@
                 <div class="row">
                     <div class="col-md-6" data-field-key="meta.service_type">
                         <div class="form-group">
-                            <label class="input-label">Service Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                            <label class="input-label js-field-label" data-field="meta.service_type">Service Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[service_type]"
                                    value="{{ $metaField('service_type') }}"
                                    class="form-control" placeholder="e.g. Oil change, Brake service, AC repair">
@@ -520,7 +520,7 @@
                     </div>
                     <div class="col-md-6" data-field-key="meta.required_notes">
                         <div class="form-group">
-                            <label class="input-label">Required Notes / Vehicle Details <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                            <label class="input-label js-field-label" data-field="meta.required_notes">Required Notes / Vehicle Details <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[required_notes]"
                                    value="{{ $metaField('required_notes') }}"
                                    class="form-control" placeholder="License plate, model year, issue description">
@@ -537,7 +537,7 @@
         <div class="row">
             <div class="col-12 col-md-4" data-field-key="meta.level">
                 <div class="form-group">
-                    <label class="input-label">Level <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.level">Level <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="meta[level]" class="form-control">
                         <option value="">Select Level</option>
                         <option value="beginner"     {{ $metaField('level') == 'beginner'     ? 'selected' : '' }}>Beginner</option>
@@ -564,7 +564,7 @@
             </div>
             <div class="col-12 col-md-6" data-field-key="meta.prerequisites">
                 <div class="form-group">
-                    <label class="input-label">Prerequisites <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.prerequisites">Prerequisites <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[prerequisites]"
                            value="{{ $metaField('prerequisites') }}"
                            class="form-control" placeholder="e.g. Basic English required">
@@ -579,7 +579,7 @@
         <div class="row">
             <div class="col-12 col-md-6" data-field-key="meta.required_docs">
                 <div class="form-group">
-                    <label class="input-label">Required Notes / Documents <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.required_docs">Required Notes / Documents <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <textarea name="meta[required_docs]" class="form-control" rows="3"
                               placeholder="e.g. Please bring your last tax return, NDA required">{{ $metaField('required_docs') }}</textarea>
                 </div>
@@ -593,7 +593,7 @@
         <div class="row">
             <div class="col-12 col-md-4" data-field-key="meta.appointment_type">
                 <div class="form-group">
-                    <label class="input-label">Service Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.appointment_type">Service Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="meta[appointment_type]" class="form-control">
                         <option value="">Select</option>
                         <option value="consultation" {{ $metaField('appointment_type') == 'consultation' ? 'selected' : '' }}>Consultation</option>
@@ -605,7 +605,7 @@
             </div>
             <div class="col-12 col-md-4" data-field-key="meta.payment_option">
                 <div class="form-group">
-                    <label class="input-label">Payment Option <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
+                    <label class="input-label js-field-label" data-field="meta.payment_option">Payment Option <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="meta[payment_option]" class="form-control">
                         <option value="">Select</option>
                         <option value="per_appointment" {{ $metaField('payment_option') == 'per_appointment' ? 'selected' : '' }}>Per Appointment</option>
@@ -801,6 +801,20 @@
     var CATEGORIES_BY_PARENT = {!! $categoriesByParent ?? '{}' !!};
     var CURRENT_CATEGORY_ID  = {!! !empty($currentCategoryId) ? json_encode((string) $currentCategoryId) : 'null' !!};
 
+    // ── FIX: ye fields kabhi hide nahi hoti — chahe kisi bhi sub-template
+    // (category level) ke required/optional array mein likhi hon ya na hon.
+    // Pehle bug ye tha ke jaise hi category select hoti thi, "category_id"
+    // field khud apne aap chip jaati thi kyunki wo kisi sub-template ki
+    // required/optional list mein nahi hoti — sirf uska naam/label change
+    // hona chahiye, hide nahi honi chahiye.
+    var ALWAYS_VISIBLE_FIELD_KEYS = ['category_id', 'title', 'price', 'description', 'requirements'];
+
+    // Currently active Booking-Type level field labels — jab category
+    // deselect ho ya kisi aisi category pe switch ho jo kisi 23-template se
+    // match nahi karti, to labels wapas isi par reset hote hain (sub-template
+    // ka purana overridden label chipka nahi rehta).
+    var CURRENT_TYPE_FIELD_LABELS = {};
+
     // Which sections to show per template type
     var TYPE_SECTIONS = {
         'beauty-spa': ['staff', 'time-slot', 'beauty-extras'],
@@ -884,12 +898,28 @@
         }
     }
 
+    // ── Field label helper ──────────────────────────────────────────
+    // Field group ke andar (chahe wo `[data-field-key]` wala element khud
+    // ho ya uske andar) `.input-label` dhoondh kar sirf uska text change
+    // karta hai, jabke required-star (span) ya icon jaise child elements
+    // ko preserve karta hai (unhe wapas label mein append kar deta hai).
+    function updateFieldLabel(containerEl, newLabel) {
+        if (!newLabel) return;
+        var label = containerEl.querySelector('label.input-label');
+        if (!label) return;
+
+        var keepEls = Array.prototype.slice.call(label.querySelectorAll('span, i'));
+        label.textContent = newLabel + ' ';
+        keepEls.forEach(function (node) { label.appendChild(node); });
+    }
+
     // ─── Main switch function (Booking Type level) ─────────────────────
 
     function applyTemplate(type) {
         if (!type) {
             hideAllSections();
             populateCategoryOptions('', null);
+            CURRENT_TYPE_FIELD_LABELS = {};
             resetSubTemplate();
             return;
         }
@@ -916,7 +946,8 @@
             priceUnitInput.value = priceLabel;
         }
 
-        // 4. Update field labels from config
+        // 4. Update field labels from config (Booking Type level defaults)
+        CURRENT_TYPE_FIELD_LABELS = config.field_labels || {};
         if (config.field_labels) {
             document.querySelectorAll('.js-field-label').forEach(function (el) {
                 var fieldKey = el.dataset.field;
@@ -966,7 +997,12 @@
     //   - jo fields us template ke "required" mein hain -> show + required
     //   - jo fields "optional" mein hain               -> show, required nahi
     //   - jo fields dono mein nahi hain (irrelevant)     -> hide kar deta hai
+    //   - EXCEPTION: ALWAYS_VISIBLE_FIELD_KEYS (category_id, title, price,
+    //     description, requirements) kabhi hide nahi hoti — sirf required
+    //     ya optional state set hoti hai.
     //   - price unit ko template ke price_unit se update karta hai
+    //   - field_labels ke through har field ka naam bhi update karta hai
+    //     (jaisa screenshots ke table mein diya gaya hai)
     //
     // Agar category kisi bhi known template se match na ho (custom
     // category jo 23 wali list mein nahi), to sub-template filtering
@@ -980,11 +1016,15 @@
 
         if (!subConfig) {
             // Koi specific sub-template match nahi hua -> sab visible rehne do,
-            // koi extra required mat lagao (sirf booking-type level fields
-            // ke defaults chalte rahenge).
+            // koi extra required mat lagao, aur labels wapas Booking-Type
+            // level defaults par reset kar do.
             allFieldEls.forEach(function (el) {
                 el.style.display = '';
                 setDynamicRequired(el, false);
+                var key = el.dataset.fieldKey;
+                if (CURRENT_TYPE_FIELD_LABELS[key]) {
+                    updateFieldLabel(el, CURRENT_TYPE_FIELD_LABELS[key]);
+                }
             });
             if (noteEl) noteEl.textContent = '';
             return;
@@ -992,10 +1032,18 @@
 
         var required = subConfig.required || [];
         var optional = subConfig.optional || [];
+        var labels   = subConfig.field_labels || {};
 
         allFieldEls.forEach(function (el) {
             var key = el.dataset.fieldKey;
-            if (required.indexOf(key) !== -1) {
+
+            if (ALWAYS_VISIBLE_FIELD_KEYS.indexOf(key) !== -1) {
+                // category_id, title, price, description, requirements —
+                // ye kabhi hide nahi hoti, sirf required/optional state
+                // sub-template ke hisab se lagti hai.
+                el.style.display = '';
+                setDynamicRequired(el, required.indexOf(key) !== -1);
+            } else if (required.indexOf(key) !== -1) {
                 el.style.display = '';
                 setDynamicRequired(el, true);
             } else if (optional.indexOf(key) !== -1) {
@@ -1004,6 +1052,12 @@
             } else {
                 el.style.display = 'none';
                 setDynamicRequired(el, false);
+            }
+
+            // Field label update — agar is sub-template ne is field ke
+            // liye custom naam diya hai (jaisa screenshot table mein hai).
+            if (labels[key]) {
+                updateFieldLabel(el, labels[key]);
             }
         });
 
@@ -1030,6 +1084,10 @@
         document.querySelectorAll('[data-field-key]').forEach(function (el) {
             el.style.display = '';
             setDynamicRequired(el, false);
+            var key = el.dataset.fieldKey;
+            if (CURRENT_TYPE_FIELD_LABELS[key]) {
+                updateFieldLabel(el, CURRENT_TYPE_FIELD_LABELS[key]);
+            }
         });
         var noteEl = document.getElementById('subTemplateNote');
         if (noteEl) noteEl.textContent = '';
