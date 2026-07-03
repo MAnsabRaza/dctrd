@@ -535,7 +535,9 @@ class CartController extends Controller
 
         if (!empty($checkoutModuleData)) {
             try {
-                app(CheckoutModuleService::class)->saveOrderMeta($order->id, $checkoutModuleData);
+                app(CheckoutModuleService::class)->saveOrderMeta($order->id, [
+                    'checkout_modules' => $checkoutModuleData,
+                ]);
             } catch (\Throwable $e) {
                 // Safe fail if module meta storage is unavailable
             }
@@ -586,7 +588,7 @@ class CartController extends Controller
                 $commissionPrice = 0;
             }
 
-            OrderItem::create([
+            $orderItem = OrderItem::create([
                 'user_id' => $user->id,
                 'order_id' => $order->id,
                 'webinar_id' => $cart->webinar_id ?? null,
@@ -614,6 +616,16 @@ class CartController extends Controller
                 'discount' => $totalDiscount,
                 'created_at' => time(),
             ]);
+
+            $itemModuleData = $checkoutModuleData[$cart->id] ?? [];
+
+            if (!empty($itemModuleData)) {
+                try {
+                    app(CheckoutModuleService::class)->saveOrderItemMeta($orderItem->id, $itemModuleData);
+                } catch (\Throwable $e) {
+                    // Safe fail if module meta storage is unavailable
+                }
+            }
         }
 
         return $order;

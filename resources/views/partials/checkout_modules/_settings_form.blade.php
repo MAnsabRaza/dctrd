@@ -70,6 +70,7 @@
             'label'       => $found['label']       ?? ($moduleLabels[$modName] ?? $modName),
             'desc'        => $found['help_text']   ?? ($moduleDescs[$modName]  ?? ''),
             'enabled'     => $found['enabled']     ?? false,
+            'required'    => $found['required']    ?? false,
             'is_required' => $found['is_required'] ?? false, // global, hamesha required
         ];
     }
@@ -102,6 +103,27 @@
 }
 .co-module-row:hover {
     background: #f1f5f9;
+}
+
+.co-module-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.co-required-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.co-required-option input {
+    margin: 0;
 }
 
 .co-module-row-left {
@@ -257,6 +279,28 @@
                         @endif
                     </div>
                 </div>
+
+                <div class="co-module-actions">
+                    @if($mod['is_required'])
+                        <input type="hidden" name="modules[{{ $mod['name'] }}]" value="1">
+                        <input type="hidden" name="required_modules[{{ $mod['name'] }}]" value="1">
+                        <label class="co-required-option">
+                            <input type="checkbox" checked disabled>
+                            <span>{{ trans('admin/pages/checkout_modules.required') ?? 'Required' }}</span>
+                        </label>
+                    @else
+                        <input type="hidden" name="required_modules[{{ $mod['name'] }}]" value="0">
+                        <label class="co-required-option">
+                            <input
+                                type="checkbox"
+                                name="required_modules[{{ $mod['name'] }}]"
+                                value="1"
+                                {{ $mod['required'] ? 'checked' : '' }}
+                            >
+                            <span>{{ trans('admin/pages/checkout_modules.required') ?? 'Required' }}</span>
+                        </label>
+                    @endif
+                </div>
             </div>
         @endforeach
     </div>
@@ -287,6 +331,7 @@
         var btn = document.getElementById('co-save-btn');
         var msg = document.getElementById('co-save-msg');
         var modules = {};
+        var requiredModules = {};
 
         document.querySelectorAll('#co-mods-bookings input[name^="modules["]').forEach(function (input) {
             var match = input.name.match(/modules\[(.+)\]/);
@@ -298,6 +343,18 @@
                 modules[modName] = input.checked;
             } else if (!(modName in modules)) {
                 modules[modName] = (input.value === '1');
+            }
+        });
+
+        document.querySelectorAll('#co-mods-bookings input[name^="required_modules["]').forEach(function (input) {
+            var match = input.name.match(/required_modules\[(.+)\]/);
+            if (!match) return;
+            var modName = match[1];
+
+            if (input.type === 'checkbox') {
+                requiredModules[modName] = input.checked;
+            } else if (!(modName in requiredModules)) {
+                requiredModules[modName] = (input.value === '1');
             }
         });
 
@@ -313,7 +370,7 @@
                 'X-CSRF-TOKEN': csrf ? csrf.getAttribute('content') : '',
                 'Accept': 'application/json',
             },
-            body: JSON.stringify({ modules: modules })
+            body: JSON.stringify({ modules: modules, required_modules: requiredModules })
         })
         .then(function (r) { return r.json(); })
         .then(function () {

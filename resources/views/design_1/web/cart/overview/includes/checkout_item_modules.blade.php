@@ -149,8 +149,8 @@
     $timeLabel    = $selectedTime
         ?: ($slotStart ? $slotStart . ($slotEnd ? ' - ' . $slotEnd : '') : (trans('cart.not_selected') ?? 'Not selected'));
 
-    $selectedStaff = old("checkout_modules.{$itemKey}.staff_member", $authUserName);
-    $staffLabel    = $selectedStaff ?: ($authUserName ?: (trans('cart.guest') ?? 'Guest'));
+    $selectedStaff = old("checkout_modules.{$itemKey}.staff_member", '');
+    $staffLabel    = $selectedStaff ?: (trans('cart.not_selected') ?? 'Not selected');
 
     $showHeader       = $showHeader ?? false;
     $wrapperClassName = $wrapperClassName ?? '';
@@ -489,10 +489,13 @@
     ]) as $customModule)
         <div class="booking-cancellation-card" data-module-name="{{ $customModule->name }}">
             <div class="booking-info-title">{{ $customModule->translated_label ?? $customModule->name }}</div>
-            @includeIf('partials.checkout_modules._' . $customModule->name, [
-                'module' => $customModule,
-                'itemId' => $itemKey,
-            ])
+            @php $customPartial = 'partials.checkout_modules._' . $customModule->name; @endphp
+            @if(\Illuminate\Support\Facades\View::exists($customPartial))
+                @include($customPartial, [
+                    'module' => $customModule,
+                    'itemId' => $itemKey,
+                ])
+            @endif
         </div>
     @endforeach
 

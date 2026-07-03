@@ -22,6 +22,7 @@
                             <tr>
                                 <th>{{ trans('public.item') }}</th>
                                 <th>{{ trans('public.type') }}</th>
+                                <th>{{ trans('admin/main.checkout_modules') ?? 'Checkout Modules' }}</th>
                                 <th class="text-center">{{ trans('public.amount') }}</th>
                             </tr>
                             @foreach($orderItems as $item)
@@ -60,6 +61,27 @@
                                             {{ trans('update.promotion_plan') }}
                                         @elseif(!empty($item->registrationPackage))
                                             {{ trans('update.registration_package') }}
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @php $checkoutMetas = $item->metas ?? collect(); @endphp
+                                        @if($checkoutMetas->isNotEmpty())
+                                            <div class="d-flex flex-column">
+                                                @foreach($checkoutMetas as $meta)
+                                                    @php
+                                                        $value = $meta->value;
+                                                        if (is_array($value)) {
+                                                            $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+                                                        }
+                                                    @endphp
+                                                    <span class="mb-1">
+                                                        <strong>{{ str_replace('_', ' ', ucfirst($meta->key)) }}:</strong>
+                                                        {{ $value }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
                                         @else
                                             -
                                         @endif

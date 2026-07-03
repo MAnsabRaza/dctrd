@@ -216,7 +216,7 @@ class OfflinePaymentController extends Controller
         $this->authorize('admin_offline_payments_list');
 
         $offlinePayment = OfflinePayment::query()->with(['order.orderItems' => function ($q) {
-            $q->with(['webinar', 'product', 'bundle', 'subscribe', 'promotion', 'registrationPackage']);
+            $q->with(['webinar', 'product', 'bundle', 'subscribe', 'promotion', 'registrationPackage', 'metas']);
         }])->findOrFail($id);
 
         if (!$offlinePayment->order) {

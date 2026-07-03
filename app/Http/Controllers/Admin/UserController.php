@@ -1805,11 +1805,14 @@ class UserController extends Controller
         $data = $request->validate([
             'modules' => 'required|array',
             'modules.*' => 'nullable|boolean',
+            'required_modules' => 'nullable|array',
+            'required_modules.*' => 'nullable|boolean',
         ]);
 
         app(CheckoutModuleService::class)->saveOrgModuleSettings(
             $user->id,
-            $data['modules'] ?? []
+            $data['modules'] ?? [],
+            $data['required_modules'] ?? []
         );
 
         return redirect(getAdminPanelUrl("/users/{$user->id}/edit?tab=checkoutOptions"))

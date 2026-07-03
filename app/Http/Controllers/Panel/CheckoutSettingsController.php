@@ -46,6 +46,8 @@ class CheckoutSettingsController extends Controller
         $request->validate([
             'modules'   => 'required|array',
             'modules.*' => 'boolean',
+            'required_modules' => 'nullable|array',
+            'required_modules.*' => 'boolean',
         ], [
             'modules.required' => trans('panel.checkout_options_modules_required'),
             'modules.array'    => trans('panel.checkout_options_modules_invalid'),
@@ -57,7 +59,8 @@ class CheckoutSettingsController extends Controller
             // Service ko call karo — ['days' => true, 'hours' => false, ...]
             $this->checkoutModuleService->saveOrgModuleSettings(
                 $orgId,
-                $request->modules
+                $request->modules,
+                $request->input('required_modules', [])
             );
 
             // AJAX request hai?

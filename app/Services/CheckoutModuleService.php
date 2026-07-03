@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CheckoutModule;
 use App\Models\CheckoutModuleAudit;
 use App\Models\EntityCheckoutModule;
+use App\Models\OrderItemMeta;
 use App\Models\OrderMeta;
 use App\Models\OrgCheckoutModule;
 use Illuminate\Support\Collection;
@@ -179,6 +180,14 @@ class CheckoutModuleService
     public function saveOrderMeta(int $orderId, array $moduleData): void
     {
         foreach ($moduleData as $moduleName => $value) {
+            if (is_array($value)) {
+                $value = $this->filterEmptyValues($value);
+            }
+
+            if ($this->isEmptyValue($value)) {
+                continue;
+            }
+
             $newValue = json_encode($value);
 
             // Pehle se koi record hai? Audit ke liye old value chahiye
@@ -190,7 +199,7 @@ class CheckoutModuleService
             // Save/Update order_meta
             OrderMeta::updateOrCreate(
                 ['order_id' => $orderId, 'key' => $moduleName],
-                ['value'    => $newValue]
+                ['value'    => $value]
             );
 
             // Agar pehle se record tha toh audit trail likho
@@ -213,6 +222,24 @@ class CheckoutModuleService
         }
     }
 
+    public function saveOrderItemMeta(int $orderItemId, array $moduleData): void
+    {
+        foreach ($moduleData as $moduleName => $value) {
+            if (is_array($value)) {
+                $value = $this->filterEmptyValues($value);
+            }
+
+            if ($this->isEmptyValue($value)) {
+                continue;
+            }
+
+            OrderItemMeta::updateOrCreate(
+                ['order_item_id' => $orderItemId, 'key' => $moduleName],
+                ['value' => $value]
+            );
+        }
+    }
+
     // =========================================================
 
     /**
@@ -227,6 +254,11 @@ class CheckoutModuleService
 
         $result = [];
         foreach ($metas as $meta) {
+            if (is_array($meta->value)) {
+                $result[$meta->key] = $meta->value;
+                continue;
+            }
+
             $decoded = json_decode($meta->value, true);
             // Agar valid JSON nahi toh original string rakhte hain
             $result[$meta->key] = ($decoded !== null) ? $decoded : $meta->value;
@@ -255,7 +287,7 @@ class CheckoutModuleService
             $config = $module->config ?? [];
 
             // Required module hai aur data khali hai
-            if ($module->is_required && empty($data)) {
+            if ($module->is_required && $this->isEmptyValue($data)) {
                 $errors[$name] = trans('checkout.validation.required', [
                     'field' => $module->translated_label
                 ]);
@@ -263,7 +295,7 @@ class CheckoutModuleService
             }
 
             // Data diya hi nahi — optional hai toh skip
-            if (empty($data)) {
+            if ($this->isEmptyValue($data)) {
                 continue;
             }
 
@@ -302,6 +334,13 @@ class CheckoutModuleService
                     ];
 
                     foreach ($fields as $field => $limits) {
+                        if ($module->is_required && (!isset($data[$field]) || $this->isEmptyValue($data[$field]))) {
+                            $errors[$name . '.' . $field] = trans('checkout.validation.required', [
+                                'field' => $field
+                            ]);
+                            continue;
+                        }
+
                         if (isset($data[$field])) {
                             $val = (int) $data[$field];
                             if ($val < $limits['min']) {
@@ -323,6 +362,13 @@ class CheckoutModuleService
                 case 'checkbox_list':
                     $validLabels = collect($config['options'] ?? [])->pluck('label')->toArray();
                     $selected    = is_array($data) ? $data : [];
+
+                    if ($module->is_required && empty($selected)) {
+                        $errors[$name] = trans('checkout.validation.required', [
+                            'field' => $module->translated_label
+                        ]);
+                        break;
+                    }
 
                     foreach ($selected as $item) {
                         if (!in_array($item, $validLabels)) {
@@ -412,9 +458,11 @@ class CheckoutModuleService
      * Globally is_required modules (e.g. cancellation_policy) hamesha
      * enabled+required true rehte hain, regardless of toggle.
      */
-    public function saveOrgModuleSettings(int $orgId, array $moduleSettings): void
+    public function saveOrgModuleSettings(int $orgId, array $moduleSettings, array $requiredSettings = []): void
     {
-        foreach ($moduleSettings as $moduleName => $isEnabled) {
+        $moduleNames = array_unique(array_merge(array_keys($moduleSettings), array_keys($requiredSettings)));
+
+        foreach ($moduleNames as $moduleName) {
 
             // Module ka ID dhundo name se
             $module = CheckoutModule::where('name', $moduleName)->first();
@@ -423,7 +471,8 @@ class CheckoutModuleService
                 continue; // Unknown module — skip karo
             }
 
-            $value = $module->is_required ? true : (bool) $isEnabled;
+            $enabled = $module->is_required ? true : (bool) ($moduleSettings[$moduleName] ?? false);
+            $required = $module->is_required ? true : (bool) ($requiredSettings[$moduleName] ?? false);
 
             OrgCheckoutModule::updateOrCreate(
                 [
@@ -431,10 +480,38 @@ class CheckoutModuleService
                     'module_id' => $module->id,
                 ],
                 [
-                    'enabled'  => $value,
-                    'required' => $value,
+                    'enabled'  => $enabled,
+                    'required' => $required,
                 ]
             );
         }
+    }
+
+    private function isEmptyValue($value): bool
+    {
+        if (is_array($value)) {
+            return empty($this->filterEmptyValues($value));
+        }
+
+        return $value === null || $value === '';
+    }
+
+    private function filterEmptyValues(array $values): array
+    {
+        $filtered = [];
+
+        foreach ($values as $key => $value) {
+            if (is_array($value)) {
+                $value = $this->filterEmptyValues($value);
+            }
+
+            if ($value === null || $value === '' || $value === []) {
+                continue;
+            }
+
+            $filtered[$key] = $value;
+        }
+
+        return $filtered;
     }
 }

@@ -94,6 +94,11 @@ class OrderItem extends Model
         return $this->belongsTo(MeetingPackage::class, 'meeting_package_id', 'id');
     }
 
+    public function metas()
+    {
+        return $this->hasMany(OrderItemMeta::class, 'order_item_id', 'id');
+    }
+
 
     /*==========
      | Helpers

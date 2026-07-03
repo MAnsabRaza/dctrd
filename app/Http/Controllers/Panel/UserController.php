@@ -458,11 +458,14 @@ public function update(Request $request)
             $this->validate($request, [
                 'modules'   => 'required|array',
                 'modules.*' => 'nullable|boolean',
+                'required_modules' => 'nullable|array',
+                'required_modules.*' => 'nullable|boolean',
             ]);
 
             app(CheckoutModuleService::class)->saveOrgModuleSettings(
                 $user->id,
-                $data['modules'] ?? []
+                $data['modules'] ?? [],
+                $data['required_modules'] ?? []
             );
         }
 
