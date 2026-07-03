@@ -52,7 +52,7 @@ class BookingController extends Controller
         // Template configs as JSON for JS dynamic field switching (Booking Type level)
         $templateConfigs = $this->buildTemplateConfigsForJs();
 
-        // NAYA: Category (subcategory/template) level config — 23 templates
+        // Category (subcategory/template) level config — 23 templates
         // (Doctor Appointment, Clinic Visit, Event Tickets, ...). Key = category slug.
         $subTemplateConfigs = $this->buildSubTemplateConfigsForJs();
 
@@ -106,7 +106,7 @@ class BookingController extends Controller
         // 1. Get template config for selected booking type (parent level)
         $templateConfig = BookingTemplateConfig::for($request->booking_type ?? '');
 
-        // 2. NAYA: agar selected category kisi specific sub-template (23
+        // 2. Agar selected category kisi specific sub-template (23
         //    templates mein se) se match karti hai, uski config bhi lo.
         $categorySlug   = $this->categorySlugFromId($request->category_id);
         $subTemplate    = BookingSubTemplateConfig::forSlug($categorySlug);
@@ -128,13 +128,20 @@ class BookingController extends Controller
 
         $nextOrder = (Booking::max('order') ?? 0) + 1;
 
-        // 4. Build meta: global meta + template-specific meta fields from request
+        // 4. Build meta: global meta + har template/sub-template ka
+        //    bheja hua meta.* field (FIX: pehle sirf booking-type level
+        //    config ke fields() se match hone wale meta keys save hote
+        //    the, is wajah se sub-template (23 templates) ke bohat se
+        //    fields — jaise meta.required_docs, meta.room_type,
+        //    meta.check_in_date, meta.amenities — silently drop ho jate
+        //    the. Ab extractTemplateMeta() form se aane wala HAR meta
+        //    field save karta hai, chahe kisi bhi category ka ho.)
         $meta = array_merge(
             $this->bookingMeta($request),
-            $this->extractTemplateMeta($request, $templateConfig)
+            $this->extractTemplateMeta($request, $templateConfig, $subTemplate)
         );
 
-        // NAYA: price_unit — agar sub-template mila to uski price_unit ko
+        // price_unit — agar sub-template mila to uski price_unit ko
         // priority do (booking-type level se zyada specific).
         $resolvedPriceUnit = $request->price_unit
             ?: ($subTemplate ? $subTemplate->priceUnit() : $templateConfig->priceUnitLabel());
@@ -285,7 +292,7 @@ class BookingController extends Controller
         $booking        = Booking::findOrFail($id);
         $templateConfig = BookingTemplateConfig::for($request->booking_type ?? $booking->booking_type ?? '');
 
-        // NAYA: sub-template (category level) config
+        // Sub-template (category level) config
         $categorySlug = $this->categorySlugFromId($request->category_id ?? $booking->category_id);
         $subTemplate  = BookingSubTemplateConfig::forSlug($categorySlug);
 
@@ -300,12 +307,16 @@ class BookingController extends Controller
             'category_id.exists' => 'Selected category is Booking Type se match nahi karti. Pehle sahi Booking Type select karein, phir usi ki subcategory chunein.',
         ]);
 
-        // Merge existing meta with new template meta (preserve non-overwritten keys)
+        // Merge existing meta with new template meta (preserve non-overwritten keys).
+        // FIX: extractTemplateMeta() ab sub-template bhi pass leta hai aur
+        // form se aane wala HAR meta.* field save karta hai (pehle sirf
+        // booking-type level config ke fields() se match hone wale keys
+        // save hote the, baqi silently discard ho jate the).
         $existingMeta = $booking->meta ?? [];
         $newMeta      = array_merge(
             $existingMeta,
             $this->bookingMeta($request),
-            $this->extractTemplateMeta($request, $templateConfig)
+            $this->extractTemplateMeta($request, $templateConfig, $subTemplate)
         );
 
         $resolvedPriceUnit = $request->price_unit
@@ -506,7 +517,7 @@ class BookingController extends Controller
     }
 
     /**
-     * NAYA: Build a JS-friendly array of all 23 Category-level (sub-template)
+     * Build a JS-friendly array of all 23 Category-level (sub-template)
      * configs, keyed by category slug — e.g. 'doctor-appointment' => [...].
      * Frontend JS isko use karke, jab admin category select kare, required/
      * optional fields aur price unit ko further filter karta hai.
@@ -522,7 +533,7 @@ class BookingController extends Controller
     }
 
     /**
-     * NAYA: category_id se uska slug nikalna — sub-template match karne
+     * category_id se uska slug nikalna — sub-template match karne
      * ke liye zaroori hai (validation + price_unit resolve karne ke liye).
      */
     private function categorySlugFromId($categoryId): ?string
@@ -534,7 +545,7 @@ class BookingController extends Controller
     }
 
     /**
-     * NAYA: har parent category id ke against uske active children
+     * Har parent category id ke against uske active children
      * (id + title + slug) ka array — Category dropdown JS se filter
      * karne ke liye, aur slug se 23-template config match karne ke liye.
      * Format: [ parent_id => [ ['id'=>.., 'title'=>.., 'slug'=>..], ... ], ... ]
@@ -580,31 +591,74 @@ class BookingController extends Controller
     }
 
     /**
-     * Extract template-specific meta fields from request.
-     * Fields prefixed with meta.* in the template config get saved to booking->meta.
+     * Extract template/sub-template-specific meta fields from the request.
+     *
+     * FIX (important): pehle ye function sirf BookingTemplateConfig
+     * (booking-type/parent level, 7 types) ke fields() array se match
+     * hone wale 'meta.*' keys save karta tha. Lekin aapke 23 sub-templates
+     * (category level) mein bohat se meta fields aise hain jo parent-level
+     * config mein declare nahi — jaise 'meta.required_docs' (Doctor
+     * Appointment ke optional mein hai lekin doctorsClinicsConfig ke
+     * fields() mein nahi), 'meta.room_type', 'meta.check_in_date',
+     * 'meta.amenities', 'meta.vehicle_specs' waghera. Nateeja: form se
+     * value aati thi lekin DB mein save nahi hoti thi — silently discard.
+     *
+     * Naya approach: chunke `meta` ek JSON column hai (koi fixed schema
+     * nahi), ab ye function form se aane wala HAR `meta[...]` field save
+     * karta hai — chahe wo kisi bhi Booking Type ya kisi bhi 23-template
+     * ka ho. Isse:
+     *   - Koi bhi category select ho, uske specific fields hamesha save hote hain.
+     *   - Naya sub-template (23 mein se koi bhi) add/edit karo, controller
+     *     mein kuch change karne ki zaroorat nahi — meta automatically save hoga.
+     *   - staff_id aur extras bhi ab unconditional save hote hain (pehle
+     *     hasStaff()/hasExtras() flag ke peeche gated the, jo sub-template
+     *     level par galat results deta tha).
      */
-    private function extractTemplateMeta(Request $request, BookingTemplateConfig $config): array
+    private function extractTemplateMeta(Request $request, BookingTemplateConfig $config, ?BookingSubTemplateConfig $subTemplate = null): array
     {
-        $meta         = [];
-        $metaFields   = array_filter($config->fields(), fn($f) => str_starts_with($f, 'meta.'));
-        $requestMeta  = $request->input('meta', []);
+        $meta = [];
 
-        // staff_id is special — stored as meta.staff_id
-        if ($config->hasStaff() && $request->filled('staff_id')) {
+        // Staff / Provider — jis form/section mein bhi staff_id aaya,
+        // hamesha meta.staff_id ke naam se save hoga.
+        if ($request->filled('staff_id')) {
             $meta['staff_id'] = $request->staff_id;
         }
 
-        // extras
-        if ($config->hasExtras() && $request->has('extras')) {
-            $meta['extras'] = $request->input('extras', []);
+        // Extras / Add-ons — top-level 'extras[]' array (name/price rows).
+        // Kai sub-templates (Beauty, Events, Accommodation, Education, ...)
+        // isi ek shared UI section ko use karte hain.
+        if ($request->has('extras')) {
+            $extras = collect($request->input('extras', []))
+                ->filter(fn($row) => !empty($row['name']) || !empty($row['price']))
+                ->values()
+                ->all();
+            $meta['extras'] = $extras;
         }
 
-        // All meta.* fields from template config
-        foreach ($metaFields as $field) {
-            $key = str_replace('meta.', '', $field);
-            if (array_key_exists($key, $requestMeta)) {
-                $meta[$key] = $requestMeta[$key];
+        // Har meta.* field jo form ne bheja — sub-template ya booking-type
+        // config mein declared ho ya na ho, sab save hota hai.
+        $requestMeta = $request->input('meta', []);
+
+        foreach ($requestMeta as $key => $value) {
+            if ($value === null) {
+                continue;
             }
+
+            if (is_array($value)) {
+                // e.g. meta[amenities][] checkboxes — khali values nikal do
+                $meta[$key] = collect($value)->filter(fn($v) => $v !== null && $v !== '')->values()->all();
+                continue;
+            }
+
+            $trimmed = is_string($value) ? trim($value) : $value;
+
+            // Khali string ko save mat karo (taake purani saved value
+            // accidentally empty se overwrite na ho jaye update ke waqt)
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $meta[$key] = $trimmed;
         }
 
         return $meta;
