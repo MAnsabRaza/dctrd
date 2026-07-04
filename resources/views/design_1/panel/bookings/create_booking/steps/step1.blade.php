@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (categorySelect) {
         categorySelect.addEventListener('change', updateSubTemplateNote);
     }
-
+window.debugMaps = { typeCategoryMap, categoriesByParent, subTemplateConfigs };
     applyCheckedTemplate(true);
 });
 </script>
