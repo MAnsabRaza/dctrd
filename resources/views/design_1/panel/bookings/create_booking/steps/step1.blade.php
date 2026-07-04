@@ -163,6 +163,7 @@
     const currentCategoryId  = {{ json_encode((string) $currentCategoryId) }};
     const typeCategoryMap    = @json($bookingTypeCategoryMap ?? []);
     const categoriesByParent = @json($categoriesByParent ?? []);
+    const categoriesByType   = @json($categoriesByBookingType ?? []);
     const subTemplateConfigs = @json($subTemplateConfigs ?? []);
     const categorySelect     = document.getElementById('panelBookingCategorySelect');
     const subTemplateNote    = document.getElementById('panelSubTemplateNote');
@@ -178,6 +179,10 @@
 
     function getCategoryChildrenForType(type) {
         if (!type) return [];
+
+        if (categoriesByType[type] && categoriesByType[type].length) {
+            return categoriesByType[type];
+        }
 
         const matched = [];
         Object.keys(categoriesByParent || {}).forEach(function (parentId) {
