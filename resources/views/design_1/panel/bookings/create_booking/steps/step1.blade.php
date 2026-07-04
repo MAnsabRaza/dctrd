@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return sub && sub.parent_type === type;
     }
 
-    function getCategoryChildrenForType(type) {
+   function getCategoryChildrenForType(type) {
         if (!type) return [];
 
         var matched = [];
@@ -200,7 +200,12 @@ document.addEventListener('DOMContentLoaded', function () {
             return matched;
         }
 
-        var parentId = typeCategoryMap[type] || typeCategoryMap[normalizeSlug(type)];
+        // FIX: normalize donon taraf se check karo (raw key + normalized key)
+        var normalizedType = normalizeSlug(type);
+        var parentId = typeCategoryMap[type]
+            || typeCategoryMap[normalizedType]
+            || typeCategoryMap[type.toLowerCase()];
+
         return parentId && categoriesByParent[parentId] ? categoriesByParent[parentId] : [];
     }
 

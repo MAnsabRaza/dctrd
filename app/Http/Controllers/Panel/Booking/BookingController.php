@@ -114,9 +114,6 @@ class BookingController extends Controller
             'config'      => null, // no template selected yet on a brand-new booking
             'allCategoryLists' => $allCategoryLists,
             'userLanguages'    => $this->getUserLanguages(),
-            // Single source of truth for which booking templates exist —
-            // pulled straight from BookingTemplateConfig so step 1 never drifts
-            // out of sync with the config class again.
             'templateOptions'  => BookingTemplateConfig::allTypes(),
             'bookingTypeCategoryMap' => $this->buildTypeCategoryMap($parentCategories),
             'categoriesByParent'     => $this->buildCategoriesByParentMap($childCategories),
@@ -149,7 +146,6 @@ class BookingController extends Controller
             'slug'         => 'nullable|string|max:255|unique:bookings,slug',
             'category_id'  => $this->categoryValidationRule($request->booking_type ?? '', true),
             'language'     => 'nullable|string|max:10',
-            // booking_type is now always one of the 7 BookingTemplateConfig slugs.
             'booking_type' => 'required|in:' . implode(',', array_keys(BookingTemplateConfig::allTypes())),
             'sub_type'     => 'nullable|string|max:255',
             'description'  => 'nullable|string',
@@ -173,7 +169,7 @@ class BookingController extends Controller
             'sub_type'     => $data['sub_type'] ?? null,
             'description'  => $data['description'] ?? null,
             'requirements' => $data['requirements'] ?? null,
-            'status'       => $isDraft ? 'draft' : 'draft', // never published directly from step 1
+            'status'       => $isDraft ? 'draft' : 'draft',
         ]);
 
         $notifyOptions = [
@@ -220,7 +216,7 @@ class BookingController extends Controller
                 $q->orderBy('id', 'asc');
             }]);
         } elseif ($step == 7) {
-            $query->with(['resources']); // needed to list "staff" type resources in template-details panel
+            $query->with(['resources']);
         }
 
         $booking = $query->first();
@@ -237,9 +233,6 @@ class BookingController extends Controller
         $parentCategories = $allCategoryLists->whereNull('parent_id')->values();
         $childCategories  = $allCategoryLists->whereNotNull('parent_id')->values();
 
-        // The selected template (from step 1) now drives every later step's
-        // fields/required/rules/filters — this is the single object every
-        // step view consults to know what to render.
         $config = BookingTemplateConfig::for($booking->booking_type);
         $subTemplate = $this->subTemplateFromCategoryId($booking->category_id);
 
@@ -269,9 +262,6 @@ class BookingController extends Controller
 
             $data['selectedSpecValueIds'] = $booking->meta['specification_value_ids'] ?? [];
 
-            // "Staff" entries are just BookingResource rows with type = 'staff'
-            // (added/removed via the existing Step 3 Resources block) — reused
-            // here instead of introducing a brand new Staff table/model.
             $data['staffResources'] = $booking->resources
                 ? $booking->resources->where('type', 'staff')
                 : collect();
@@ -313,8 +303,6 @@ class BookingController extends Controller
             abort(404);
         }
 
-        // Template config for the booking_type chosen back on step 1 —
-        // drives which extra fields/rules apply on steps 2 & 7 below.
         $config = BookingTemplateConfig::for($booking->booking_type);
         $subTemplate = $this->subTemplateFromCategoryId($booking->category_id);
 
@@ -332,8 +320,6 @@ class BookingController extends Controller
                 'requirements' => 'nullable|string',
             ];
         } elseif ($currentStep == 2) {
-            // capacity / inventory rules only exist in the config for templates
-            // that actually need them (events, beauty-spa group service, etc.)
             $extraRules = collect($config->rules())->only(['capacity', 'inventory'])->toArray();
             if ($subTemplate) {
                 $extraRules = array_merge(
@@ -382,9 +368,6 @@ class BookingController extends Controller
         } elseif ($currentStep == 6) {
             // FAQ rows are managed via storeFaq()/destroyFaq(); nothing to validate here
         } elseif ($currentStep == 7) {
-            // Pull every "meta.xxx" validation rule the selected template defines
-            // (online_link, room_type, amenities, vehicle_specs, level, ...) straight
-            // out of BookingTemplateConfig — no need to hand-duplicate them per type.
             $metaRules = collect($config->rules())
                 ->filter(fn ($rule, $key) => str_starts_with($key, 'meta.'))
                 ->toArray();
@@ -422,7 +405,6 @@ class BookingController extends Controller
 
         $this->validate($request, $rules);
 
-        // Final-step submission requires terms accepted and moves the booking to "pending" review
         $finalSubmit = ($currentStep == 8 and !$getNextStep and !$isDraft);
 
         $data['status'] = $isDraft ? 'draft' : ($finalSubmit ? 'pending' : $booking->status);
@@ -453,9 +435,6 @@ class BookingController extends Controller
                 'price_unit'       => $data['price_unit'] ?? ($subTemplate ? $subTemplate->priceUnit() : $booking->price_unit),
                 'duration_minutes' => $data['duration_minutes'] ?? null,
 
-                // Only meaningful for templates whose config actually lists them
-                // (events => capacity+inventory, accommodation => room capacity, etc.)
-                // — saved as null otherwise so switching templates can't leave stale data.
                 'capacity'  => $this->fieldRelevant('capacity', $config, $subTemplate) ? ($data['capacity'] ?? null) : null,
                 'inventory' => $this->fieldRelevant('inventory', $config, $subTemplate) ? ($data['inventory'] ?? null) : null,
 
@@ -482,18 +461,12 @@ class BookingController extends Controller
                 ]);
             }
         } elseif ($currentStep == 3) {
-            // Participants are plain Booking columns — already on the schema
             $booking->fill([
                 'min_persons'      => $data['min_persons'] ?? $booking->min_persons,
                 'max_persons'      => $data['max_persons'] ?? $booking->max_persons,
                 'max_children'     => $data['max_children'] ?? $booking->max_children,
                 'children_allowed' => !empty($data['children_allowed']) && $data['children_allowed'] === 'on',
             ]);
-
-            // Resources, Assets, Staff (all BookingResource rows distinguished by `type`)
-            // and Recurring (BookingTimeSlot rows) are added/removed live via
-            // storeResource()/destroyResource() and storeTimeSlot()/destroyTimeSlot()
-            // — nothing bulk to save here.
 
             $meta = $booking->meta ?? [];
             $meta['participants_enabled'] = !empty($data['participants_enabled']) && $data['participants_enabled'] === 'on';
@@ -529,12 +502,6 @@ class BookingController extends Controller
             $meta = $booking->meta ?? [];
             $meta['specification_value_ids'] = $specValueIds;
 
-            // Data-driven meta save: walk the selected template's own field list
-            // and only touch the "meta.xxx" keys it actually declares. This means
-            // every template (current + any future one added to BookingTemplateConfig)
-            // is supported automatically without editing this controller again, and
-            // multi-select fields (amenities, extra_fees, ticket_types) correctly
-            // reset to empty when nothing is checked instead of keeping stale data.
             $multiValueKeys = ['amenities', 'extra_fees', 'ticket_types', 'extras'];
 
             $metaFields = $subTemplate
@@ -546,7 +513,7 @@ class BookingController extends Controller
                     continue;
                 }
 
-                $metaKey = substr($field, 5); // strip "meta." prefix
+                $metaKey = substr($field, 5);
                 $submitted = $data['meta'][$metaKey] ?? null;
 
                 $meta[$metaKey] = $submitted !== null
@@ -554,10 +521,6 @@ class BookingController extends Controller
                     : (in_array($metaKey, $multiValueKeys) ? [] : null);
             }
 
-            // 'staff_id' and beauty-spa's 'extras' are declared in the config's
-            // fields() list WITHOUT the "meta." prefix (they're still stored in
-            // meta though) — handled explicitly here since the loop above only
-            // walks prefixed keys.
             if ($this->fieldRelevant('staff_id', $config, $subTemplate)) {
                 $meta['staff_id'] = $data['meta']['staff_id'] ?? null;
             }
@@ -572,7 +535,6 @@ class BookingController extends Controller
                 'checkout_message' => $data['checkout_message'] ?? null,
             ]);
 
-            // terms_accepted has no dedicated column — stored in meta instead
             $meta = $booking->meta ?? [];
             $meta['terms_accepted'] = true;
             $booking->meta = $meta;
@@ -697,8 +659,7 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | SUB-RESOURCE: RESOURCES, ASSETS & STAFF (all live in booking_resources,
-    | distinguished by `type`, AJAX add/remove inside step 3)
+    | SUB-RESOURCE: RESOURCES, ASSETS & STAFF
     |--------------------------------------------------------------------------
     */
 
@@ -736,7 +697,7 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | SUB-RESOURCE: TIME SLOTS (Recurring Bookings, AJAX add/remove inside step 3)
+    | SUB-RESOURCE: TIME SLOTS
     |--------------------------------------------------------------------------
     */
 
@@ -776,7 +737,7 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | SUB-RESOURCE: FAQ (AJAX add/remove inside step 6)
+    | SUB-RESOURCE: FAQ
     |--------------------------------------------------------------------------
     */
 
@@ -810,7 +771,7 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | CATEGORY SPECIFICATIONS (AJAX, used on category change in step 1/7)
+    | CATEGORY SPECIFICATIONS
     |--------------------------------------------------------------------------
     */
 
@@ -921,6 +882,12 @@ class BookingController extends Controller
         return $map;
     }
 
+    /**
+     * FIX: ab dono taraf (booking_type constants aur category slug/title)
+     * ko exactly wahi Str::slug() normalization se guzara jata hai jo JS ke
+     * normalizeSlug() function mein hoti hai (lowercase + dashes). Isse
+     * "beauty_spa" vs "beauty-spa" jaisi mismatches khatam ho jati hain.
+     */
     private function buildTypeCategoryMap($parentCategories): array
     {
         $map = [];
@@ -928,6 +895,23 @@ class BookingController extends Controller
             $map[Str::slug($category->slug)] = $category->id;
             $map[Str::slug($category->title)] = $category->id;
         }
+
+        // Extra safety: booking_type constants ko bhi direct keys ke tor par
+        // add karo agar koi parent category unse match karti ho (case/format
+        // farq ke bawajood) — taake JS side ka fallback aur bhi mazboot ho.
+        foreach (BookingTemplateConfig::allTypes() as $typeSlug => $label) {
+            $normalizedType = Str::slug($typeSlug);
+            if (!isset($map[$normalizedType])) {
+                foreach ($parentCategories as $category) {
+                    if (Str::slug($category->slug) === $normalizedType
+                        || Str::slug($category->title) === $normalizedType) {
+                        $map[$normalizedType] = $category->id;
+                        break;
+                    }
+                }
+            }
+        }
+
         return $map;
     }
 
@@ -975,7 +959,7 @@ class BookingController extends Controller
             ->get();
 
         $typeMap  = $this->buildTypeCategoryMap($parentCategories);
-        $parentId = $typeMap[$bookingType] ?? null;
+        $parentId = $typeMap[Str::slug($bookingType)] ?? ($typeMap[$bookingType] ?? null);
 
         if (empty($parentId)) {
             return [];
