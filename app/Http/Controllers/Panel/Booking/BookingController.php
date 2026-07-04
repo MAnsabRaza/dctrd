@@ -119,7 +119,6 @@ class BookingController extends Controller
             'templateOptions'  => BookingTemplateConfig::allTypes(),
             'bookingTypeCategoryMap' => $this->buildTypeCategoryMap($parentCategories),
             'categoriesByParent'     => $this->buildCategoriesByParentMap($childCategories),
-            'categoriesByBookingType'=> $this->buildCategoriesByBookingTypeMap($parentCategories, $childCategories),
             'subTemplateConfigs'     => $this->buildSubTemplateConfigsForJs(),
             'bookingDefaults'  => [
                 'currency'         => $user->booking_default_currency ?? $user->currency ?? 'USD',
@@ -254,7 +253,6 @@ class BookingController extends Controller
             'templateOptions'  => BookingTemplateConfig::allTypes(),
             'bookingTypeCategoryMap' => $this->buildTypeCategoryMap($parentCategories),
             'categoriesByParent'     => $this->buildCategoriesByParentMap($childCategories),
-            'categoriesByBookingType'=> $this->buildCategoriesByBookingTypeMap($parentCategories, $childCategories),
             'subTemplateConfigs'     => $this->buildSubTemplateConfigsForJs(),
         ];
 
@@ -781,7 +779,7 @@ class BookingController extends Controller
     */
 
     public function storeFaq(Request $request, $bookingId)
-    {yar 
+    {
         $booking = $this->findOwnBooking($bookingId);
 
         $data = $request->validate([
@@ -918,42 +916,6 @@ class BookingController extends Controller
                 'slug' => $child->slug,
             ];
         }
-        return $map;
-    }
-
-    private function buildCategoriesByBookingTypeMap($parentCategories, $childCategories): array
-    {
-        $map = [];
-        $childrenByParent = $this->buildCategoriesByParentMap($childCategories);
-        $typeCategoryMap = $this->buildTypeCategoryMap($parentCategories);
-
-        foreach (array_keys(BookingTemplateConfig::allTypes()) as $bookingType) {
-            $map[$bookingType] = [];
-        }
-
-        foreach ($childCategories as $child) {
-            $subTemplate = BookingSubTemplateConfig::forSlug($child->slug);
-
-            if ($subTemplate && isset($map[$subTemplate->parentType()])) {
-                $map[$subTemplate->parentType()][] = [
-                    'id' => $child->id,
-                    'title' => $child->title,
-                    'slug' => $child->slug,
-                ];
-            }
-        }
-
-        foreach ($map as $bookingType => $categories) {
-            if (!empty($categories)) {
-                continue;
-            }
-
-            $parentId = $typeCategoryMap[$bookingType] ?? null;
-            $map[$bookingType] = ($parentId && isset($childrenByParent[$parentId]))
-                ? $childrenByParent[$parentId]
-                : [];
-        }
-
         return $map;
     }
 
