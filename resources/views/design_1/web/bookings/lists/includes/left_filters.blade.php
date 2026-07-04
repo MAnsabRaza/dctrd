@@ -48,7 +48,7 @@
     </div>
 </div> -->
 
-<div class="position-relative products-lists-filters mt-28"> 
+<div class="position-relative products-lists-filters"> 
     <div class="products-lists-filters__mask"></div>
 
     <div class="position-relative bg-white py-16 rounded-24 z-index-2">

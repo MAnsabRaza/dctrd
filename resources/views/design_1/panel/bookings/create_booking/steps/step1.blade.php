@@ -93,11 +93,12 @@
 
         <div class="col-12 col-md-6">
             <div class="form-group">
-                <label>Category</label>
-                <select name="category_id" id="panelBookingCategorySelect" class="form-control" {{ empty($currentType) ? 'disabled' : '' }}>
+                <label>Category <span class="text-danger">*</span></label>
+                <select name="category_id" id="panelBookingCategorySelect" class="form-control @error('category_id') is-invalid @enderror" {{ empty($currentType) ? 'disabled' : '' }} required>
                     <option value="">{{ empty($currentType) ? 'Select booking template first' : 'Select category' }}</option>
                 </select>
                 <small class="text-muted d-block mt-1" id="panelSubTemplateNote"></small>
+                @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
 

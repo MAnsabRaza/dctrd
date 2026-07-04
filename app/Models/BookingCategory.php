@@ -13,7 +13,6 @@ class BookingCategory extends Model
     protected $table='booking_categories';
     protected $fillable=[
         'parent_id',
-        'user_id',
         'title',
         'slug',
         'icon',

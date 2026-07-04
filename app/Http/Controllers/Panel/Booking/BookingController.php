@@ -99,6 +99,7 @@ class BookingController extends Controller
 
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title', 'slug', 'parent_id')
+            ->where('status', 1)
             ->orderBy('title')
             ->get();
 
@@ -146,7 +147,7 @@ class BookingController extends Controller
         $rules = [
             'title'        => 'required|string|max:255',
             'slug'         => 'nullable|string|max:255|unique:bookings,slug',
-            'category_id'  => $this->categoryValidationRule($request->booking_type ?? ''),
+            'category_id'  => $this->categoryValidationRule($request->booking_type ?? '', true),
             'language'     => 'nullable|string|max:10',
             // booking_type is now always one of the 7 BookingTemplateConfig slugs.
             'booking_type' => 'required|in:' . implode(',', array_keys(BookingTemplateConfig::allTypes())),
@@ -230,6 +231,7 @@ class BookingController extends Controller
 
         $allCategoryLists = BookingCategory::query()
             ->select('id', 'title', 'slug', 'parent_id')
+            ->where('status', 1)
             ->orderBy('title')
             ->get();
         $parentCategories = $allCategoryLists->whereNull('parent_id')->values();
@@ -322,7 +324,7 @@ class BookingController extends Controller
             $rules = [
                 'title'        => 'required|string|max:255',
                 'slug'         => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')->ignore($booking->id)],
-                'category_id'  => $this->categoryValidationRule($request->booking_type ?? $booking->booking_type ?? ''),
+                'category_id'  => $this->categoryValidationRule($request->booking_type ?? $booking->booking_type ?? '', true),
                 'language'     => 'nullable|string|max:10',
                 'booking_type' => 'required|in:' . implode(',', array_keys(BookingTemplateConfig::allTypes())),
                 'sub_type'     => 'nullable|string|max:255',
@@ -929,12 +931,12 @@ class BookingController extends Controller
         return $map;
     }
 
-    private function categoryValidationRule(string $bookingType): array
+    private function categoryValidationRule(string $bookingType, bool $required = false): array
     {
         $validCategoryIds = $this->validCategoryIdsForBookingType($bookingType);
 
         return [
-            'nullable',
+            $required ? 'required' : 'nullable',
             Rule::exists('booking_categories', 'id')->where(function ($q) use ($validCategoryIds) {
                 if (!empty($validCategoryIds)) {
                     $q->whereIn('id', $validCategoryIds);
