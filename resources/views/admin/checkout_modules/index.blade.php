@@ -353,7 +353,8 @@
                                                 </div>
 
                                                 {{-- ── Toggles ── --}}
-                                               
+                                                <div class="form-group">
+                                                  
                                                     <div class="custom-control custom-switch">
                                                         <input type="checkbox" name="is_active"
                                                                class="custom-control-input" id="is_active"
