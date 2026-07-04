@@ -29,6 +29,24 @@
     $currentType    = old('booking_type', $booking->booking_type ?? '');
     $currentSubType = old('sub_type', $booking->sub_type ?? '');
     $currentCategoryId = old('category_id', $booking->category_id ?? '');
+
+    $bookingCategoryOptions = collect($allCategoryLists ?? [])
+        ->whereNotNull('parent_id')
+        ->map(function ($category) use ($allCategoryLists) {
+            $subTemplate = \App\Services\BookingSubTemplateConfig::forSlug($category->slug);
+            $parent = collect($allCategoryLists ?? [])->firstWhere('id', $category->parent_id);
+
+            return [
+                'id' => $category->id,
+                'title' => $category->title,
+                'slug' => $category->slug,
+                'parent_id' => $category->parent_id,
+                'booking_type' => $subTemplate
+                    ? $subTemplate->parentType()
+                    : (!empty($parent) ? \Illuminate\Support\Str::slug($parent->slug ?: $parent->title) : ''),
+            ];
+        })
+        ->values();
 @endphp
 
 <div class="section-head">
@@ -46,6 +64,7 @@
             <div class="col-6 col-md-4 col-lg-3 mb-3">
                 <label class="pill-check mb-0">
                     <input type="radio" name="booking_type" value="{{ $value }}" class="booking-type-radio"
+                           onchange="window.panelBookingStep1ApplyTemplate && window.panelBookingStep1ApplyTemplate(this.value, false)"
                            {{ $currentType === $value ? 'checked' : '' }} required>
                     <span class="pill-box">
                         <i class="fa {{ $templateIcons[$value] ?? 'fa-bookmark' }} d-block mb-1"></i>
@@ -94,8 +113,17 @@
         <div class="col-12 col-md-6">
             <div class="form-group">
                 <label>Category <span class="text-danger">*</span></label>
-                <select name="category_id" id="panelBookingCategorySelect" class="form-control @error('category_id') is-invalid @enderror" {{ empty($currentType) ? 'disabled' : '' }} required>
+                <select name="category_id" id="panelBookingCategorySelect" class="form-control @error('category_id') is-invalid @enderror" required>
                     <option value="">{{ empty($currentType) ? 'Select booking template first' : 'Select category' }}</option>
+                    @foreach($bookingCategoryOptions as $categoryOption)
+                        <option value="{{ $categoryOption['id'] }}"
+                                data-slug="{{ $categoryOption['slug'] }}"
+                                data-booking-type="{{ $categoryOption['booking_type'] }}"
+                                {{ (string) $currentCategoryId === (string) $categoryOption['id'] ? 'selected' : '' }}
+                                {{ !empty($currentType) && $categoryOption['booking_type'] !== $currentType ? 'hidden disabled' : '' }}>
+                            {{ $categoryOption['title'] }}
+                        </option>
+                    @endforeach
                 </select>
                 <small class="text-muted d-block mt-1" id="panelSubTemplateNote"></small>
                 @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
@@ -169,6 +197,16 @@ function initPanelBookingStep1() {
     var subTypeText = document.getElementById('subTypeText');
     var categorySelect = document.getElementById('panelBookingCategorySelect');
     var subTemplateNote = document.getElementById('panelSubTemplateNote');
+    var renderedCategoryOptions = categorySelect
+        ? Array.prototype.slice.call(categorySelect.querySelectorAll('option[data-booking-type]')).map(function (option) {
+            return {
+                id: option.value,
+                title: option.textContent,
+                slug: option.getAttribute('data-slug') || '',
+                booking_type: option.getAttribute('data-booking-type') || ''
+            };
+        })
+        : [];
 
     function normalizeSlug(value) {
         return String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -194,6 +232,14 @@ function initPanelBookingStep1() {
                     matched.push(cat);
                 }
             });
+        });
+
+        if (matched.length) {
+            return matched;
+        }
+
+        matched = renderedCategoryOptions.filter(function (cat) {
+            return cat.booking_type === type;
         });
 
         if (matched.length) {
@@ -283,6 +329,8 @@ function initPanelBookingStep1() {
 
         populateCategories(type, isInitial ? currentCategoryId : null);
     }
+
+    window.panelBookingStep1ApplyTemplate = applyTemplate;
 
     function applyCheckedTemplate(isInitial) {
         var checkedRadio = document.querySelector('.booking-type-radio:checked');
