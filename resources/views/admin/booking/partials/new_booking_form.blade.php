@@ -66,7 +66,7 @@
                                 class="form-control @error('category_id') is-invalid @enderror"
                                 {{ empty($currentType) ? 'disabled' : '' }}>
                             <option value="">
-                                {{ empty($currentType) ? 'Pehle Booking Type select karein' : 'Select a Category' }}
+                                {{ empty($currentType) ? 'Select booking type first' : 'Select a Category' }}
                             </option>
                             @if(!empty($booking) && $booking->category)
                                 <option value="{{ $booking->category->id }}" data-slug="{{ $booking->category->slug }}" selected>
