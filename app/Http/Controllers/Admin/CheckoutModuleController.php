@@ -64,7 +64,6 @@ class CheckoutModuleController extends Controller
             'price_rule'               => 'nullable|json',
             'order_index'              => 'required|integer|min:0',
             'is_active'                => 'nullable|boolean',
-            'is_required'              => 'nullable|boolean',
             'translations'             => 'nullable|array',
             'translations.*.locale'    => 'required|string|max:10',
             'translations.*.label'     => 'nullable|string|max:255',
@@ -85,7 +84,6 @@ class CheckoutModuleController extends Controller
                 'price_rule'  => $request->filled('price_rule') ? json_decode($request->price_rule, true) : null,
                 'order_index' => (int) $request->order_index,
                 'is_active'   => $request->boolean('is_active', true),
-                'is_required' => $request->boolean('is_required', false),
             ]);
 
             if ($request->filled('translations')) {
@@ -154,7 +152,6 @@ class CheckoutModuleController extends Controller
             'price_rule'               => 'nullable|json',
             'order_index'              => 'required|integer|min:0',
             'is_active'                => 'nullable|boolean',
-            'is_required'              => 'nullable|boolean',
             'translations'             => 'nullable|array',
             'translations.*.locale'    => 'required|string|max:10',
             'translations.*.label'     => 'nullable|string|max:255',
@@ -170,7 +167,6 @@ class CheckoutModuleController extends Controller
                 'price_rule'  => $request->filled('price_rule') ? json_decode($request->price_rule, true) : null,
                 'order_index' => (int) $request->order_index,
                 'is_active'   => $request->boolean('is_active', true),
-                'is_required' => $request->boolean('is_required', false),
             ]);
 
             if ($request->filled('translations')) {

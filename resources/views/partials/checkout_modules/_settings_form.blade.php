@@ -1,15 +1,8 @@
 {{--
     partials/checkout_modules/_settings_form.blade.php
-
     Checkout Options Settings Panel — BOOKING ONLY
-    - Sirf "Bookings" ke modules dikhaye jaate hain (days, hours, staff_member,
-      persons_children, extra_services, cancellation_policy, checkout_message)
-    - Har module ka EK toggle — ON/OFF karne se "enabled" AND "required"
-      dono database mein update hote hain (org_checkout_modules table)
-    - Data $moduleSettings (database se, CheckoutModuleService::getOrgModuleSettings) se aata hai
-    - Field name "modules[name]" — UserController@checkoutOptionsUpdate ke
-      validation se match karta hai
-    - Hidden input + checkbox combo: toggle OFF karne par bhi "0" submit hota hai
+    Har module ka SIRF EK toggle - enabled/disabled (is_active status).
+    "Required" concept poori tarah remove kar diya gaya hai.
 --}}
 
 @php
@@ -23,21 +16,15 @@
 
     $rawSettings = $moduleSettings ?? [];
 
-    // Sirf booking checkout pe use hone wale modules — order yahi rakha gaya hai
     $bookingModuleNames = [
-        'days',
-        'hours',
-        'staff_member',
-        'persons_children',
-        'extra_services',
-        'cancellation_policy',
-        'checkout_message',
+        'days', 'hours', 'staff_member', 'persons_children',
+        'extra_services', 'cancellation_policy', 'checkout_message',
     ];
 
     $moduleLabels = [
         'days'                => trans('cart.module_days')                ?? 'Select Days',
         'hours'               => trans('cart.module_hours')               ?? 'Select Time Slot',
-        'staff_member'        => trans('cart.module_staff_member')        ?? 'Select Staff Member',
+        'staff_member'        => trans('cart.module_staff_member')        ?? 'Customer Name',
         'persons_children'    => trans('cart.module_persons_children')    ?? 'Guests',
         'extra_services'      => trans('cart.module_extra_services')      ?? 'Extra Services',
         'cancellation_policy' => trans('cart.module_cancellation_policy') ?? 'Cancellation Policy',
@@ -46,15 +33,13 @@
     $moduleDescs = [
         'days'                => trans('cart.module_days_desc')                ?? 'Check-in and check-out dates',
         'hours'               => trans('cart.module_hours_desc')               ?? 'Preferred time slot',
-        'staff_member'        => trans('cart.module_staff_member_desc')        ?? 'Choose preferred staff member',
+        'staff_member'        => trans('cart.module_staff_member_desc')        ?? 'Shows the logged-in customer name',
         'persons_children'    => trans('cart.module_persons_children_desc')    ?? 'Number of adults, children and rooms',
         'extra_services'      => trans('cart.module_extra_services_desc')      ?? 'Additional services you require',
         'cancellation_policy' => trans('cart.module_cancellation_policy_desc') ?? 'Please read and agree to our policy',
         'checkout_message'    => trans('cart.module_checkout_message_desc')    ?? 'Any special instructions for your booking',
     ];
 
-    // $rawSettings, CheckoutModuleService::getOrgModuleSettings() se aata hai —
-    // flat array of ['name' => ..., 'enabled' => ..., 'is_required' => ..., ...]
     $bookingModules = [];
     foreach ($bookingModuleNames as $modName) {
         $found = null;
@@ -66,167 +51,52 @@
         }
 
         $bookingModules[] = [
-            'name'        => $modName,
-            'label'       => $found['label']       ?? ($moduleLabels[$modName] ?? $modName),
-            'desc'        => $found['help_text']   ?? ($moduleDescs[$modName]  ?? ''),
-            'enabled'     => $found['enabled']     ?? false,
-            'required'    => $found['required']    ?? false,
-            'is_required' => $found['is_required'] ?? false, // global, hamesha required
+            'name'    => $modName,
+            'label'   => $found['label']     ?? ($moduleLabels[$modName] ?? $modName),
+            'desc'    => $found['help_text'] ?? ($moduleDescs[$modName]  ?? ''),
+            'enabled' => $found['enabled']   ?? false,
         ];
     }
 @endphp
 
 @push('styles_top')
 <style>
-.co-wrap {
-    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
-}
-
-.co-section-header {
-    padding: 6px 0 8px;
-}
-
-.co-section-name {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: 0.01em;
-}
-
+.co-wrap { font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif); }
+.co-section-header { padding: 6px 0 8px; }
+.co-section-name { font-size: 12.5px; font-weight: 700; color: #0f172a; letter-spacing: 0.01em; }
 .co-module-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 7px 6px 7px 4px;
-    border-radius: 7px;
-    transition: background 0.12s;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 6px 7px 4px; border-radius: 7px; transition: background 0.12s;
 }
-.co-module-row:hover {
-    background: #f1f5f9;
-}
-
-.co-module-actions {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-shrink: 0;
-}
-
-.co-required-option {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    margin: 0;
-    font-size: 11px;
-    font-weight: 600;
-    color: #64748b;
-}
-
-.co-required-option input {
-    margin: 0;
-}
-
-.co-module-row-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-}
-
-.co-module-row-text {
-    min-width: 0;
-}
-
-.co-module-row-name {
-    font-size: 12.5px;
-    font-weight: 500;
-    color: #1e293b;
-    line-height: 1.3;
-}
-
-.co-module-row-desc {
-    font-size: 10.5px;
-    color: #94a3b8;
-    line-height: 1.3;
-    margin-top: 1px;
-}
-
-.co-required-badge {
-    font-size: 9.5px;
-    font-weight: 600;
-    color: #2563EB;
-    background: #eff6ff;
-    border-radius: 4px;
-    padding: 1px 6px;
-    margin-left: 6px;
-    white-space: nowrap;
-}
-
+.co-module-row:hover { background: #f1f5f9; }
+.co-module-row-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.co-module-row-text { min-width: 0; }
+.co-module-row-name { font-size: 12.5px; font-weight: 500; color: #1e293b; line-height: 1.3; }
+.co-module-row-desc { font-size: 10.5px; color: #94a3b8; line-height: 1.3; margin-top: 1px; }
 .co-save-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 0.5px solid #e2e8f0;
+    display: flex; align-items: center; gap: 10px; margin-top: 14px;
+    padding-top: 12px; border-top: 0.5px solid #e2e8f0;
 }
-
 #co-save-btn {
-    padding: 6px 18px;
-    font-size: 12.5px;
-    font-weight: 600;
-    background: #2563EB;
-    color: #fff;
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: background 0.15s, opacity 0.15s;
+    padding: 6px 18px; font-size: 12.5px; font-weight: 600;
+    background: #2563EB; color: #fff; border: none; border-radius: 7px;
+    cursor: pointer; transition: background 0.15s, opacity 0.15s;
 }
 #co-save-btn:hover   { background: #1d4ed8; }
 #co-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-#co-save-msg {
-    font-size: 12px;
-    color: #16a34a;
-    font-weight: 500;
-    display: none;
-}
-
-/* ── MODULE TOGGLE (34×19) ── */
-.co-mod-toggle {
-    position: relative;
-    width: 34px;
-    height: 19px;
-    flex-shrink: 0;
-}
+#co-save-msg { font-size: 12px; color: #16a34a; font-weight: 500; display: none; }
+.co-mod-toggle { position: relative; width: 34px; height: 19px; flex-shrink: 0; }
 .co-mod-toggle input { opacity:0; width:0; height:0; position:absolute; }
-.co-mod-slider {
-    position: absolute;
-    inset: 0;
-    border-radius: 20px;
-    background: #cbd5e1;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+.co-mod-slider { position: absolute; inset: 0; border-radius: 20px; background: #cbd5e1; cursor: pointer; transition: background 0.2s; }
 .co-mod-slider:before {
-    content: '';
-    position: absolute;
-    width: 13px; height: 13px;
-    border-radius: 50%;
-    background: #fff;
-    top: 3px; left: 3px;
-    transition: transform 0.2s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    content: ''; position: absolute; width: 13px; height: 13px; border-radius: 50%;
+    background: #fff; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
-.co-mod-toggle input:checked + .co-mod-slider           { background: #2563EB; }
-.co-mod-toggle input:checked + .co-mod-slider:before    { transform: translateX(15px); }
-.co-mod-toggle input:disabled + .co-mod-slider          { opacity: 0.7; cursor: not-allowed; }
+.co-mod-toggle input:checked + .co-mod-slider        { background: #2563EB; }
+.co-mod-toggle input:checked + .co-mod-slider:before { transform: translateX(15px); }
 </style>
 @endpush
 
-{{-- ══════════════════════════════════════════
-     HTML
-══════════════════════════════════════════ --}}
 <div class="co-wrap">
 
     @if($wrapForm)
@@ -242,70 +112,30 @@
         @foreach($bookingModules as $mod)
             <div class="co-module-row">
                 <div class="co-module-row-left">
-
-                    @if($mod['is_required'])
-                        {{-- Globally required module — toggle hamesha ON, disable kiya hai --}}
-                        <label class="co-mod-toggle" title="{{ $mod['label'] }}">
-                            <input type="checkbox" checked disabled>
-                            <span class="co-mod-slider"></span>
-                        </label>
-                        {{-- Hidden field zaroori nahi — service is_required modules ko
-                             hamesha true rakhta hai chahe input aaye ya na aaye --}}
-                    @else
-                        {{-- Hidden input pehle — checkbox unchecked hone par "0" submit hoga --}}
-                        <input type="hidden" name="modules[{{ $mod['name'] }}]" value="0">
-                        <label class="co-mod-toggle" title="{{ $mod['label'] }}">
-                            <input
-                                type="checkbox"
-                                class="co-module-toggle"
-                                name="modules[{{ $mod['name'] }}]"
-                                value="1"
-                                data-module="{{ $mod['name'] }}"
-                                {{ $mod['enabled'] ? 'checked' : '' }}
-                            >
-                            <span class="co-mod-slider"></span>
-                        </label>
-                    @endif
+                    <input type="hidden" name="modules[{{ $mod['name'] }}]" value="0">
+                    <label class="co-mod-toggle" title="{{ $mod['label'] }}">
+                        <input
+                            type="checkbox"
+                            class="co-module-toggle"
+                            name="modules[{{ $mod['name'] }}]"
+                            value="1"
+                            data-module="{{ $mod['name'] }}"
+                            {{ $mod['enabled'] ? 'checked' : '' }}
+                        >
+                        <span class="co-mod-slider"></span>
+                    </label>
 
                     <div class="co-module-row-text">
-                        <div class="co-module-row-name">
-                            {{ $mod['label'] }}
-                            @if($mod['is_required'])
-                                <span class="co-required-badge">{{ trans('cart.always_required') ?? 'Always Required' }}</span>
-                            @endif
-                        </div>
+                        <div class="co-module-row-name">{{ $mod['label'] }}</div>
                         @if($mod['desc'])
                             <div class="co-module-row-desc">{{ $mod['desc'] }}</div>
                         @endif
                     </div>
                 </div>
-
-                <div class="co-module-actions">
-                    @if($mod['is_required'])
-                        <input type="hidden" name="modules[{{ $mod['name'] }}]" value="1">
-                        <input type="hidden" name="required_modules[{{ $mod['name'] }}]" value="1">
-                        <label class="co-required-option">
-                            <input type="checkbox" checked disabled>
-                            <span>{{ trans('admin/pages/checkout_modules.required') ?? 'Required' }}</span>
-                        </label>
-                    @else
-                        <input type="hidden" name="required_modules[{{ $mod['name'] }}]" value="0">
-                        <label class="co-required-option">
-                            <input
-                                type="checkbox"
-                                name="required_modules[{{ $mod['name'] }}]"
-                                value="1"
-                                {{ $mod['required'] ? 'checked' : '' }}
-                            >
-                            <span>{{ trans('admin/pages/checkout_modules.required') ?? 'Required' }}</span>
-                        </label>
-                    @endif
-                </div>
             </div>
         @endforeach
     </div>
 
-    {{-- Save Row --}}
     <div class="co-save-row">
         @if($wrapForm)
             <button type="submit" id="co-save-btn">{{ $submitLabel }}</button>
@@ -318,7 +148,6 @@
     @if($wrapForm)
         </form>
     @endif
-
 </div>
 
 @push('scripts_bottom')
@@ -326,35 +155,20 @@
 (function () {
     'use strict';
 
-    /* AJAX save (jab wrapForm = false ho) */
     window.coSaveSettings = function () {
         var btn = document.getElementById('co-save-btn');
         var msg = document.getElementById('co-save-msg');
         var modules = {};
-        var requiredModules = {};
 
         document.querySelectorAll('#co-mods-bookings input[name^="modules["]').forEach(function (input) {
             var match = input.name.match(/modules\[(.+)\]/);
             if (!match) return;
             var modName = match[1];
 
-            // checkbox priority: agar checkbox checked hai to true, warna hidden ki value
             if (input.type === 'checkbox') {
                 modules[modName] = input.checked;
             } else if (!(modName in modules)) {
                 modules[modName] = (input.value === '1');
-            }
-        });
-
-        document.querySelectorAll('#co-mods-bookings input[name^="required_modules["]').forEach(function (input) {
-            var match = input.name.match(/required_modules\[(.+)\]/);
-            if (!match) return;
-            var modName = match[1];
-
-            if (input.type === 'checkbox') {
-                requiredModules[modName] = input.checked;
-            } else if (!(modName in requiredModules)) {
-                requiredModules[modName] = (input.value === '1');
             }
         });
 
@@ -370,7 +184,7 @@
                 'X-CSRF-TOKEN': csrf ? csrf.getAttribute('content') : '',
                 'Accept': 'application/json',
             },
-            body: JSON.stringify({ modules: modules, required_modules: requiredModules })
+            body: JSON.stringify({ modules: modules })
         })
         .then(function (r) { return r.json(); })
         .then(function () {
@@ -387,7 +201,6 @@
         });
     };
 
-    /* Standard form submit feedback */
     (function () {
         var form = document.getElementById('{{ $formId }}');
         if (!form) return;
@@ -396,7 +209,6 @@
             if (btn) { btn.textContent = '{{ trans("cart.saving") ?? "Saving..." }}'; btn.disabled = true; }
         });
     })();
-
 })();
 </script>
 @endpush

@@ -177,7 +177,6 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="booking-info-title">
                             {{ $daysModule->translated_label ?? trans('update.check_in_date') ?? 'Check-in Date' }}
-                            @if($daysModule->is_required)<span class="text-danger">*</span>@endif
                         </div>
                         @if($perDay)
                             <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perDay) }}/{{ trans('cart.day') ?? 'day' }}</span>
@@ -193,7 +192,6 @@
                                class="form-control form-control-sm bmod-date-input bmod-cin"
                                value="{{ $oldCheckIn }}"
                                min="{{ now()->format('Y-m-d') }}"
-                               {{ $daysModule->is_required ? 'required' : '' }}
                                style="border-radius:12px;">
                         <input type="date"
                                name="{{ $datePrefix }}[check_out]"
@@ -201,7 +199,6 @@
                                class="form-control form-control-sm bmod-date-input bmod-cout"
                                value="{{ $oldCheckOut }}"
                                min="{{ now()->format('Y-m-d') }}"
-                               {{ $daysModule->is_required ? 'required' : '' }}
                                style="border-radius:12px;">
                         <div class="booking-info-label bmod-cin-label">{{ $checkInLabel }}</div>
                         <div class="cmod-nights" id="bmod_nights_{{ $itemKey }}">0 {{ trans('cart.nights') ?? 'nights' }}</div>
@@ -259,41 +256,30 @@
                 </div>
             @endif
 
-            {{-- STAFF MODULE --}}
-            @if($staffModule)
-                @php $staffOptions = $staffModule->config['staff'] ?? []; @endphp
-                <div class="booking-info-card" data-module-name="staff_member" data-price-type="none">
-                    <div class="booking-info-title">
-                        {{ $staffModule->translated_label ?? trans('cart.staff_member') ?? 'Assigned Staff' }}
-                        @if($staffModule->is_required)<span class="text-danger">*</span>@endif
-                    </div>
-                    <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
-                        <div class="booking-info-icon">
-                            <x-iconsax-lin-profile class="icons" width="16px" height="16px"/>
-                        </div>
-                        @if(!empty($staffOptions))
-                            <select name="{{ $staffPrefix }}"
-                                    id="bmod_staff_{{ $itemKey }}"
-                                    class="form-control form-control-sm"
-                                    {{ $staffModule->is_required ? 'required' : '' }}
-                                    style="border-radius:12px;">
-                                <option value="">— {{ trans('cart.select_staff') ?? 'Select staff' }} —</option>
-                                @foreach($staffOptions as $staff)
-                                    @php $value = $staff['id'] ?? $staff['name']; @endphp
-                                    <option value="{{ $value }}" {{ $selectedStaff == $value ? 'selected' : '' }}>{{ $staff['name'] }}</option>
-                                @endforeach
-                            </select>
-                        @else
-                            <div class="booking-info-value">{{ $staffLabel }}</div>
-                            <input type="hidden" name="{{ $staffPrefix }}" value="{{ $selectedStaff }}">
-                        @endif
-                        <div class="booking-info-label">{{ $staffLabel }}</div>
-                    </div>
-                    @error("checkout_modules.{$itemKey}.staff_member")
-                        <div class="text-danger font-11 mt-4">{{ $message }}</div>
-                    @enderror
-                </div>
-            @endif
+        {{-- CUSTOMER NAME (auto-filled, logged-in user) --}}
+@if($staffModule)
+    @php
+        $customerName = auth()->check() ? auth()->user()->full_name : $staffLabel;
+    @endphp
+    <div class="booking-info-card" data-module-name="staff_member" data-price-type="none">
+        <div class="booking-info-title">
+            {{ $staffModule->translated_label ?? trans('cart.staff_member') ?? 'Customer Name' }}
+        </div>
+        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
+            <div class="booking-info-icon">
+                <x-iconsax-lin-profile class="icons" width="16px" height="16px"/>
+            </div>
+            <input type="text"
+                   name="{{ $staffPrefix }}"
+                   id="bmod_staff_{{ $itemKey }}"
+                   class="form-control form-control-sm"
+                   value="{{ old("checkout_modules.{$itemKey}.staff_member", $customerName) }}"
+                   readonly
+                   style="border-radius:12px;background:#f8fafc;">
+            <div class="booking-info-label">{{ $customerName }}</div>
+        </div>
+    </div>
+@endif
 
         </div>{{-- .booking-info-grid --}}
     @endif

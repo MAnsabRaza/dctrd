@@ -48,15 +48,16 @@
             </div>
         </div>
 
-        @if(!empty($cart))
-            <div class="booking-cart-card__modules w-100 mt-16 mt-xl-0">
-                @include('design_1.web.cart.overview.includes.checkout_item_modules', [
-                    'cart' => $cart,
-                    'showHeader' => false,
-                    'wrapperClassName' => 'booking-checkout-shell',
-                ])
-            </div>
-        @endif
+@if(!empty($cart))
+    <div class="booking-cart-card__modules w-100 mt-16 mt-xl-0">
+        @include('design_1.web.cart.overview.includes.checkout_item_modules', [
+            'cart' => $cart,
+            'checkoutModules' => $checkoutModulesByCart[$cart->id] ?? collect(),
+            'showHeader' => false,
+            'wrapperClassName' => 'booking-checkout-shell',
+        ])
+    </div>
+@endif
 
         <div class="booking-cart-card__price d-flex align-items-center justify-content-between justify-content-xl-end mt-16 mt-xl-0 cart-item-card__quantity">
             <div class="d-flex align-items-center mr-56 mr-lg-0">

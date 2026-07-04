@@ -1796,28 +1796,25 @@ class UserController extends Controller
         abort(404);
     }
 
-    public function checkoutOptionsUpdate(Request $request, $id)
-    {
-        $this->authorize('admin_users_edit');
+   public function checkoutOptionsUpdate(Request $request, $id)
+{
+    $this->authorize('admin_users_edit');
 
-        $user = User::query()->findOrFail($id);
+    $user = User::query()->findOrFail($id);
 
-        $data = $request->validate([
-            'modules' => 'required|array',
-            'modules.*' => 'nullable|boolean',
-            'required_modules' => 'nullable|array',
-            'required_modules.*' => 'nullable|boolean',
-        ]);
+    $data = $request->validate([
+        'modules'   => 'required|array',
+        'modules.*' => 'nullable|boolean',
+    ]);
 
-        app(CheckoutModuleService::class)->saveOrgModuleSettings(
-            $user->id,
-            $data['modules'] ?? [],
-            $data['required_modules'] ?? []
-        );
+    app(CheckoutModuleService::class)->saveOrgModuleSettings(
+        $user->id,
+        $data['modules'] ?? []
+    );
 
-        return redirect(getAdminPanelUrl("/users/{$user->id}/edit?tab=checkoutOptions"))
-            ->with('msg', trans('update.saved_successfully'));
-    }
+    return redirect(getAdminPanelUrl("/users/{$user->id}/edit?tab=checkoutOptions"))
+        ->with('msg', trans('update.saved_successfully'));
+}
 
     public function disableCashbackToggle($id)
     {

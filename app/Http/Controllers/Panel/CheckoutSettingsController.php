@@ -41,52 +41,44 @@ class CheckoutSettingsController extends Controller
      * URL: POST /panel/checkout-settings/save
      * Returns: JSON (AJAX se call hota hai)
      */
-    public function save(Request $request)
-    {
-        $request->validate([
-            'modules'   => 'required|array',
-            'modules.*' => 'boolean',
-            'required_modules' => 'nullable|array',
-            'required_modules.*' => 'boolean',
-        ], [
-            'modules.required' => trans('panel.checkout_options_modules_required'),
-            'modules.array'    => trans('panel.checkout_options_modules_invalid'),
-        ]);
+   public function save(Request $request)
+{
+    $request->validate([
+        'modules'   => 'required|array',
+        'modules.*' => 'boolean',
+    ], [
+        'modules.required' => trans('panel.checkout_options_modules_required'),
+        'modules.array'    => trans('panel.checkout_options_modules_invalid'),
+    ]);
 
-        $orgId = Auth::id();
+    $orgId = Auth::id();
 
-        try {
-            // Service ko call karo — ['days' => true, 'hours' => false, ...]
-            $this->checkoutModuleService->saveOrgModuleSettings(
-                $orgId,
-                $request->modules,
-                $request->input('required_modules', [])
-            );
+    try {
+        $this->checkoutModuleService->saveOrgModuleSettings($orgId, $request->modules);
 
-            // AJAX request hai?
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => trans('panel.checkout_options_saved'),
-                ]);
-            }
-
-            return redirect()
-                ->route('panel.checkout-settings')
-                ->with('success', trans('panel.checkout_options_saved'));
-
-        } catch (\Exception $e) {
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => trans('panel.checkout_options_save_failed'),
-                ], 500);
-            }
-
-            return back()->with('error', trans('panel.checkout_options_save_failed'));
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => trans('panel.checkout_options_saved'),
+            ]);
         }
+
+        return redirect()
+            ->route('panel.checkout-settings')
+            ->with('success', trans('panel.checkout_options_saved'));
+
+    } catch (\Exception $e) {
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => trans('panel.checkout_options_save_failed'),
+            ], 500);
+        }
+
+        return back()->with('error', trans('panel.checkout_options_save_failed'));
     }
+}
 
     // =========================================================
 

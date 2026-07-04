@@ -17,14 +17,12 @@ class CheckoutModule extends Model
         'price_rule',
         'order_index',
         'is_active',
-        'is_required',
     ];
 
     protected $casts = [
         'config' => 'array',
         'price_rule' => 'array',
         'is_active' => 'boolean',
-        'is_required' => 'boolean',
     ];
 
     // ─────────────────────────────────────────
