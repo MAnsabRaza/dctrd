@@ -81,7 +81,7 @@
                         </div>
                     </div>
                     <div class="text-gray-500 text-small mt-1">
-                        Sirf usi Booking Type ki subcategories yahan dikhengi jo upar select ki gayi hai.
+                        Only subcategories of the selected booking type will be shown here.
                     </div>
                     <div class="text-primary text-small mt-1" id="subTemplateNote"></div>
                     @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
@@ -856,7 +856,7 @@
 
         if (!type) {
             select.disabled = true;
-            select.appendChild(makeOption('', 'Pehle Booking Type select karein'));
+            select.appendChild(makeOption('', 'Select booking template first'));
             triggerSelectTwoRefresh(select);
             return;
         }
