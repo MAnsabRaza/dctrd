@@ -77,7 +77,7 @@
                                                         <th class="text-left">{{ trans('admin/pages/checkout_modules.name') }}</th>
                                                         <th class="text-center">{{ trans('admin/pages/checkout_modules.input_type') }}</th>
                                                         <th class="text-center">{{ trans('admin/pages/checkout_modules.order') }}</th>
-                                                        <th class="text-center">{{ trans('admin/pages/checkout_modules.required') }}</th>
+                                                       
                                                         <th class="text-center">{{ trans('admin/main.status') }}</th>
                                                         <th class="text-center">{{ trans('admin/main.action') }}</th>
                                                     </tr>
@@ -102,14 +102,7 @@
                                                             {{-- Order --}}
                                                             <td class="text-center">{{ $module->order_index }}</td>
 
-                                                            {{-- Required --}}
-                                                            <td class="text-center">
-                                                                @if($module->is_required)
-                                                                    <span class="badge badge-warning">{{ trans('admin/main.yes') }}</span>
-                                                                @else
-                                                                    <span class="text-muted">—</span>
-                                                                @endif
-                                                            </td>
+                                                         
 
                                                             {{-- Active Toggle (AJAX) --}}
                                                             <td class="text-center">
@@ -360,16 +353,7 @@
                                                 </div>
 
                                                 {{-- ── Toggles ── --}}
-                                                <div class="form-group">
-                                                    <div class="custom-control custom-switch mb-2">
-                                                        <input type="checkbox" name="is_required"
-                                                               class="custom-control-input" id="is_required"
-                                                               value="1"
-                                                               {{ (!empty($editModule) && $editModule->is_required) ? 'checked' : '' }}>
-                                                        <label class="custom-control-label" for="is_required">
-                                                            {{ trans('admin/pages/checkout_modules.required') }}
-                                                        </label>
-                                                    </div>
+                                               
                                                     <div class="custom-control custom-switch">
                                                         <input type="checkbox" name="is_active"
                                                                class="custom-control-input" id="is_active"
