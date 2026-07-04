@@ -153,20 +153,22 @@
     </div>
 </div>
 
+@push('scripts_bottom')
 <script>
-(function () {
-    const subTypeOptionsMap = @json($subTypeOptionsMap);
-    const subTypeSelectWrap  = document.getElementById('subTypeSelectWrap');
-    const subTypeTextWrap    = document.getElementById('subTypeTextWrap');
-    const subTypeSelect      = document.getElementById('subTypeSelect');
-    const subTypeText        = document.getElementById('subTypeText');
-    const currentSubType     = {{ json_encode($currentSubType) }};
-    const currentCategoryId  = {{ json_encode((string) $currentCategoryId) }};
-    const typeCategoryMap    = @json($bookingTypeCategoryMap ?? []);
-    const categoriesByParent = @json($categoriesByParent ?? []);
-    const subTemplateConfigs = @json($subTemplateConfigs ?? []);
-    const categorySelect     = document.getElementById('panelBookingCategorySelect');
-    const subTemplateNote    = document.getElementById('panelSubTemplateNote');
+document.addEventListener('DOMContentLoaded', function () {
+    var subTypeOptionsMap = @json($subTypeOptionsMap);
+    var currentSubType = {{ json_encode($currentSubType) }};
+    var currentCategoryId = {{ json_encode((string) $currentCategoryId) }};
+    var typeCategoryMap = @json($bookingTypeCategoryMap ?? []);
+    var categoriesByParent = @json($categoriesByParent ?? []);
+    var subTemplateConfigs = @json($subTemplateConfigs ?? []);
+
+    var subTypeSelectWrap = document.getElementById('subTypeSelectWrap');
+    var subTypeTextWrap = document.getElementById('subTypeTextWrap');
+    var subTypeSelect = document.getElementById('subTypeSelect');
+    var subTypeText = document.getElementById('subTypeText');
+    var categorySelect = document.getElementById('panelBookingCategorySelect');
+    var subTemplateNote = document.getElementById('panelSubTemplateNote');
 
     function normalizeSlug(value) {
         return String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -177,14 +179,18 @@
         return subTemplateConfigs[slug] || null;
     }
 
+    function categoryMatchesType(category, type) {
+        var sub = findSubTemplate(category.slug);
+        return sub && sub.parent_type === type;
+    }
+
     function getCategoryChildrenForType(type) {
         if (!type) return [];
 
-        const matched = [];
+        var matched = [];
         Object.keys(categoriesByParent || {}).forEach(function (parentId) {
             (categoriesByParent[parentId] || []).forEach(function (cat) {
-                const sub = findSubTemplate(cat.slug);
-                if (sub && sub.parent_type === type) {
+                if (categoryMatchesType(cat, type)) {
                     matched.push(cat);
                 }
             });
@@ -194,80 +200,114 @@
             return matched;
         }
 
-        const parentId = typeCategoryMap[type];
+        var parentId = typeCategoryMap[type] || typeCategoryMap[normalizeSlug(type)];
         return parentId && categoriesByParent[parentId] ? categoriesByParent[parentId] : [];
+    }
+
+    function setSelectOption(select, label, value) {
+        var option = document.createElement('option');
+        option.value = value || '';
+        option.textContent = label;
+        select.appendChild(option);
+        return option;
+    }
+
+    function updateSubTemplateNote() {
+        if (!categorySelect || !subTemplateNote) return;
+
+        var selected = categorySelect.options[categorySelect.selectedIndex];
+        var sub = selected ? findSubTemplate(selected.getAttribute('data-slug')) : null;
+
+        subTemplateNote.textContent = sub
+            ? 'Template: ' + sub.label + ' | Price unit: ' + (sub.price_unit || 'per booking')
+            : '';
     }
 
     function populateCategories(type, selectedId) {
         if (!categorySelect) return;
 
-        const children = getCategoryChildrenForType(type);
         categorySelect.innerHTML = '';
 
         if (!type) {
             categorySelect.disabled = true;
-            categorySelect.appendChild(new Option('Select booking template first', ''));
+            setSelectOption(categorySelect, 'Select booking template first', '');
             if (subTemplateNote) subTemplateNote.textContent = '';
             return;
         }
 
+        var children = getCategoryChildrenForType(type);
         categorySelect.disabled = false;
-        categorySelect.appendChild(new Option(children.length ? 'Select category' : 'No category found for this template', ''));
+        setSelectOption(categorySelect, children.length ? 'Select category' : 'No category found for this template', '');
 
         children.forEach(function (cat) {
-            const option = new Option(cat.title, cat.id, false, String(cat.id) === String(selectedId || ''));
-            option.dataset.slug = cat.slug || '';
-            categorySelect.appendChild(option);
+            var option = setSelectOption(categorySelect, cat.title, cat.id);
+            option.setAttribute('data-slug', cat.slug || '');
+
+            if (String(cat.id) === String(selectedId || '')) {
+                option.selected = true;
+            }
         });
 
         updateSubTemplateNote();
     }
 
-    function updateSubTemplateNote() {
-        if (!categorySelect || !subTemplateNote) return;
-        const selected = categorySelect.options[categorySelect.selectedIndex];
-        const sub = selected ? findSubTemplate(selected.dataset.slug) : null;
-        subTemplateNote.textContent = sub
-            ? `Template: ${sub.label} | Price unit: ${sub.price_unit || 'per booking'}`
-            : '';
-    }
-
     function applyTemplate(type, isInitial) {
-        const options = subTypeOptionsMap[type];
+        var options = subTypeOptionsMap[type];
 
-        if (options) {
-            subTypeSelect.innerHTML = '';
-            Object.keys(options).forEach(function (val) {
-                const opt = document.createElement('option');
-                opt.value = val;
-                opt.textContent = options[val];
-                if (isInitial && val === currentSubType) opt.selected = true;
-                subTypeSelect.appendChild(opt);
-            });
+        if (subTypeSelect && subTypeText && subTypeSelectWrap && subTypeTextWrap) {
+            if (options) {
+                subTypeSelect.innerHTML = '';
+                Object.keys(options).forEach(function (val) {
+                    var opt = document.createElement('option');
+                    opt.value = val;
+                    opt.textContent = options[val];
+                    if (isInitial && val === currentSubType) opt.selected = true;
+                    subTypeSelect.appendChild(opt);
+                });
 
-            subTypeSelect.name = 'sub_type';
-            subTypeText.removeAttribute('name');
-            subTypeSelectWrap.style.display = 'block';
-            subTypeTextWrap.style.display = 'none';
-        } else {
-            subTypeText.setAttribute('name', 'sub_type');
-            subTypeSelect.removeAttribute('name');
-            subTypeSelectWrap.style.display = 'none';
-            subTypeTextWrap.style.display = 'block';
+                subTypeSelect.setAttribute('name', 'sub_type');
+                subTypeText.removeAttribute('name');
+                subTypeSelectWrap.style.display = 'block';
+                subTypeTextWrap.style.display = 'none';
+            } else {
+                subTypeText.setAttribute('name', 'sub_type');
+                subTypeSelect.removeAttribute('name');
+                subTypeSelectWrap.style.display = 'none';
+                subTypeTextWrap.style.display = 'block';
+            }
         }
 
         populateCategories(type, isInitial ? currentCategoryId : null);
     }
 
-    const checkedRadio = document.querySelector('.booking-type-radio:checked');
-    if (checkedRadio) applyTemplate(checkedRadio.value, true);
+    function applyCheckedTemplate(isInitial) {
+        var checkedRadio = document.querySelector('.booking-type-radio:checked');
+        applyTemplate(checkedRadio ? checkedRadio.value : '', isInitial);
+    }
 
-    document.querySelectorAll('.booking-type-radio').forEach(function (radio) {
-        radio.addEventListener('change', function () { applyTemplate(this.value, false); });
+    document.addEventListener('change', function (event) {
+        if (event.target && event.target.classList.contains('booking-type-radio')) {
+            applyTemplate(event.target.value, false);
+        }
+    });
+
+    document.addEventListener('click', function (event) {
+        var radio = event.target && event.target.closest ? event.target.closest('.pill-check') : null;
+        if (!radio) return;
+
+        var input = radio.querySelector('.booking-type-radio');
+        if (input) {
+            window.setTimeout(function () {
+                applyTemplate(input.value, false);
+            }, 0);
+        }
     });
 
     if (categorySelect) {
         categorySelect.addEventListener('change', updateSubTemplateNote);
     }
-})();
+
+    applyCheckedTemplate(true);
+});
 </script>
+@endpush
