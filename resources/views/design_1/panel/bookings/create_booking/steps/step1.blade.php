@@ -180,9 +180,11 @@
         <textarea name="description" rows="5" class="form-control" placeholder="Tell customers what this booking is about...">{{ old('description', $booking->description ?? '') }}</textarea>
     </div>
 </div>
-
+<script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
+    <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
 <script>
-;(function () {
+    
+(function () {
 function initPanelBookingStep1() {
     var subTypeOptionsMap = @json($subTypeOptionsMap);
     var currentSubType = {{ json_encode($currentSubType) }};
