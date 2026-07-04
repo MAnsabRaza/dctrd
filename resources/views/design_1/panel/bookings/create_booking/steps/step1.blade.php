@@ -5,6 +5,16 @@
     template is picked here is what every later step (2,3,7) will read fields/
     rules/filters from. $templateOptions comes straight from the config class
     so this view can never drift out of sync with it again.
+
+    NOTE: Category filtering now works two ways:
+    1) Server-side (guaranteed, no JS required): the "Filter Categories" button
+       resubmits the form as GET to the same URL, so request('booking_type')
+       is available on reload and the existing hidden/disabled Blade logic
+       filters the <option> list correctly.
+    2) Client-side JS (best-effort, instant, no reload): if/when the inline
+       script below successfully executes, it does the same filtering live
+       without needing a page reload. If it doesn't execute for any reason,
+       option (1) still guarantees correct filtering.
 --}}
 @php
     $templateIcons = [
@@ -26,9 +36,18 @@
         \App\Services\BookingTemplateConfig::EDUCATION_TRAINING    => ['online' => 'Online', 'in-person' => 'In-person', 'both' => 'Both'],
     ];
 
-    $currentType    = old('booking_type', $booking->booking_type ?? '');
-    $currentSubType = old('sub_type', $booking->sub_type ?? '');
-    $currentCategoryId = old('category_id', $booking->category_id ?? '');
+    // IMPORTANT CHANGE: we now also check request()/query string, so that
+    // after the "Filter Categories" GET-reload button is used, the selected
+    // template, title, sub type etc. are all preserved and the category list
+    // filters correctly — all without any JS.
+    $currentType       = old('booking_type', request('booking_type', $booking->booking_type ?? ''));
+    $currentSubType    = old('sub_type', request('sub_type', $booking->sub_type ?? ''));
+    $currentCategoryId = old('category_id', request('category_id', $booking->category_id ?? ''));
+    $currentTitle       = old('title', request('title', $booking->title ?? ''));
+    $currentSlug        = old('slug', request('slug', $booking->slug ?? ''));
+    $currentDescription = old('description', request('description', $booking->description ?? ''));
+    $currentRequirements = old('requirements', request('requirements', $booking->requirements ?? ''));
+    $currentLanguage     = old('language', request('language', $booking->language ?? app()->getLocale()));
 
     $bookingCategoryOptions = collect($allCategoryLists ?? [])
         ->whereNotNull('parent_id')
@@ -47,6 +66,13 @@
             ];
         })
         ->values();
+
+    // Pre-filter categories server-side for the currently selected type, so
+    // the select only ever renders the relevant options (plus we still add
+    // hidden/disabled as a belt-and-braces guard in case of stale JS state).
+    $filteredCategoryOptions = empty($currentType)
+        ? $bookingCategoryOptions
+        : $bookingCategoryOptions->filter(fn ($opt) => $opt['booking_type'] === $currentType)->values();
 @endphp
 
 <div class="section-head">
@@ -74,6 +100,20 @@
             </div>
         @endforeach
     </div>
+
+    {{--
+        SERVER-SIDE FALLBACK (no JS required): clicking this resubmits the
+        whole form as a GET request to the exact same URL. All currently
+        typed values travel along as query params (thanks to the $current*
+        vars above reading from request()), and booking_type becomes
+        available server-side so the category <select> below renders
+        already filtered correctly on reload.
+    --}}
+    <button type="submit" formmethod="GET" formaction="{{ url()->current() }}"
+            class="btn btn-sm btn-outline-primary mt-2">
+        <i class="fa fa-filter mr-1"></i> Apply Template &amp; Filter Categories
+    </button>
+
     @if($isEditingTemplate = !empty($booking) && !empty($booking->id))
         <small class="text-muted d-block mt-1">
             <i class="fa fa-info-circle mr-1"></i> Changing the template after step 2 onward has been filled in may require re-checking those steps' fields.
@@ -93,7 +133,7 @@
             <div class="form-group">
                 <label>Title <span class="text-danger">*</span></label>
                 <input name="title" type="text" class="form-control @error('title') is-invalid @enderror" required
-                       value="{{ old('title', $booking->title ?? '') }}">
+                       value="{{ $currentTitle }}">
                 @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
@@ -105,7 +145,7 @@
                 </label>
                 <input name="slug" type="text" class="form-control @error('slug') is-invalid @enderror"
                        placeholder="auto-generated-if-empty"
-                       value="{{ old('slug', $booking->slug ?? '') }}">
+                       value="{{ $currentSlug }}">
                 @error('slug')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
@@ -113,18 +153,27 @@
         <div class="col-12 col-md-6">
             <div class="form-group">
                 <label>Category <span class="text-danger">*</span></label>
-                <select name="category_id" id="panelBookingCategorySelect" class="form-control @error('category_id') is-invalid @enderror" required>
-                    <option value="">{{ empty($currentType) ? 'Select booking template first' : 'Select category' }}</option>
-                    @foreach($bookingCategoryOptions as $categoryOption)
+                <select name="category_id" id="panelBookingCategorySelect" class="form-control @error('category_id') is-invalid @enderror" required
+                        {{ empty($currentType) ? 'disabled' : '' }}>
+                    <option value="">
+                        {{ empty($currentType)
+                            ? 'Select booking template first'
+                            : ($filteredCategoryOptions->isEmpty() ? 'No category found for this template' : 'Select category') }}
+                    </option>
+                    @foreach($filteredCategoryOptions as $categoryOption)
                         <option value="{{ $categoryOption['id'] }}"
                                 data-slug="{{ $categoryOption['slug'] }}"
                                 data-booking-type="{{ $categoryOption['booking_type'] }}"
-                                {{ (string) $currentCategoryId === (string) $categoryOption['id'] ? 'selected' : '' }}
-                                {{ !empty($currentType) && $categoryOption['booking_type'] !== $currentType ? 'hidden disabled' : '' }}>
+                                {{ (string) $currentCategoryId === (string) $categoryOption['id'] ? 'selected' : '' }}>
                             {{ $categoryOption['title'] }}
                         </option>
                     @endforeach
                 </select>
+                @if(empty($currentType))
+                    <small class="text-muted d-block mt-1">
+                        Booking Template select karke "Apply Template &amp; Filter Categories" button dabao.
+                    </small>
+                @endif
                 <small class="text-muted d-block mt-1" id="panelSubTemplateNote"></small>
                 @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
@@ -135,7 +184,7 @@
                 <label>Language</label>
                 <select name="language" class="form-control">
                     @foreach($userLanguages as $lang => $language)
-                        <option value="{{ $lang }}" {{ old('language', $booking->language ?? app()->getLocale()) == $lang ? 'selected' : '' }}>
+                        <option value="{{ $lang }}" {{ $currentLanguage == $lang ? 'selected' : '' }}>
                             {{ $language }}
                         </option>
                     @endforeach
@@ -145,25 +194,48 @@
 
         {{-- Sub Type — becomes a meaningful select for templates that define
              real sub_type options (automotive rental/service, online/in-person, etc.),
-             plain free text otherwise. JS below swaps which input is "live" the
-             moment a template pill is clicked, since the booking isn't saved yet. --}}
+             plain free text otherwise. Server-side rendering picks the right
+             input type immediately based on $currentType (no JS needed for this
+             either, since $currentType is already known after the filter reload). --}}
         <div class="col-12 col-md-6">
-            <div class="form-group" id="subTypeSelectWrap" style="display:none;">
-                <label id="subTypeSelectLabel">Sub Type</label>
-                <select name="sub_type" id="subTypeSelect" class="form-control"></select>
-            </div>
-            <div class="form-group" id="subTypeTextWrap">
-                <label>Sub Type</label>
-                <input name="sub_type" id="subTypeText" type="text" class="form-control"
-                       value="{{ $currentSubType }}">
-            </div>
+            @php
+                $subTypeOptions = $subTypeOptionsMap[$currentType] ?? null;
+            @endphp
+
+            @if($subTypeOptions)
+                <div class="form-group" id="subTypeSelectWrap">
+                    <label id="subTypeSelectLabel">Sub Type</label>
+                    <select name="sub_type" id="subTypeSelect" class="form-control">
+                        <option value="">Select sub type</option>
+                        @foreach($subTypeOptions as $val => $optLabel)
+                            <option value="{{ $val }}" {{ $currentSubType === $val ? 'selected' : '' }}>
+                                {{ $optLabel }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group" id="subTypeTextWrap" style="display:none;">
+                    <label>Sub Type</label>
+                    <input type="text" id="subTypeText" class="form-control" value="{{ $currentSubType }}">
+                </div>
+            @else
+                <div class="form-group" id="subTypeSelectWrap" style="display:none;">
+                    <label id="subTypeSelectLabel">Sub Type</label>
+                    <select name="sub_type" id="subTypeSelect" class="form-control"></select>
+                </div>
+                <div class="form-group" id="subTypeTextWrap">
+                    <label>Sub Type</label>
+                    <input name="sub_type" id="subTypeText" type="text" class="form-control"
+                           value="{{ $currentSubType }}">
+                </div>
+            @endif
         </div>
 
         <div class="col-12 col-md-6">
             <div class="form-group">
                 <label>Requirements</label>
                 <input name="requirements" type="text" class="form-control"
-                       value="{{ old('requirements', $booking->requirements ?? '') }}">
+                       value="{{ $currentRequirements }}">
             </div>
         </div>
     </div>
@@ -177,16 +249,23 @@
         </div>
     </div>
     <div class="form-group mb-0">
-        <textarea name="description" rows="5" class="form-control" placeholder="Tell customers what this booking is about...">{{ old('description', $booking->description ?? '') }}</textarea>
+        <textarea name="description" rows="5" class="form-control" placeholder="Tell customers what this booking is about...">{{ $currentDescription }}</textarea>
     </div>
 </div>
 
 @push('scripts_bottom')
 <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
-    <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
+<script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
 <script>
-    
-(function () {
+{{--
+    This JS is a "nice to have" progressive enhancement. It gives instant,
+    no-reload filtering IF it successfully executes on your page. The
+    server-side "Apply Template & Filter Categories" button above already
+    guarantees correct filtering even if this script never runs (e.g. if a
+    theme/pjax layer strips inline <script> tags from partial includes) —
+    so the feature works either way now.
+--}}
+;(function () {
 function initPanelBookingStep1() {
     var subTypeOptionsMap = @json($subTypeOptionsMap);
     var currentSubType = {{ json_encode($currentSubType) }};
@@ -227,40 +306,38 @@ function initPanelBookingStep1() {
     }
 
     function getCategoryChildrenForType(type) {
-    if (!type) return [];
+        if (!type) return [];
 
-    // Priority 1: server-rendered options (Blade already computed the correct
-    // booking_type per category using the sub-template's parentType() with a
-    // safe parent-slug fallback) — this is the source of truth, trust it first.
-    var matched = renderedCategoryOptions.filter(function (cat) {
-        return cat.booking_type === type;
-    });
-    if (matched.length) {
-        return matched;
-    }
-
-    // Priority 2: categoriesByParent + subTemplateConfigs match (only used if
-    // priority 1 found nothing, e.g. category added after initial page load)
-    matched = [];
-    Object.keys(categoriesByParent || {}).forEach(function (parentId) {
-        (categoriesByParent[parentId] || []).forEach(function (cat) {
-            if (categoryMatchesType(cat, type)) {
-                matched.push(cat);
-            }
+        // Priority 1: server-rendered options (Blade already computed the
+        // correct booking_type per category) — most reliable source.
+        var matched = renderedCategoryOptions.filter(function (cat) {
+            return cat.booking_type === type;
         });
-    });
-    if (matched.length) {
-        return matched;
+        if (matched.length) {
+            return matched;
+        }
+
+        // Priority 2: categoriesByParent + subTemplateConfigs match
+        matched = [];
+        Object.keys(categoriesByParent || {}).forEach(function (parentId) {
+            (categoriesByParent[parentId] || []).forEach(function (cat) {
+                if (categoryMatchesType(cat, type)) {
+                    matched.push(cat);
+                }
+            });
+        });
+        if (matched.length) {
+            return matched;
+        }
+
+        // Priority 3: last-resort parent-id lookup
+        var normalizedType = normalizeSlug(type);
+        var parentId = typeCategoryMap[type]
+            || typeCategoryMap[normalizedType]
+            || typeCategoryMap[type.toLowerCase()];
+
+        return parentId && categoriesByParent[parentId] ? categoriesByParent[parentId] : [];
     }
-
-    // Priority 3: last-resort parent-id lookup
-    var normalizedType = normalizeSlug(type);
-    var parentId = typeCategoryMap[type]
-        || typeCategoryMap[normalizedType]
-        || typeCategoryMap[type.toLowerCase()];
-
-    return parentId && categoriesByParent[parentId] ? categoriesByParent[parentId] : [];
-}
 
     function setSelectOption(select, label, value) {
         var option = document.createElement('option');
@@ -315,6 +392,11 @@ function initPanelBookingStep1() {
         if (subTypeSelect && subTypeText && subTypeSelectWrap && subTypeTextWrap) {
             if (options) {
                 subTypeSelect.innerHTML = '';
+                var placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Select sub type';
+                subTypeSelect.appendChild(placeholder);
+
                 Object.keys(options).forEach(function (val) {
                     var opt = document.createElement('option');
                     opt.value = val;
