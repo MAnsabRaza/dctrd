@@ -223,36 +223,40 @@ function initPanelBookingStep1() {
     }
 
     function getCategoryChildrenForType(type) {
-        if (!type) return [];
+    if (!type) return [];
 
-        var matched = [];
-        Object.keys(categoriesByParent || {}).forEach(function (parentId) {
-            (categoriesByParent[parentId] || []).forEach(function (cat) {
-                if (categoryMatchesType(cat, type)) {
-                    matched.push(cat);
-                }
-            });
-        });
-
-        if (matched.length) {
-            return matched;
-        }
-
-        matched = renderedCategoryOptions.filter(function (cat) {
-            return cat.booking_type === type;
-        });
-
-        if (matched.length) {
-            return matched;
-        }
-
-        var normalizedType = normalizeSlug(type);
-        var parentId = typeCategoryMap[type]
-            || typeCategoryMap[normalizedType]
-            || typeCategoryMap[type.toLowerCase()];
-
-        return parentId && categoriesByParent[parentId] ? categoriesByParent[parentId] : [];
+    // Priority 1: server-rendered options (Blade already computed the correct
+    // booking_type per category using the sub-template's parentType() with a
+    // safe parent-slug fallback) — this is the source of truth, trust it first.
+    var matched = renderedCategoryOptions.filter(function (cat) {
+        return cat.booking_type === type;
+    });
+    if (matched.length) {
+        return matched;
     }
+
+    // Priority 2: categoriesByParent + subTemplateConfigs match (only used if
+    // priority 1 found nothing, e.g. category added after initial page load)
+    matched = [];
+    Object.keys(categoriesByParent || {}).forEach(function (parentId) {
+        (categoriesByParent[parentId] || []).forEach(function (cat) {
+            if (categoryMatchesType(cat, type)) {
+                matched.push(cat);
+            }
+        });
+    });
+    if (matched.length) {
+        return matched;
+    }
+
+    // Priority 3: last-resort parent-id lookup
+    var normalizedType = normalizeSlug(type);
+    var parentId = typeCategoryMap[type]
+        || typeCategoryMap[normalizedType]
+        || typeCategoryMap[type.toLowerCase()];
+
+    return parentId && categoriesByParent[parentId] ? categoriesByParent[parentId] : [];
+}
 
     function setSelectOption(select, label, value) {
         var option = document.createElement('option');
