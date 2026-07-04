@@ -1413,6 +1413,107 @@
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // ── FIX: Silent submit-block guard ──────────────────────────────────
+    //
+    // Masla: kai fields (category_id, staff_id, sub_type waghera) select2
+    // (data-plugin-selectTwo) use karti hain. Select2 asli <select> ko
+    // display:none kar deta hai aur apna fake dropdown dikhata hai.
+    // Jab JS (setDynamicRequired) us hidden <select> par `required`
+    // attribute laga deti hai aur uski value khaali ho, to browser
+    // ("An invalid form control is not focusable") form submit hi nahi
+    // karta — koi error, koi red border, kuch bhi visible nahi hota.
+    // User ko lagta hai "sab bhar diya phir bhi save nahi ho raha".
+    //
+    // Isi tarah agar koi field hidden section ke andar hai lekin uspar
+    // abhi bhi stale `required` attribute laga hai, to bhi yehi silent
+    // block hota hai.
+    //
+    // Fix: submit se pehle khud check karo —
+    //   1. Agar required field kisi hidden section/field-key ke andar hai
+    //      -> uska required attribute hata do (wo abhi applicable nahi).
+    //   2. Agar required field visible hai lekin khaali hai -> usko
+    //      red border + message se highlight karo aur submit rok do.
+    // ═══════════════════════════════════════════════════════════════════
+
+    var bookingForm = document.getElementById('bookingAdminForm');
+
+    function isSelect2Field(el) {
+        return !!(window.jQuery && window.jQuery(el).data('select2'));
+    }
+
+    function isInsideHidden(el) {
+        return !!el.closest(
+            '[data-field-key][style*="display: none"], [data-field-key][style*="display:none"],' +
+            '[data-template-section][style*="display: none"], [data-template-section][style*="display:none"]'
+        );
+    }
+
+    function markFieldInvalid(el, message) {
+        el.classList.add('is-invalid');
+        var group = el.closest('.form-group') || el.parentElement;
+        var feedback = group.querySelector('.js-custom-invalid-feedback');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback d-block text-danger js-custom-invalid-feedback';
+            group.appendChild(feedback);
+        }
+        feedback.textContent = message;
+        if (isSelect2Field(el)) {
+            window.jQuery(el).next('.select2-container')
+                .find('.selection, .select2-selection')
+                .css('border-color', '#dc3545');
+        }
+    }
+
+    function clearFieldInvalid(el) {
+        el.classList.remove('is-invalid');
+        var group = el.closest('.form-group') || el.parentElement;
+        var feedback = group.querySelector('.js-custom-invalid-feedback');
+        if (feedback) feedback.remove();
+        if (isSelect2Field(el)) {
+            window.jQuery(el).next('.select2-container')
+                .find('.selection, .select2-selection')
+                .css('border-color', '');
+        }
+    }
+
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function (e) {
+            var firstInvalid = null;
+
+            bookingForm.querySelectorAll('[required]').forEach(function (el) {
+                // 1. Field hidden hai -> required hata do, warna browser
+                //    silently submit block kar dega.
+                if (isInsideHidden(el)) {
+                    el.removeAttribute('required');
+                    clearFieldInvalid(el);
+                    return;
+                }
+
+                // 2. Field visible hai -> value check karo
+                var value = (el.value || '').trim();
+                if (!value) {
+                    markFieldInvalid(el, 'Ye field zaroori hai.');
+                    if (!firstInvalid) firstInvalid = el;
+                } else {
+                    clearFieldInvalid(el);
+                }
+            });
+
+            if (firstInvalid) {
+                e.preventDefault();
+                e.stopPropagation();
+                var scrollTarget = isSelect2Field(firstInvalid)
+                    ? window.jQuery(firstInvalid).next('.select2-container')[0]
+                    : firstInvalid;
+                if (scrollTarget) {
+                    scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+    }
+
     // ─── Tags: auto-comma on Enter ────────────────────────────────────
 
     var tagsInput = document.querySelector('input[name="tags"]');
