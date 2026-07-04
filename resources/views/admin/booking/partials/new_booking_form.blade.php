@@ -802,6 +802,7 @@
     var CATEGORIES_BY_PARENT = {!! $categoriesByParent ?? '{}' !!};
     var CURRENT_CATEGORY_ID  = {!! !empty($currentCategoryId) ? json_encode((string) $currentCategoryId) : 'null' !!};
     var CURRENT_SUB_TYPE     = {!! json_encode(old('sub_type', $booking->sub_type ?? '')) !!};
+    var IS_REFRESHING_CATEGORY_SELECT = false;
 
     // ── FIX: ye fields kabhi hide nahi hoti — chahe kisi bhi sub-template
     // (category level) ke required/optional array mein likhi hon ya na hon.
@@ -849,8 +850,7 @@
         var select = document.getElementById('bookingCategorySelect');
         if (!select) return;
 
-        var parentId = TYPE_CATEGORY_MAP[type];
-        var children = (parentId && CATEGORIES_BY_PARENT[parentId]) ? CATEGORIES_BY_PARENT[parentId] : [];
+        var children = getCategoryChildrenForType(type);
 
         select.innerHTML = '';
 
@@ -892,9 +892,15 @@
         // to naye options ke baad usko refresh karna zaroori hai.
         if (window.jQuery) {
             var $select = window.jQuery(select);
+            IS_REFRESHING_CATEGORY_SELECT = true;
             if ($select.data('select2')) {
-                $select.trigger('change.select2');
+                $select.trigger('change');
+            } else {
+                $select.trigger('change');
             }
+            window.setTimeout(function () {
+                IS_REFRESHING_CATEGORY_SELECT = false;
+            }, 0);
         }
     }
 
@@ -907,6 +913,27 @@
     function findSubTemplateConfig(categorySlug) {
         var slug = normalizeTemplateSlug(categorySlug);
         return SUB_TEMPLATE_CONFIGS[slug] || null;
+    }
+
+    function getCategoryChildrenForType(type) {
+        if (!type) return [];
+
+        var matched = [];
+        Object.keys(CATEGORIES_BY_PARENT || {}).forEach(function (parentId) {
+            (CATEGORIES_BY_PARENT[parentId] || []).forEach(function (cat) {
+                var subConfig = findSubTemplateConfig(cat.slug);
+                if (subConfig && subConfig.parent_type === type) {
+                    matched.push(cat);
+                }
+            });
+        });
+
+        if (matched.length) {
+            return matched;
+        }
+
+        var parentId = TYPE_CATEGORY_MAP[type];
+        return (parentId && CATEGORIES_BY_PARENT[parentId]) ? CATEGORIES_BY_PARENT[parentId] : [];
     }
 
     // ── Field label helper ──────────────────────────────────────────
@@ -1367,6 +1394,7 @@
 
     if (categorySelect) {
         categorySelect.addEventListener('change', function () {
+            if (IS_REFRESHING_CATEGORY_SELECT) return;
             applySelectedCategoryTemplate();
         });
 

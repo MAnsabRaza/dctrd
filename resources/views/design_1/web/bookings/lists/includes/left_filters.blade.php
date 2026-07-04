@@ -1,4 +1,4 @@
-<div class="position-relative products-lists-filters">
+<!-- <div class="position-relative products-lists-filters">
     <div class="products-lists-filters__mask"></div>
 
     <div id="bookingLeftFiltersAccordion" class="position-relative card-before-line card-before-line__4-12 bg-white py-16 rounded-24 z-index-2">
@@ -46,9 +46,9 @@
             @endif
         @endforeach
     </div>
-</div>
+</div> 
 
-<div class="position-relative products-lists-filters mt-28">
+<div class="position-relative products-lists-filters mt-28"> -->
     <div class="products-lists-filters__mask"></div>
 
     <div class="position-relative bg-white py-16 rounded-24 z-index-2">

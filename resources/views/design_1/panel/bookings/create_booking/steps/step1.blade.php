@@ -176,11 +176,31 @@
         return subTemplateConfigs[slug] || null;
     }
 
+    function getCategoryChildrenForType(type) {
+        if (!type) return [];
+
+        const matched = [];
+        Object.keys(categoriesByParent || {}).forEach(function (parentId) {
+            (categoriesByParent[parentId] || []).forEach(function (cat) {
+                const sub = findSubTemplate(cat.slug);
+                if (sub && sub.parent_type === type) {
+                    matched.push(cat);
+                }
+            });
+        });
+
+        if (matched.length) {
+            return matched;
+        }
+
+        const parentId = typeCategoryMap[type];
+        return parentId && categoriesByParent[parentId] ? categoriesByParent[parentId] : [];
+    }
+
     function populateCategories(type, selectedId) {
         if (!categorySelect) return;
 
-        const parentId = typeCategoryMap[type];
-        const children = parentId && categoriesByParent[parentId] ? categoriesByParent[parentId] : [];
+        const children = getCategoryChildrenForType(type);
         categorySelect.innerHTML = '';
 
         if (!type) {
@@ -245,6 +265,8 @@
         radio.addEventListener('change', function () { applyTemplate(this.value, false); });
     });
 
-    categorySelect?.addEventListener('change', updateSubTemplateNote);
+    if (categorySelect) {
+        categorySelect.addEventListener('change', updateSubTemplateNote);
+    }
 })();
 </script>

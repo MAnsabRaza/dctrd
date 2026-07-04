@@ -570,6 +570,44 @@ class BookingController extends Controller
      */
     private function categoryValidationRule(string $bookingType): array
     {
+        $validCategoryIds = $this->validCategoryIdsForBookingType($bookingType);
+
+        return [
+            'nullable',
+            Rule::exists('booking_categories', 'id')->where(function ($q) use ($validCategoryIds) {
+                if (!empty($validCategoryIds)) {
+                    $q->whereIn('id', $validCategoryIds);
+                } else {
+                    // booking_type map nahi hua to koi bhi category valid na maani jaye
+                    $q->whereRaw('1 = 0');
+                }
+            }),
+        ];
+    }
+
+    private function validCategoryIdsForBookingType(string $bookingType): array
+    {
+        if (empty($bookingType)) {
+            return [];
+        }
+
+        $childCategories = BookingCategory::query()
+            ->whereNotNull('parent_id')
+            ->where('status', 1)
+            ->get(['id', 'slug']);
+
+        $ids = [];
+        foreach ($childCategories as $category) {
+            $subTemplate = BookingSubTemplateConfig::forSlug($category->slug);
+            if ($subTemplate && $subTemplate->parentType() === $bookingType) {
+                $ids[] = $category->id;
+            }
+        }
+
+        if (!empty($ids)) {
+            return $ids;
+        }
+
         $parentCategories = BookingCategory::whereNull('parent_id')
             ->where('status', 1)
             ->get();
@@ -577,17 +615,15 @@ class BookingController extends Controller
         $typeMap  = $this->buildTypeCategoryMap($parentCategories);
         $parentId = $typeMap[$bookingType] ?? null;
 
-        return [
-            'nullable',
-            Rule::exists('booking_categories', 'id')->where(function ($q) use ($parentId) {
-                if (!empty($parentId)) {
-                    $q->where('parent_id', $parentId);
-                } else {
-                    // booking_type map nahi hua to koi bhi category valid na maani jaye
-                    $q->whereRaw('1 = 0');
-                }
-            }),
-        ];
+        if (empty($parentId)) {
+            return [];
+        }
+
+        return BookingCategory::query()
+            ->where('parent_id', $parentId)
+            ->where('status', 1)
+            ->pluck('id')
+            ->all();
     }
 
     /**
