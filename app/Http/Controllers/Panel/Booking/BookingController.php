@@ -11,12 +11,14 @@ use App\Models\BookingFaq;
 use App\Models\BookingSpecification;
 use App\Models\OrgAvailabilityRule;
 use App\Services\BookingTemplateConfig;
+use App\Services\BookingSubTemplateConfig;
 use App\Services\PricingEngine;
 use App\Services\SlotEngine;
 use App\Services\NightlyAvailability;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use App\Http\Controllers\Panel\Booking\Traits\MyBookingsListsTrait;
 
@@ -96,9 +98,12 @@ class BookingController extends Controller
         }
 
         $allCategoryLists = BookingCategory::query()
-            ->select('id', 'title')
+            ->select('id', 'title', 'slug', 'parent_id')
             ->orderBy('title')
             ->get();
+
+        $parentCategories = $allCategoryLists->whereNull('parent_id')->values();
+        $childCategories  = $allCategoryLists->whereNotNull('parent_id')->values();
 
         $data = [
             'pageTitle'   => trans('update.new_booking_page_title') ?: 'New Booking',
@@ -112,6 +117,9 @@ class BookingController extends Controller
             // pulled straight from BookingTemplateConfig so step 1 never drifts
             // out of sync with the config class again.
             'templateOptions'  => BookingTemplateConfig::allTypes(),
+            'bookingTypeCategoryMap' => $this->buildTypeCategoryMap($parentCategories),
+            'categoriesByParent'     => $this->buildCategoriesByParentMap($childCategories),
+            'subTemplateConfigs'     => $this->buildSubTemplateConfigsForJs(),
             'bookingDefaults'  => [
                 'currency'         => $user->booking_default_currency ?? $user->currency ?? 'USD',
                 'price_unit'       => $user->booking_default_price_unit ?? 'booking',
@@ -138,7 +146,7 @@ class BookingController extends Controller
         $rules = [
             'title'        => 'required|string|max:255',
             'slug'         => 'nullable|string|max:255|unique:bookings,slug',
-            'category_id'  => 'nullable|exists:booking_categories,id',
+            'category_id'  => $this->categoryValidationRule($request->booking_type ?? ''),
             'language'     => 'nullable|string|max:10',
             // booking_type is now always one of the 7 BookingTemplateConfig slugs.
             'booking_type' => 'required|in:' . implode(',', array_keys(BookingTemplateConfig::allTypes())),
@@ -221,14 +229,17 @@ class BookingController extends Controller
         }
 
         $allCategoryLists = BookingCategory::query()
-            ->select('id', 'title')
+            ->select('id', 'title', 'slug', 'parent_id')
             ->orderBy('title')
             ->get();
+        $parentCategories = $allCategoryLists->whereNull('parent_id')->values();
+        $childCategories  = $allCategoryLists->whereNotNull('parent_id')->values();
 
         // The selected template (from step 1) now drives every later step's
         // fields/required/rules/filters — this is the single object every
         // step view consults to know what to render.
         $config = BookingTemplateConfig::for($booking->booking_type);
+        $subTemplate = $this->subTemplateFromCategoryId($booking->category_id);
 
         $data = [
             'pageTitle'        => (trans('update.edit_booking') ?: 'Edit Booking') . ' | ' . $booking->title,
@@ -238,7 +249,11 @@ class BookingController extends Controller
             'allCategoryLists' => $allCategoryLists,
             'userLanguages'    => $this->getUserLanguages(),
             'config'           => $config,
+            'subTemplate'      => $subTemplate,
             'templateOptions'  => BookingTemplateConfig::allTypes(),
+            'bookingTypeCategoryMap' => $this->buildTypeCategoryMap($parentCategories),
+            'categoriesByParent'     => $this->buildCategoriesByParentMap($childCategories),
+            'subTemplateConfigs'     => $this->buildSubTemplateConfigsForJs(),
         ];
 
         if ($step == 1) {
@@ -299,6 +314,7 @@ class BookingController extends Controller
         // Template config for the booking_type chosen back on step 1 —
         // drives which extra fields/rules apply on steps 2 & 7 below.
         $config = BookingTemplateConfig::for($booking->booking_type);
+        $subTemplate = $this->subTemplateFromCategoryId($booking->category_id);
 
         $rules = [];
 
@@ -306,7 +322,7 @@ class BookingController extends Controller
             $rules = [
                 'title'        => 'required|string|max:255',
                 'slug'         => ['nullable', 'string', 'max:255', Rule::unique('bookings', 'slug')->ignore($booking->id)],
-                'category_id'  => 'nullable|exists:booking_categories,id',
+                'category_id'  => $this->categoryValidationRule($request->booking_type ?? $booking->booking_type ?? ''),
                 'language'     => 'nullable|string|max:10',
                 'booking_type' => 'required|in:' . implode(',', array_keys(BookingTemplateConfig::allTypes())),
                 'sub_type'     => 'nullable|string|max:255',
@@ -317,6 +333,12 @@ class BookingController extends Controller
             // capacity / inventory rules only exist in the config for templates
             // that actually need them (events, beauty-spa group service, etc.)
             $extraRules = collect($config->rules())->only(['capacity', 'inventory'])->toArray();
+            if ($subTemplate) {
+                $extraRules = array_merge(
+                    $extraRules,
+                    collect($subTemplate->rules())->only(['price', 'duration_minutes', 'capacity', 'inventory'])->toArray()
+                );
+            }
 
             $rules = array_merge([
                 'price'            => 'nullable|numeric|min:0',
@@ -364,6 +386,14 @@ class BookingController extends Controller
             $metaRules = collect($config->rules())
                 ->filter(fn ($rule, $key) => str_starts_with($key, 'meta.'))
                 ->toArray();
+            if ($subTemplate) {
+                $metaRules = array_merge(
+                    $metaRules,
+                    collect($subTemplate->rules())
+                        ->filter(fn ($rule, $key) => str_starts_with($key, 'meta.'))
+                        ->toArray()
+                );
+            }
 
             $rules = array_merge([
                 'location_enabled' => 'nullable|in:on',
@@ -418,14 +448,14 @@ class BookingController extends Controller
                 'discount_price'   => $data['discount_price'] ?? null,
                 'currency'         => $data['currency'] ?? $booking->currency,
                 'price_per'        => $data['price_per'] ?? null,
-                'price_unit'       => $data['price_unit'] ?? $booking->price_unit,
+                'price_unit'       => $data['price_unit'] ?? ($subTemplate ? $subTemplate->priceUnit() : $booking->price_unit),
                 'duration_minutes' => $data['duration_minutes'] ?? null,
 
                 // Only meaningful for templates whose config actually lists them
                 // (events => capacity+inventory, accommodation => room capacity, etc.)
                 // — saved as null otherwise so switching templates can't leave stale data.
-                'capacity'  => in_array('capacity', $config->fields()) ? ($data['capacity'] ?? null) : null,
-                'inventory' => in_array('inventory', $config->fields()) ? ($data['inventory'] ?? null) : null,
+                'capacity'  => $this->fieldRelevant('capacity', $config, $subTemplate) ? ($data['capacity'] ?? null) : null,
+                'inventory' => $this->fieldRelevant('inventory', $config, $subTemplate) ? ($data['inventory'] ?? null) : null,
 
                 'deposit_enabled' => !empty($data['deposit_enabled']) && $data['deposit_enabled'] === 'on',
                 'deposit_amount'  => $data['deposit_amount'] ?? null,
@@ -505,7 +535,11 @@ class BookingController extends Controller
             // reset to empty when nothing is checked instead of keeping stale data.
             $multiValueKeys = ['amenities', 'extra_fees', 'ticket_types', 'extras'];
 
-            foreach ($config->fields() as $field) {
+            $metaFields = $subTemplate
+                ? collect($subTemplate->relevantFields())->filter(fn ($field) => str_starts_with($field, 'meta.'))->values()->all()
+                : $config->fields();
+
+            foreach ($metaFields as $field) {
                 if (!str_starts_with($field, 'meta.')) {
                     continue;
                 }
@@ -522,10 +556,10 @@ class BookingController extends Controller
             // fields() list WITHOUT the "meta." prefix (they're still stored in
             // meta though) — handled explicitly here since the loop above only
             // walks prefixed keys.
-            if ($config->hasStaff()) {
+            if ($this->fieldRelevant('staff_id', $config, $subTemplate)) {
                 $meta['staff_id'] = $data['meta']['staff_id'] ?? null;
             }
-            if (in_array('extras', $config->fields())) {
+            if ($this->fieldRelevant('extras', $config, $subTemplate)) {
                 $meta['extras'] = $data['meta']['extras'] ?? [];
             }
 
@@ -842,6 +876,78 @@ class BookingController extends Controller
         }
 
         return [app()->getLocale() => ucfirst(app()->getLocale())];
+    }
+
+    private function buildSubTemplateConfigsForJs(): array
+    {
+        $configs = [];
+        foreach (BookingSubTemplateConfig::all() as $slug => $raw) {
+            $sub = BookingSubTemplateConfig::forSlug($slug);
+            $configs[$slug] = $sub->toArray();
+        }
+        return $configs;
+    }
+
+    private function subTemplateFromCategoryId($categoryId): ?BookingSubTemplateConfig
+    {
+        if (empty($categoryId)) {
+            return null;
+        }
+
+        return BookingSubTemplateConfig::forSlug(
+            BookingCategory::where('id', $categoryId)->value('slug')
+        );
+    }
+
+    private function fieldRelevant(string $field, BookingTemplateConfig $config, ?BookingSubTemplateConfig $subTemplate): bool
+    {
+        return $subTemplate
+            ? in_array($field, $subTemplate->relevantFields(), true)
+            : in_array($field, $config->fields(), true);
+    }
+
+    private function buildCategoriesByParentMap($childCategories): array
+    {
+        $map = [];
+        foreach ($childCategories as $child) {
+            $map[$child->parent_id][] = [
+                'id' => $child->id,
+                'title' => $child->title,
+                'slug' => $child->slug,
+            ];
+        }
+        return $map;
+    }
+
+    private function buildTypeCategoryMap($parentCategories): array
+    {
+        $map = [];
+        foreach ($parentCategories as $category) {
+            $map[Str::slug($category->slug)] = $category->id;
+            $map[Str::slug($category->title)] = $category->id;
+        }
+        return $map;
+    }
+
+    private function categoryValidationRule(string $bookingType): array
+    {
+        $parentCategories = BookingCategory::whereNull('parent_id')
+            ->where('status', 1)
+            ->get();
+
+        $typeMap  = $this->buildTypeCategoryMap($parentCategories);
+        $parentId = $typeMap[$bookingType] ?? null;
+
+        return [
+            'nullable',
+            Rule::exists('booking_categories', 'id')->where(function ($q) use ($parentId) {
+                if (!empty($parentId)) {
+                    $q->where('parent_id', $parentId);
+                } else {
+                    $q->whereRaw('1 = 0');
+                }
+            }),
+        ];
     }
 
     private function findOwnBooking($id): Booking

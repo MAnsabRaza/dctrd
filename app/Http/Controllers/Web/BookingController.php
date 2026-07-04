@@ -564,7 +564,7 @@ class BookingController extends Controller
             $query->where('price', '<=', $maxPrice);
         }
 
-        $hasLocationFilter  = !empty($lat) && !empty($lng);
+       $hasLocationFilter  = $lat !== null && $lat !== '' && $lng !== null && $lng !== '';
         $willSortByDistance = $hasLocationFilter && empty($sort);
 
         switch ($sort) {

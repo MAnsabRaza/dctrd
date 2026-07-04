@@ -295,7 +295,7 @@
                                                     </label>
                                                     <small class="d-block text-muted mb-2">
                                                         {{ trans('admin/pages/checkout_modules.price_rule_hint') }}
-                                                    </small>
+                                                    </small> 
 
                                                     <div id="priceAttributes">
                                                         @php

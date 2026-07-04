@@ -4,10 +4,15 @@
 @php
     $locationEnabled = old('location_enabled', !empty($booking->location_enabled));
     $specGroups = $specifications ?? collect();
-    $tplFields  = $config->fields();
+    $subTemplate = $subTemplate ?? null;
+    $tplFields  = $subTemplate ? $subTemplate->relevantFields() : $config->fields();
+    $requiredFields = $subTemplate ? $subTemplate->required() : $config->required();
+    $fieldLabels = $subTemplate ? $subTemplate->fieldLabels() : $config->fieldLabels();
     $meta       = $booking->meta ?? [];
 
     $hasField = fn (string $field) => in_array($field, $tplFields);
+    $isRequired = fn (string $field) => in_array($field, $requiredFields, true);
+    $fieldLabel = fn (string $field, string $fallback) => $fieldLabels[$field] ?? $fallback;
 
     $amenityOptions  = $config->filters()['meta.amenities']['options'] ?? ['wifi','pool','parking','gym','spa','breakfast','ac','kitchen'];
     $vehicleTypeOptions = $config->filters()['meta.vehicle_type']['options'] ?? ['car','suv','van','truck','motorcycle','bus'];
@@ -23,18 +28,18 @@
 <div class="section-head">
     <div class="badge-icon"><i class="fa fa-sliders"></i></div>
     <div>
-        <h6>{{ $config->label() }} Details</h6>
+        <h6>{{ $subTemplate ? $subTemplate->label() : $config->label() }} Details</h6>
         <p class="section-sub">Fields specific to this booking template.</p>
     </div>
 </div>
 
 {{-- ── Staff / Provider (reuses Step 3 Resources block, type='staff') ──── --}}
-@if($config->hasStaff())
+@if($hasField('staff_id'))
     @php $staffList = $staffResources ?? collect(); @endphp
     <div class="panel-card">
         <div class="section-head mb-3">
             <div class="badge-icon"><i class="fa fa-user"></i></div>
-            <div><h6>Staff / Provider</h6></div>
+                <div><h6>{{ $fieldLabel('staff_id', 'Staff / Provider') }}</h6></div>
         </div>
 
         @if($staffList->isEmpty())
@@ -48,7 +53,7 @@
             </div>
         @else
             <div class="form-group mb-0">
-                <label>Default Staff / Provider</label>
+                <label>{{ $fieldLabel('staff_id', 'Default Staff / Provider') }} @if($isRequired('staff_id')) <span class="text-danger">*</span> @endif</label>
                 <select name="meta[staff_id]" class="form-control">
                     <option value="">No specific staff (any available)</option>
                     @foreach($staffList as $staff)
@@ -67,7 +72,7 @@
     <div class="panel-card">
         <div class="section-head mb-3">
             <div class="badge-icon"><i class="fa fa-plus-square"></i></div>
-            <div><h6>Extras / Add-ons</h6></div>
+            <div><h6>{{ $fieldLabel('extras', 'Extras / Add-ons') }}</h6></div>
         </div>
         <div class="mini-table-wrap">
             <table class="mini-table" id="extrasTable">
@@ -96,7 +101,7 @@
         <div class="row">
             <div class="col-12 col-md-6">
                 <div class="form-group mb-0">
-                    <label>Service Type</label>
+                    <label>{{ $fieldLabel('meta.appointment_type', 'Service Type') }} @if($isRequired('meta.appointment_type')) <span class="text-danger">*</span> @endif</label>
                     <select name="meta[appointment_type]" class="form-control">
                         <option value="">Select type</option>
                         @foreach(['consultation' => 'Consultation', 'diagnostic' => 'Diagnostic', 'therapy' => 'Therapy', 'checkup' => 'Checkup'] as $val => $label)
@@ -107,7 +112,7 @@
             </div>
             <div class="col-12 col-md-6">
                 <div class="form-group mb-0">
-                    <label>Payment Option</label>
+                    <label>{{ $fieldLabel('meta.payment_option', 'Payment Option') }} @if($isRequired('meta.payment_option')) <span class="text-danger">*</span> @endif</label>
                     <select name="meta[payment_option]" class="form-control">
                         @foreach(['per_appointment' => 'Per Appointment', 'quote_based' => 'Quote Based', 'insurance' => 'Insurance'] as $val => $label)
                             <option value="{{ $val }}" {{ old('meta.payment_option', $meta['payment_option'] ?? '') === $val ? 'selected' : '' }}>{{ $label }}</option>
@@ -123,9 +128,9 @@
 @if($hasField('meta.online_link'))
     <div class="panel-card">
         <div class="form-group mb-0">
-            <label>Online Meeting Link</label>
+            <label>{{ $fieldLabel('meta.online_link', 'Online Meeting Link') }} @if($isRequired('meta.online_link')) <span class="text-danger">*</span> @endif</label>
             <input type="url" name="meta[online_link]" class="form-control" placeholder="https://zoom.us/..."
-                   value="{{ old('meta.online_link', $meta['online_link'] ?? '') }}">
+                   value="{{ old('meta.online_link', $meta['online_link'] ?? '') }}" {{ $isRequired('meta.online_link') ? 'required' : '' }}>
             <small class="text-muted">Only needed if Sub Type (Step 1) includes "online".</small>
         </div>
     </div>
@@ -135,19 +140,70 @@
 @if($hasField('meta.required_docs'))
     <div class="panel-card">
         <div class="form-group mb-0">
-            <label>Required Notes / Documents</label>
+            <label>{{ $fieldLabel('meta.required_docs', 'Required Notes / Documents') }} @if($isRequired('meta.required_docs')) <span class="text-danger">*</span> @endif</label>
             <textarea name="meta[required_docs]" rows="3" class="form-control"
-                      placeholder="e.g. Please bring your ID and last invoice">{{ old('meta.required_docs', $meta['required_docs'] ?? '') }}</textarea>
+                      placeholder="e.g. Please bring your ID and last invoice" {{ $isRequired('meta.required_docs') ? 'required' : '' }}>{{ old('meta.required_docs', $meta['required_docs'] ?? '') }}</textarea>
         </div>
     </div>
 @endif
 
 {{-- ── Education / Training: level ─────────────────────────────────────── --}}
+@if($hasField('meta.service_type') && $booking->booking_type !== \App\Services\BookingTemplateConfig::AUTOMOTIVE)
+    <div class="panel-card">
+        <div class="form-group mb-0">
+            <label>{{ $fieldLabel('meta.service_type', 'Service Type') }} @if($isRequired('meta.service_type')) <span class="text-danger">*</span> @endif</label>
+            <input type="text" name="meta[service_type]" class="form-control"
+                   value="{{ old('meta.service_type', $meta['service_type'] ?? '') }}" {{ $isRequired('meta.service_type') ? 'required' : '' }}>
+        </div>
+    </div>
+@endif
+
+@if($hasField('meta.prerequisites'))
+    <div class="panel-card">
+        <div class="form-group mb-0">
+            <label>{{ $fieldLabel('meta.prerequisites', 'Prerequisites') }} @if($isRequired('meta.prerequisites')) <span class="text-danger">*</span> @endif</label>
+            <textarea name="meta[prerequisites]" rows="3" class="form-control" {{ $isRequired('meta.prerequisites') ? 'required' : '' }}>{{ old('meta.prerequisites', $meta['prerequisites'] ?? '') }}</textarea>
+        </div>
+    </div>
+@endif
+
+@if($hasField('meta.required_notes') && $booking->booking_type !== \App\Services\BookingTemplateConfig::AUTOMOTIVE)
+    <div class="panel-card">
+        <div class="form-group mb-0">
+            <label>{{ $fieldLabel('meta.required_notes', 'Required Notes') }} @if($isRequired('meta.required_notes')) <span class="text-danger">*</span> @endif</label>
+            <textarea name="meta[required_notes]" rows="3" class="form-control" {{ $isRequired('meta.required_notes') ? 'required' : '' }}>{{ old('meta.required_notes', $meta['required_notes'] ?? '') }}</textarea>
+        </div>
+    </div>
+@endif
+
+@if($hasField('meta.pickup_location') && $booking->booking_type !== \App\Services\BookingTemplateConfig::AUTOMOTIVE)
+    <div class="panel-card">
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <div class="form-group mb-0">
+                    <label>{{ $fieldLabel('meta.pickup_location', 'Pickup / Meeting Point') }} @if($isRequired('meta.pickup_location')) <span class="text-danger">*</span> @endif</label>
+                    <input type="text" name="meta[pickup_location]" class="form-control"
+                           value="{{ old('meta.pickup_location', $meta['pickup_location'] ?? '') }}" {{ $isRequired('meta.pickup_location') ? 'required' : '' }}>
+                </div>
+            </div>
+            @if($hasField('meta.dropoff_location'))
+                <div class="col-12 col-md-6">
+                    <div class="form-group mb-0">
+                        <label>{{ $fieldLabel('meta.dropoff_location', 'Drop-off / Transport') }} @if($isRequired('meta.dropoff_location')) <span class="text-danger">*</span> @endif</label>
+                        <input type="text" name="meta[dropoff_location]" class="form-control"
+                               value="{{ old('meta.dropoff_location', $meta['dropoff_location'] ?? '') }}" {{ $isRequired('meta.dropoff_location') ? 'required' : '' }}>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+@endif
+
 @if($hasField('meta.level'))
     <div class="panel-card">
         <div class="form-group mb-0">
-            <label>Level</label>
-            <select name="meta[level]" class="form-control">
+            <label>{{ $fieldLabel('meta.level', 'Level') }} @if($isRequired('meta.level')) <span class="text-danger">*</span> @endif</label>
+            <select name="meta[level]" class="form-control" {{ $isRequired('meta.level') ? 'required' : '' }}>
                 @foreach($levelOptions as $lvl)
                     <option value="{{ $lvl }}" {{ old('meta.level', $meta['level'] ?? '') === $lvl ? 'selected' : '' }}>{{ ucfirst($lvl) }}</option>
                 @endforeach
@@ -157,12 +213,37 @@
 @endif
 
 {{-- ── Accommodation: room type, amenities, extra fees ────────────────────── --}}
+@if($hasField('meta.check_in_date') || $hasField('meta.check_out_date'))
+    <div class="panel-card">
+        <div class="row">
+            @if($hasField('meta.check_in_date'))
+                <div class="col-12 col-md-6">
+                    <div class="form-group mb-0">
+                        <label>{{ $fieldLabel('meta.check_in_date', 'Check-in Date') }} @if($isRequired('meta.check_in_date')) <span class="text-danger">*</span> @endif</label>
+                        <input type="date" name="meta[check_in_date]" class="form-control"
+                               value="{{ old('meta.check_in_date', $meta['check_in_date'] ?? '') }}" {{ $isRequired('meta.check_in_date') ? 'required' : '' }}>
+                    </div>
+                </div>
+            @endif
+            @if($hasField('meta.check_out_date'))
+                <div class="col-12 col-md-6">
+                    <div class="form-group mb-0">
+                        <label>{{ $fieldLabel('meta.check_out_date', 'Check-out Date') }} @if($isRequired('meta.check_out_date')) <span class="text-danger">*</span> @endif</label>
+                        <input type="date" name="meta[check_out_date]" class="form-control"
+                               value="{{ old('meta.check_out_date', $meta['check_out_date'] ?? '') }}" {{ $isRequired('meta.check_out_date') ? 'required' : '' }}>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+@endif
+
 @if($hasField('meta.room_type'))
     <div class="panel-card">
         <div class="form-group mb-0">
-            <label>Room / Unit Type</label>
+            <label>{{ $fieldLabel('meta.room_type', 'Room / Unit Type') }} @if($isRequired('meta.room_type')) <span class="text-danger">*</span> @endif</label>
             <input type="text" name="meta[room_type]" class="form-control" placeholder="e.g. Deluxe Double Room"
-                   value="{{ old('meta.room_type', $meta['room_type'] ?? '') }}">
+                   value="{{ old('meta.room_type', $meta['room_type'] ?? '') }}" {{ $isRequired('meta.room_type') ? 'required' : '' }}>
         </div>
     </div>
 @endif
@@ -171,7 +252,7 @@
     <div class="panel-card">
         <div class="section-head mb-3">
             <div class="badge-icon"><i class="fa fa-check-circle"></i></div>
-            <div><h6>Amenities</h6></div>
+            <div><h6>{{ $fieldLabel('meta.amenities', 'Amenities') }}</h6></div>
         </div>
         @foreach($amenityOptions as $amenity)
             <label class="chip-check mr-1 mb-1">
@@ -220,8 +301,8 @@
         <div class="row">
             <div class="col-12 col-md-6">
                 <div class="form-group">
-                    <label>Vehicle Type</label>
-                    <select name="meta[vehicle_type]" class="form-control">
+                    <label>{{ $fieldLabel('meta.vehicle_type', 'Vehicle Type') }} @if($isRequired('meta.vehicle_type')) <span class="text-danger">*</span> @endif</label>
+                    <select name="meta[vehicle_type]" class="form-control" {{ $isRequired('meta.vehicle_type') ? 'required' : '' }}>
                         <option value="">Select type</option>
                         @foreach($vehicleTypeOptions as $vt)
                             <option value="{{ $vt }}" {{ old('meta.vehicle_type', $meta['vehicle_type'] ?? '') === $vt ? 'selected' : '' }}>{{ ucfirst($vt) }}</option>
@@ -231,9 +312,9 @@
             </div>
             <div class="col-12 col-md-6">
                 <div class="form-group">
-                    <label>Vehicle Specifications</label>
+                    <label>{{ $fieldLabel('meta.vehicle_specs', 'Vehicle Specifications') }} @if($isRequired('meta.vehicle_specs')) <span class="text-danger">*</span> @endif</label>
                     <input type="text" name="meta[vehicle_specs]" class="form-control" placeholder="e.g. Automatic, Diesel, 5 seats"
-                           value="{{ old('meta.vehicle_specs', $meta['vehicle_specs'] ?? '') }}">
+                           value="{{ old('meta.vehicle_specs', $meta['vehicle_specs'] ?? '') }}" {{ $isRequired('meta.vehicle_specs') ? 'required' : '' }}>
                 </div>
             </div>
         </div>
@@ -242,16 +323,16 @@
             <div class="row">
                 <div class="col-12 col-md-6">
                     <div class="form-group">
-                        <label>Pickup Location</label>
+                        <label>{{ $fieldLabel('meta.pickup_location', 'Pickup Location') }} @if($isRequired('meta.pickup_location')) <span class="text-danger">*</span> @endif</label>
                         <input type="text" name="meta[pickup_location]" class="form-control"
-                               value="{{ old('meta.pickup_location', $meta['pickup_location'] ?? '') }}">
+                               value="{{ old('meta.pickup_location', $meta['pickup_location'] ?? '') }}" {{ $isRequired('meta.pickup_location') ? 'required' : '' }}>
                     </div>
                 </div>
                 <div class="col-12 col-md-6">
                     <div class="form-group">
-                        <label>Drop-off Location</label>
+                        <label>{{ $fieldLabel('meta.dropoff_location', 'Drop-off Location') }} @if($isRequired('meta.dropoff_location')) <span class="text-danger">*</span> @endif</label>
                         <input type="text" name="meta[dropoff_location]" class="form-control"
-                               value="{{ old('meta.dropoff_location', $meta['dropoff_location'] ?? '') }}">
+                               value="{{ old('meta.dropoff_location', $meta['dropoff_location'] ?? '') }}" {{ $isRequired('meta.dropoff_location') ? 'required' : '' }}>
                     </div>
                 </div>
                 <div class="col-12 col-md-4">
@@ -280,9 +361,9 @@
             <div class="row">
                 <div class="col-12 col-md-6">
                     <div class="form-group">
-                        <label>Service Type</label>
+                        <label>{{ $fieldLabel('meta.service_type', 'Service Type') }} @if($isRequired('meta.service_type')) <span class="text-danger">*</span> @endif</label>
                         <input type="text" name="meta[service_type]" class="form-control" placeholder="e.g. Oil change, Brake repair"
-                               value="{{ old('meta.service_type', $meta['service_type'] ?? '') }}">
+                               value="{{ old('meta.service_type', $meta['service_type'] ?? '') }}" {{ $isRequired('meta.service_type') ? 'required' : '' }}>
                     </div>
                 </div>
                 <div class="col-12 col-md-6">
@@ -301,8 +382,8 @@
                 </div>
                 <div class="col-12 col-md-6">
                     <div class="form-group mb-0">
-                        <label>Required Notes / Vehicle Details</label>
-                        <textarea name="meta[required_notes]" rows="2" class="form-control">{{ old('meta.required_notes', $meta['required_notes'] ?? '') }}</textarea>
+                        <label>{{ $fieldLabel('meta.required_notes', 'Required Notes / Vehicle Details') }} @if($isRequired('meta.required_notes')) <span class="text-danger">*</span> @endif</label>
+                        <textarea name="meta[required_notes]" rows="2" class="form-control" {{ $isRequired('meta.required_notes') ? 'required' : '' }}>{{ old('meta.required_notes', $meta['required_notes'] ?? '') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -317,8 +398,8 @@
             @if($hasField('meta.venue_type'))
                 <div class="col-12 col-md-6">
                     <div class="form-group mb-0">
-                        <label>Venue Type</label>
-                        <select name="meta[venue_type]" class="form-control">
+                        <label>{{ $fieldLabel('meta.venue_type', 'Venue Type') }} @if($isRequired('meta.venue_type')) <span class="text-danger">*</span> @endif</label>
+                        <select name="meta[venue_type]" class="form-control" {{ $isRequired('meta.venue_type') ? 'required' : '' }}>
                             <option value="">Select venue type</option>
                             @foreach($venueTypeOptions as $val => $label)
                                 <option value="{{ $val }}" {{ old('meta.venue_type', $meta['venue_type'] ?? '') === $val ? 'selected' : '' }}>{{ $label }}</option>
@@ -330,9 +411,9 @@
             @if($hasField('meta.organizer'))
                 <div class="col-12 col-md-6">
                     <div class="form-group mb-0">
-                        <label>Organizer / Provider</label>
+                        <label>{{ $fieldLabel('meta.organizer', 'Organizer / Provider') }} @if($isRequired('meta.organizer')) <span class="text-danger">*</span> @endif</label>
                         <input type="text" name="meta[organizer]" class="form-control"
-                               value="{{ old('meta.organizer', $meta['organizer'] ?? '') }}">
+                               value="{{ old('meta.organizer', $meta['organizer'] ?? '') }}" {{ $isRequired('meta.organizer') ? 'required' : '' }}>
                     </div>
                 </div>
             @endif

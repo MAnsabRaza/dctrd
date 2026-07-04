@@ -281,4 +281,147 @@
         });
     });
 </script>
+
+<script>
+(function ($) {
+    'use strict';
+
+    /* ════════════════════════════════════════
+       Translation strings (Blade se seedha)
+    ════════════════════════════════════════ */
+    var LANG = {
+        geolocationNotSupported: '{{ trans("update.geolocation_not_supported") ?? "Geolocation not supported by your browser" }}',
+        detectingLocation: '{{ trans("update.detecting_location") ?? "Detecting..." }}',
+        couldNotGetLocation: '{{ trans("update.could_not_get_location") ?? "Could not get your location" }}'
+    };
+
+    /* ════════════════════════════════════════
+       Booking list ko AJAX se reload karo,
+       current filters + naye lat/lng/radius ke sath
+    ════════════════════════════════════════ */
+    function reloadBookingsList(extraParams) {
+        var $container = $('#bookingsListsContainer');
+        if (!$container.length) return;
+
+        var params = new URLSearchParams(window.location.search);
+
+        Object.keys(extraParams || {}).forEach(function (key) {
+            var val = extraParams[key];
+            if (val === null || val === '' || typeof val === 'undefined') {
+                params.delete(key);
+            } else {
+                params.set(key, val);
+            }
+        });
+
+        $container.css('opacity', '0.5');
+
+        $.ajax({
+            url: window.location.pathname + '?' + params.toString(),
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).done(function (res) {
+            if (res && res.data) {
+                $container.html(res.data);
+            }
+            window.history.replaceState({}, '', window.location.pathname + '?' + params.toString());
+        }).always(function () {
+            $container.css('opacity', '1');
+        });
+    }
+
+    /* ════════════════════════════════════════
+       "Use my location" — browser geolocation
+    ════════════════════════════════════════ */
+    $(document).on('click', '#btn-use-my-location', function () {
+        var $btn = $(this);
+
+        if (!navigator.geolocation) {
+            if (typeof showToast === 'function') {
+                showToast('error', '', LANG.geolocationNotSupported);
+            } else {
+                alert(LANG.geolocationNotSupported);
+            }
+            return;
+        }
+
+        var originalText = $btn.text();
+        $btn.prop('disabled', true).text(LANG.detectingLocation);
+
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+
+                $('#filter-lat').val(lat);
+                $('#filter-lng').val(lng);
+                $btn.prop('disabled', false).text(originalText);
+
+                reloadBookingsList({
+                    lat: lat,
+                    lng: lng,
+                    radius: $('select[name="radius"]').val() || 25
+                });
+            },
+            function () {
+                $btn.prop('disabled', false).text(originalText);
+                if (typeof showToast === 'function') {
+                    showToast('error', '', LANG.couldNotGetLocation);
+                } else {
+                    alert(LANG.couldNotGetLocation);
+                }
+            }
+        );
+    });
+
+    /* ════════════════════════════════════════
+       Address/City input — geocode to lat/lng
+       (Nominatim/OpenStreetMap — free, no API key)
+    ════════════════════════════════════════ */
+    var geocodeTimer = null;
+
+    $(document).on('input', '#location-address-input', function () {
+        var address = $(this).val().trim();
+        clearTimeout(geocodeTimer);
+
+        if (address.length < 3) return;
+
+        geocodeTimer = setTimeout(function () {
+            $.ajax({
+                url: 'https://nominatim.openstreetmap.org/search',
+                method: 'GET',
+                data: { q: address, format: 'json', limit: 1 }
+            }).done(function (results) {
+                if (results && results.length) {
+                    var lat = parseFloat(results[0].lat);
+                    var lng = parseFloat(results[0].lon);
+
+                    $('#filter-lat').val(lat);
+                    $('#filter-lng').val(lng);
+
+                    reloadBookingsList({
+                        lat: lat,
+                        lng: lng,
+                        radius: $('select[name="radius"]').val() || 25
+                    });
+                }
+            });
+        }, 600); // debounce — typing rukne ke 600ms baad hi search kare
+    });
+
+    /* ════════════════════════════════════════
+       Radius change — agar lat/lng already set hain
+       to turant naye radius se dobara filter karo
+    ════════════════════════════════════════ */
+    $(document).on('change', 'select[name="radius"]', function () {
+        var lat = $('#filter-lat').val();
+        var lng = $('#filter-lng').val();
+
+        if (lat && lng) {
+            reloadBookingsList({ lat: lat, lng: lng, radius: $(this).val() });
+        }
+    });
+
+})(jQuery);
+</script>
 @endpush

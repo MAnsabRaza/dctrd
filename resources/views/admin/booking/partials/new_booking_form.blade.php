@@ -894,10 +894,19 @@
             var $select = window.jQuery(select);
             if ($select.data('select2')) {
                 $select.trigger('change.select2');
-            } else {
-                $select.trigger('change');
             }
         }
+    }
+
+    function normalizeTemplateSlug(value) {
+        return String(value || '').toLowerCase().trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+
+    function findSubTemplateConfig(categorySlug) {
+        var slug = normalizeTemplateSlug(categorySlug);
+        return SUB_TEMPLATE_CONFIGS[slug] || null;
     }
 
     // ── Field label helper ──────────────────────────────────────────
@@ -1024,7 +1033,7 @@
 
     function applySubTemplate(categorySlug) {
         var allFieldEls = document.querySelectorAll('[data-field-key]');
-        var subConfig   = categorySlug ? SUB_TEMPLATE_CONFIGS[categorySlug] : null;
+        var subConfig   = categorySlug ? findSubTemplateConfig(categorySlug) : null;
 
         var noteEl = document.getElementById('subTemplateNote');
 

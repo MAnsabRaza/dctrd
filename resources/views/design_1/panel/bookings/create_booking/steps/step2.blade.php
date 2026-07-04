@@ -3,14 +3,20 @@
 --}}
 @php
     $existingPlans = $booking->ratePlans ?? collect();
-    $tplFields = $config->fields();
+    $subTemplate = $subTemplate ?? null;
+    $tplFields = $subTemplate ? $subTemplate->relevantFields() : $config->fields();
+    $requiredFields = $subTemplate ? $subTemplate->required() : $config->required();
+    $fieldLabels = $subTemplate ? $subTemplate->fieldLabels() : $config->fieldLabels();
+    $priceUnitLabel = $subTemplate ? $subTemplate->priceUnit() : $config->priceUnitLabel();
+    $fieldLabel = fn (string $field, string $fallback) => $fieldLabels[$field] ?? $fallback;
+    $isRequired = fn (string $field) => in_array($field, $requiredFields, true);
 @endphp
 
 <div class="section-head">
     <div class="badge-icon"><i class="fa fa-tags"></i></div>
     <div>
         <h6>Pricing &amp; Availability</h6>
-        <p class="section-sub">Set the base price and seasonal rate overrides for {{ $config->label() }}.</p>
+        <p class="section-sub">Set the base price and seasonal rate overrides for {{ $subTemplate ? $subTemplate->label() : $config->label() }}.</p>
     </div>
 </div>
 
@@ -23,10 +29,10 @@
     <div class="row">
         <div class="col-12 col-md-3">
             <div class="form-group">
-                <label>Base Price <span class="text-danger">*</span></label>
+                <label>{{ $fieldLabel('price', 'Base Price') }} <span class="text-danger">*</span></label>
                 <input name="price" type="number" step="0.01" min="0" class="form-control"
                        value="{{ old('price', $booking->price ?? '') }}" placeholder="0.00">
-                <small class="text-muted">{{ $config->priceUnitLabel() }}</small>
+                <small class="text-muted">{{ $priceUnitLabel }}</small>
             </div>
         </div>
 
@@ -53,7 +59,7 @@
             <div class="form-group">
                 <label>Price Unit</label>
                 <input name="price_unit" type="text" class="form-control"
-                       value="{{ old('price_unit', $booking->price_unit ?? $config->priceUnitLabel()) }}" placeholder="per night, per adult">
+                       value="{{ old('price_unit', $subTemplate ? $priceUnitLabel : ($booking->price_unit ?? $priceUnitLabel)) }}" placeholder="per night, per adult">
             </div>
         </div>
 
@@ -70,9 +76,9 @@
         @if(in_array('duration_minutes', $tplFields))
             <div class="col-12 col-md-4">
                 <div class="form-group mb-0">
-                    <label>Duration (minutes) <span class="text-danger">*</span></label>
+                    <label>{{ $fieldLabel('duration_minutes', 'Duration (minutes)') }} @if($isRequired('duration_minutes')) <span class="text-danger">*</span> @endif</label>
                     <input name="duration_minutes" type="number" min="0" class="form-control"
-                           value="{{ old('duration_minutes', $booking->duration_minutes ?? '') }}">
+                           value="{{ old('duration_minutes', $booking->duration_minutes ?? '') }}" {{ $isRequired('duration_minutes') ? 'required' : '' }}>
                 </div>
             </div>
         @endif
@@ -105,18 +111,18 @@
             @if(in_array('capacity', $tplFields))
                 <div class="col-12 col-md-6">
                     <div class="form-group mb-0">
-                        <label>Capacity {{ in_array('capacity', $config->required()) ? '*' : '' }}</label>
+                        <label>{{ $fieldLabel('capacity', 'Capacity') }} @if($isRequired('capacity')) <span class="text-danger">*</span> @endif</label>
                         <input name="capacity" type="number" min="1" class="form-control"
-                               value="{{ old('capacity', $booking->capacity ?? '') }}" placeholder="Leave empty for unlimited">
+                               value="{{ old('capacity', $booking->capacity ?? '') }}" placeholder="Leave empty for unlimited" {{ $isRequired('capacity') ? 'required' : '' }}>
                     </div>
                 </div>
             @endif
             @if(in_array('inventory', $tplFields))
                 <div class="col-12 col-md-6">
                     <div class="form-group mb-0">
-                        <label>Available Tickets / Seats</label>
+                        <label>{{ $fieldLabel('inventory', 'Available Tickets / Seats') }} @if($isRequired('inventory')) <span class="text-danger">*</span> @endif</label>
                         <input name="inventory" type="number" min="0" class="form-control"
-                               value="{{ old('inventory', $booking->inventory ?? '') }}" placeholder="Leave empty for unlimited">
+                               value="{{ old('inventory', $booking->inventory ?? '') }}" placeholder="Leave empty for unlimited" {{ $isRequired('inventory') ? 'required' : '' }}>
                     </div>
                 </div>
             @endif

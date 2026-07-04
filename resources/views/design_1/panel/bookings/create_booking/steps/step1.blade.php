@@ -28,6 +28,7 @@
 
     $currentType    = old('booking_type', $booking->booking_type ?? '');
     $currentSubType = old('sub_type', $booking->sub_type ?? '');
+    $currentCategoryId = old('category_id', $booking->category_id ?? '');
 @endphp
 
 <div class="section-head">
@@ -93,15 +94,10 @@
         <div class="col-12 col-md-6">
             <div class="form-group">
                 <label>Category</label>
-                <select name="category_id" class="form-control">
-                    <option value="">Select category</option>
-                    @foreach($allCategoryLists as $category)
-                        <option value="{{ $category->id }}"
-                            {{ old('category_id', $booking->category_id ?? '') == $category->id ? 'selected' : '' }}>
-                            {{ $category->title }}
-                        </option>
-                    @endforeach
+                <select name="category_id" id="panelBookingCategorySelect" class="form-control" {{ empty($currentType) ? 'disabled' : '' }}>
+                    <option value="">{{ empty($currentType) ? 'Select booking template first' : 'Select category' }}</option>
                 </select>
+                <small class="text-muted d-block mt-1" id="panelSubTemplateNote"></small>
             </div>
         </div>
 
@@ -164,6 +160,56 @@
     const subTypeSelect      = document.getElementById('subTypeSelect');
     const subTypeText        = document.getElementById('subTypeText');
     const currentSubType     = {{ json_encode($currentSubType) }};
+    const currentCategoryId  = {{ json_encode((string) $currentCategoryId) }};
+    const typeCategoryMap    = @json($bookingTypeCategoryMap ?? []);
+    const categoriesByParent = @json($categoriesByParent ?? []);
+    const subTemplateConfigs = @json($subTemplateConfigs ?? []);
+    const categorySelect     = document.getElementById('panelBookingCategorySelect');
+    const subTemplateNote    = document.getElementById('panelSubTemplateNote');
+
+    function normalizeSlug(value) {
+        return String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    function findSubTemplate(slug) {
+        slug = normalizeSlug(slug);
+        return subTemplateConfigs[slug] || null;
+    }
+
+    function populateCategories(type, selectedId) {
+        if (!categorySelect) return;
+
+        const parentId = typeCategoryMap[type];
+        const children = parentId && categoriesByParent[parentId] ? categoriesByParent[parentId] : [];
+        categorySelect.innerHTML = '';
+
+        if (!type) {
+            categorySelect.disabled = true;
+            categorySelect.appendChild(new Option('Select booking template first', ''));
+            if (subTemplateNote) subTemplateNote.textContent = '';
+            return;
+        }
+
+        categorySelect.disabled = false;
+        categorySelect.appendChild(new Option(children.length ? 'Select category' : 'No category found for this template', ''));
+
+        children.forEach(function (cat) {
+            const option = new Option(cat.title, cat.id, false, String(cat.id) === String(selectedId || ''));
+            option.dataset.slug = cat.slug || '';
+            categorySelect.appendChild(option);
+        });
+
+        updateSubTemplateNote();
+    }
+
+    function updateSubTemplateNote() {
+        if (!categorySelect || !subTemplateNote) return;
+        const selected = categorySelect.options[categorySelect.selectedIndex];
+        const sub = selected ? findSubTemplate(selected.dataset.slug) : null;
+        subTemplateNote.textContent = sub
+            ? `Template: ${sub.label} | Price unit: ${sub.price_unit || 'per booking'}`
+            : '';
+    }
 
     function applyTemplate(type, isInitial) {
         const options = subTypeOptionsMap[type];
@@ -188,6 +234,8 @@
             subTypeSelectWrap.style.display = 'none';
             subTypeTextWrap.style.display = 'block';
         }
+
+        populateCategories(type, isInitial ? currentCategoryId : null);
     }
 
     const checkedRadio = document.querySelector('.booking-type-radio:checked');
@@ -196,5 +244,7 @@
     document.querySelectorAll('.booking-type-radio').forEach(function (radio) {
         radio.addEventListener('change', function () { applyTemplate(this.value, false); });
     });
+
+    categorySelect?.addEventListener('change', updateSubTemplateNote);
 })();
 </script>
