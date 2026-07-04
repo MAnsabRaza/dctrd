@@ -153,9 +153,9 @@
     </div>
 </div>
 
-@push('scripts_bottom')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+;(function () {
+function initPanelBookingStep1() {
     var subTypeOptionsMap = @json($subTypeOptionsMap);
     var currentSubType = {{ json_encode($currentSubType) }};
     var currentCategoryId = {{ json_encode((string) $currentCategoryId) }};
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return sub && sub.parent_type === type;
     }
 
-   function getCategoryChildrenForType(type) {
+    function getCategoryChildrenForType(type) {
         if (!type) return [];
 
         var matched = [];
@@ -200,7 +200,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return matched;
         }
 
-        // FIX: normalize donon taraf se check karo (raw key + normalized key)
         var normalizedType = normalizeSlug(type);
         var parentId = typeCategoryMap[type]
             || typeCategoryMap[normalizedType]
@@ -308,11 +307,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    if (categorySelect) {
+    if (categorySelect && categorySelect.dataset.bookingCategoryReady !== 'true') {
+        categorySelect.dataset.bookingCategoryReady = 'true';
         categorySelect.addEventListener('change', updateSubTemplateNote);
     }
-window.debugMaps = { typeCategoryMap, categoriesByParent, subTemplateConfigs };
+
     applyCheckedTemplate(true);
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPanelBookingStep1);
+} else {
+    initPanelBookingStep1();
+}
+})();
 </script>
-@endpush
