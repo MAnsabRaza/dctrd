@@ -180,6 +180,8 @@
         <textarea name="description" rows="5" class="form-control" placeholder="Tell customers what this booking is about...">{{ old('description', $booking->description ?? '') }}</textarea>
     </div>
 </div>
+
+@push('scripts_bottom')
 <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
     <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
 <script>
@@ -376,3 +378,4 @@ if (document.readyState === 'loading') {
 }
 })();
 </script>
+@endpush
