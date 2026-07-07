@@ -17,14 +17,17 @@ class CalendarController extends Controller
     | GOOGLE
     |--------------------------------------------------------------------------
     */
-    public function googleRedirect(Request $request)
-    {
-        $returnTo = $request->get('return_to', route('panel.setting.external-connections'));
+   public function googleRedirect(Request $request)
+{
+    $returnTo = $request->get('return_to', route('panel.setting.external-connections'));
+    
+    // Fix: use target user_id from request/route, not just auth()->id()
+    $userId = $request->get('user_id', auth()->id());
 
-        $url = app(GoogleCalendarService::class)->getAuthUrl(auth()->id(), $returnTo);
+    $url = app(GoogleCalendarService::class)->getAuthUrl($userId, $returnTo);
 
-        return redirect($url);
-    }
+    return redirect($url);
+}
 
     public function googleCallback(Request $request)
     {
