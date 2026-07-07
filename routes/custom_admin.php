@@ -35,6 +35,7 @@ use App\Http\Controllers\Admin\Booking\BookingFeaturedController;
 use App\Http\Controllers\Admin\Booking\BookingTopCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingFeatureCategoryController;
 use App\Http\Controllers\Admin\CalendarController;
+use App\Http\Controllers\Admin\CalendarLogController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -333,7 +334,7 @@ Route::group(['prefix' => 'users/{id}/calendar'], function () {
 });
 
 // Admin: view sync logs across all users (calendar.view_logs permission)
-Route::get('admin/calendar/logs', [\App\Http\Controllers\Admin\CalendarLogController::class, 'index'])
+Route::get('admin/calendar/logs', [CalendarLogController::class, 'index'])
     ->name('admin.calendar.logs')
     ->middleware(['auth', 'admin', 'can:calendar.view_logs']);
 
