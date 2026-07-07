@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\Booking\BookingContentSettingsController;
 use App\Http\Controllers\Admin\Booking\BookingFeaturedController;
 use App\Http\Controllers\Admin\Booking\BookingTopCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingFeatureCategoryController;
+use App\Http\Controllers\Admin\CalendarController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -314,6 +315,27 @@ Route::group(['prefix' => 'users/{id}/booking-settings'], function () {
     Route::post('/save', [BookingCategorySettingsController::class, 'save'])
         ->name('admin.users.booking_settings.save');
 });
+
+Route::group(['prefix' => 'users/{id}/calendar'], function () {
+    Route::post('/{provider}/credentials', [CalendarController::class, 'saveCredentials'])
+        ->name('admin.users.calendar.credentials')
+        ->where('provider', 'google|outlook');
+
+    Route::post('/{provider}/settings', [CalendarController::class, 'saveSettings'])
+        ->name('admin.users.calendar.settings')
+        ->where('provider', 'google|outlook');
+
+    Route::post('/ical/toggle', [CalendarController::class, 'toggleIcal'])
+        ->name('admin.users.calendar.ical.toggle');
+
+    Route::post('/ical/regenerate', [CalendarController::class, 'regenerateIcal'])
+        ->name('admin.users.calendar.ical.regenerate');
+});
+
+// Admin: view sync logs across all users (calendar.view_logs permission)
+Route::get('admin/calendar/logs', [\App\Http\Controllers\Admin\CalendarLogController::class, 'index'])
+    ->name('admin.calendar.logs')
+    ->middleware(['auth', 'admin', 'can:calendar.view_logs']);
 
 /**
  * ═════════════════════════════════════════════════════════════════

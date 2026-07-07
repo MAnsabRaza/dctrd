@@ -319,6 +319,14 @@
                                                 aria-selected="true">{{ trans('panel.checkout_options') }}</a>
                                         </li>
 
+                                            <li class="nav-item">
+                                            <a class="nav-link {{ (request()->get('tab') == 'externalConnections') ? 'active' : '' }}"
+                                                id="externalConnections-tab" data-toggle="tab" href="#externalConnections"
+                                                role="tab" aria-controls="externalConnections"
+                                                aria-selected="true">{{ trans('panel.external_connections') }}</a>
+                                        </li>
+
+
                                         @if(!empty($becomeInstructor))
                                             <li class="nav-item">
                                                 <a class="nav-link @if(!empty($becomeInstructor)) active @endif"
@@ -455,6 +463,8 @@
                                         @include('admin.users.editTabs.support_tickets')
 
                                         @include('admin.users.editTabs.login_history')
+
+                                        @include('admin.users.edit-tabs.external-connections')
 
                                     </div>
                                 </div>
