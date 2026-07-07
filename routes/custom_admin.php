@@ -8,6 +8,7 @@
  */
 
 use App\Http\Controllers\Admin\AvailabilitySettingsController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\Admin\BookingCategorySettingsController;
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
 use App\Http\Controllers\Admin\Booking\BookingBundleController;
@@ -34,7 +35,6 @@ use App\Http\Controllers\Admin\Booking\BookingContentSettingsController;
 use App\Http\Controllers\Admin\Booking\BookingFeaturedController;
 use App\Http\Controllers\Admin\Booking\BookingTopCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingFeatureCategoryController;
-use App\Http\Controllers\Admin\CalendarController;
 use App\Http\Controllers\Admin\CalendarLogController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
@@ -337,6 +337,28 @@ Route::group(['prefix' => 'users/{id}/calendar'], function () {
 Route::get('admin/calendar/logs', [CalendarLogController::class, 'index'])
     ->name('admin.calendar.logs')
     ->middleware(['auth', 'admin', 'can:calendar.view_logs']);
+
+
+    Route::get('calendar/google/redirect', [CalendarController::class, 'googleRedirect'])
+    ->name('calendar.google.redirect')
+    ->middleware('auth');
+
+Route::get('calendar/google/callback', [CalendarController::class, 'googleCallback'])
+    ->name('calendar.google.callback');
+
+Route::get('calendar/outlook/redirect', [CalendarController::class, 'outlookRedirect'])
+    ->name('calendar.outlook.redirect')
+    ->middleware('auth');
+
+Route::get('calendar/outlook/callback', [CalendarController::class, 'outlookCallback'])
+    ->name('calendar.outlook.callback');
+
+Route::get('ical/{token}', [CalendarController::class, 'icalFeed'])
+    ->name('calendar.ical.feed');
+
+Route::post('calendar/{provider}/disconnect', [CalendarController::class, 'disconnect'])
+    ->name('calendar.disconnect')
+    ->middleware('auth');
 
 /**
  * ═════════════════════════════════════════════════════════════════

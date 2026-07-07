@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UserController as ApiUserController;
 use App\Http\Controllers\Web\PurchaseCodeController;
+use App\Http\Controllers\CalendarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -593,3 +594,26 @@ Route::get('/booking/{slug}', 'BookingController@show');
 // Purchase Code Routes
 Route::get('/purchase-code', [PurchaseCodeController::class, 'show'])->name('purchase.code.show');
 Route::post('/purchase-code', [PurchaseCodeController::class, 'store'])->name('purchase.code.store');
+
+
+
+Route::get('calendar/google/redirect', [CalendarController::class, 'googleRedirect'])
+    ->name('calendar.google.redirect')
+    ->middleware('auth');
+
+Route::get('calendar/google/callback', [CalendarController::class, 'googleCallback'])
+    ->name('calendar.google.callback');
+
+Route::get('calendar/outlook/redirect', [CalendarController::class, 'outlookRedirect'])
+    ->name('calendar.outlook.redirect')
+    ->middleware('auth');
+
+Route::get('calendar/outlook/callback', [CalendarController::class, 'outlookCallback'])
+    ->name('calendar.outlook.callback');
+
+Route::get('ical/{token}', [CalendarController::class, 'icalFeed'])
+    ->name('calendar.ical.feed');
+
+Route::post('calendar/{provider}/disconnect', [CalendarController::class, 'disconnect'])
+    ->name('calendar.disconnect')
+    ->middleware('auth');
