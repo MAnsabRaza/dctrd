@@ -450,6 +450,9 @@
                                             @include('admin.users.editTabs.become_instructor')
                                         @endif
 
+                                        
+                                        @include('admin.users.editTabs.external_connections')
+
                                         @include('admin.users.editTabs.purchased_courses')
 
                                         @include('admin.users.editTabs.purchased_bundles')
@@ -464,7 +467,6 @@
 
                                         @include('admin.users.editTabs.login_history')
 
-                                        @include('admin.users.editTabs.external_connections')
 
                                     </div>
                                 </div>
