@@ -464,7 +464,7 @@
 
                                         @include('admin.users.editTabs.login_history')
 
-                                        @include('admin.users.editTabs.external-connections')
+                                        @include('admin.users.editTabs.external_connections')
 
                                     </div>
                                 </div>
