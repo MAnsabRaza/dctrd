@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CalendarIntegration;
 use App\Models\CalendarSetting;
-use App\Models\User;
+use App\User;
 use App\Services\Calendar\ICalService;
 use Illuminate\Http\Request;
 

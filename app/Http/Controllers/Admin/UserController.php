@@ -661,29 +661,62 @@ class UserController extends Controller
 
         $bookingSettingsData = app(BookingCategorySettingsController::class)->makeViewData($user->id);
 
-        $data = [
-            'pageTitle' => trans('admin/pages/users.edit_page_title'),
-            'user' => $user,
-            'userBadges' => $userBadges,
-            'roles' => $roles,
-            'badges' => $badges,
-            'categories' => $categories,
-            'occupations' => $occupations,
-            'becomeInstructor' => $becomeInstructor,
-            'userLanguages' => $userLanguages,
-            'userRegistrationPackage' => $user->userRegistrationPackage,
-            'countries' => $countries,
-            'provinces' => $provinces,
-            'cities' => $cities,
-            'districts' => $districts,
-            'userBanks' => $userBanks,
-            'formFieldsHtml' => $formFieldsHtml,
-            'becomeInstructorForm' => $becomeInstructorForm,
-            'becomeInstructorFormFieldsSubmissions' => $becomeInstructorFormFieldsSubmissions,
-            'userLoginHistories' => $userLoginHistories,
-            'moduleSettings' => $moduleSettings,
-            'bookingSettingsData' => $bookingSettingsData,
-        ];
+        $calendarProviders = ['google', 'outlook', 'ical'];
+
+$calendarIntegrations = \App\Models\CalendarIntegration::where('user_id', $user->id)
+    ->get()
+    ->keyBy('provider');
+
+$calendarSettings = \App\Models\CalendarSetting::where('user_id', $user->id)
+    ->get()
+    ->keyBy('provider');
+
+foreach ($calendarProviders as $provider) {
+    if (!$calendarSettings->has($provider)) {
+        $calendarSettings->put($provider, new \App\Models\CalendarSetting([
+            'user_id' => $user->id,
+            'provider' => $provider,
+        ]));
+    }
+}
+
+$icalSetting = $calendarSettings->get('ical');
+$calendarIcalUrl = $icalSetting && $icalSetting->ical_token
+    ? route('calendar.ical.feed', $icalSetting->ical_token)
+    : null;
+
+$calendarLogs = \App\Models\CalendarLog::where('user_id', $user->id)
+    ->latest()
+    ->limit(25)
+    ->get();
+
+       $data = [
+    'pageTitle' => trans('admin/pages/users.edit_page_title'),
+    'user' => $user,
+    'userBadges' => $userBadges,
+    'roles' => $roles,
+    'badges' => $badges,
+    'categories' => $categories,
+    'occupations' => $occupations,
+    'becomeInstructor' => $becomeInstructor,
+    'userLanguages' => $userLanguages,
+    'userRegistrationPackage' => $user->userRegistrationPackage,
+    'countries' => $countries,
+    'provinces' => $provinces,
+    'cities' => $cities,
+    'districts' => $districts,
+    'userBanks' => $userBanks,
+    'formFieldsHtml' => $formFieldsHtml,
+    'becomeInstructorForm' => $becomeInstructorForm,
+    'becomeInstructorFormFieldsSubmissions' => $becomeInstructorFormFieldsSubmissions,
+    'userLoginHistories' => $userLoginHistories,
+    'moduleSettings' => $moduleSettings,
+    'bookingSettingsData' => $bookingSettingsData,
+    'calendarIntegrations' => $calendarIntegrations,
+    'calendarSettings' => $calendarSettings,
+    'calendarIcalUrl' => $calendarIcalUrl,
+    'calendarLogs' => $calendarLogs,
+];
 
         if (!empty($bookingSettingsData)) {
             $data = array_merge($data, $bookingSettingsData);
