@@ -144,12 +144,19 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
             ->name('panel.bookings.orders');
 
         // calender
-        Route::get('/external-connections', 'CalendarController@index')
+        // calender
+Route::get('/external-connections', 'CalendarController@index')
     ->name('panel.setting.external-connections')
     ->middleware('can:calendar.configure');
 
 Route::post('/external-connections/{provider}/credentials', 'CalendarController@saveCredentials')
     ->name('panel.setting.external-connections.credentials')
+    ->where('provider', 'google|outlook')
+    ->middleware('can:calendar.connect');
+
+// 👇 YEH NAYA ROUTE ADD KAREIN
+Route::post('/external-connections/{provider}/credentials/connect', 'CalendarController@saveCredentialsAndConnect')
+    ->name('panel.setting.external-connections.credentials.connect')
     ->where('provider', 'google|outlook')
     ->middleware('can:calendar.connect');
 
@@ -165,7 +172,6 @@ Route::post('/external-connections/ical/toggle', 'CalendarController@toggleIcal'
 Route::post('/external-connections/ical/regenerate', 'CalendarController@regenerateIcal')
     ->name('panel.setting.external-connections.ical.regenerate')
     ->middleware('can:calendar.configure');
-
         /*
         |--------------------------------------------------------------------------
         | COMMENTS
