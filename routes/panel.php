@@ -220,33 +220,33 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
     });
 
     Route::get('/external-connections', 'CalendarController@index')
-    ->name('panel.setting.external-connections')
-    ->middleware('can:calendar.configure');
+    ->name('panel.setting.external-connections');
+    // ->middleware('can:calendar.configure');
 
 Route::post('/external-connections/{provider}/credentials', 'CalendarController@saveCredentials')
     ->name('panel.setting.external-connections.credentials')
-    ->where('provider', 'google|outlook')
-    ->middleware('can:calendar.connect');
+    ->where('provider', 'google|outlook');
+    // ->middleware('can:calendar.connect');
 
 // 👇 YEH NAYA ROUTE ADD KAREIN
 Route::post('/external-connections/{provider}/credentials/connect', 'CalendarController@saveCredentialsAndConnect')
     ->name('panel.setting.external-connections.credentials.connect')
-    ->where('provider', 'google|outlook')
-    ->middleware('can:calendar.connect');
+    ->where('provider', 'google|outlook');
+    // ->middleware('can:calendar.connect');
 
 Route::post('/external-connections/{provider}/settings', 'CalendarController@saveSettings')
     ->name('panel.setting.external-connections.settings')
-    ->where('provider', 'google|outlook')
-    ->middleware('can:calendar.configure');
+    ->where('provider', 'google|outlook');
+    // ->middleware('can:calendar.configure');
 
 Route::post('/external-connections/ical/toggle', 'CalendarController@toggleIcal')
-    ->name('panel.setting.external-connections.ical.toggle')
-    ->middleware('can:calendar.configure');
+    ->name('panel.setting.external-connections.ical.toggle');
+    // ->middleware('can:calendar.configure');
 
 Route::post('/external-connections/ical/regenerate', 'CalendarController@regenerateIcal')
-    ->name('panel.setting.external-connections.ical.regenerate')
-    ->middleware('can:calendar.configure');
-    
+    ->name('panel.setting.external-connections.ical.regenerate');
+    // ->middleware('can:calendar.configure');
+
     Route::group(['prefix' => 'users'], function () {
         Route::post('/offlineToggle', 'UserController@offlineToggle');
         Route::get('/{id}/getInfo', 'UserController@getUserInfo');

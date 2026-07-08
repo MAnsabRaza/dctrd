@@ -1084,6 +1084,7 @@ Section::updateOrCreate(['id' => 3353], ['name' => 'admin_booking_package_delete
         $this->createPanelSection(['id' => 302], ['name' => 'panel_others_profile_url', 'section_group_id' => 300, 'caption' => 'Profile Url']);
         $this->createPanelSection(['id' => 303], ['name' => 'panel_others_logout', 'section_group_id' => 300, 'caption' => 'Logout']);
         $this->createPanelSection(['id' => 304], ['name' => 'panel_others_checkout_options', 'section_group_id' => 300, 'caption' => 'Check-Out Options']);
+        $this->createPanelSection(['id' => 305], ['name' => 'panel_others_external_connections', 'section_group_id' => 300, 'caption' => 'External Connections (Calendar Sync)']);
         // Attendances 320 - 329
         $this->createPanelSection(['id' => 320], ['name' => 'panel_attendances', 'caption' => 'Attendances']);
         $this->createPanelSection(['id' => 321], ['name' => 'panel_attendances_lists', 'section_group_id' => 320, 'caption' => 'Attendances lists']);
