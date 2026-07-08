@@ -219,31 +219,31 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
     });
 
-    Route::get('/external-connections', 'CalendarController@index')
+    Route::get('/external-connections', 'Booking\CalendarController@index')
     ->name('panel.setting.external-connections');
     // ->middleware('can:calendar.configure');
 
-Route::post('/external-connections/{provider}/credentials', 'CalendarController@saveCredentials')
+Route::post('/external-connections/{provider}/credentials', 'Booking\CalendarController@saveCredentials')
     ->name('panel.setting.external-connections.credentials')
     ->where('provider', 'google|outlook');
     // ->middleware('can:calendar.connect');
 
 // 👇 YEH NAYA ROUTE ADD KAREIN
-Route::post('/external-connections/{provider}/credentials/connect', 'CalendarController@saveCredentialsAndConnect')
+Route::post('/external-connections/{provider}/credentials/connect', 'Booking\CalendarController@saveCredentialsAndConnect')
     ->name('panel.setting.external-connections.credentials.connect')
     ->where('provider', 'google|outlook');
     // ->middleware('can:calendar.connect');
 
-Route::post('/external-connections/{provider}/settings', 'CalendarController@saveSettings')
+Route::post('/external-connections/{provider}/settings', 'Booking\CalendarController@saveSettings')
     ->name('panel.setting.external-connections.settings')
     ->where('provider', 'google|outlook');
     // ->middleware('can:calendar.configure');
 
-Route::post('/external-connections/ical/toggle', 'CalendarController@toggleIcal')
+Route::post('/external-connections/ical/toggle', 'Booking\CalendarController@toggleIcal')
     ->name('panel.setting.external-connections.ical.toggle');
     // ->middleware('can:calendar.configure');
 
-Route::post('/external-connections/ical/regenerate', 'CalendarController@regenerateIcal')
+Route::post('/external-connections/ical/regenerate', 'Booking\CalendarController@regenerateIcal')
     ->name('panel.setting.external-connections.ical.regenerate');
     // ->middleware('can:calendar.configure');
 
