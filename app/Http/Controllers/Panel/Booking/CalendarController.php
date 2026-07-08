@@ -60,7 +60,11 @@ class CalendarController extends Controller
             ]
         );
 
-        return back()->with('success', trans('calendar.credentials_saved'));
+        if ($request->wantsJson()) {
+        return response()->json(['success' => true, 'message' => trans('calendar.credentials_saved')]);
+    }
+
+    return back()->with('success', trans('calendar.credentials_saved'));
     }
 
     // Save event template + sync options for a provider
@@ -141,6 +145,13 @@ class CalendarController extends Controller
         ? app(GoogleCalendarService::class)
         : app(OutlookCalendarService::class);
 
-    return redirect($service->getAuthUrl(auth()->id(), $data['return_to'] ?? url()->previous()));
+    if ($request->wantsJson()) {
+    return response()->json([
+        'success'  => true,
+        'redirect' => $service->getAuthUrl(auth()->id(), $data['return_to'] ?? url()->previous()),
+    ]);
+}
+
+return redirect($service->getAuthUrl(auth()->id(), $data['return_to'] ?? url()->previous()));
 }
 }

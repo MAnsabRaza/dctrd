@@ -7,6 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Web\traits\UserFormFieldsTrait;
 use App\Mixins\Geo\Geo;
 use App\Mixins\RegistrationPackage\UserPackage;
+use App\Models\CalendarIntegration;
+use App\Models\CalendarLog;
+use App\Models\CalendarSetting;
 use App\Models\Category;
 use App\Models\BookingCategory;
 use App\Models\DeleteAccountRequest;
@@ -88,6 +91,7 @@ class UserController extends Controller
         $formFieldsHtml = null;
         $bookingSettingsData = [];
         $availabilitySettingsData = [];
+        $calendarConnectionsData = [];
 
         if ($step == "extra_information") {
             $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
@@ -121,7 +125,14 @@ class UserController extends Controller
             }
 
             $bookingSettingsData = $this->makeBookingSettingsViewData($user->id);
-        } elseif ($step == "availability") {
+        } elseif ($step == "external_connections") {
+    if (!($user->isOrganization() or $user->isTeacher())) {
+        abort(404);
+    }
+
+    $calendarConnectionsData = $this->makeExternalConnectionsViewData($user->id);
+}
+         elseif ($step == "availability") {
             if (!($user->isOrganization() or $user->isTeacher())) {
                 abort(404);
             }
@@ -153,9 +164,31 @@ class UserController extends Controller
             'attachments' => $attachments,
             'userLoginHistories' => $userLoginHistories,
             'moduleSettings' => $moduleSettings,
-        ], $bookingSettingsData, $availabilitySettingsData);
+        ], $bookingSettingsData, $availabilitySettingsData,$calendarConnectionsData);
     }
 
+    private function makeExternalConnectionsViewData(int $userId): array
+{
+    $providers = ['google', 'outlook', 'ical'];
+
+    $calendarIntegrations = CalendarIntegration::where('user_id', $userId)->get()->keyBy('provider');
+
+    $calendarSettings = CalendarSetting::where('user_id', $userId)->get()->keyBy('provider');
+    foreach ($providers as $provider) {
+        if (!$calendarSettings->has($provider)) {
+            $calendarSettings->put($provider, new CalendarSetting(['user_id' => $userId, 'provider' => $provider]));
+        }
+    }
+
+    $icalSetting = $calendarSettings->get('ical');
+    $calendarIcalUrl = $icalSetting && $icalSetting->ical_token
+        ? route('calendar.ical.feed', $icalSetting->ical_token)
+        : null;
+
+    $calendarLogs = CalendarLog::where('user_id', $userId)->latest()->limit(25)->get();
+
+    return compact('calendarIntegrations', 'calendarSettings', 'calendarIcalUrl', 'calendarLogs');
+}
     private function makeBookingSettingsViewData(int $userId): array
     {
         $categories = BookingCategory::query()
