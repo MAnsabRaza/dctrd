@@ -258,37 +258,45 @@
             return body;
         });
     }
+function calendarSaveCredentials(provider, connect) {
+    const clientId = document.getElementById(provider + '_client_id').value;
+    const clientSecret = document.getElementById(provider + '_client_secret').value;
 
-    function calendarSaveCredentials(provider, connect) {
-        const clientId = document.getElementById(provider + '_client_id').value;
-        const clientSecret = document.getElementById(provider + '_client_secret').value;
+    const url = connect
+        ? (provider === 'google'
+            ? "{{ route('panel.setting.external-connections.credentials.connect', 'google') }}"
+            : "{{ route('panel.setting.external-connections.credentials.connect', 'outlook') }}")
+        : (provider === 'google'
+            ? "{{ route('panel.setting.external-connections.credentials', 'google') }}"
+            : "{{ route('panel.setting.external-connections.credentials', 'outlook') }}");
 
-        const url = connect
-            ? "{{ url('/panel/setting/external-connections') }}/" + provider + "/credentials/connect"
-            : "{{ url('/panel/setting/external-connections') }}/" + provider + "/credentials";
+    calendarPost(url, {
+        client_id: clientId,
+        client_secret: clientSecret,
+        return_to: window.location.href,
+    }).then((res) => {
+        if (connect && res.redirect) {
+            window.location.href = res.redirect;
+        } else {
+            window.location.reload();
+        }
+    }).catch((err) => alert(err.message));
+}
 
-        calendarPost(url, {
-            client_id: clientId,
-            client_secret: clientSecret,
-            return_to: window.location.href,
-        }).then((res) => {
-            if (connect && res.redirect) {
-                window.location.href = res.redirect;
-            } else {
-                window.location.reload();
-            }
-        }).catch((err) => alert(err.message));
-    }
+function calendarSaveSettings(provider) {
+    const url = provider === 'google'
+        ? "{{ route('panel.setting.external-connections.settings', 'google') }}"
+        : "{{ route('panel.setting.external-connections.settings', 'outlook') }}";
 
-    function calendarSaveSettings(provider) {
-        calendarPost("{{ url('/panel/setting/external-connections') }}/" + provider + "/settings", {
-            event_title_template: document.getElementById(provider + '_title_template').value,
-            event_description_template: document.getElementById(provider + '_description_template').value,
-            add_customer_as_attendee: document.getElementById(provider + '_attendee').checked,
-            debug_mode: document.getElementById(provider + '_debug').checked,
-        }).then(() => window.location.reload())
-          .catch((err) => alert(err.message));
-    }
+    calendarPost(url, {
+        event_title_template: document.getElementById(provider + '_title_template').value,
+        event_description_template: document.getElementById(provider + '_description_template').value,
+        add_customer_as_attendee: document.getElementById(provider + '_attendee').checked,
+        debug_mode: document.getElementById(provider + '_debug').checked,
+    }).then(() => window.location.reload())
+      .catch((err) => alert(err.message));
+}
+
 
     function calendarToggleIcal(enabled) {
         calendarPost("{{ route('panel.setting.external-connections.ical.toggle') }}", {
@@ -303,9 +311,9 @@
             .catch((err) => alert(err.message));
     }
 
-    function calendarDisconnect(provider) {
-        calendarPost("{{ url('/panel/calendar/disconnect') }}/" + provider, {})
-            .then(() => window.location.reload())
-            .catch((err) => alert(err.message));
-    }
+   function calendarDisconnect(provider) {
+    calendarPost("{{ url('/calendar') }}/" + provider + "/disconnect", {})
+        .then(() => window.location.reload())
+        .catch((err) => alert(err.message));
+}
 </script>
