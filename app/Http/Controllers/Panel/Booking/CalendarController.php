@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\CalendarIntegration;
 use App\Models\CalendarLog;
 use App\Models\CalendarSetting;
+use App\Services\Calendar\GoogleCalendarService;
 use App\Services\Calendar\ICalService;
+use App\Services\Calendar\OutlookCalendarService;
 use Illuminate\Http\Request;
 
 class CalendarController extends Controller
@@ -115,4 +117,30 @@ class CalendarController extends Controller
 
         return back()->with('success', trans('calendar.ical_token_regenerated'));
     }
+    public function saveCredentialsAndConnect(Request $request, string $provider)
+{
+    if (!in_array($provider, ['google', 'outlook'], true)) {
+        abort(422, 'Unsupported provider.');
+    }
+
+    $data = $request->validate([
+        'client_id'     => ['required', 'string', 'max:255'],
+        'client_secret' => ['required', 'string', 'max:255'],
+        'return_to'     => ['nullable', 'string'],
+    ]);
+
+    CalendarIntegration::updateOrCreate(
+        ['user_id' => auth()->id(), 'provider' => $provider],
+        [
+            'client_id'     => $data['client_id'],
+            'client_secret' => $data['client_secret'],
+        ]
+    );
+
+    $service = $provider === 'google'
+        ? app(GoogleCalendarService::class)
+        : app(OutlookCalendarService::class);
+
+    return redirect($service->getAuthUrl(auth()->id(), $data['return_to'] ?? url()->previous()));
+}
 }

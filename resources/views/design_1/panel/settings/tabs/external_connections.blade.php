@@ -9,6 +9,12 @@
             {{ trans('calendar.external_connections') }}
         </a>
 --}}
+@php
+    $calendarIntegrations = $calendarIntegrations ?? collect();
+    $calendarSettings     = $calendarSettings ?? collect();
+    $calendarLogs         = $calendarLogs ?? collect();
+    $calendarIcalUrl      = $calendarIcalUrl ?? null;
+@endphp
 @extends('panel.layouts.app')
 
 @section('content')
@@ -51,31 +57,23 @@
                         </p>
 
                         <form action="{{ route('panel.setting.external-connections.credentials', 'google') }}" method="POST">
-                            @csrf
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label>{{ trans('calendar.client_id') }}</label>
-                                    <input type="text" name="client_id" class="form-control"
-                                           value="{{ old('client_id', $google->client_id ?? '') }}"
-                                           placeholder="{{ trans('calendar.enter_credentials') }}">
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label>{{ trans('calendar.client_secret') }}</label>
-                                    <input type="password" name="client_secret" class="form-control"
-                                           value="{{ old('client_secret', $google->client_secret ?? '') }}"
-                                           placeholder="{{ trans('calendar.enter_credentials') }}">
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-secondary">{{ trans('admin/main.submit') }}</button>
+    @csrf
+    <input type="hidden" name="return_to" value="{{ url()->current() }}">
+    {{-- ... existing client_id / client_secret inputs same rehne dein ... --}}
 
-                            @if($google && $google->isConnected())
-                                <a href="#" onclick="event.preventDefault(); document.getElementById('googleDisconnectForm').submit();"
-                                   class="btn btn-outline-danger">{{ trans('calendar.disconnect') }}</a>
-                            @else
-                                <a href="{{ route('calendar.google.redirect', ['return_to' => url()->current()]) }}"
-                                   class="btn btn-primary">{{ trans('calendar.connect_google') }}</a>
-                            @endif
-                        </form>
+    <button type="submit" class="btn btn-secondary">{{ trans('admin/main.submit') }}</button>
+
+    @if($google && $google->isConnected())
+        <a href="#" onclick="event.preventDefault(); document.getElementById('googleDisconnectForm').submit();"
+           class="btn btn-outline-danger">{{ trans('calendar.disconnect') }}</a>
+    @else
+        <button type="submit"
+                formaction="{{ route('panel.setting.external-connections.credentials.connect', 'google') }}"
+                class="btn btn-primary">
+            {{ trans('calendar.connect_google') }}
+        </button>
+    @endif
+</form>
 
                         <form id="googleDisconnectForm" action="{{ route('calendar.disconnect', 'google') }}" method="POST" class="d-none">
                             @csrf
