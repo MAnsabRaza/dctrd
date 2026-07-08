@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Panel;
+namespace App\Http\Controllers\Booking\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\CalendarIntegration;
