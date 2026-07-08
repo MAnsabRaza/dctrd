@@ -422,4 +422,7 @@ return [
 'day_6' => 'Fri',
 'day_7' => 'Sat',
 
+//external connections
+'external_connections' => 'External Connections',
+
 ];

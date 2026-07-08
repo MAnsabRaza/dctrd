@@ -28,6 +28,13 @@
     </a>
 @endif
 
+<a href="/panel/setting/step/external_connections" class="navbar-item navbar-item-h-52 d-inline-flex-center cursor-pointer {{ ($currentStep == "external_connections") ? 'active' : '' }}">
+    <div class="size-20">
+        <x-iconsax-lin-note class="icons" width="20px" height="20px"/>
+    </div>
+    <span class="ml-4">{{ trans('panel.external_connections') }}</span>
+</a>
+
 <a href="/panel/setting/step/images" class="navbar-item navbar-item-h-52 d-inline-flex-center cursor-pointer {{ ($currentStep == "images") ? 'active' : '' }}">
     <div class="size-20">
         <x-iconsax-lin-gallery class="icons" width="20px" height="20px"/>
