@@ -10,6 +10,7 @@ use App\Services\Calendar\GoogleCalendarService;
 use App\Services\Calendar\ICalService;
 use App\Services\Calendar\OutlookCalendarService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 
 class CalendarController extends Controller
 {
@@ -61,10 +62,10 @@ class CalendarController extends Controller
         );
 
         if ($request->wantsJson()) {
-        return response()->json(['success' => true, 'message' => trans('calendar.credentials_saved')]);
-    }
+            return response()->json(['success' => true, 'message' => trans('calendar.credentials_saved')]);
+        }
 
-    return back()->with('success', trans('calendar.credentials_saved'));
+        return back()->with('success', trans('calendar.credentials_saved'));
     }
 
     // Save event template + sync options for a provider
@@ -121,37 +122,113 @@ class CalendarController extends Controller
 
         return back()->with('success', trans('calendar.ical_token_regenerated'));
     }
+
+    // Save credentials, then redirect user to Google/Outlook consent screen
     public function saveCredentialsAndConnect(Request $request, string $provider)
-{
-    if (!in_array($provider, ['google', 'outlook'], true)) {
-        abort(422, 'Unsupported provider.');
+    {
+        if (!in_array($provider, ['google', 'outlook'], true)) {
+            abort(422, 'Unsupported provider.');
+        }
+
+        $data = $request->validate([
+            'client_id'     => ['required', 'string', 'max:255'],
+            'client_secret' => ['required', 'string', 'max:255'],
+            'return_to'     => ['nullable', 'string'],
+        ]);
+
+        CalendarIntegration::updateOrCreate(
+            ['user_id' => auth()->id(), 'provider' => $provider],
+            [
+                'client_id'     => $data['client_id'],
+                'client_secret' => $data['client_secret'],
+            ]
+        );
+
+        $service = $provider === 'google'
+            ? app(GoogleCalendarService::class)
+            : app(OutlookCalendarService::class);
+
+        $authUrl = $service->getAuthUrl(auth()->id(), $data['return_to'] ?? url()->previous());
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success'  => true,
+                'redirect' => $authUrl,
+            ]);
+        }
+
+        return redirect($authUrl);
     }
 
-    $data = $request->validate([
-        'client_id'     => ['required', 'string', 'max:255'],
-        'client_secret' => ['required', 'string', 'max:255'],
-        'return_to'     => ['nullable', 'string'],
-    ]);
+    // ── Google OAuth callback ──────────────────────────────────────────
+    public function googleCallback(Request $request)
+    {
+        return $this->handleProviderCallback($request, 'google', GoogleCalendarService::class);
+    }
 
-    CalendarIntegration::updateOrCreate(
-        ['user_id' => auth()->id(), 'provider' => $provider],
-        [
-            'client_id'     => $data['client_id'],
-            'client_secret' => $data['client_secret'],
-        ]
-    );
+    // ── Outlook OAuth callback ──────────────────────────────────────────
+    public function outlookCallback(Request $request)
+    {
+        return $this->handleProviderCallback($request, 'outlook', OutlookCalendarService::class);
+    }
 
-    $service = $provider === 'google'
-        ? app(GoogleCalendarService::class)
-        : app(OutlookCalendarService::class);
+    // ── Shared logic: decrypt state, run handleCallback(), save token, redirect ──
+    private function handleProviderCallback(Request $request, string $provider, string $serviceClass)
+    {
+        $code  = $request->query('code');
+        $state = $request->query('state');
 
-    if ($request->wantsJson()) {
-    return response()->json([
-        'success'  => true,
-        'redirect' => $service->getAuthUrl(auth()->id(), $data['return_to'] ?? url()->previous()),
-    ]);
-}
+        // If user cancelled consent on Google/Outlook screen
+        if ($request->filled('error')) {
+            return redirect('/panel/setting/step/external_connections')->with('toast', [
+                'title'  => trans('public.error'),
+                'msg'    => trans('calendar.oauth_failed'),
+                'status' => 'error',
+            ]);
+        }
 
-return redirect($service->getAuthUrl(auth()->id(), $data['return_to'] ?? url()->previous()));
-}
+        if (empty($code) || empty($state)) {
+            return redirect('/panel/setting/step/external_connections')->with('toast', [
+                'title'  => trans('public.error'),
+                'msg'    => trans('calendar.oauth_failed'),
+                'status' => 'error',
+            ]);
+        }
+
+        $returnTo = '/panel/setting/step/external_connections';
+
+        try {
+            $payload  = json_decode(Crypt::decryptString($state), true);
+            $userId   = $payload['user_id'] ?? null;
+            $returnTo = $payload['return_to'] ?? $returnTo;
+
+            if (empty($userId)) {
+                throw new \Exception('Invalid state payload: missing user_id.');
+            }
+
+            /** @var GoogleCalendarService|OutlookCalendarService $service */
+            $service = app($serviceClass);
+            $success = $service->handleCallback($code, (int) $userId);
+
+            return redirect($returnTo)->with('toast', [
+                'title'  => $success ? trans('public.request_success') : trans('public.error'),
+                'msg'    => $success ? trans('calendar.credentials_saved') : trans('calendar.oauth_failed'),
+                'status' => $success ? 'success' : 'error',
+            ]);
+        } catch (\Throwable $e) {
+            CalendarLog::create([
+                'user_id'       => auth()->id(),
+                'provider'      => $provider,
+                'action'        => 'token_refresh',
+                'status'        => 'failed',
+                'error_message' => $e->getMessage(),
+            ]);
+
+            return redirect($returnTo)->with('toast', [
+                'title'  => trans('public.error'),
+                'msg'    => trans('calendar.oauth_failed'),
+                'status' => 'error',
+            ]);
+        }
+    }
 }

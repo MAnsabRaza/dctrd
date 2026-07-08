@@ -246,6 +246,11 @@ Route::post('/external-connections/ical/toggle', 'Booking\CalendarController@tog
 Route::post('/external-connections/ical/regenerate', 'Booking\CalendarController@regenerateIcal')
     ->name('panel.setting.external-connections.ical.regenerate');
     // ->middleware('can:calendar.configure');
+    Route::get('/calendar/google/callback', 'Booking\CalendarController@googleCallback')
+    ->name('calendar.google.callback');
+
+Route::get('/calendar/outlook/callback', 'Booking\CalendarController@outlookCallback')
+    ->name('calendar.outlook.callback');
 
     Route::group(['prefix' => 'users'], function () {
         Route::post('/offlineToggle', 'UserController@offlineToggle');
