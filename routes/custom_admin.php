@@ -313,11 +313,10 @@ Route::group(['prefix' => 'users/{id}/availability'], function () {
 
 Route::group(['prefix' => 'abilities'], function () {
     Route::get('/', [AbilityController::class, 'index'])->name('admin.abilities.index');
-    Route::get('/create', [AbilityController::class, 'create'])->name('admin.abilities.create');
     Route::post('/store', [AbilityController::class, 'store'])->name('admin.abilities.store');
-    Route::get('/{ability}/edit', [AbilityController::class, 'edit'])->name('admin.abilities.edit');
-    Route::post('/{ability}/update', [AbilityController::class, 'update'])->name('admin.abilities.update');
-    Route::get('/{ability}/delete', [AbilityController::class, 'destroy'])->name('admin.abilities.delete');
+    Route::get('/{id}/edit', [AbilityController::class, 'edit'])->name('admin.abilities.edit');
+    Route::post('/{id}/update', [AbilityController::class, 'update'])->name('admin.abilities.update');
+    Route::get('/{id}/delete', [AbilityController::class, 'delete'])->name('admin.abilities.delete');
 });
 
 Route::group(['prefix' => 'users/{id}/booking-settings'], function () {

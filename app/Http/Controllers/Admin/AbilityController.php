@@ -9,80 +9,120 @@ use Illuminate\Support\Str;
 
 class AbilityController extends Controller
 {
+    /**
+     * List tab + (agar koi edit nahi ho raha to) empty create form
+     */
     public function index()
     {
-        $abilities = Ability::orderBy('created_at', 'desc')->paginate(20);
-        return view('admin.abilities.index', compact('abilities'));
+        $abilities = Ability::withCount('vendorAbilities')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('admin.abilities.index', [
+            'abilities'   => $abilities,
+            'editAbility' => null,
+        ]);
     }
 
-    public function create()
+    /**
+     * Same view, lekin $editAbility set hone se form "Edit" mode mein khulta hai
+     */
+    public function edit($id)
     {
-        return view('admin.abilities.create');
+        $editAbility = Ability::findOrFail($id);
+
+        $abilities = Ability::withCount('vendorAbilities')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('admin.abilities.index', [
+            'abilities'   => $abilities,
+            'editAbility' => $editAbility,
+        ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name'                    => 'required|string|max:255',
-            'type'                    => 'required|in:import,export,booking,dropshipping',
-            'driver_class'            => 'required|string|max:255',
-            'description'             => 'nullable|string',
-            'fields'                  => 'required|array|min:1',
-            'fields.*.key'            => 'required|string',
-            'fields.*.label'         => 'required|string',
-            'fields.*.type'           => 'required|in:text,password,boolean,select,textarea',
-            'fields.*.required'       => 'nullable|boolean',
-        ]);
+        $validated = $this->validateAbility($request);
 
         Ability::create([
-            'key'          => Str::slug($validated['name'], '_'),
+            'key'          => Str::slug($validated['name'], '_') . '_' . Str::random(4),
             'name'         => $validated['name'],
             'type'         => $validated['type'],
             'driver_class' => $validated['driver_class'],
             'description'  => $validated['description'] ?? null,
             'schema_json'  => ['fields' => $validated['fields']],
-            'is_active'    => true,
+            'is_active'    => $request->boolean('status', true),
         ]);
 
-        return redirect()
-            ->route('admin.abilities.index')
-            ->with('success', 'Ability created successfully.');
+        return redirect(getAdminPanelUrl() . '/abilities')
+            ->with('success', trans('admin/main.save_change'));
     }
 
-    public function edit(Ability $ability)
+    public function update(Request $request, $id)
     {
-        return view('admin.abilities.edit', compact('ability'));
-    }
+        $ability = Ability::findOrFail($id);
 
-    public function update(Request $request, Ability $ability)
-    {
-        $validated = $request->validate([
-            'name'         => 'required|string|max:255',
-            'driver_class' => 'required|string|max:255',
-            'description'  => 'nullable|string',
-            'is_active'    => 'nullable|boolean',
-            'fields'       => 'required|array|min:1',
-            'fields.*.key' => 'required|string',
-            'fields.*.label' => 'required|string',
-            'fields.*.type'  => 'required|in:text,password,boolean,select,textarea',
-        ]);
+        $validated = $this->validateAbility($request);
 
         $ability->update([
             'name'         => $validated['name'],
+            'type'         => $validated['type'],
             'driver_class' => $validated['driver_class'],
             'description'  => $validated['description'] ?? null,
-            'is_active'    => $request->boolean('is_active'),
             'schema_json'  => ['fields' => $validated['fields']],
+            'is_active'    => $request->boolean('status', true),
         ]);
 
-        return redirect()
-            ->route('admin.abilities.index')
-            ->with('success', 'Ability updated successfully.');
+        return redirect(getAdminPanelUrl() . '/abilities')
+            ->with('success', trans('admin/main.save_change'));
     }
 
-    public function destroy(Ability $ability)
+    public function delete($id)
     {
+        $ability = Ability::findOrFail($id);
         $ability->delete();
-        return back()->with('success', 'Ability deleted.');
+
+        return redirect(getAdminPanelUrl() . '/abilities')
+            ->with('success', trans('admin/main.deleted_successfully'));
+    }
+
+    protected function validateAbility(Request $request): array
+    {
+        // Blade form parallel arrays bhejta hai (field_key[], field_label[], field_type[],
+        // field_required[index]) -- rateplan.blade.php condition_key[]/condition_value[]
+        // ke pattern jaisa. Yahan unhe ek structured "fields" array mein zip karte hain.
+        $keys     = $request->input('field_key', []);
+        $labels   = $request->input('field_label', []);
+        $types    = $request->input('field_type', []);
+        $required = $request->input('field_required', []); // associative: [index => "1"]
+
+        $fields = [];
+        foreach ($keys as $index => $key) {
+            $key = trim($key);
+            if ($key === '') {
+                continue; // khali rows skip
+            }
+            $fields[] = [
+                'key'      => $key,
+                'label'    => trim($labels[$index] ?? $key),
+                'type'     => $types[$index] ?? 'text',
+                'required' => !empty($required[$index]),
+            ];
+        }
+
+        $request->merge(['fields' => $fields]);
+
+        return $request->validate([
+            'name'              => 'required|string|max:255',
+            'type'              => 'required|in:import,export,booking,dropshipping',
+            'driver_class'      => 'required|string|max:255',
+            'description'       => 'nullable|string',
+            'fields'            => 'required|array|min:1',
+            'fields.*.key'      => 'required|string',
+            'fields.*.label'    => 'required|string',
+            'fields.*.type'     => 'required|in:text,password,boolean,select,textarea',
+            'fields.*.required' => 'nullable|boolean',
+        ]);
     }
 }
