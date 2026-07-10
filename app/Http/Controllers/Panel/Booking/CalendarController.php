@@ -10,6 +10,7 @@ use App\Services\Calendar\GoogleCalendarService;
 use App\Services\Calendar\ICalService;
 use App\Services\Calendar\OutlookCalendarService;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 
 class CalendarController extends Controller
@@ -30,7 +31,7 @@ class CalendarController extends Controller
         }
 
         $icalSetting = $calendarSettings->get('ical');
-        $calendarIcalUrl = $icalSetting && $icalSetting->ical_token
+        $calendarIcalUrl = ($icalSetting && $icalSetting->ical_token && $icalSetting->ical_export_enabled)
             ? route('calendar.ical.feed', $icalSetting->ical_token)
             : null;
 
@@ -92,13 +93,19 @@ class CalendarController extends Controller
             ]
         );
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => trans('calendar.settings_saved')]);
+        }
+
         return back()->with('success', trans('calendar.settings_saved'));
     }
 
-    // Toggle iCal export on/off, generating a signed token the first time it's enabled
+    // Toggle iCal export on/off, generating a signed token the first time it's enabled.
+    // Turning it OFF does NOT delete the token - the feed route below will simply
+    // start returning 404 for it, matching the spec ("token active=false, not deleted").
     public function toggleIcal(Request $request)
     {
-        $userId = auth()->id();
+        $userId  = auth()->id();
         $enabled = $request->boolean('ical_export_enabled');
 
         $setting = CalendarSetting::firstOrCreate(
@@ -112,15 +119,49 @@ class CalendarController extends Controller
 
         $setting->update(['ical_export_enabled' => $enabled]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => trans('calendar.settings_saved')]);
+        }
+
         return back()->with('success', trans('calendar.settings_saved'));
     }
 
-    // Regenerate the signed iCal token (invalidates the old feed URL)
+    // Regenerate the signed iCal token (invalidates the old feed URL immediately,
+    // since ICalService::generateToken() overwrites ical_token on the same row)
     public function regenerateIcal()
     {
         app(ICalService::class)->generateToken(auth()->id());
 
         return back()->with('success', trans('calendar.ical_token_regenerated'));
+    }
+
+    // ── PUBLIC iCal feed endpoint ────────────────────────────────────────
+    // GET /ical/{token}  — no auth, unguessable token acts as the credential.
+    // This was referenced everywhere (blade "Download .ics", index() above)
+    // but had no route/action wired up yet - added here.
+    public function icalFeed(string $token)
+    {
+        $setting = CalendarSetting::where('provider', 'ical')
+            ->where('ical_token', $token)
+            ->first();
+
+        // Unknown token, or export turned OFF -> the feed is gone (410) rather
+        // than a generic 404, so calendar apps know the subscription was revoked.
+        if (!$setting) {
+            abort(404);
+        }
+
+        if (!$setting->ical_export_enabled) {
+            abort(410);
+        }
+
+        $ics = app(ICalService::class)->generateIcs($setting->user_id);
+
+        return response($ics, 200, [
+            'Content-Type'        => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'inline; filename="calendar.ics"',
+            'Cache-Control'       => 'no-store, max-age=0',
+        ]);
     }
 
     // Save credentials, then redirect user to Google/Outlook consent screen
@@ -158,6 +199,39 @@ class CalendarController extends Controller
         }
 
         return redirect($authUrl);
+    }
+
+    // Disconnect a provider - clear tokens, keep past events on the provider side
+    // and keep the calendar_settings row (templates, toggles) untouched.
+    public function disconnect(Request $request, string $provider)
+    {
+        if (!in_array($provider, ['google', 'outlook'], true)) {
+            abort(422, 'Unsupported provider.');
+        }
+
+        CalendarIntegration::where('user_id', auth()->id())
+            ->where('provider', $provider)
+            ->update([
+                'access_token'     => null,
+                'refresh_token'    => null,
+                'token_expires_at' => null,
+                'sync_token'       => null,
+                'status'           => 'disconnected',
+                'last_error'       => null,
+            ]);
+
+        CalendarLog::create([
+            'user_id'  => auth()->id(),
+            'provider' => $provider,
+            'action'   => 'disconnect',
+            'status'   => 'success',
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => trans('calendar.credentials_saved')]);
+        }
+
+        return back()->with('success', trans('calendar.credentials_saved'));
     }
 
     // ── Google OAuth callback ──────────────────────────────────────────

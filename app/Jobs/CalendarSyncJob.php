@@ -98,6 +98,24 @@ class CalendarSyncJob implements ShouldQueue
         }
     }
 
+    // Called automatically by the queue worker once all retry attempts (3, with
+    // 1/5/15 min backoff) have been exhausted. Spec section 9 requires the
+    // instructor to be notified when a sync permanently fails.
+    public function failed(\Throwable $exception): void
+    {
+        CalendarLog::create([
+            'user_id'          => $this->integration->user_id,
+            'provider'         => $this->integration->provider,
+            'action'           => $this->action,
+            'status'           => 'failed',
+            'booking_order_id' => $this->order->id,
+            'error_message'    => 'All retry attempts exhausted: ' . $exception->getMessage(),
+        ]);
+
+        // TODO: hook this up to your notification system once available, e.g.:
+        // $this->integration->user?->notify(new CalendarSyncFailedNotification($this->order, $this->integration->provider));
+    }
+
     private function buildBookingData(): array
     {
         $item = $this->order->items->first();
@@ -111,6 +129,9 @@ class CalendarSyncJob implements ShouldQueue
             'start_at'       => ($item->booking_date ?? '') . 'T' . ($item->start_time ?? '00:00:00'),
             'end_at'         => ($item->booking_date ?? '') . 'T' . ($item->end_time ?? '00:00:00'),
             'resource_name'  => $item->resource->name ?? '',
+            // Event "location" field on Google/Outlook - falls back to resource
+            // name, then to the booking/product address if you track one.
+            'location'       => $item->resource->name ?? ($item->booking->address ?? ''),
         ];
     }
 }

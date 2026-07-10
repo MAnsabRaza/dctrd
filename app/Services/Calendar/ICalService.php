@@ -8,12 +8,19 @@ use Illuminate\Support\Str;
 
 class ICalService
 {
-    // Generate .ics file content
+    // Generate .ics file content for the given INSTRUCTOR/ORG (not the buyer).
+    // BookingOrder.user_id is the buyer, so we must filter through the item's
+    // booking creator_id instead - same rule CalendarSyncService uses to pick
+    // which integrations to notify.
     public function generateIcs(int $userId): string
     {
-        $bookings = BookingOrder::where('user_id', $userId)
-            ->where('status', 'confirmed')
-            ->with('items.booking')
+        $bookings = BookingOrder::where('status', 'confirmed')
+            ->whereHas('items.booking', function ($q) use ($userId) {
+                $q->where('creator_id', $userId);
+            })
+            ->with(['items' => function ($q) use ($userId) {
+                $q->whereHas('booking', fn($qq) => $qq->where('creator_id', $userId));
+            }, 'items.booking', 'items.resource'])
             ->get();
 
         $ics  = "BEGIN:VCALENDAR\r\n";
@@ -24,12 +31,21 @@ class ICalService
 
         foreach ($bookings as $order) {
             foreach ($order->items as $item) {
+                // Skip items that don't belong to this instructor (safety net in
+                // case an order has mixed items from different creators).
+                if (($item->booking->creator_id ?? null) != $userId) {
+                    continue;
+                }
+
                 $start = $this->toIcsDate($item->booking_date, $item->start_time ?? null);
                 $end   = $this->toIcsDate($item->booking_date, $item->end_time ?? null);
 
                 $ics .= "BEGIN:VEVENT\r\n";
                 $ics .= "UID:{$order->order_number}-{$item->id}@rocketlms\r\n";
                 $ics .= "SUMMARY:" . $this->escape($item->booking->title ?? '') . "\r\n";
+                if (!empty($item->resource->name)) {
+                    $ics .= "LOCATION:" . $this->escape($item->resource->name) . "\r\n";
+                }
                 $ics .= "DTSTART:{$start}\r\n";
                 $ics .= "DTEND:{$end}\r\n";
                 $ics .= "STATUS:CONFIRMED\r\n";
@@ -43,7 +59,8 @@ class ICalService
         return $ics;
     }
 
-    // Generate signed token for iCal URL
+    // Generate signed token for iCal URL (also used on regenerate - overwrites
+    // the old token so the previous feed URL stops working immediately).
     public function generateToken(int $userId): string
     {
         $token = Str::random(64);

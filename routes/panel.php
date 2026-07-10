@@ -251,6 +251,11 @@ Route::post('/external-connections/ical/regenerate', 'Booking\CalendarController
 
 Route::get('/calendar/outlook/callback', 'Booking\CalendarController@outlookCallback')
     ->name('calendar.outlook.callback');
+    // panel.php ke andar (external-connections group ke sath) — blade JS
+// isi URL par POST karta hai lekin route defined nahi tha:
+Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disconnect')
+    ->name('panel.setting.external-connections.disconnect')
+    ->where('provider', 'google|outlook');
 
     Route::group(['prefix' => 'users'], function () {
         Route::post('/offlineToggle', 'UserController@offlineToggle');

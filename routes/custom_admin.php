@@ -8,6 +8,7 @@
  */
 
 use App\Http\Controllers\Admin\AvailabilitySettingsController;
+use App\Http\Controllers\Admin\AbilityController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\Admin\BookingCategorySettingsController;
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
@@ -308,6 +309,15 @@ Route::group(['prefix' => 'users/{id}/availability'], function () {
         ->name('admin.users.availability.deleteRow');
     Route::post('/row/add', [AvailabilitySettingsController::class, 'addRow'])
         ->name('admin.users.availability.addRow');
+});
+
+Route::group(['prefix' => 'abilities'], function () {
+    Route::get('/', [AbilityController::class, 'index'])->name('admin.abilities.index');
+    Route::get('/create', [AbilityController::class, 'create'])->name('admin.abilities.create');
+    Route::post('/store', [AbilityController::class, 'store'])->name('admin.abilities.store');
+    Route::get('/{ability}/edit', [AbilityController::class, 'edit'])->name('admin.abilities.edit');
+    Route::post('/{ability}/update', [AbilityController::class, 'update'])->name('admin.abilities.update');
+    Route::get('/{ability}/delete', [AbilityController::class, 'destroy'])->name('admin.abilities.delete');
 });
 
 Route::group(['prefix' => 'users/{id}/booking-settings'], function () {
