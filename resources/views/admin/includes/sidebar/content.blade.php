@@ -9,7 +9,8 @@
         $authUser->can('admin_forms') or
         $authUser->can('admin_ai_contents') or
         $authUser->can('admin_content_delete_requests_lists') or
-        $authUser->can('admin_instructor_finder')
+        $authUser->can('admin_instructor_finder') or
+        $authUser->can('admin_abilities')
     )
     <li class="menu-header">{{ trans('admin/main.content') }}</li>
 @endif
@@ -377,6 +378,20 @@
                     </li>
                 @endcan
             @endforeach
+        </ul>
+    </li>
+@endcan
+
+@can('admin_abilities')
+    <li class="nav-item dropdown {{ (request()->is(getAdminPanelUrl('/abilities*', false))) ? 'active' : '' }}">
+        <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">
+            <x-iconsax-bul-cpu-charge class="icons" width="24px" height="24px" />
+            <span>Abilities</span>
+        </a>
+        <ul class="dropdown-menu">
+            <li class="{{ (request()->is(getAdminPanelUrl('/abilities', false))) ? 'active' : '' }}">
+                <a class="nav-link" href="{{ getAdminPanelUrl() }}/abilities">Abilities</a>
+            </li>
         </ul>
     </li>
 @endcan

@@ -882,6 +882,12 @@ Section::updateOrCreate(['id' => 3353], ['name' => 'admin_booking_package_delete
         Section::updateOrCreate(['id' => 3404], ['name' => 'admin_checkout_modules_delete', 'section_group_id' => 3400, 'caption' => 'Checkout Modules Delete']);
         Section::updateOrCreate(['id' => 3405], ['name' => 'admin_checkout_modules_toggle', 'section_group_id' => 3400, 'caption' => 'Checkout Modules Toggle']);
 
+        // Abilities 3620 - 3623
+        Section::updateOrCreate(['id' => 3620], ['name' => 'admin_abilities', 'caption' => 'Abilities']);
+        Section::updateOrCreate(['id' => 3621], ['name' => 'admin_abilities_create', 'section_group_id' => 3620, 'caption' => 'Create Ability']);
+        Section::updateOrCreate(['id' => 3622], ['name' => 'admin_abilities_edit', 'section_group_id' => 3620, 'caption' => 'Edit Ability']);
+        Section::updateOrCreate(['id' => 3623], ['name' => 'admin_abilities_delete', 'section_group_id' => 3620, 'caption' => 'Delete Ability']);
+
         $bookingModuleSections = [
             3360 => ['admin_booking_filters', 'Booking Filters'],
             3364 => ['admin_booking_rules', 'Booking Rules'],

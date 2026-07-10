@@ -14,6 +14,8 @@ class AbilityController extends Controller
      */
     public function index()
     {
+        $this->authorize('admin_abilities');
+
         $abilities = Ability::withCount('vendorAbilities')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -29,6 +31,8 @@ class AbilityController extends Controller
      */
     public function edit($id)
     {
+        $this->authorize('admin_abilities_edit');
+
         $editAbility = Ability::findOrFail($id);
 
         $abilities = Ability::withCount('vendorAbilities')
@@ -43,6 +47,8 @@ class AbilityController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('admin_abilities_create');
+
         $validated = $this->validateAbility($request);
 
         Ability::create([
@@ -61,6 +67,8 @@ class AbilityController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('admin_abilities_edit');
+
         $ability = Ability::findOrFail($id);
 
         $validated = $this->validateAbility($request);
@@ -80,6 +88,8 @@ class AbilityController extends Controller
 
     public function delete($id)
     {
+        $this->authorize('admin_abilities_delete');
+
         $ability = Ability::findOrFail($id);
         $ability->delete();
 
