@@ -196,23 +196,6 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════════════════════════
-         FIX: Shared / cross-template meta fields.
-         Ye fields (service_type, room_type, pickup/dropoff_location,
-         required_notes) pehle sirf ek section ke andar physically maujood
-         thay (jaise meta.service_type sirf Automotive ke andar, placeholder
-         "Oil change, Brake service..." ke sath). Jab koi doosra template
-         (jaise Beauty Salon) apne required/optional array mein wahi
-         field-key reuse karta tha, JS us field ko dikhane ke liye uska
-         poora parent [data-template-section] force-show kar deta tha —
-         is se Beauty Salon select karne par "Automotive/Accommodation
-         Details" section apne original title/placeholder ke sath ghalat
-         tarah se reveal ho jata tha.
-         Fix: in fields ko ek neutral, kisi bhi type se na-bandha section
-         mein daal diya — ab ye kisi bhi template se reuse hon, sirf ye
-         wahi ek generic field show/hide hoti hai, koi doosra poora
-         section leak nahi hota.
-         ══════════════════════════════════════════════════════════════ --}}
     <div class="booking-section" id="section-shared-meta">
         <h3 class="booking-section-title">Template-Specific Details</h3>
         <div class="row">
@@ -325,12 +308,6 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════════════════════════
-         SECTION 4 — Template-specific fields (dynamic sections)
-         Each section is hidden by default. JS reveals the right one.
-         ══════════════════════════════════════════════════════════════ --}}
-
-    {{-- ─── 4a: Staff / Provider (Beauty, Doctors, Professional, Automotive, Education) ─── --}}
     <div class="booking-section booking-type-section" data-template-section="staff" style="display:none">
         <h3 class="booking-section-title js-section-title" data-section="staff">Staff / Provider</h3>
         <div class="row">
@@ -352,7 +329,6 @@
         </div>
     </div>
 
-    {{-- ─── 4b: Sub-type selector (Doctors, Professional, Automotive, Education) ─── --}}
     <div class="booking-section booking-type-section" data-template-section="sub-type" style="display:none">
         <h3 class="booking-section-title js-section-title" data-section="sub-type">Appointment / Service Type</h3>
         <div class="row">
@@ -361,13 +337,11 @@
                     <label class="input-label js-field-label" data-field="sub_type">Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <select name="sub_type" class="form-control js-sub-type-select @error('sub_type') is-invalid @enderror">
                         <option value="">Select Type</option>
-                        {{-- Options populated by JS based on template config --}}
                     </select>
                     @error('sub_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
 
-            {{-- Online meeting link (shown when sub_type=online) --}}
             <div class="col-12 col-md-6 js-online-link-field" style="display:none" data-field-key="meta.online_link">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.online_link">Online Meeting Link <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
@@ -381,7 +355,6 @@
         </div>
     </div>
 
-    {{-- ─── 4c: Availability — Time Slot (Beauty, Doctor, Professional, Education) ─── --}}
     <div class="booking-section booking-type-section" data-template-section="time-slot" style="display:none">
         <h3 class="booking-section-title">Schedule & Availability</h3>
         <p class="text-muted text-small mb-3">
@@ -439,7 +412,6 @@
         </div>
     </div>
 
-    {{-- ─── 4d: Availability — Date Range (Accommodation, Automotive Rental) ─── --}}
     <div class="booking-section booking-type-section" data-template-section="date-range" style="display:none">
         <h3 class="booking-section-title js-section-title" data-section="date-range">Availability Period</h3>
         <p class="text-muted text-small mb-3">
@@ -467,7 +439,6 @@
         </div>
     </div>
 
-    {{-- ─── 4e: Accommodation — specific fields ─── --}}
     <div class="booking-section booking-type-section" data-template-section="accommodation" style="display:none">
         <h3 class="booking-section-title">Accommodation Details</h3>
         <div class="row">
@@ -551,7 +522,6 @@
         </div>
     </div>
 
-    {{-- ─── 4f: Events — specific fields ─── --}}
     <div class="booking-section booking-type-section" data-template-section="events" style="display:none">
         <h3 class="booking-section-title">Event Details</h3>
         <div class="row">
@@ -616,7 +586,6 @@
         </div>
     </div>
 
-    {{-- ─── 4g: Automotive — specific fields ─── --}}
     <div class="booking-section booking-type-section" data-template-section="automotive" style="display:none">
         <h3 class="booking-section-title">Automotive Details</h3>
         <div class="row">
@@ -631,7 +600,6 @@
                 </div>
             </div>
 
-            {{-- Rental fields — pickup/dropoff_location moved to shared section above --}}
             <div class="col-12 js-automotive-rental" style="display:none">
                 <div class="row">
                     <div class="col-md-6" data-field-key="meta.vehicle_specs">
@@ -647,14 +615,12 @@
                 </div>
             </div>
 
-            {{-- Service / mechanic fields — service_type/required_notes moved to shared section above --}}
             <div class="col-12 js-automotive-service" style="display:none">
                 <div class="row"></div>
             </div>
         </div>
     </div>
 
-    {{-- ─── 4h: Education — specific fields ─── --}}
     <div class="booking-section booking-type-section" data-template-section="education" style="display:none">
         <h3 class="booking-section-title">Education / Training Details</h3>
         <div class="row">
@@ -699,7 +665,6 @@
         </div>
     </div>
 
-    {{-- ─── 4i: Professional Services — specific fields ─── --}}
     <div class="booking-section booking-type-section" data-template-section="professional" style="display:none">
         <h3 class="booking-section-title">Professional Service Details</h3>
         <div class="row">
@@ -714,7 +679,6 @@
         </div>
     </div>
 
-    {{-- ─── 4j: Doctors — specific fields ─── --}}
     <div class="booking-section booking-type-section" data-template-section="doctors" style="display:none">
         <h3 class="booking-section-title">Doctor / Clinic Details</h3>
         <div class="row">
@@ -746,7 +710,6 @@
         </div>
     </div>
 
-    {{-- ─── 4k: Beauty/Spa — extras ─── --}}
     <div class="booking-section booking-type-section" data-template-section="beauty-extras" style="display:none" data-field-key="extras">
         <h3 class="booking-section-title">Extras / Add-ons <span class="text-danger js-dynamic-required" style="display:none">*</span></h3>
         <p class="text-muted text-small mb-3">
@@ -767,9 +730,6 @@
         </button>
     </div>
 
-    {{-- ══════════════════════════════════════════════════════════════
-         SECTION 5 — Pricing (always visible, labels change per type)
-         ══════════════════════════════════════════════════════════════ --}}
     <div class="booking-section" id="section-pricing">
         <h3 class="booking-section-title">Pricing</h3>
         <div class="row">
@@ -825,7 +785,6 @@
                 </div>
             </div>
 
-            {{-- Deposit --}}
             <div class="col-12 col-md-3" data-field-key="deposit_enabled">
                 <div class="form-group d-flex align-items-center mt-4">
                     <div class="custom-control custom-switch">
@@ -862,9 +821,6 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════════════════════════
-         SECTION 6 — Booking Options (always visible)
-         ══════════════════════════════════════════════════════════════ --}}
     <div class="booking-section" id="section-options">
         <h3 class="booking-section-title">Booking Options</h3>
         <div class="row">
@@ -907,7 +863,6 @@
         </div>
     </div>
 
-    {{-- Submit --}}
     <div class="d-flex align-items-center gap-3 mt-4">
         <button type="submit" class="btn btn-success px-5">
             <i class="fa fa-save mr-2"></i> Save Booking
@@ -916,39 +871,22 @@
     </div>
 </form>
 
-{{-- ══════════════════════════════════════════════════════════════════
-     JavaScript — Dynamic form behavior
-     ══════════════════════════════════════════════════════════════════ --}}
 <script>
 (function () {
     'use strict';
 
-    // Template configs passed from controller as JSON (Booking Type level)
     var TEMPLATE_CONFIGS = {!! $templateConfigs ?? '{}' !!};
-
-    // NAYA: Sub-template configs (Category level) — key = category slug.
-    // Ye woh 23 templates hain (Doctor Appointment, Clinic Visit, ...).
     var SUB_TEMPLATE_CONFIGS = {!! $subTemplateConfigs ?? '{}' !!};
-
-    // Booking Type (slug) => parent category id map, aur
-    // parent category id => uske children [{id,title,slug}] map.
     var TYPE_CATEGORY_MAP    = {!! json_encode($bookingTypeCategoryMap ?? []) !!};
     var CATEGORIES_BY_PARENT = {!! $categoriesByParent ?? '{}' !!};
     var CURRENT_CATEGORY_ID  = {!! !empty($currentCategoryId) ? json_encode((string) $currentCategoryId) : 'null' !!};
     var CURRENT_SUB_TYPE     = {!! json_encode(old('sub_type', $booking->sub_type ?? '')) !!};
     var IS_REFRESHING_CATEGORY_SELECT = false;
 
-    // ── FIX: ye fields kabhi hide nahi hoti — chahe kisi bhi sub-template
-    // (category level) ke required/optional array mein likhi hon ya na hon.
     var ALWAYS_VISIBLE_FIELD_KEYS = ['category_id', 'title', 'price', 'description', 'requirements'];
 
-    // Currently active Booking-Type level field labels
     var CURRENT_TYPE_FIELD_LABELS = {};
 
-    // Which sections to show per template type
-    // FIX: 'automotive' ko 'staff' section bhi diya gaya hai — Mechanic /
-    // Repair Appointment sub-template ko staff_id chahiye hota hai, lekin
-    // pehle ye section list mein hi shamil nahi tha.
     var TYPE_SECTIONS = {
         'beauty-spa': ['staff', 'time-slot', 'beauty-extras'],
         'doctors-clinics': ['staff', 'sub-type', 'time-slot', 'doctors'],
@@ -959,7 +897,6 @@
         'education-training': ['staff', 'sub-type', 'time-slot', 'education'],
     };
 
-    // Sub-type options per template
     var SUB_TYPE_OPTIONS = {
         'doctors-clinics':        [['physical','Physical'],['online','Online'],['both','Both']],
         'automotive':             [['rental','Rental / Car Hire'],['service','Mechanic / Service Appointment']],
@@ -967,14 +904,11 @@
         'education-training':     [['in-person','In-person'],['online','Online'],['both','Both']],
     };
 
-    // Section heading overrides per template
     var SECTION_TITLES = {
         'accommodation': { 'date-range': 'Availability Period (Check-in / Check-out)' },
         'automotive':    { 'date-range': 'Pickup & Return Period',
                            'sub-type':   'Booking Sub-type (Rental or Service)' },
     };
-
-    // ─── Category dropdown — filtered by selected Booking Type ────────
 
     function populateCategoryOptions(type, selectedCategoryId) {
         var select = document.getElementById('bookingCategorySelect');
@@ -1064,7 +998,6 @@
         return (parentId && CATEGORIES_BY_PARENT[parentId]) ? CATEGORIES_BY_PARENT[parentId] : [];
     }
 
-    // ── Field label helper ──────────────────────────────────────────
     function updateFieldLabel(containerEl, newLabel) {
         if (!newLabel) return;
         var label = containerEl.querySelector('label.input-label');
@@ -1074,8 +1007,6 @@
         label.textContent = newLabel + ' ';
         keepEls.forEach(function (node) { label.appendChild(node); });
     }
-
-    // ─── Main switch function (Booking Type level) ─────────────────────
 
     function applyTemplate(type, options) {
         options = options || {};
@@ -1097,16 +1028,13 @@
         var config   = TEMPLATE_CONFIGS[type] || {};
         var sections = TYPE_SECTIONS[type]    || [];
 
-        // 1. Hide all type-specific sections
         hideAllSections();
 
-        // 2. Show relevant sections for this type
         sections.forEach(function (sectionKey) {
             var el = document.querySelector('[data-template-section="' + sectionKey + '"]');
             if (el) el.style.display = '';
         });
 
-        // 3. Update price unit label
         var priceLabel = config.price_unit_label || 'per booking';
         document.querySelectorAll('.js-price-unit-label').forEach(function (el) {
             el.textContent = priceLabel;
@@ -1116,7 +1044,6 @@
             priceUnitInput.value = priceLabel;
         }
 
-        // 4. Update field labels from config (Booking Type level defaults)
         CURRENT_TYPE_FIELD_LABELS = config.field_labels || {};
         if (config.field_labels) {
             document.querySelectorAll('.js-field-label').forEach(function (el) {
@@ -1129,27 +1056,22 @@
             });
         }
 
-        // 5. Build sub-type select options
         buildSubTypeOptions(type);
 
-        // 6. Category dropdown ko sirf isi parent ke children se filter karo
         if (shouldPopulateCategory) {
             populateCategoryOptions(type, CURRENT_CATEGORY_ID);
         }
 
-        // 7. Apply section title overrides
         var titleOverrides = SECTION_TITLES[type] || {};
         Object.keys(titleOverrides).forEach(function (sectionKey) {
             var el = document.querySelector('[data-template-section="' + sectionKey + '"] .booking-section-title');
             if (el) el.textContent = titleOverrides[sectionKey];
         });
 
-        // 8. Update the type note under the select
         var note = config.meta && config.meta.filter_note ? config.meta.filter_note : '';
         var noteEl = document.getElementById('bookingTypeNote');
         if (noteEl) noteEl.textContent = note;
 
-        // 9. Booking Type badalte hi purana category-level filtering reset karo
         if (shouldResetSubTemplate) {
             resetSubTemplate();
         }
@@ -1160,8 +1082,6 @@
             el.style.display = 'none';
         });
     }
-
-    // ─── Sub-template (Category level) switch function ──────────────────
 
     function applySubTemplate(categorySlug) {
         var allFieldEls = document.querySelectorAll('[data-field-key]');
@@ -1208,15 +1128,9 @@
             }
         });
 
-        // FIX: sirf current booking_type ke legal sections hi reveal karo —
-        // pehle ye function kisi bhi field ka parent section blindly show
-        // kar deta tha, jis se shared meta-keys (jaise meta.service_type)
-        // ka istemaal karne wala template ghalat template ka poora section
-        // (jaise Automotive/Accommodation) force reveal kar deta tha.
         var currentType = (document.getElementById('bookingTypeSelect') || {}).value || '';
         syncDynamicContainers(currentType);
 
-        // Price unit: template ki value se override karo
         if (subConfig.price_unit) {
             document.querySelectorAll('.js-price-unit-label').forEach(function (el) {
                 el.textContent = subConfig.price_unit;
@@ -1234,11 +1148,6 @@
         }
     }
 
-    // FIX: type-aware — sirf wahi [data-template-section] wrapper reveal
-    // hota hai jo current booking_type ke TYPE_SECTIONS mein legally
-    // allowed hai. Isse koi bhi shared meta field (jaise meta.service_type,
-    // meta.room_type) kisi doosre type ka poora section force-show nahi
-    // kar sakta.
     function syncDynamicContainers(currentType) {
         var allowedSections = TYPE_SECTIONS[currentType] || [];
 
@@ -1254,7 +1163,7 @@
             if (section) {
                 var sectionKey = section.dataset.templateSection;
                 if (allowedSections.indexOf(sectionKey) === -1) {
-                    return; // is section ko chhoo mat — current type ke liye allowed nahi
+                    return;
                 }
                 section.style.display = '';
 
@@ -1346,8 +1255,6 @@
         }
     }
 
-    // ─── Sub-type options ─────────────────────────────────────────────
-
     function buildSubTypeOptions(type) {
         var select  = document.querySelector('.js-sub-type-select');
         var options = SUB_TYPE_OPTIONS[type];
@@ -1397,8 +1304,6 @@
         });
     }
 
-    // ─── Slug auto-generation ─────────────────────────────────────────
-
     function slugify(str) {
         return str.toLowerCase().trim()
             .replace(/[^a-z0-9\s-]/g, '')
@@ -1421,8 +1326,6 @@
         });
     }
 
-    // ─── Location panel toggle ────────────────────────────────────────
-
     var locationSwitch = document.getElementById('newBookingLocationSwitch');
     var locationPanel  = document.getElementById('newBookingLocationPanel');
 
@@ -1432,8 +1335,6 @@
         });
     }
 
-    // ─── Deposit panel toggle ─────────────────────────────────────────
-
     var depositSwitch = document.getElementById('booking_deposit_enabled');
     var depositPanel  = document.getElementById('bookingDepositPanel');
 
@@ -1442,8 +1343,6 @@
             depositPanel.style.display = this.checked ? '' : 'none';
         });
     }
-
-    // ─── Extras (Beauty/Spa) ──────────────────────────────────────────
 
     var extrasContainer = document.getElementById('extrasContainer');
     var addExtraBtn     = document.getElementById('addExtraBtn');
@@ -1468,8 +1367,6 @@
         });
     }
 
-    // ─── Booking type change ──────────────────────────────────────────
-
     var typeSelect = document.getElementById('bookingTypeSelect');
 
     if (typeSelect) {
@@ -1478,10 +1375,8 @@
             prepareCategoryPicker(this.value, null);
         });
 
-        // On load (create ya edit dono par) — apply saved/selected type
         prepareCategoryPicker(typeSelect.value, CURRENT_CATEGORY_ID);
 
-        // Restore sub_type if editing
         @if(!empty($booking) && $booking->sub_type)
             var subTypeSelect = document.querySelector('.js-sub-type-select');
             if (subTypeSelect) {
@@ -1491,8 +1386,6 @@
             }
         @endif
     }
-
-    // ─── Category (subcategory/template) change ────────────────────────
 
     var categorySelect = document.getElementById('bookingCategorySelect');
 
@@ -1512,10 +1405,6 @@
             applySelectedCategoryTemplate();
         }
     }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // ── Silent submit-block guard ────────────────────────────────────────
-    // ═══════════════════════════════════════════════════════════════════
 
     var bookingForm = document.getElementById('bookingAdminForm');
 
@@ -1592,8 +1481,6 @@
         });
     }
 
-    // ─── Tags: auto-comma on Enter ────────────────────────────────────
-
     var tagsInput = document.querySelector('input[name="tags"]');
     if (tagsInput) {
         tagsInput.addEventListener('keydown', function (e) {
@@ -1604,20 +1491,6 @@
             }
         });
     }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // ── FIX: Server-side validation errors ko field-level pe highlight karo
-    //
-    // Masla: pehle sirf title/price/status/category_id/slug pe @error
-    // markup tha — 30+ dynamic fields (staff_id, sub_type, meta.* fields)
-    // pe koi error markup nahi tha, is liye server validation fail hone ke
-    // bawajood user ko kuch dikhta nahi tha.
-    //
-    // Fix: Laravel ke $errors bag ko JSON mein le kar HAR named field ko
-    // khud check karta hai — chahe wo field kisi hidden template-section
-    // ke andar hi kyun na ho (usko reveal bhi kar deta hai), aur pehli
-    // invalid field tak scroll kar deta hai.
-    // ═══════════════════════════════════════════════════════════════════
 
     var SERVER_ERRORS = {!! json_encode($errors->getMessages() ?? []) !!};
 
@@ -1676,8 +1549,6 @@
         }
     }
 
-    // Sab dynamic init (applyTemplate/applySubTemplate) ho chukne ke baad
-    // chalao, warna ye apne aap wapas hide ho jayenge.
     window.setTimeout(showServerErrors, 50);
 
 })();
