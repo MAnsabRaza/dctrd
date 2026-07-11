@@ -19,6 +19,18 @@
     {{ csrf_field() }}
     <input type="hidden" name="creator_id" value="{{ auth()->id() }}">
 
+    {{-- FIX: general error summary — pehle koi visible error message nahi tha --}}
+    @if ($errors->any())
+        <div class="alert alert-danger" id="bookingFormErrorsAlert">
+            <strong>{{ $errors->count() }} {{ $errors->count() == 1 ? 'error' : 'errors' }} — neeche highlighted fields check karein:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="booking-section">
         <h3 class="booking-section-title">Booking Type</h3>
 
@@ -55,6 +67,7 @@
                             </option>
                         @endforeach
                     </select>
+                    @error('language')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
 
@@ -168,20 +181,126 @@
                     <label class="input-label js-field-label" data-field="requirements">
                         Cancellation / Policy <span class="text-danger js-dynamic-required" style="display:none">*</span>
                     </label>
-                    <textarea name="requirements" class="form-control" rows="4"
+                    <textarea name="requirements" class="form-control @error('requirements') is-invalid @enderror" rows="4"
                               placeholder="Cancellation or rescheduling policy...">{{ $field('requirements') }}</textarea>
+                    @error('requirements')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="form-group" data-field-key="description">
                     <label class="input-label js-field-label" data-field="description">Description <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <textarea name="description" class="summernote form-control"
+                    <textarea name="description" class="summernote form-control @error('description') is-invalid @enderror"
                               placeholder="Detailed description (min 300 words)">{{ $field('description') }}</textarea>
+                    @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
     </div>
 
-   
+    {{-- ══════════════════════════════════════════════════════════════
+         FIX: Shared / cross-template meta fields.
+         Ye fields (service_type, room_type, pickup/dropoff_location,
+         required_notes) pehle sirf ek section ke andar physically maujood
+         thay (jaise meta.service_type sirf Automotive ke andar, placeholder
+         "Oil change, Brake service..." ke sath). Jab koi doosra template
+         (jaise Beauty Salon) apne required/optional array mein wahi
+         field-key reuse karta tha, JS us field ko dikhane ke liye uska
+         poora parent [data-template-section] force-show kar deta tha —
+         is se Beauty Salon select karne par "Automotive/Accommodation
+         Details" section apne original title/placeholder ke sath ghalat
+         tarah se reveal ho jata tha.
+         Fix: in fields ko ek neutral, kisi bhi type se na-bandha section
+         mein daal diya — ab ye kisi bhi template se reuse hon, sirf ye
+         wahi ek generic field show/hide hoti hai, koi doosra poora
+         section leak nahi hota.
+         ══════════════════════════════════════════════════════════════ --}}
+    <div class="booking-section" id="section-shared-meta">
+        <h3 class="booking-section-title">Template-Specific Details</h3>
+        <div class="row">
+            <div class="col-12 col-md-6" data-field-key="meta.service_type">
+                <div class="form-group">
+                    <label class="input-label js-field-label" data-field="meta.service_type">
+                        Service / Type <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
+                    <input type="text" name="meta[service_type]"
+                           value="{{ $metaField('service_type') }}"
+                           class="form-control @error('meta.service_type') is-invalid @enderror"
+                           placeholder="e.g. type of service for this template">
+                    @error('meta.service_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6" data-field-key="meta.room_type">
+                <div class="form-group">
+                    <label class="input-label js-field-label" data-field="meta.room_type">
+                        Room / Resource <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
+                    <input type="text" name="meta[room_type]"
+                           value="{{ $metaField('room_type') }}"
+                           class="form-control @error('meta.room_type') is-invalid @enderror"
+                           placeholder="e.g. room, chair, or resource name">
+                    @error('meta.room_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6" data-field-key="meta.pickup_location">
+                <div class="form-group">
+                    <label class="input-label js-field-label" data-field="meta.pickup_location">
+                        Pickup / Meeting Location <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
+                    <input type="text" name="meta[pickup_location]"
+                           value="{{ $metaField('pickup_location') }}"
+                           class="form-control @error('meta.pickup_location') is-invalid @enderror">
+                    @error('meta.pickup_location')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6" data-field-key="meta.dropoff_location">
+                <div class="form-group">
+                    <label class="input-label js-field-label" data-field="meta.dropoff_location">
+                        Drop-off / Return Location <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
+                    <input type="text" name="meta[dropoff_location]"
+                           value="{{ $metaField('dropoff_location') }}"
+                           class="form-control @error('meta.dropoff_location') is-invalid @enderror">
+                    @error('meta.dropoff_location')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6" data-field-key="meta.required_notes">
+                <div class="form-group">
+                    <label class="input-label js-field-label" data-field="meta.required_notes">
+                        Required Notes <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
+                    <input type="text" name="meta[required_notes]"
+                           value="{{ $metaField('required_notes') }}"
+                           class="form-control @error('meta.required_notes') is-invalid @enderror">
+                    @error('meta.required_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6" data-field-key="meta.gallery">
+                <div class="form-group">
+                    <label class="input-label js-field-label" data-field="meta.gallery">
+                        Gallery Images <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <button type="button" class="input-group-text admin-file-manager"
+                                    data-input="booking_gallery" data-preview="holder" data-multiple="true">
+                                <i class="fa fa-upload"></i>
+                            </button>
+                        </div>
+                        <input type="text" name="meta[gallery]" id="booking_gallery"
+                               value="{{ $metaField('gallery') }}"
+                               class="form-control @error('meta.gallery') is-invalid @enderror"
+                               placeholder="Comma-separated image paths">
+                    </div>
+                    @error('meta.gallery')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="booking-section" id="section-location" data-field-key="location_enabled">
         <h3 class="booking-section-title">Location <span class="text-danger js-dynamic-required" style="display:none">*</span></h3>
         <div class="form-group d-flex align-items-center">
@@ -218,7 +337,7 @@
             <div class="col-12 col-md-6">
                 <div class="form-group" data-field-key="staff_id">
                     <label class="input-label js-field-label" data-field="staff_id">Staff / Provider <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <select name="staff_id" data-plugin-selectTwo class="form-control">
+                    <select name="staff_id" data-plugin-selectTwo class="form-control @error('meta.staff_id') is-invalid @enderror">
                         <option value="">Select Staff / Provider</option>
                         @foreach($instructors ?? [] as $instructor)
                             <option value="{{ $instructor->id }}"
@@ -227,6 +346,7 @@
                             </option>
                         @endforeach
                     </select>
+                    @error('meta.staff_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -239,10 +359,11 @@
             <div class="col-12 col-md-6">
                 <div class="form-group" data-field-key="sub_type">
                     <label class="input-label js-field-label" data-field="sub_type">Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <select name="sub_type" class="form-control js-sub-type-select">
+                    <select name="sub_type" class="form-control js-sub-type-select @error('sub_type') is-invalid @enderror">
                         <option value="">Select Type</option>
                         {{-- Options populated by JS based on template config --}}
                     </select>
+                    @error('sub_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
 
@@ -252,7 +373,9 @@
                     <label class="input-label js-field-label" data-field="meta.online_link">Online Meeting Link <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="url" name="meta[online_link]"
                            value="{{ $metaField('online_link') }}"
-                           class="form-control" placeholder="https://meet.example.com/...">
+                           class="form-control @error('meta.online_link') is-invalid @enderror"
+                           placeholder="https://meet.example.com/...">
+                    @error('meta.online_link')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -271,36 +394,46 @@
                         Duration (minutes) <span class="text-danger js-dynamic-required" style="display:none">*</span>
                     </label>
                     <input type="number" name="duration_minutes" min="5" max="480"
-                           value="{{ $field('duration_minutes') }}" class="form-control"
+                           value="{{ $field('duration_minutes') }}"
+                           class="form-control @error('duration_minutes') is-invalid @enderror"
                            placeholder="e.g. 60">
+                    @error('duration_minutes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label class="input-label">Buffer Before (minutes)</label>
                     <input type="number" name="buffer_before" min="0"
-                           value="{{ $field('buffer_before', 0) }}" class="form-control">
+                           value="{{ $field('buffer_before', 0) }}"
+                           class="form-control @error('buffer_before') is-invalid @enderror">
+                    @error('buffer_before')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label class="input-label">Buffer After (minutes)</label>
                     <input type="number" name="buffer_after" min="0"
-                           value="{{ $field('buffer_after', 0) }}" class="form-control">
+                           value="{{ $field('buffer_after', 0) }}"
+                           class="form-control @error('buffer_after') is-invalid @enderror">
+                    @error('buffer_after')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label class="input-label">Lead Time (hours)</label>
                     <input type="number" name="lead_time_hours" min="0"
-                           value="{{ $field('lead_time_hours', 0) }}" class="form-control">
+                           value="{{ $field('lead_time_hours', 0) }}"
+                           class="form-control @error('lead_time_hours') is-invalid @enderror">
+                    @error('lead_time_hours')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label class="input-label">Cutoff Time (hours)</label>
                     <input type="number" name="cutoff_time_hours" min="0"
-                           value="{{ $field('cutoff_time_hours', 0) }}" class="form-control">
+                           value="{{ $field('cutoff_time_hours', 0) }}"
+                           class="form-control @error('cutoff_time_hours') is-invalid @enderror">
+                    @error('cutoff_time_hours')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -317,14 +450,18 @@
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.check_in_date">Check-in / Pickup Date <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="date" name="meta[check_in_date]"
-                           value="{{ $metaField('check_in_date') }}" class="form-control">
+                           value="{{ $metaField('check_in_date') }}"
+                           class="form-control @error('meta.check_in_date') is-invalid @enderror">
+                    @error('meta.check_in_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4" data-field-key="meta.check_out_date">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.check_out_date">Check-out / Return Date <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="date" name="meta[check_out_date]"
-                           value="{{ $metaField('check_out_date') }}" class="form-control">
+                           value="{{ $metaField('check_out_date') }}"
+                           class="form-control @error('meta.check_out_date') is-invalid @enderror">
+                    @error('meta.check_out_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -334,14 +471,6 @@
     <div class="booking-section booking-type-section" data-template-section="accommodation" style="display:none">
         <h3 class="booking-section-title">Accommodation Details</h3>
         <div class="row">
-            <div class="col-12 col-md-4" data-field-key="meta.room_type">
-                <div class="form-group">
-                    <label class="input-label js-field-label" data-field="meta.room_type">Room / Unit Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <input type="text" name="meta[room_type]"
-                           value="{{ $metaField('room_type') }}"
-                           class="form-control" placeholder="e.g. Deluxe Room, Studio, Villa">
-                </div>
-            </div>
             <div class="col-12 col-md-4" data-field-key="price">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="price">Price per Night <span class="text-danger">*</span></label>
@@ -355,35 +484,45 @@
                 <div class="form-group">
                     <label class="input-label">Price per Extra Person (per night)</label>
                     <input type="number" name="price_per" step="0.01" min="0"
-                           value="{{ $field('price_per') }}" class="form-control">
+                           value="{{ $field('price_per') }}"
+                           class="form-control @error('price_per') is-invalid @enderror">
+                    @error('price_per')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-3" data-field-key="min_persons">
                 <div class="form-group">
                     <label class="input-label">Min Guests</label>
                     <input type="number" name="min_persons" min="1"
-                           value="{{ $field('min_persons', 1) }}" class="form-control">
+                           value="{{ $field('min_persons', 1) }}"
+                           class="form-control @error('min_persons') is-invalid @enderror">
+                    @error('min_persons')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-3" data-field-key="max_persons">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="max_persons">Max Guests (Adults) <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="number" name="max_persons" min="1"
-                           value="{{ $field('max_persons') }}" class="form-control js-required-for-type" data-type="accommodation">
+                           value="{{ $field('max_persons') }}"
+                           class="form-control js-required-for-type @error('max_persons') is-invalid @enderror" data-type="accommodation">
+                    @error('max_persons')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-3" data-field-key="max_children">
                 <div class="form-group">
                     <label class="input-label">Max Children</label>
                     <input type="number" name="max_children" min="0"
-                           value="{{ $field('max_children') }}" class="form-control">
+                           value="{{ $field('max_children') }}"
+                           class="form-control @error('max_children') is-invalid @enderror">
+                    @error('max_children')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-3" data-field-key="capacity">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="capacity">Room Capacity <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="number" name="capacity" min="1"
-                           value="{{ $field('capacity') }}" class="form-control">
+                           value="{{ $field('capacity') }}"
+                           class="form-control @error('capacity') is-invalid @enderror">
+                    @error('capacity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12" data-field-key="meta.amenities">
@@ -406,6 +545,7 @@
                             </div>
                         @endforeach
                     </div>
+                    @error('meta.amenities')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -419,15 +559,19 @@
                 <div class="form-group">
                     <label class="input-label">Total Capacity <span class="text-danger">*</span></label>
                     <input type="number" name="capacity" min="1"
-                           value="{{ $field('capacity') }}" class="form-control">
+                           value="{{ $field('capacity') }}"
+                           class="form-control @error('capacity') is-invalid @enderror">
+                    @error('capacity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4" data-field-key="inventory">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="inventory">Available Tickets <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="number" name="inventory" min="0"
-                           value="{{ $field('inventory') }}" class="form-control"
+                           value="{{ $field('inventory') }}"
+                           class="form-control @error('inventory') is-invalid @enderror"
                            placeholder="Leave blank = same as capacity">
+                    @error('inventory')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4">
@@ -440,20 +584,23 @@
             <div class="col-12 col-md-4" data-field-key="meta.venue_type">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.venue_type">Venue Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <select name="meta[venue_type]" class="form-control">
+                    <select name="meta[venue_type]" class="form-control @error('meta.venue_type') is-invalid @enderror">
                         <option value="">Select</option>
                         <option value="indoor"   {{ $metaField('venue_type') == 'indoor'   ? 'selected' : '' }}>Indoor</option>
                         <option value="outdoor"  {{ $metaField('venue_type') == 'outdoor'  ? 'selected' : '' }}>Outdoor</option>
                         <option value="hybrid"   {{ $metaField('venue_type') == 'hybrid'   ? 'selected' : '' }}>Hybrid</option>
                         <option value="online"   {{ $metaField('venue_type') == 'online'   ? 'selected' : '' }}>Online</option>
                     </select>
+                    @error('meta.venue_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4" data-field-key="meta.organizer">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.organizer">Organizer / Provider <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[organizer]"
-                           value="{{ $metaField('organizer') }}" class="form-control">
+                           value="{{ $metaField('organizer') }}"
+                           class="form-control @error('meta.organizer') is-invalid @enderror">
+                    @error('meta.organizer')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4" data-field-key="meta.specifications">
@@ -461,7 +608,9 @@
                     <label class="input-label js-field-label" data-field="meta.specifications">Specifications <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[specifications]"
                            value="{{ $metaField('specifications') }}"
-                           class="form-control" placeholder="e.g. Family-friendly, 18+, Outdoor shoes required">
+                           class="form-control @error('meta.specifications') is-invalid @enderror"
+                           placeholder="e.g. Family-friendly, 18+, Outdoor shoes required">
+                    @error('meta.specifications')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -476,58 +625,31 @@
                     <label class="input-label js-field-label" data-field="meta.vehicle_type">Vehicle Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[vehicle_type]"
                            value="{{ $metaField('vehicle_type') }}"
-                           class="form-control" placeholder="e.g. Sedan, SUV, Motorcycle">
+                           class="form-control @error('meta.vehicle_type') is-invalid @enderror"
+                           placeholder="e.g. Sedan, SUV, Motorcycle">
+                    @error('meta.vehicle_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
 
-            {{-- Rental fields --}}
+            {{-- Rental fields — pickup/dropoff_location moved to shared section above --}}
             <div class="col-12 js-automotive-rental" style="display:none">
                 <div class="row">
-                    <div class="col-md-4" data-field-key="meta.pickup_location">
-                        <div class="form-group">
-                            <label class="input-label js-field-label" data-field="meta.pickup_location">Pickup Location <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                            <input type="text" name="meta[pickup_location]"
-                                   value="{{ $metaField('pickup_location') }}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-4" data-field-key="meta.dropoff_location">
-                        <div class="form-group">
-                            <label class="input-label js-field-label" data-field="meta.dropoff_location">Drop-off Location <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                            <input type="text" name="meta[dropoff_location]"
-                                   value="{{ $metaField('dropoff_location') }}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-4" data-field-key="meta.vehicle_specs">
+                    <div class="col-md-6" data-field-key="meta.vehicle_specs">
                         <div class="form-group">
                             <label class="input-label js-field-label" data-field="meta.vehicle_specs">Vehicle Specs <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                             <input type="text" name="meta[vehicle_specs]"
                                    value="{{ $metaField('vehicle_specs') }}"
-                                   class="form-control" placeholder="e.g. 5 seats, automatic, petrol">
+                                   class="form-control @error('meta.vehicle_specs') is-invalid @enderror"
+                                   placeholder="e.g. 5 seats, automatic, petrol">
+                            @error('meta.vehicle_specs')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Service / mechanic fields --}}
+            {{-- Service / mechanic fields — service_type/required_notes moved to shared section above --}}
             <div class="col-12 js-automotive-service" style="display:none">
-                <div class="row">
-                    <div class="col-md-6" data-field-key="meta.service_type">
-                        <div class="form-group">
-                            <label class="input-label js-field-label" data-field="meta.service_type">Service Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                            <input type="text" name="meta[service_type]"
-                                   value="{{ $metaField('service_type') }}"
-                                   class="form-control" placeholder="e.g. Oil change, Brake service, AC repair">
-                        </div>
-                    </div>
-                    <div class="col-md-6" data-field-key="meta.required_notes">
-                        <div class="form-group">
-                            <label class="input-label js-field-label" data-field="meta.required_notes">Required Notes / Vehicle Details <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                            <input type="text" name="meta[required_notes]"
-                                   value="{{ $metaField('required_notes') }}"
-                                   class="form-control" placeholder="License plate, model year, issue description">
-                        </div>
-                    </div>
-                </div>
+                <div class="row"></div>
             </div>
         </div>
     </div>
@@ -539,13 +661,14 @@
             <div class="col-12 col-md-4" data-field-key="meta.level">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.level">Level <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <select name="meta[level]" class="form-control">
+                    <select name="meta[level]" class="form-control @error('meta.level') is-invalid @enderror">
                         <option value="">Select Level</option>
                         <option value="beginner"     {{ $metaField('level') == 'beginner'     ? 'selected' : '' }}>Beginner</option>
                         <option value="intermediate" {{ $metaField('level') == 'intermediate' ? 'selected' : '' }}>Intermediate</option>
                         <option value="advanced"     {{ $metaField('level') == 'advanced'     ? 'selected' : '' }}>Advanced</option>
                         <option value="all"          {{ $metaField('level') == 'all'          ? 'selected' : '' }}>All Levels</option>
                     </select>
+                    @error('meta.level')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4">
@@ -568,7 +691,9 @@
                     <label class="input-label js-field-label" data-field="meta.prerequisites">Prerequisites <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <input type="text" name="meta[prerequisites]"
                            value="{{ $metaField('prerequisites') }}"
-                           class="form-control" placeholder="e.g. Basic English required">
+                           class="form-control @error('meta.prerequisites') is-invalid @enderror"
+                           placeholder="e.g. Basic English required">
+                    @error('meta.prerequisites')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -581,8 +706,9 @@
             <div class="col-12 col-md-6" data-field-key="meta.required_docs">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.required_docs">Required Notes / Documents <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <textarea name="meta[required_docs]" class="form-control" rows="3"
+                    <textarea name="meta[required_docs]" class="form-control @error('meta.required_docs') is-invalid @enderror" rows="3"
                               placeholder="e.g. Please bring your last tax return, NDA required">{{ $metaField('required_docs') }}</textarea>
+                    @error('meta.required_docs')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -595,24 +721,26 @@
             <div class="col-12 col-md-4" data-field-key="meta.appointment_type">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.appointment_type">Service Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <select name="meta[appointment_type]" class="form-control">
+                    <select name="meta[appointment_type]" class="form-control @error('meta.appointment_type') is-invalid @enderror">
                         <option value="">Select</option>
                         <option value="consultation" {{ $metaField('appointment_type') == 'consultation' ? 'selected' : '' }}>Consultation</option>
                         <option value="diagnostic"   {{ $metaField('appointment_type') == 'diagnostic'   ? 'selected' : '' }}>Diagnostic</option>
                         <option value="therapy"      {{ $metaField('appointment_type') == 'therapy'      ? 'selected' : '' }}>Therapy</option>
                         <option value="checkup"      {{ $metaField('appointment_type') == 'checkup'      ? 'selected' : '' }}>Check-up</option>
                     </select>
+                    @error('meta.appointment_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-4" data-field-key="meta.payment_option">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.payment_option">Payment Option <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <select name="meta[payment_option]" class="form-control">
+                    <select name="meta[payment_option]" class="form-control @error('meta.payment_option') is-invalid @enderror">
                         <option value="">Select</option>
                         <option value="per_appointment" {{ $metaField('payment_option') == 'per_appointment' ? 'selected' : '' }}>Per Appointment</option>
                         <option value="quote_based"     {{ $metaField('payment_option') == 'quote_based'     ? 'selected' : '' }}>Quote Based</option>
                         <option value="insurance"       {{ $metaField('payment_option') == 'insurance'       ? 'selected' : '' }}>Insurance</option>
                     </select>
+                    @error('meta.payment_option')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -661,7 +789,9 @@
                 <div class="form-group">
                     <label class="input-label">Discount / Display Price</label>
                     <input type="number" name="discount_price" step="0.01" min="0"
-                           value="{{ $field('discount_price') }}" class="form-control">
+                           value="{{ $field('discount_price') }}"
+                           class="form-control @error('discount_price') is-invalid @enderror">
+                    @error('discount_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-3">
@@ -689,7 +819,9 @@
                 <div class="form-group">
                     <label class="input-label">Tax (%)</label>
                     <input type="number" name="tax" step="0.01" min="0"
-                           value="{{ $field('tax', '0.00') }}" class="form-control">
+                           value="{{ $field('tax', '0.00') }}"
+                           class="form-control @error('tax') is-invalid @enderror">
+                    @error('tax')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
 
@@ -712,7 +844,9 @@
                     <div class="form-group">
                         <label class="input-label">Deposit Amount</label>
                         <input type="number" name="deposit_amount" step="0.01" min="0"
-                               value="{{ $field('deposit_amount') }}" class="form-control">
+                               value="{{ $field('deposit_amount') }}"
+                               class="form-control @error('deposit_amount') is-invalid @enderror">
+                        @error('deposit_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
                 <div class="col-12 col-md-3">
@@ -806,25 +940,21 @@
 
     // ── FIX: ye fields kabhi hide nahi hoti — chahe kisi bhi sub-template
     // (category level) ke required/optional array mein likhi hon ya na hon.
-    // Pehle bug ye tha ke jaise hi category select hoti thi, "category_id"
-    // field khud apne aap chip jaati thi kyunki wo kisi sub-template ki
-    // required/optional list mein nahi hoti — sirf uska naam/label change
-    // hona chahiye, hide nahi honi chahiye.
     var ALWAYS_VISIBLE_FIELD_KEYS = ['category_id', 'title', 'price', 'description', 'requirements'];
 
-    // Currently active Booking-Type level field labels — jab category
-    // deselect ho ya kisi aisi category pe switch ho jo kisi 23-template se
-    // match nahi karti, to labels wapas isi par reset hote hain (sub-template
-    // ka purana overridden label chipka nahi rehta).
+    // Currently active Booking-Type level field labels
     var CURRENT_TYPE_FIELD_LABELS = {};
 
     // Which sections to show per template type
+    // FIX: 'automotive' ko 'staff' section bhi diya gaya hai — Mechanic /
+    // Repair Appointment sub-template ko staff_id chahiye hota hai, lekin
+    // pehle ye section list mein hi shamil nahi tha.
     var TYPE_SECTIONS = {
         'beauty-spa': ['staff', 'time-slot', 'beauty-extras'],
         'doctors-clinics': ['staff', 'sub-type', 'time-slot', 'doctors'],
         'events': ['time-slot', 'events'],
         'accommodation': ['date-range', 'accommodation'],
-        'automotive': ['sub-type', 'automotive'],
+        'automotive': ['staff', 'sub-type', 'automotive'],
         'professional-services': ['staff', 'sub-type', 'time-slot', 'professional'],
         'education-training': ['staff', 'sub-type', 'time-slot', 'education'],
     };
@@ -888,8 +1018,6 @@
     }
 
     function triggerSelectTwoRefresh(select) {
-        // Agar select2 (data-plugin-selectTwo) is field par init ho chuka hai,
-        // to naye options ke baad usko refresh karna zaroori hai.
         if (window.jQuery) {
             var $select = window.jQuery(select);
             IS_REFRESHING_CATEGORY_SELECT = true;
@@ -937,10 +1065,6 @@
     }
 
     // ── Field label helper ──────────────────────────────────────────
-    // Field group ke andar (chahe wo `[data-field-key]` wala element khud
-    // ho ya uske andar) `.input-label` dhoondh kar sirf uska text change
-    // karta hai, jabke required-star (span) ya icon jaise child elements
-    // ko preserve karta hai (unhe wapas label mein append kar deta hai).
     function updateFieldLabel(containerEl, newLabel) {
         if (!newLabel) return;
         var label = containerEl.querySelector('label.input-label');
@@ -982,7 +1106,7 @@
             if (el) el.style.display = '';
         });
 
-        // 3. Update price unit label (default, category select ye override kar sakta hai)
+        // 3. Update price unit label
         var priceLabel = config.price_unit_label || 'per booking';
         document.querySelectorAll('.js-price-unit-label').forEach(function (el) {
             el.textContent = priceLabel;
@@ -998,7 +1122,6 @@
             document.querySelectorAll('.js-field-label').forEach(function (el) {
                 var fieldKey = el.dataset.field;
                 if (config.field_labels[fieldKey]) {
-                    // Keep the asterisk span(s) if they exist
                     var stars = el.querySelectorAll('.text-danger');
                     el.textContent = config.field_labels[fieldKey] + ' ';
                     stars.forEach(function (star) { el.appendChild(star); });
@@ -1026,8 +1149,7 @@
         var noteEl = document.getElementById('bookingTypeNote');
         if (noteEl) noteEl.textContent = note;
 
-        // 9. Booking Type badalte hi purana category-level (sub-template)
-        //    filtering reset kar do — jab tak naya category select na ho.
+        // 9. Booking Type badalte hi purana category-level filtering reset karo
         if (shouldResetSubTemplate) {
             resetSubTemplate();
         }
@@ -1039,24 +1161,7 @@
         });
     }
 
-    // ─── NAYA: Sub-template (Category level) switch function ───────────
-    //
-    // Jab admin Category select kare (e.g. "Doctor Appointment"), is
-    // function ko us category ke `slug` ke sath call kiya jata hai.
-    // Ye SUB_TEMPLATE_CONFIGS se us template ki config nikalta hai aur:
-    //   - jo fields us template ke "required" mein hain -> show + required
-    //   - jo fields "optional" mein hain               -> show, required nahi
-    //   - jo fields dono mein nahi hain (irrelevant)     -> hide kar deta hai
-    //   - EXCEPTION: ALWAYS_VISIBLE_FIELD_KEYS (category_id, title, price,
-    //     description, requirements) kabhi hide nahi hoti — sirf required
-    //     ya optional state set hoti hai.
-    //   - price unit ko template ke price_unit se update karta hai
-    //   - field_labels ke through har field ka naam bhi update karta hai
-    //     (jaisa screenshots ke table mein diya gaya hai)
-    //
-    // Agar category kisi bhi known template se match na ho (custom
-    // category jo 23 wali list mein nahi), to sub-template filtering
-    // skip ho jati hai aur sab kuch Booking-Type level par hi chalta hai.
+    // ─── Sub-template (Category level) switch function ──────────────────
 
     function applySubTemplate(categorySlug) {
         var allFieldEls = document.querySelectorAll('[data-field-key]');
@@ -1065,9 +1170,6 @@
         var noteEl = document.getElementById('subTemplateNote');
 
         if (!subConfig) {
-            // Koi specific sub-template match nahi hua -> sab visible rehne do,
-            // koi extra required mat lagao, aur labels wapas Booking-Type
-            // level defaults par reset kar do.
             allFieldEls.forEach(function (el) {
                 el.style.display = '';
                 setDynamicRequired(el, false);
@@ -1088,9 +1190,6 @@
             var key = el.dataset.fieldKey;
 
             if (ALWAYS_VISIBLE_FIELD_KEYS.indexOf(key) !== -1) {
-                // category_id, title, price, description, requirements —
-                // ye kabhi hide nahi hoti, sirf required/optional state
-                // sub-template ke hisab se lagti hai.
                 el.style.display = '';
                 setDynamicRequired(el, required.indexOf(key) !== -1);
             } else if (required.indexOf(key) !== -1) {
@@ -1104,14 +1203,18 @@
                 setDynamicRequired(el, false);
             }
 
-            // Field label update — agar is sub-template ne is field ke
-            // liye custom naam diya hai (jaisa screenshot table mein hai).
             if (labels[key]) {
                 updateFieldLabel(el, labels[key]);
             }
         });
 
-        syncDynamicContainers();
+        // FIX: sirf current booking_type ke legal sections hi reveal karo —
+        // pehle ye function kisi bhi field ka parent section blindly show
+        // kar deta tha, jis se shared meta-keys (jaise meta.service_type)
+        // ka istemaal karne wala template ghalat template ka poora section
+        // (jaise Automotive/Accommodation) force reveal kar deta tha.
+        var currentType = (document.getElementById('bookingTypeSelect') || {}).value || '';
+        syncDynamicContainers(currentType);
 
         // Price unit: template ki value se override karo
         if (subConfig.price_unit) {
@@ -1124,7 +1227,6 @@
             }
         }
 
-        // Informational note: label + checkout modules
         if (noteEl) {
             var modules = (subConfig.checkout_modules || []).join(', ');
             noteEl.textContent = 'Template: ' + subConfig.label +
@@ -1132,7 +1234,14 @@
         }
     }
 
-    function syncDynamicContainers() {
+    // FIX: type-aware — sirf wahi [data-template-section] wrapper reveal
+    // hota hai jo current booking_type ke TYPE_SECTIONS mein legally
+    // allowed hai. Isse koi bhi shared meta field (jaise meta.service_type,
+    // meta.room_type) kisi doosre type ka poora section force-show nahi
+    // kar sakta.
+    function syncDynamicContainers(currentType) {
+        var allowedSections = TYPE_SECTIONS[currentType] || [];
+
         document.querySelectorAll('[data-field-key]').forEach(function (fieldEl) {
             if (fieldEl.style.display === 'none') return;
 
@@ -1143,9 +1252,13 @@
 
             var section = fieldEl.closest('[data-template-section]');
             if (section) {
+                var sectionKey = section.dataset.templateSection;
+                if (allowedSections.indexOf(sectionKey) === -1) {
+                    return; // is section ko chhoo mat — current type ke liye allowed nahi
+                }
                 section.style.display = '';
 
-                if (section.dataset.templateSection === 'automotive') {
+                if (sectionKey === 'automotive') {
                     var typeSelect = document.getElementById('bookingTypeSelect');
                     var title = section.querySelector('.booking-section-title');
                     if (title && typeSelect && typeSelect.value !== 'automotive') {
@@ -1219,10 +1332,6 @@
         applySubTemplate(slug);
     }
 
-    // Ek field-group ke andar required/optional star show/hide karo, aur
-    // agar iske andar koi actual input/select/textarea hai to uska
-    // `required` attribute bhi set/remove karo (checkbox/switch fields
-    // ko required attribute nahi diya jata).
     function setDynamicRequired(fieldGroupEl, isRequired) {
         var star = fieldGroupEl.querySelector('.js-dynamic-required');
         if (star) star.style.display = isRequired ? '' : 'none';
@@ -1245,7 +1354,6 @@
 
         if (!select || !options) return;
 
-        // Clear existing options except blank
         select.innerHTML = '<option value="">Select Type</option>';
         options.forEach(function (opt) {
             var option    = document.createElement('option');
@@ -1263,13 +1371,11 @@
             }
         }
 
-        // Show/hide online link when online selected
         if (select.dataset.templateListenerBound === 'true') return;
         select.dataset.templateListenerBound = 'true';
         select.addEventListener('change', function () {
             CURRENT_SUB_TYPE = this.value;
             toggleOnlineLink(this.value);
-            // Automotive: show rental vs service fields
             if ((document.getElementById('bookingTypeSelect') || {}).value === 'automotive') {
                 toggleAutomotiveFields(this.value);
             }
@@ -1368,8 +1474,6 @@
 
     if (typeSelect) {
         typeSelect.addEventListener('change', function () {
-            // Naya Booking Type select hote hi purani category selection clear
-            // karo (kyunki wo purane parent ki thi, naye parent se match nahi karti).
             CURRENT_CATEGORY_ID = null;
             prepareCategoryPicker(this.value, null);
         });
@@ -1388,7 +1492,7 @@
         @endif
     }
 
-    // ─── NAYA: Category (subcategory/template) change ──────────────────
+    // ─── Category (subcategory/template) change ────────────────────────
 
     var categorySelect = document.getElementById('bookingCategorySelect');
 
@@ -1398,42 +1502,19 @@
             applySelectedCategoryTemplate();
         });
 
-        // select2 use hone ki wajah se native 'change' kabhi kabhi select2's
-        // apne event se replace ho jata hai — is liye select2 ka event bhi sunte hain.
         if (window.jQuery) {
             window.jQuery(categorySelect).on('select2:select', function () {
                 applySelectedCategoryTemplate();
             });
         }
 
-        // Page load par (edit mode mein) agar category pehle se selected hai
-        // to uska sub-template bhi turant apply karo.
         if (selectedCategorySlug()) {
             applySelectedCategoryTemplate();
         }
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // ── FIX: Silent submit-block guard ──────────────────────────────────
-    //
-    // Masla: kai fields (category_id, staff_id, sub_type waghera) select2
-    // (data-plugin-selectTwo) use karti hain. Select2 asli <select> ko
-    // display:none kar deta hai aur apna fake dropdown dikhata hai.
-    // Jab JS (setDynamicRequired) us hidden <select> par `required`
-    // attribute laga deti hai aur uski value khaali ho, to browser
-    // ("An invalid form control is not focusable") form submit hi nahi
-    // karta — koi error, koi red border, kuch bhi visible nahi hota.
-    // User ko lagta hai "sab bhar diya phir bhi save nahi ho raha".
-    //
-    // Isi tarah agar koi field hidden section ke andar hai lekin uspar
-    // abhi bhi stale `required` attribute laga hai, to bhi yehi silent
-    // block hota hai.
-    //
-    // Fix: submit se pehle khud check karo —
-    //   1. Agar required field kisi hidden section/field-key ke andar hai
-    //      -> uska required attribute hata do (wo abhi applicable nahi).
-    //   2. Agar required field visible hai lekin khaali hai -> usko
-    //      red border + message se highlight karo aur submit rok do.
+    // ── Silent submit-block guard ────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════
 
     var bookingForm = document.getElementById('bookingAdminForm');
@@ -1483,15 +1564,12 @@
             var firstInvalid = null;
 
             bookingForm.querySelectorAll('[required]').forEach(function (el) {
-                // 1. Field hidden hai -> required hata do, warna browser
-                //    silently submit block kar dega.
                 if (isInsideHidden(el)) {
                     el.removeAttribute('required');
                     clearFieldInvalid(el);
                     return;
                 }
 
-                // 2. Field visible hai -> value check karo
                 var value = (el.value || '').trim();
                 if (!value) {
                     markFieldInvalid(el, 'Ye field zaroori hai.');
@@ -1526,6 +1604,81 @@
             }
         });
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ── FIX: Server-side validation errors ko field-level pe highlight karo
+    //
+    // Masla: pehle sirf title/price/status/category_id/slug pe @error
+    // markup tha — 30+ dynamic fields (staff_id, sub_type, meta.* fields)
+    // pe koi error markup nahi tha, is liye server validation fail hone ke
+    // bawajood user ko kuch dikhta nahi tha.
+    //
+    // Fix: Laravel ke $errors bag ko JSON mein le kar HAR named field ko
+    // khud check karta hai — chahe wo field kisi hidden template-section
+    // ke andar hi kyun na ho (usko reveal bhi kar deta hai), aur pehli
+    // invalid field tak scroll kar deta hai.
+    // ═══════════════════════════════════════════════════════════════════
+
+    var SERVER_ERRORS = {!! json_encode($errors->getMessages() ?? []) !!};
+
+    function nameToErrorKey(name) {
+        return name.replace(/\[(\w*)\]/g, '.$1').replace(/\.$/, '');
+    }
+
+    function showServerErrors() {
+        var keys = Object.keys(SERVER_ERRORS);
+        if (!keys.length) return;
+
+        var firstErrorScrollTarget = null;
+        var handledGroups = {};
+
+        document.querySelectorAll('[name]').forEach(function (el) {
+            var key = nameToErrorKey(el.name);
+            if (!SERVER_ERRORS[key]) return;
+
+            var fieldGroupKey = el.closest('[data-field-key]');
+            if (fieldGroupKey) {
+                fieldGroupKey.style.display = '';
+                var star = fieldGroupKey.querySelector('.js-dynamic-required');
+                if (star) star.style.display = '';
+            }
+            var section = el.closest('[data-template-section]');
+            if (section) section.style.display = '';
+
+            el.classList.add('is-invalid');
+
+            var group = el.closest('.form-group') || el.parentElement;
+            var dedupeKey = key + '::' + (group.dataset.errGroupId || Math.random());
+            if (!handledGroups[key]) {
+                var feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback d-block text-danger js-server-invalid-feedback';
+                feedback.textContent = SERVER_ERRORS[key][0];
+                group.appendChild(feedback);
+                handledGroups[key] = true;
+            }
+
+            var scrollTarget = el;
+            if (window.jQuery && window.jQuery(el).data('select2')) {
+                window.jQuery(el).next('.select2-container')
+                    .find('.selection, .select2-selection')
+                    .css('border-color', '#dc3545');
+                scrollTarget = window.jQuery(el).next('.select2-container')[0];
+            }
+
+            if (!firstErrorScrollTarget) firstErrorScrollTarget = scrollTarget;
+        });
+
+        if (firstErrorScrollTarget) {
+            firstErrorScrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            var alertEl = document.getElementById('bookingFormErrorsAlert');
+            if (alertEl) alertEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    // Sab dynamic init (applyTemplate/applySubTemplate) ho chukne ke baad
+    // chalao, warna ye apne aap wapas hide ho jayenge.
+    window.setTimeout(showServerErrors, 50);
 
 })();
 </script>
