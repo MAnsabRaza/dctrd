@@ -281,6 +281,47 @@
                     @error('meta.gallery')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
+
+            {{-- ══════════════════════════════════════════════════════
+                 FIX: capacity aur inventory pehle Accommodation, Events,
+                 aur Education sections mein ALAG-ALAG <input name="capacity">
+                 / <input name="inventory"> ke roop mein duplicate the.
+                 HTML forms mein duplicate `name` wale saare inputs POST
+                 hote hain (chahe wo `display:none` section ke andar ho) —
+                 PHP/Laravel sirf DOM order ki AAKHRI value rakhta hai.
+                 Isi wajah se sahi section mein value bharne ke bawajood
+                 validation fail ho rahi thi (kyunke neeche kisi doosre
+                 hidden section ka khali input value ko overwrite kar
+                 deta tha), aur error ke baad us doosre section ko bhi
+                 force-reveal kar deta tha.
+                 Fix: ab ye dono fields sirf YAHAN ek hi jagah maujood
+                 hain — label sirf text change hota hai (jaisa baaki
+                 shared meta fields ke liye pehle se ho raha hai).
+                 ══════════════════════════════════════════════════════ --}}
+            <div class="col-12 col-md-6" data-field-key="capacity">
+                <div class="form-group">
+                    <label class="input-label js-field-label" data-field="capacity">
+                        Capacity <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
+                    <input type="number" name="capacity" min="1"
+                           value="{{ $field('capacity') }}"
+                           class="form-control @error('capacity') is-invalid @enderror">
+                    @error('capacity')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6" data-field-key="inventory">
+                <div class="form-group">
+                    <label class="input-label js-field-label" data-field="inventory">
+                        Inventory / Available Slots <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
+                    <input type="number" name="inventory" min="0"
+                           value="{{ $field('inventory') }}"
+                           class="form-control @error('inventory') is-invalid @enderror"
+                           placeholder="Leave blank = unlimited">
+                    @error('inventory')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
         </div>
     </div>
 
@@ -442,15 +483,11 @@
     <div class="booking-section booking-type-section" data-template-section="accommodation" style="display:none">
         <h3 class="booking-section-title">Accommodation Details</h3>
         <div class="row">
-            <div class="col-12 col-md-4" data-field-key="price">
-                <div class="form-group">
-                    <label class="input-label js-field-label" data-field="price">Price per Night <span class="text-danger">*</span></label>
-                    <input type="number" name="price" step="0.01" min="0"
-                           value="{{ $field('price', '0.00') }}"
-                           class="form-control @error('price') is-invalid @enderror">
-                    @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-            </div>
+            {{-- FIX: duplicate 'price' input removed — the Pricing section's
+                 Base Price field already covers this; its label auto-switches
+                 to "Price per Night" via field_labels config when this type
+                 is active. A second <input name="price"> here was silently
+                 overwriting the Pricing section's value on submit. --}}
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label class="input-label">Price per Extra Person (per night)</label>
@@ -487,15 +524,9 @@
                     @error('max_children')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
-            <div class="col-12 col-md-3" data-field-key="capacity">
-                <div class="form-group">
-                    <label class="input-label js-field-label" data-field="capacity">Room Capacity <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <input type="number" name="capacity" min="1"
-                           value="{{ $field('capacity') }}"
-                           class="form-control @error('capacity') is-invalid @enderror">
-                    @error('capacity')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-            </div>
+            {{-- FIX: duplicate 'capacity' input removed — now a single shared
+                 field in the Template-Specific Details section (label
+                 switches to "Room Capacity" via field_labels config). --}}
             <div class="col-12" data-field-key="meta.amenities">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.amenities">Amenities <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
@@ -525,32 +556,13 @@
     <div class="booking-section booking-type-section" data-template-section="events" style="display:none">
         <h3 class="booking-section-title">Event Details</h3>
         <div class="row">
-            <div class="col-12 col-md-4">
-                <div class="form-group">
-                    <label class="input-label">Total Capacity <span class="text-danger">*</span></label>
-                    <input type="number" name="capacity" min="1"
-                           value="{{ $field('capacity') }}"
-                           class="form-control @error('capacity') is-invalid @enderror">
-                    @error('capacity')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-            </div>
-            <div class="col-12 col-md-4" data-field-key="inventory">
-                <div class="form-group">
-                    <label class="input-label js-field-label" data-field="inventory">Available Tickets <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <input type="number" name="inventory" min="0"
-                           value="{{ $field('inventory') }}"
-                           class="form-control @error('inventory') is-invalid @enderror"
-                           placeholder="Leave blank = same as capacity">
-                    @error('inventory')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="form-group">
-                    <label class="input-label">Event Duration (minutes)</label>
-                    <input type="number" name="duration_minutes" min="0"
-                           value="{{ $field('duration_minutes') }}" class="form-control">
-                </div>
-            </div>
+            {{-- FIX: duplicate 'capacity', 'inventory' and 'duration_minutes'
+                 inputs removed from here — 'capacity'/'inventory' now live
+                 once in the Template-Specific Details section (labels switch
+                 to "Total Capacity"/"Available Tickets" via field_labels
+                 config), and 'duration_minutes' already exists in the
+                 Schedule & Availability (time-slot) section, which is
+                 already shown for the 'events' type via TYPE_SECTIONS. --}}
             <div class="col-12 col-md-4" data-field-key="meta.venue_type">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.venue_type">Venue Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
@@ -637,21 +649,9 @@
                     @error('meta.level')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
-            <div class="col-12 col-md-4">
-                <div class="form-group">
-                    <label class="input-label">Class Capacity</label>
-                    <input type="number" name="capacity" min="1"
-                           value="{{ $field('capacity') }}" class="form-control"
-                           placeholder="Leave blank for unlimited">
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="form-group">
-                    <label class="input-label">Available Seats</label>
-                    <input type="number" name="inventory" min="0"
-                           value="{{ $field('inventory') }}" class="form-control">
-                </div>
-            </div>
+            {{-- FIX: duplicate 'capacity' ("Class Capacity") and 'inventory'
+                 ("Available Seats") inputs removed — now a single shared
+                 field each in the Template-Specific Details section. --}}
             <div class="col-12 col-md-6" data-field-key="meta.prerequisites">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.prerequisites">Prerequisites <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
@@ -1502,6 +1502,18 @@
         var keys = Object.keys(SERVER_ERRORS);
         if (!keys.length) return;
 
+        // FIX: pehle ye function kisi bhi [name] field ka poora parent
+        // [data-template-section] reveal kar deta tha agar uska error-key
+        // SERVER_ERRORS mein match ho jaye — chahe wo section current
+        // booking_type ke liye legally allowed ho ya na ho. Chunke
+        // 'duration_minutes' / 'capacity' / 'inventory' jaisi fields
+        // (duplicate-name bug ki wajah se) multiple sections mein
+        // maujood thin, Beauty Spa ka error Events ka poora section
+        // bhi force-show kar deta tha. Ab sirf TYPE_SECTIONS[currentType]
+        // mein listed sections hi is function se reveal ho sakte hain.
+        var currentType     = (document.getElementById('bookingTypeSelect') || {}).value || '';
+        var allowedSections = TYPE_SECTIONS[currentType] || [];
+
         var firstErrorScrollTarget = null;
         var handledGroups = {};
 
@@ -1509,13 +1521,20 @@
             var key = nameToErrorKey(el.name);
             if (!SERVER_ERRORS[key]) return;
 
+            var section = el.closest('[data-template-section]');
+            if (section) {
+                var sectionKey = section.dataset.templateSection;
+                if (allowedSections.indexOf(sectionKey) === -1) {
+                    return; // is type ke liye allowed nahi — skip karo
+                }
+            }
+
             var fieldGroupKey = el.closest('[data-field-key]');
             if (fieldGroupKey) {
                 fieldGroupKey.style.display = '';
                 var star = fieldGroupKey.querySelector('.js-dynamic-required');
                 if (star) star.style.display = '';
             }
-            var section = el.closest('[data-template-section]');
             if (section) section.style.display = '';
 
             el.classList.add('is-invalid');
