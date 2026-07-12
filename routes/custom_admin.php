@@ -317,6 +317,8 @@ Route::group(['prefix' => 'abilities'], function () {
     Route::get('/{id}/edit', [AbilityController::class, 'edit'])->name('admin.abilities.edit');
     Route::post('/{id}/update', [AbilityController::class, 'update'])->name('admin.abilities.update');
     Route::get('/{id}/delete', [AbilityController::class, 'delete'])->name('admin.abilities.delete');
+     Route::get('/{id}/show', [AbilityController::class, 'show'])->name('admin.abilities.show');
+    Route::post('/{id}/vendor/{vendorAbilityId}/toggle', [AbilityController::class, 'toggleVendor'])->name('admin.abilities.vendor.toggle');
 });
 
 Route::group(['prefix' => 'users/{id}/booking-settings'], function () {

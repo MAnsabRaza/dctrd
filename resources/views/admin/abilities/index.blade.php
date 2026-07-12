@@ -103,7 +103,11 @@
                                                                 <td class="text-left">
                                                                     <code class="font-12">{{ $ability->driver_class }}</code>
                                                                 </td>
-                                                                <td class="text-center">{{ $ability->vendor_abilities_count ?? 0 }}</td>
+                                                                <td class="text-center">
+    <a href="{{ getAdminPanelUrl() }}/abilities/{{ $ability->id }}/show">
+        {{ $ability->vendor_abilities_count ?? 0 }}
+    </a>
+</td>
                                                                 <td class="text-center">
                                                                     @if($ability->is_active)
                                                                         <span class="badge badge-success">{{ trans('admin/main.active') }}</span>

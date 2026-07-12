@@ -92,6 +92,7 @@ class UserController extends Controller
         $bookingSettingsData = [];
         $availabilitySettingsData = [];
         $calendarConnectionsData = [];
+        $abilitiesSettingsData = [];
 
         if ($step == "extra_information") {
             $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
@@ -132,6 +133,13 @@ class UserController extends Controller
 
     $calendarConnectionsData = $this->makeExternalConnectionsViewData($user->id);
 }
+elseif ($step == "abilities") {
+    if (!($user->isOrganization() or $user->isTeacher())) {
+        abort(404);
+    }
+
+    $abilitiesSettingsData = $this->makeAbilitiesViewData($user->id);
+}
          elseif ($step == "availability") {
             if (!($user->isOrganization() or $user->isTeacher())) {
                 abort(404);
@@ -164,8 +172,14 @@ class UserController extends Controller
             'attachments' => $attachments,
             'userLoginHistories' => $userLoginHistories,
             'moduleSettings' => $moduleSettings,
-        ], $bookingSettingsData, $availabilitySettingsData,$calendarConnectionsData);
+        ], $bookingSettingsData, $availabilitySettingsData,$calendarConnectionsData,$abilitiesSettingsData);
     }
+    private function makeAbilitiesViewData(int $vendorId): array
+{
+    $abilities = app(\App\Services\AbilityService::class)->getAvailableAbilitiesForVendor($vendorId);
+
+    return compact('abilities');
+}
 
     private function makeExternalConnectionsViewData(int $userId): array
 {

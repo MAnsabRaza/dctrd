@@ -30,7 +30,7 @@
                     {{-- Step Fields --}}
                     @include("design_1.panel.settings.tabs.{$currentStep}")
 
-                   @unless(in_array($currentStep, ['booking_settings', 'availability', 'external_connections']))
+                  @unless(in_array($currentStep, ['booking_settings', 'availability', 'external_connections', 'abilities']))
                         <div class="panel-bottom-bar d-flex align-items-center justify-content-end bg-white px-32 py-16">
                             <button type="button" id="saveData" class="btn btn-primary">{{ trans('update.save_settings') }}</button>
                         </div>

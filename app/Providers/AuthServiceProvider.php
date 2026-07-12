@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Models\Api\CourseForumAnswer;
+use App\Models\VendorAbility;
 use App\Models\Webinar;
 use App\Models\CourseForum;
 use App\Models\Section;
 use App\Policies\CourseForumAnswerPolicy;
 use App\Policies\CourseForumPolicy;
+use App\Policies\VendorAbilityPolicy;
 use App\Policies\WebinarPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Cache;
@@ -24,7 +26,8 @@ class AuthServiceProvider extends ServiceProvider
         // 'App\Model' => 'App\Policies\ModelPolicy',
         CourseForum::class => CourseForumPolicy::class,
         CourseForumAnswer::class => CourseForumAnswerPolicy::class ,
-        Webinar::class => WebinarPolicy::class
+        Webinar::class => WebinarPolicy::class,
+         VendorAbility::class => VendorAbilityPolicy::class,
     ];
 
     /**

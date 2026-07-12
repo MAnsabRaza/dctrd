@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Ability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Models\VendorAbility;
+use App\Services\AbilityService;
 
 class AbilityController extends Controller
 {
@@ -134,5 +136,49 @@ class AbilityController extends Controller
             'fields.*.type'     => 'required|in:text,password,boolean,select,textarea',
             'fields.*.required' => 'nullable|boolean',
         ]);
+    }
+       public function show($id)
+    {
+        $this->authorize('admin_abilities');
+
+        $ability = Ability::findOrFail($id);
+
+        $vendorAbilities = VendorAbility::with('vendor:id,full_name,email')
+            ->where('ability_id', $ability->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('admin.abilities.show', [
+            'ability'         => $ability,
+            'vendorAbilities' => $vendorAbilities,
+        ]);
+    }
+
+    /**
+     * Admin khud kisi vendor ki ability enable/disable kar sake
+     */
+    public function toggleVendor(Request $request, $id, $vendorAbilityId)
+    {
+        $this->authorize('admin_abilities_edit');
+
+        $ability = Ability::findOrFail($id);
+
+        $vendorAbility = VendorAbility::where('id', $vendorAbilityId)
+            ->where('ability_id', $ability->id)
+            ->firstOrFail();
+
+        $enable = $request->boolean('enabled');
+
+        $vendorAbility->update(['enabled' => $enable]);
+
+        // ability_sync_logs mein record — Acceptance Criteria #6
+        app(AbilityService::class)->log(
+            $vendorAbility,
+            $enable ? 'enable' : 'disable',
+            'success'
+        );
+
+        return redirect(getAdminPanelUrl() . '/abilities/' . $ability->id . '/show')
+            ->with('success', trans('admin/main.save_change'));
     }
 }

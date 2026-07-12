@@ -661,6 +661,16 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
             ->name('panel.checkout-settings.save');
         Route::post('/checkout-settings/entity', 'CheckoutSettingsController@saveEntityModules')
             ->name('panel.checkout-settings.entity');
+
+
+              // ═══════════════════════════════════════════════════════════════
+    // ABILITIES (vendor-side enable/disable/configure)
+    // ═══════════════════════════════════════════════════════════════
+    Route::post('/abilities/{abilityId}/save', 'VendorAbilityController@saveConfig')
+        ->name('panel.setting.abilities.save');
+
+    Route::post('/abilities/{abilityId}/disable', 'VendorAbilityController@disable')
+        ->name('panel.setting.abilities.disable');
     });
 
     Route::group(['prefix' => 'support'], function () {
