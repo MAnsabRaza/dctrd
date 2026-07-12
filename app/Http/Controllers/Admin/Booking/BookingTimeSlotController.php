@@ -66,7 +66,7 @@ class BookingTimeSlotController extends Controller
             'booking_id'       => 'required|exists:bookings,id',
             'resource_id'      => 'nullable|exists:booking_resources,id',
             'day_of_week'      => 'required|array|min:1',
-            'day_of_week.*'    => 'required|in:1,2,3,4,5,6,7',
+            'day_of_week.*'    => 'required|in:0,1,2,3,4,5,6',
             'start_time'       => 'required|date_format:H:i',
             'end_time'         => 'required|date_format:H:i|after:start_time',
             'duration_minutes' => 'required|integer|min:1',

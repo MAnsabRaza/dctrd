@@ -199,8 +199,8 @@
 
                                                     {{-- Capacity --}}
                                                     <div class="form-group">
-                                                        <label>{{ trans('admin/main.capacity') }}</label>
-                                                        <input type="number" name="capacity" min="0"
+                                                       <label>{{ trans('admin/main.capacity') }} <span class="text-danger">*</span></label>
+                                                        <input type="number" name="capacity" min="0" required
                                                                class="form-control @error('capacity') is-invalid @enderror"
                                                                value="{{ !empty($editResource) ? $editResource->capacity : old('capacity') }}"
                                                                placeholder="0"/>
