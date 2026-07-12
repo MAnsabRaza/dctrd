@@ -34,6 +34,13 @@
     </div>
     <span class="ml-4">{{ trans('panel.external_connections') }}</span>
 </a>
+ <a href="/panel/setting/step/abilities" class="navbar-item navbar-item-h-52 d-inline-flex-center cursor-pointer {{ ($currentStep == "abilities") ? 'active' : '' }}">
+        <div class="size-20">
+            <x-iconsax-lin-flash class="icons" width="20px" height="20px"/>
+        </div>
+        <span class="ml-4">{{ trans('panel.abilities') ?? 'Abilities' }}</span>
+    </a>
+
 
 <a href="/panel/setting/step/images" class="navbar-item navbar-item-h-52 d-inline-flex-center cursor-pointer {{ ($currentStep == "images") ? 'active' : '' }}">
     <div class="size-20">
