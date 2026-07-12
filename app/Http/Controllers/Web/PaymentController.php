@@ -81,7 +81,7 @@ class PaymentController extends Controller
                     'msg' => trans('public.channel_payment_disabled'),
                     'status' => 'error'
                 ];
-                return back()->with(['toast' => $toastData]);
+                return redirect('/cart')->with(['toast' => $toastData]);
             }
 
             // Required inputs: account, referral_code, date, attachment (optional)
@@ -144,7 +144,8 @@ class PaymentController extends Controller
                 'msg' => trans('public.channel_payment_disabled'),
                 'status' => 'error'
             ];
-            return back()->with(['toast' => $toastData]);
+            // return back()->with(['toast' => $toastData]);
+            return redirect('/cart')->with(['toast' => $toastData]);
         }
 
         $order->payment_method = Order::$paymentChannel;
@@ -169,7 +170,7 @@ class PaymentController extends Controller
                 'msg' => trans('cart.gateway_error'),
                 'status' => 'error'
             ];
-            return back()->with(['toast' => $toastData]);
+            return redirect('/cart')->with(['toast' => $toastData]);
         }
     }
 

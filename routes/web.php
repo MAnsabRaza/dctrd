@@ -247,7 +247,9 @@ Route::group(['namespace' => 'Web', 'middleware' => ['check_mobile_app', 'impers
 
         Route::group(['prefix' => 'cart'], function () {
             Route::get('/', 'CartController@index');
-
+ Route::get('/checkout', function () {
+        return redirect('/cart');
+    }); // ✅ NEW — safety fallback, GET aane par crash na ho
             Route::post('/coupon/validate', 'CartController@couponValidate');
             Route::post('/checkout', 'CartController@checkout')->name('checkout');
         });
