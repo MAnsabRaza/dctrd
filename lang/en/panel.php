@@ -424,5 +424,7 @@ return [
 
 //external connections
 'external_connections' => 'External Connections',
+'abilities'=>'Ability',
+'disabled'=>'Disabled',
 
 ];

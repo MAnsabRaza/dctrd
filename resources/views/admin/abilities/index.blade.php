@@ -39,11 +39,12 @@
                                             'label'    => $f['label'] ?? '',
                                             'type'     => $f['type'] ?? 'text',
                                             'required' => !empty($f['required']),
+                                            'options'  => $f['options'] ?? [],
                                         ];
                                     }
                                 }
                                 if (empty($existingFields)) {
-                                    $existingFields[] = ['key' => '', 'label' => '', 'type' => 'text', 'required' => false];
+                                    $existingFields[] = ['key' => '', 'label' => '', 'type' => 'text', 'required' => false, 'options' => []];
                                 }
                             @endphp
 
@@ -104,10 +105,10 @@
                                                                     <code class="font-12">{{ $ability->driver_class }}</code>
                                                                 </td>
                                                                 <td class="text-center">
-    <a href="{{ getAdminPanelUrl() }}/abilities/{{ $ability->id }}/show">
-        {{ $ability->vendor_abilities_count ?? 0 }}
-    </a>
-</td>
+                                                                    <a href="{{ getAdminPanelUrl() }}/abilities/{{ $ability->id }}/show">
+                                                                        {{ $ability->vendor_abilities_count ?? 0 }}
+                                                                    </a>
+                                                                </td>
                                                                 <td class="text-center">
                                                                     @if($ability->is_active)
                                                                         <span class="badge badge-success">{{ trans('admin/main.active') }}</span>
@@ -223,39 +224,45 @@
                                                     </div>
 
                                                     {{-- ====================================================== --}}
-                                                    {{-- CONFIG FIELDS — key / label / type / required rows      --}}
+                                                    {{-- CONFIG FIELDS — key / label / type / options / required --}}
                                                     {{-- Saves as JSON: {"fields":[{...},{...}]}                --}}
                                                     {{-- ====================================================== --}}
                                                     <div class="form-group">
                                                         <label>Config Fields <span class="text-danger">*</span></label>
                                                         <div class="text-gray-500 text-small mb-2">
                                                             Ye fields hain jo vendor ko apni ability configure karte waqt bharne honge (e.g. API URL, API Key).
+                                                            "Select" type ke liye Options field mein comma-separated values likhein (e.g. <code>hourly,daily,weekly</code>).
                                                         </div>
 
                                                         <div id="fieldsWrap">
                                                             @foreach($existingFields as $f)
-                                                                <div class="field-row d-flex align-items-center mb-2">
+                                                                <div class="field-row d-flex align-items-center flex-wrap mb-2">
                                                                     <input type="text" name="field_key[]"
-                                                                           class="form-control mr-2" style="max-width:170px"
+                                                                           class="form-control mr-2 mb-2" style="max-width:150px"
                                                                            placeholder="Key e.g. api_key"
                                                                            value="{{ $f['key'] }}"/>
                                                                     <input type="text" name="field_label[]"
-                                                                           class="form-control mr-2" style="max-width:170px"
+                                                                           class="form-control mr-2 mb-2" style="max-width:150px"
                                                                            placeholder="Label e.g. API Key"
                                                                            value="{{ $f['label'] }}"/>
-                                                                    <select name="field_type[]" class="form-control mr-2" style="max-width:140px">
+                                                                    <select name="field_type[]" class="form-control mr-2 mb-2 js-field-type" style="max-width:130px">
                                                                         @foreach(['text' => 'Text', 'password' => 'Password', 'boolean' => 'Checkbox', 'select' => 'Select', 'textarea' => 'Textarea'] as $val => $label)
                                                                             <option value="{{ $val }}" {{ $f['type'] === $val ? 'selected' : '' }}>{{ $label }}</option>
                                                                         @endforeach
                                                                     </select>
-                                                                    <div class="custom-control custom-checkbox mr-2 flex-shrink-0">
+                                                                    <input type="text" name="field_options[]"
+                                                                           class="form-control mr-2 mb-2 js-field-options"
+                                                                           style="max-width:170px; {{ ($f['type'] ?? 'text') === 'select' ? '' : 'display:none;' }}"
+                                                                           placeholder="Options: hourly,daily,weekly"
+                                                                           value="{{ !empty($f['options']) ? implode(',', $f['options']) : '' }}"/>
+                                                                    <div class="custom-control custom-checkbox mr-2 mb-2 flex-shrink-0">
                                                                         <input type="checkbox" name="field_required[{{ $loop->index }}]" value="1"
                                                                                class="custom-control-input" id="fieldRequired{{ $loop->index }}"
                                                                                {{ $f['required'] ? 'checked' : '' }}>
                                                                         <label class="custom-control-label" for="fieldRequired{{ $loop->index }}">Required</label>
                                                                     </div>
                                                                     <button type="button"
-                                                                            class="btn btn-sm btn-outline-danger js-remove-field flex-shrink-0">
+                                                                            class="btn btn-sm btn-outline-danger js-remove-field flex-shrink-0 mb-2">
                                                                         &times;
                                                                     </button>
                                                                 </div>
@@ -328,27 +335,38 @@
         } else {
             e.target.closest('.field-row').querySelectorAll('input[type="text"]').forEach(function (i) { i.value = ''; });
             e.target.closest('.field-row').querySelector('input[type="checkbox"]').checked = false;
+            var optionsInput = e.target.closest('.field-row').querySelector('.js-field-options');
+            if (optionsInput) optionsInput.style.display = 'none';
         }
+    });
+
+    // field_type change hone par options input show/hide
+    wrap.addEventListener('change', function (e) {
+        if (!e.target.classList.contains('js-field-type')) return;
+        var row = e.target.closest('.field-row');
+        var optionsInput = row.querySelector('.js-field-options');
+        optionsInput.style.display = (e.target.value === 'select') ? '' : 'none';
     });
 
     function appendRow() {
         var div = document.createElement('div');
-        div.className = 'field-row d-flex align-items-center mb-2';
+        div.className = 'field-row d-flex align-items-center flex-wrap mb-2';
         div.innerHTML =
-            '<input type="text" name="field_key[]" class="form-control mr-2" style="max-width:170px" placeholder="Key e.g. api_key"/>' +
-            '<input type="text" name="field_label[]" class="form-control mr-2" style="max-width:170px" placeholder="Label e.g. API Key"/>' +
-            '<select name="field_type[]" class="form-control mr-2" style="max-width:140px">' +
+            '<input type="text" name="field_key[]" class="form-control mr-2 mb-2" style="max-width:150px" placeholder="Key e.g. api_key"/>' +
+            '<input type="text" name="field_label[]" class="form-control mr-2 mb-2" style="max-width:150px" placeholder="Label e.g. API Key"/>' +
+            '<select name="field_type[]" class="form-control mr-2 mb-2 js-field-type" style="max-width:130px">' +
                 '<option value="text">Text</option>' +
                 '<option value="password">Password</option>' +
                 '<option value="boolean">Checkbox</option>' +
                 '<option value="select">Select</option>' +
                 '<option value="textarea">Textarea</option>' +
             '</select>' +
-            '<div class="custom-control custom-checkbox mr-2 flex-shrink-0">' +
+            '<input type="text" name="field_options[]" class="form-control mr-2 mb-2 js-field-options" style="max-width:170px; display:none;" placeholder="Options: hourly,daily,weekly"/>' +
+            '<div class="custom-control custom-checkbox mr-2 mb-2 flex-shrink-0">' +
                 '<input type="checkbox" name="field_required[' + rowIndex + ']" value="1" class="custom-control-input" id="fieldRequired' + rowIndex + '">' +
                 '<label class="custom-control-label" for="fieldRequired' + rowIndex + '">Required</label>' +
             '</div>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger js-remove-field flex-shrink-0">&times;</button>';
+            '<button type="button" class="btn btn-sm btn-outline-danger js-remove-field flex-shrink-0 mb-2">&times;</button>';
         wrap.appendChild(div);
         rowIndex++;
     }

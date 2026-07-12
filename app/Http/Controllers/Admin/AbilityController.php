@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ability;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use App\Models\VendorAbility;
 use App\Services\AbilityService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AbilityController extends Controller
 {
@@ -45,6 +45,53 @@ class AbilityController extends Controller
             'abilities'   => $abilities,
             'editAbility' => $editAbility,
         ]);
+    }
+
+    /**
+     * Vendor Assignment Page — konsa vendor konsi ability use kar raha hai
+     */
+    public function show($id)
+    {
+        $this->authorize('admin_abilities');
+
+        $ability = Ability::findOrFail($id);
+
+        $vendorAbilities = VendorAbility::with('vendor:id,full_name,email')
+            ->where('ability_id', $ability->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('admin.abilities.show', [
+            'ability'         => $ability,
+            'vendorAbilities' => $vendorAbilities,
+        ]);
+    }
+
+    /**
+     * Admin khud kisi vendor ki ability enable/disable kar sake
+     */
+    public function toggleVendor(Request $request, $id, $vendorAbilityId)
+    {
+        $this->authorize('admin_abilities_edit');
+
+        $ability = Ability::findOrFail($id);
+
+        $vendorAbility = VendorAbility::where('id', $vendorAbilityId)
+            ->where('ability_id', $ability->id)
+            ->firstOrFail();
+
+        $enable = $request->boolean('enabled');
+
+        $vendorAbility->update(['enabled' => $enable]);
+
+        app(AbilityService::class)->log(
+            $vendorAbility,
+            $enable ? 'enable' : 'disable',
+            'success'
+        );
+
+        return redirect(getAdminPanelUrl() . '/abilities/' . $ability->id . '/show')
+            ->with('success', trans('admin/main.save_change'));
     }
 
     public function store(Request $request)
@@ -102,11 +149,11 @@ class AbilityController extends Controller
     protected function validateAbility(Request $request): array
     {
         // Blade form parallel arrays bhejta hai (field_key[], field_label[], field_type[],
-        // field_required[index]) -- rateplan.blade.php condition_key[]/condition_value[]
-        // ke pattern jaisa. Yahan unhe ek structured "fields" array mein zip karte hain.
+        // field_options[], field_required[index])
         $keys     = $request->input('field_key', []);
         $labels   = $request->input('field_label', []);
         $types    = $request->input('field_type', []);
+        $options  = $request->input('field_options', []);
         $required = $request->input('field_required', []); // associative: [index => "1"]
 
         $fields = [];
@@ -115,70 +162,42 @@ class AbilityController extends Controller
             if ($key === '') {
                 continue; // khali rows skip
             }
-            $fields[] = [
+
+            $fieldType = $types[$index] ?? 'text';
+
+            $fieldData = [
                 'key'      => $key,
                 'label'    => trim($labels[$index] ?? $key),
-                'type'     => $types[$index] ?? 'text',
+                'type'     => $fieldType,
                 'required' => !empty($required[$index]),
             ];
+
+            // sirf "select" type ke liye options attach karo
+            // Admin comma-separated likhega: "hourly,daily,weekly"
+            if ($fieldType === 'select') {
+                $rawOptions = trim($options[$index] ?? '');
+                $fieldData['options'] = $rawOptions !== ''
+                    ? array_values(array_filter(array_map('trim', explode(',', $rawOptions))))
+                    : [];
+            }
+
+            $fields[] = $fieldData;
         }
 
         $request->merge(['fields' => $fields]);
 
         return $request->validate([
-            'name'              => 'required|string|max:255',
-            'type'              => 'required|in:import,export,booking,dropshipping',
-            'driver_class'      => 'required|string|max:255',
-            'description'       => 'nullable|string',
-            'fields'            => 'required|array|min:1',
-            'fields.*.key'      => 'required|string',
-            'fields.*.label'    => 'required|string',
-            'fields.*.type'     => 'required|in:text,password,boolean,select,textarea',
-            'fields.*.required' => 'nullable|boolean',
+            'name'                => 'required|string|max:255',
+            'type'                => 'required|in:import,export,booking,dropshipping',
+            'driver_class'        => 'required|string|max:255',
+            'description'         => 'nullable|string',
+            'fields'              => 'required|array|min:1',
+            'fields.*.key'        => 'required|string',
+            'fields.*.label'      => 'required|string',
+            'fields.*.type'       => 'required|in:text,password,boolean,select,textarea',
+            'fields.*.required'   => 'nullable|boolean',
+            'fields.*.options'    => 'nullable|array',
+            'fields.*.options.*'  => 'nullable|string',
         ]);
-    }
-       public function show($id)
-    {
-        $this->authorize('admin_abilities');
-
-        $ability = Ability::findOrFail($id);
-
-        $vendorAbilities = VendorAbility::with('vendor:id,full_name,email')
-            ->where('ability_id', $ability->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-
-        return view('admin.abilities.show', [
-            'ability'         => $ability,
-            'vendorAbilities' => $vendorAbilities,
-        ]);
-    }
-
-    /**
-     * Admin khud kisi vendor ki ability enable/disable kar sake
-     */
-    public function toggleVendor(Request $request, $id, $vendorAbilityId)
-    {
-        $this->authorize('admin_abilities_edit');
-
-        $ability = Ability::findOrFail($id);
-
-        $vendorAbility = VendorAbility::where('id', $vendorAbilityId)
-            ->where('ability_id', $ability->id)
-            ->firstOrFail();
-
-        $enable = $request->boolean('enabled');
-
-        $vendorAbility->update(['enabled' => $enable]);
-
-        // ability_sync_logs mein record — Acceptance Criteria #6
-        app(AbilityService::class)->log(
-            $vendorAbility,
-            $enable ? 'enable' : 'disable',
-            'success'
-        );
-
-        return redirect(getAdminPanelUrl() . '/abilities/' . $ability->id . '/show')
-            ->with('success', trans('admin/main.save_change'));
     }
 }
