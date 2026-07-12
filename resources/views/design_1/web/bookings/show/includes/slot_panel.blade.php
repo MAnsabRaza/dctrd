@@ -54,4 +54,5 @@
             @endif
         @endif
     </div>
+     <div id="availabilityMessage" class="mt-12" style="display:none;"></div>
 </div>

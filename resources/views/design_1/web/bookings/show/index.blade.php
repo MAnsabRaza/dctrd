@@ -197,18 +197,58 @@
     });
 
     $bookBtn.on('click', function () {
-        $bookBtn.addClass('loadingbar').prop('disabled', true);
+    // ✅ Date + time dono select hone chahiye
+    if (!selectedSlot || !selectedSlot.date || !selectedSlot.start_time) {
+        showToast('error', 'Error', '{{ trans("update.select_date_and_slot_first") ?? "Please select a date and time slot first" }}');
+        return;
+    }
+
+    $bookBtn.addClass('loadingbar').prop('disabled', true);
+    $('#availabilityMessage').hide();
+
+    $.ajax({
+        url: '/bookings/' + bookingSlug + '/check-availability',
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            date: selectedSlot.date,
+            start_time: selectedSlot.start_time,
+            resource_id: $('#slotResourceId').val() || ''
+        },
+        dataType: 'json'
+    }).done(function (res) {
+
+        if (!res.available) {
+            $('#availabilityMessage')
+                .removeClass('alert-success')
+                .addClass('alert alert-danger')
+                .text(res.message)
+                .show();
+            $bookBtn.removeClass('loadingbar').prop('disabled', false);
+            return;
+        }
+
+        $('#availabilityMessage')
+            .removeClass('alert-danger')
+            .addClass('alert alert-success')
+            .text(res.message)
+            .show();
+
         $.post('/cart/store', {
             _token:     '{{ csrf_token() }}',
             item_id:    bookingId,
             item_name:  'booking_id',
             item_type:  'booking',
-            slot_date:  selectedSlot ? selectedSlot.date       : '',
-            slot_start: selectedSlot ? selectedSlot.start_time : '',
-            slot_end:   selectedSlot ? selectedSlot.end_time   : '',
+            slot_date:  selectedSlot.date,
+            slot_start: selectedSlot.start_time,
+            slot_end:   selectedSlot.end_time,
         }, function (result) {
             if (result && result.title) {
                 showToast(result.status || 'success', result.title, result.msg || '');
+            }
+            if (result && result.status === 'error') {
+                $bookBtn.removeClass('loadingbar').prop('disabled', false);
+                return;
             }
             if ($('.js-view-cart-drawer').length) {
                 $('.js-view-cart-drawer').trigger('click');
@@ -224,7 +264,12 @@
                 showToast('error', 'Error', 'Something went wrong');
             }
         });
+
+    }).fail(function (xhr) {
+        $bookBtn.removeClass('loadingbar').prop('disabled', false);
+        showToast('error', 'Error', 'Could not verify availability, please try again.');
     });
+});
 
     $('body').on('click', '#bookingFavoriteBtn, .bookingFavoriteBtn', function (e) {
         e.preventDefault(); e.stopPropagation();

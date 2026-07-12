@@ -358,6 +358,8 @@ Route::group(['prefix' => 'bookings'], function () {
 
     // Slots (AJAX)
     Route::get('/{slug}/slots', 'BookingController@getSlots');
+    
+    Route::post('/{slug}/check-availability', 'BookingController@checkAvailability');
 
     // Calculate Price (AJAX)
     Route::post('/{slug}/pricing', 'BookingController@calculatePrice');

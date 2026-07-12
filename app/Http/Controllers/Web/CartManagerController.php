@@ -17,7 +17,7 @@ use App\Models\Ticket;
 use App\Models\Webinar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
-
+use App\Services\SlotEngine;
 class CartManagerController extends Controller
 {
     public $cookieKey = 'carts';
@@ -264,56 +264,95 @@ class CartManagerController extends Controller
         ];
     }
 
-    public function storeUserBookingCart($user, $data)
-    {
-        $booking_id = $data['item_id'];
+   public function storeUserBookingCart($user, $data, SlotEngine $slotEngine = null)
+{
+    $slotEngine = $slotEngine ?? app(SlotEngine::class);
 
-        $booking = Booking::where('id', $booking_id)
-            ->where('status', 'published')
-            ->first();
+    $booking_id = $data['item_id'];
 
-        if (!empty($booking) and !empty($user)) {
-            $meta = [];
-            if (isset($data['slot_date'])) {
-                $meta['slot_date'] = $data['slot_date'];
-            }
-            if (isset($data['slot_start'])) {
-                $meta['slot_start'] = $data['slot_start'];
-            }
-            if (isset($data['slot_end'])) {
-                $meta['slot_end'] = $data['slot_end'];
-            }
-            if (isset($data['resource_id'])) {
-                $meta['resource_id'] = $data['resource_id'];
-            }
+    $booking = Booking::where('id', $booking_id)
+        ->where('status', 'published')
+        ->first();
 
-            $bookingOrder = BookingOrder::updateOrCreate([
-                'booking_id' => $booking->id,
-                'seller_id' => $booking->creator_id,
-                'buyer_id' => $user->id,
-            ], [
-                'quantity' => 1,
-                'status' => BookingOrder::$pending,
-                'created_at' => time(),
-            ]);
-
-            Cart::updateOrCreate([
-                'creator_id' => $user->id,
-                'booking_order_id' => $bookingOrder->id,
-            ], [
-                'created_at' => time(),
-                'meta' => !empty($meta) ? $meta : null,
-            ]);
-
-            return 'ok';
-        }
-
+    if (empty($booking) or empty($user)) {
         return [
             'title' => trans('public.request_failed'),
             'msg' => trans('public.request_failed'),
             'status' => 'error'
         ];
     }
+
+    // ✅ Agar date/time diya gaya hai to availability confirm karo cart mein add karne se pehle
+    if (!empty($data['slot_date']) and !empty($data['slot_start'])) {
+        $resourceId = !empty($data['resource_id']) ? (int) $data['resource_id'] : null;
+
+        try {
+            $date = \Carbon\Carbon::parse($data['slot_date']);
+        } catch (\Throwable $e) {
+            return [
+                'title' => trans('public.request_failed'),
+                'msg'   => trans('booking.availability.invalid_date') ?? 'Invalid date selected.',
+                'status'=> 'error'
+            ];
+        }
+
+        $startTime = $data['slot_start'];
+
+        // end_time diya gaya hai to wahi use karo, warna booking duration se calculate karo
+        $endTime = $data['slot_end'] ?? null;
+        if (empty($endTime)) {
+            $durationMinutes = (int) ($booking->duration_minutes ?? 60);
+            $endTime = \Carbon\Carbon::parse($data['slot_date'] . ' ' . $startTime)
+                ->addMinutes($durationMinutes)
+                ->format('H:i');
+        }
+
+        $isAvailable = $slotEngine->isSlotAvailable($booking, $date, $startTime, $endTime, $resourceId);
+
+        if (!$isAvailable) {
+            return [
+                'title' => trans('public.request_failed'),
+                'msg'   => trans('booking.availability.slot_unavailable')
+                    ?? 'This time slot is no longer available. Please select another slot.',
+                'status'=> 'error'
+            ];
+        }
+    }
+
+    $meta = [];
+    if (isset($data['slot_date'])) {
+        $meta['slot_date'] = $data['slot_date'];
+    }
+    if (isset($data['slot_start'])) {
+        $meta['slot_start'] = $data['slot_start'];
+    }
+    if (isset($data['slot_end'])) {
+        $meta['slot_end'] = $data['slot_end'];
+    }
+    if (isset($data['resource_id'])) {
+        $meta['resource_id'] = $data['resource_id'];
+    }
+
+    $bookingOrder = BookingOrder::updateOrCreate([
+        'booking_id' => $booking->id,
+        'seller_id' => $booking->creator_id,
+        'buyer_id' => $user->id,
+    ], [
+        'quantity' => 1,
+        'status' => BookingOrder::$pending,
+        'created_at' => time(),
+    ]);
+
+    Cart::updateOrCreate([
+        'creator_id' => $user->id,
+        'booking_order_id' => $bookingOrder->id,
+    ], [
+        'created_at' => time(),
+        'meta' => !empty($meta) ? $meta : null,
+    ]);
+
+    return 'ok';
+}
 
     public function storeUserBundleCart($user, $data)
     {

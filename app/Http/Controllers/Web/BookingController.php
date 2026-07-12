@@ -187,6 +187,34 @@ class BookingController extends Controller
         ]);
     }
 
+    public function checkAvailability(Request $request, $slug, SlotEngine $slotEngine)
+{
+    $booking = $this->getPublishedBooking($slug);
+
+    $request->validate([
+        'date'        => 'required|date',
+        'start_time'  => 'required',
+        'resource_id' => 'nullable|integer|exists:booking_resources,id',
+    ]);
+
+    $date = Carbon::parse($request->get('date'));
+    $startTime = $request->get('start_time');
+    $resourceId = $request->filled('resource_id') ? (int) $request->get('resource_id') : null;
+
+    $durationMinutes = (int) ($booking->duration_minutes ?? 60);
+    $endTime = Carbon::parse($request->get('date') . ' ' . $startTime)
+        ->addMinutes($durationMinutes)
+        ->format('H:i');
+
+    $isAvailable = $slotEngine->isSlotAvailable($booking, $date, $startTime, $endTime, $resourceId);
+
+    return response()->json([
+        'available' => $isAvailable,
+        'message' => $isAvailable
+            ? (trans('booking.availability.ok') ?? 'This slot is available.')
+            : (trans('booking.availability.slot_unavailable') ?? 'This time slot is no longer available. Please select another slot.'),
+    ]);
+}
     /* ══════════════════════════════════════════════
        CALCULATE PRICE  (AJAX)
     ══════════════════════════════════════════════ */
