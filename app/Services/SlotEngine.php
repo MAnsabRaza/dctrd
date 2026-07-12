@@ -112,39 +112,16 @@ class SlotEngine
         return true;
     }
 
-   private function getTimeSlotsForDate(
+  private function getTimeSlotsForDate(
     Booking $booking,
     Carbon $date,
     ?int $resourceId
 ): Collection {
     $dayOfWeek = $date->dayOfWeek; // 0 = Sunday
 
-    // ── STEP 1: Explicit date-specific override — BookingSlot table ──
-    $explicitSlots = BookingSlot::where('booking_id', $booking->id)
-        ->where('status', true)
-        ->when($resourceId, fn($q) => $q->where('resource_id', $resourceId))
-        ->where(function ($query) use ($date, $dayOfWeek) {
-            $query->where('date', $date->toDateString())
-                ->orWhere(function ($query) use ($dayOfWeek) {
-                    $query->whereNull('date')->where('day_of_week', $dayOfWeek);
-                });
-        })
-        ->get()
-        ->map(function ($slot) {
-            return [
-                'start_time' => Carbon::parse($slot->start_time)->format('H:i'),
-                'end_time' => Carbon::parse($slot->end_time)->format('H:i'),
-                'duration_minutes' => Carbon::parse($slot->start_time)->diffInMinutes(Carbon::parse($slot->end_time)),
-                'buffer_minutes' => (int) $slot->buffer_after,
-                'max_bookings' => (int) $slot->capacity,
-            ];
-        });
+    // ── booking_slots (explicit override) table STEP 1 hata di gayi ──
+    // Ab hum seedha booking_time_slots (weekly recurring template) use karenge.
 
-    if ($explicitSlots->isNotEmpty()) {
-        return $explicitSlots;
-    }
-
-    // ── STEP 2: Weekly recurring template — BookingTimeSlot table ──
     $slotTemplates = BookingTimeSlot::where('booking_id', $booking->id)
         ->where('status', true)
         ->when($resourceId, fn($q) => $q->where('resource_id', $resourceId))
@@ -152,9 +129,11 @@ class SlotEngine
         ->filter(function ($template) use ($dayOfWeek) {
             if (!$template->day_of_week)
                 return true; // applies all days
+
             $days = is_array($template->day_of_week)
                 ? array_map('intval', $template->day_of_week)
                 : array_map('intval', explode(',', $template->day_of_week));
+
             return in_array($dayOfWeek, $days);
         });
 
@@ -162,16 +141,16 @@ class SlotEngine
 
     foreach ($slotTemplates as $template) {
         $start = Carbon::parse($date->toDateString() . ' ' . $template->start_time);
-        $end = Carbon::parse($date->toDateString() . ' ' . $template->end_time);
+        $end   = Carbon::parse($date->toDateString() . ' ' . $template->end_time);
 
         while ($start->copy()->addMinutes($template->duration_minutes)->lte($end)) {
             $slotEnd = $start->copy()->addMinutes($template->duration_minutes);
             $slots->push([
-                'start_time' => $start->format('H:i'),
-                'end_time' => $slotEnd->format('H:i'),
+                'start_time'       => $start->format('H:i'),
+                'end_time'         => $slotEnd->format('H:i'),
                 'duration_minutes' => $template->duration_minutes,
-                'buffer_minutes' => $template->buffer_minutes,
-                'max_bookings' => $template->max_bookings,
+                'buffer_minutes'   => $template->buffer_minutes,
+                'max_bookings'     => $template->max_bookings,
             ]);
             $start->addMinutes($template->duration_minutes + $template->buffer_minutes);
         }
