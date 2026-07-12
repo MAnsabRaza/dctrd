@@ -198,12 +198,14 @@
         });
     });
 
-    // ✅ SIRF YEH EK JAGA — "Book This Slot" button — poori booking flow yahin chalti hai
-    $(document).on('click', '#bookSlotBtn', function () {
+    // ✅ SIRF YEH EK BUTTON — "Book Now"
+    // Agar slot select nahi hai -> panel tak scroll karo.
+    // Agar slot select hai -> poori booking flow (check-availability + cart + redirect) chalao.
+    $('#bookingAddToCartBtn').on('click', function () {
         var $bookBtn = $(this);
 
         if (!selectedSlot || !selectedSlot.date || !selectedSlot.start_time) {
-            showToast('error', 'Error', '{{ trans("update.select_date_and_slot_first") ?? "Please select a date and time slot first" }}');
+            document.getElementById('bookingSlotPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             return;
         }
 
@@ -301,12 +303,5 @@
     });
 
 })(jQuery);
-</script>
-
-{{-- ✅ "Book Now" button — sirf slot panel tak scroll karta hai, koi booking logic yahan nahi --}}
-<script>
-document.getElementById('bookingAddToCartBtn')?.addEventListener('click', function () {
-    document.getElementById('bookingSlotPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
 </script>
 @endpush
