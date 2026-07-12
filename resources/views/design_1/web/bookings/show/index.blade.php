@@ -120,9 +120,8 @@
 (function ($) {
     'use strict';
 
-    var bookingSlug = '{{ $booking->slug }}';
-    var bookingId   = {{ $booking->id }};
-    var $bookBtn    = $('#bookingAddToCartBtn');
+    var bookingSlug  = '{{ $booking->slug }}';
+    var bookingId    = {{ $booking->id }};
     var selectedSlot = null;
 
     function updateSlotSummary() {
@@ -137,6 +136,7 @@
         }
     }
 
+    // Slot radio select hone par summary update
     $(document).on('change', 'input[name="selected_slot"]', function () {
         var $r = $(this);
         selectedSlot = { date: $r.data('date'), start_time: $r.val(), end_time: $r.data('end') };
@@ -146,6 +146,7 @@
         updateSlotSummary();
     });
 
+    // Date change hone par purani selection reset
     $('#slotDateInput').on('change', function () {
         if (selectedSlot && selectedSlot.date !== $(this).val()) {
             selectedSlot = null;
@@ -155,6 +156,7 @@
         }
     });
 
+    // Check Slots button
     $('#checkSlotsBtn').on('click', function () {
         var date       = $('#slotDateInput').val();
         var resourceId = $('#slotResourceId').val() || '';
@@ -196,81 +198,85 @@
         });
     });
 
-    $bookBtn.on('click', function () {
-    // ✅ Date + time dono select hone chahiye
-    if (!selectedSlot || !selectedSlot.date || !selectedSlot.start_time) {
-        showToast('error', 'Error', '{{ trans("update.select_date_and_slot_first") ?? "Please select a date and time slot first" }}');
-        return;
-    }
+    // ✅ SIRF YEH EK JAGA — "Book This Slot" button — poori booking flow yahin chalti hai
+    $(document).on('click', '#bookSlotBtn', function () {
+        var $bookBtn = $(this);
 
-    $bookBtn.addClass('loadingbar').prop('disabled', true);
-    $('#availabilityMessage').hide();
-
-    $.ajax({
-        url: '/bookings/' + bookingSlug + '/check-availability',
-        method: 'POST',
-        data: {
-            _token: '{{ csrf_token() }}',
-            date: selectedSlot.date,
-            start_time: selectedSlot.start_time,
-            resource_id: $('#slotResourceId').val() || ''
-        },
-        dataType: 'json'
-    }).done(function (res) {
-
-        if (!res.available) {
-            $('#availabilityMessage')
-                .removeClass('alert-success')
-                .addClass('alert alert-danger')
-                .text(res.message)
-                .show();
-            $bookBtn.removeClass('loadingbar').prop('disabled', false);
+        if (!selectedSlot || !selectedSlot.date || !selectedSlot.start_time) {
+            showToast('error', 'Error', '{{ trans("update.select_date_and_slot_first") ?? "Please select a date and time slot first" }}');
             return;
         }
 
-        $('#availabilityMessage')
-            .removeClass('alert-danger')
-            .addClass('alert alert-success')
-            .text(res.message)
-            .show();
+        $bookBtn.addClass('loadingbar').prop('disabled', true);
+        $('#availabilityMessage').hide();
 
-        $.post('/cart/store', {
-            _token:     '{{ csrf_token() }}',
-            item_id:    bookingId,
-            item_name:  'booking_id',
-            item_type:  'booking',
-            slot_date:  selectedSlot.date,
-            slot_start: selectedSlot.start_time,
-            slot_end:   selectedSlot.end_time,
-        }, function (result) {
-            if (result && result.title) {
-                showToast(result.status || 'success', result.title, result.msg || '');
-            }
-            if (result && result.status === 'error') {
+        $.ajax({
+            url: '/bookings/' + bookingSlug + '/check-availability',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                date: selectedSlot.date,
+                start_time: selectedSlot.start_time,
+                resource_id: $('#slotResourceId').val() || ''
+            },
+            dataType: 'json'
+        }).done(function (res) {
+
+            if (!res.available) {
+                $('#availabilityMessage')
+                    .removeClass('alert-success')
+                    .addClass('alert alert-danger')
+                    .text(res.message)
+                    .show();
                 $bookBtn.removeClass('loadingbar').prop('disabled', false);
                 return;
             }
-            if ($('.js-view-cart-drawer').length) {
-                $('.js-view-cart-drawer').trigger('click');
-            } else {
-                setTimeout(function () { window.location.href = '/cart'; }, 800);
-            }
-        }).fail(function (err) {
+
+            $('#availabilityMessage')
+                .removeClass('alert-danger')
+                .addClass('alert alert-success')
+                .text(res.message)
+                .show();
+
+            $.post('/cart/store', {
+                _token:      '{{ csrf_token() }}',
+                item_id:     bookingId,
+                item_name:   'booking_id',
+                item_type:   'booking',
+                slot_date:   selectedSlot.date,
+                slot_start:  selectedSlot.start_time,
+                slot_end:    selectedSlot.end_time,
+                resource_id: $('#slotResourceId').val() || ''
+            }, function (result) {
+                if (result && result.title) {
+                    showToast(result.status || 'success', result.title, result.msg || '');
+                }
+                if (result && result.status === 'error') {
+                    $bookBtn.removeClass('loadingbar').prop('disabled', false);
+                    return;
+                }
+                if ($('.js-view-cart-drawer').length) {
+                    $('.js-view-cart-drawer').trigger('click');
+                } else {
+                    setTimeout(function () { window.location.href = '/cart'; }, 800);
+                }
+            }).fail(function (err) {
+                $bookBtn.removeClass('loadingbar').prop('disabled', false);
+                var errors = err.responseJSON;
+                if (errors && errors.toast_alert) {
+                    showToast('error', errors.toast_alert.title, errors.toast_alert.msg);
+                } else {
+                    showToast('error', 'Error', 'Something went wrong');
+                }
+            });
+
+        }).fail(function (xhr) {
             $bookBtn.removeClass('loadingbar').prop('disabled', false);
-            var errors = err.responseJSON;
-            if (errors && errors.toast_alert) {
-                showToast('error', errors.toast_alert.title, errors.toast_alert.msg);
-            } else {
-                showToast('error', 'Error', 'Something went wrong');
-            }
+            showToast('error', 'Error', 'Could not verify availability, please try again.');
         });
-
-    }).fail(function (xhr) {
-        $bookBtn.removeClass('loadingbar').prop('disabled', false);
-        showToast('error', 'Error', 'Could not verify availability, please try again.');
     });
-});
 
+    // Favourite toggle
     $('body').on('click', '#bookingFavoriteBtn, .bookingFavoriteBtn', function (e) {
         e.preventDefault(); e.stopPropagation();
         var $btn     = $(this);
@@ -296,6 +302,8 @@
 
 })(jQuery);
 </script>
+
+{{-- ✅ "Book Now" button — sirf slot panel tak scroll karta hai, koi booking logic yahan nahi --}}
 <script>
 document.getElementById('bookingAddToCartBtn')?.addEventListener('click', function () {
     document.getElementById('bookingSlotPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
