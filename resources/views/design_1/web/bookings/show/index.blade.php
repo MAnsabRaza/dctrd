@@ -296,4 +296,9 @@
 
 })(jQuery);
 </script>
+<script>
+document.getElementById('bookingAddToCartBtn')?.addEventListener('click', function () {
+    document.getElementById('bookingSlotPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+</script>
 @endpush

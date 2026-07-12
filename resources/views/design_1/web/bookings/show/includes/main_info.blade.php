@@ -115,10 +115,10 @@
 
         {{-- Action buttons --}}
         <div class="d-flex align-items-center gap-12 flex-wrap mt-16">
-            <button type="button" id="bookingAddToCartBtn" class="btn btn-primary btn-lg">
-                <x-iconsax-lin-calendar-2 class="icons text-white" width="24px" height="24px"/>
-                <span class="ml-4 text-white">{{ trans('update.book_now') }}</span>
-            </button>
+           <button type="button" id="bookingAddToCartBtn" class="btn btn-primary btn-lg">
+    <x-iconsax-lin-calendar-2 class="icons text-white" width="24px" height="24px"/>
+    <span class="ml-4 text-white">{{ trans('update.book_now') }}</span>
+</button>
 
             <button id="bookingFavoriteBtn" type="button"
                     class="btn btn-outline-secondary btn-lg d-flex align-items-center"

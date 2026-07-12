@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\BookingTimeSlot;
 use Carbon\Carbon;
+use App\Models\BookingOrder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
 class SlotEngine
@@ -184,13 +185,13 @@ class SlotEngine
     ?int $resourceId
 ): array {
 
-    $orders = \App\Models\BookingOrder::query()
+    $orders = BookingOrder::query()
         ->where('booking_id', $booking->id)
         ->where('booking_date', $date->toDateString())
         ->when($resourceId, function ($q) use ($resourceId) {
             $q->where('resource_id', $resourceId);
         })
-        ->whereIn('status', [\App\Models\BookingOrder::$pending, \App\Models\BookingOrder::$success])
+        ->whereIn('status', [BookingOrder::$pending, BookingOrder::$success])
         ->get(['start_time', 'end_time']);
 
     $booked = [];

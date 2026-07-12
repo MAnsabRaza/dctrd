@@ -282,9 +282,13 @@ class CartManagerController extends Controller
         ];
     }
 
+    $resourceId  = !empty($data['resource_id']) ? (int) $data['resource_id'] : null;
+    $bookingDate = null;
+    $startTime   = null;
+    $endTime     = null;
+
     // ✅ Agar date/time diya gaya hai to availability confirm karo cart mein add karne se pehle
     if (!empty($data['slot_date']) and !empty($data['slot_start'])) {
-        $resourceId = !empty($data['resource_id']) ? (int) $data['resource_id'] : null;
 
         try {
             $date = \Carbon\Carbon::parse($data['slot_date']);
@@ -298,7 +302,6 @@ class CartManagerController extends Controller
 
         $startTime = $data['slot_start'];
 
-        // end_time diya gaya hai to wahi use karo, warna booking duration se calculate karo
         $endTime = $data['slot_end'] ?? null;
         if (empty($endTime)) {
             $durationMinutes = (int) ($booking->duration_minutes ?? 60);
@@ -317,30 +320,25 @@ class CartManagerController extends Controller
                 'status'=> 'error'
             ];
         }
+
+        $bookingDate = $date->toDateString();
     }
 
-    $meta = [];
-    if (isset($data['slot_date'])) {
-        $meta['slot_date'] = $data['slot_date'];
-    }
-    if (isset($data['slot_start'])) {
-        $meta['slot_start'] = $data['slot_start'];
-    }
-    if (isset($data['slot_end'])) {
-        $meta['slot_end'] = $data['slot_end'];
-    }
-    if (isset($data['resource_id'])) {
-        $meta['resource_id'] = $data['resource_id'];
-    }
-
+    // ✅ Match condition mein booking_date + start_time bhi shamil hai,
+    // taake user isi booking ko alag alag dates/times ke liye
+    // dobara book kar sake bina purani booking overwrite kiye.
     $bookingOrder = BookingOrder::updateOrCreate([
-        'booking_id' => $booking->id,
-        'seller_id' => $booking->creator_id,
-        'buyer_id' => $user->id,
+        'booking_id'   => $booking->id,
+        'seller_id'    => $booking->creator_id,
+        'buyer_id'     => $user->id,
+        'booking_date' => $bookingDate,
+        'start_time'   => $startTime,
     ], [
-        'quantity' => 1,
-        'status' => BookingOrder::$pending,
-        'created_at' => time(),
+        'resource_id' => $resourceId,
+        'end_time'    => $endTime,
+        'quantity'    => 1,
+        'status'      => BookingOrder::$pending,
+        'created_at'  => time(),
     ]);
 
     Cart::updateOrCreate([
@@ -348,7 +346,6 @@ class CartManagerController extends Controller
         'booking_order_id' => $bookingOrder->id,
     ], [
         'created_at' => time(),
-        'meta' => !empty($meta) ? $meta : null,
     ]);
 
     return 'ok';

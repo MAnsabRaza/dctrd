@@ -33,6 +33,10 @@ class BookingOrder extends Model
         'booking_id',
         'bundle_id',
         'seller_id',
+         'resource_id',   // ✅ naya
+    'booking_date',  // ✅ naya
+    'start_time',    // ✅ naya
+    'end_time', 
         'buyer_id',
         'sale_id',
         'booking_discount_id',
