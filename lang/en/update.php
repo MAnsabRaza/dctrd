@@ -4895,6 +4895,7 @@ return [
     'check_booking' => 'Check Booking',
     'add_to_favorites' => 'Add To Favorites',
     'select_date_and_slot_first'=>'Select Date and Slot First',
+    'book_this_slot' => 'Book This Slot',
     'select_date_check_slots' => 'Select Date to Check Slots',
     'resource' => 'Resource',
     'any_resource' => 'Any Resource',
