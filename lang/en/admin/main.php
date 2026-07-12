@@ -1935,5 +1935,7 @@ return [
     'meeting_package' => 'Meeting Package',
     'event_ticket' => 'Event Ticket',
 
-
+    //abilities
+    'abilities'=> 'Abilities',
+    'new_ability'=> 'New Ability',
 ];

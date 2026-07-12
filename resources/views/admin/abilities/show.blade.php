@@ -1,5 +1,12 @@
 @extends('admin.layouts.app')
 
+@php
+    // trans() missing key par khud wahi key return karta hai (null nahi),
+    // isliye "?? 'Abilities'" fallback kaam nahi karta — manually check karo
+    $abilitiesLabel = trans('admin/main.abilities');
+    $abilitiesLabel = ($abilitiesLabel === 'admin/main.abilities') ? 'Abilities' : $abilitiesLabel;
+@endphp
+
 @section('content')
 <section class="section">
     <div class="section-header">
@@ -9,7 +16,7 @@
                 <a href="{{ getAdminPanelUrl() }}">{{ trans('admin/main.dashboard') }}</a>
             </div>
             <div class="breadcrumb-item">
-                <a href="{{ getAdminPanelUrl() }}/abilities">{{ trans('admin/main.abilities') ?? 'Abilities' }}</a>
+                <a href="{{ getAdminPanelUrl() }}/abilities">{{ $abilitiesLabel }}</a>
             </div>
             <div class="breadcrumb-item">{{ $ability->name }}</div>
         </div>
@@ -21,15 +28,75 @@
                 <div class="card">
                     <div class="card-body">
 
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <div>
-                                <span class="badge badge-info text-capitalize mr-2">{{ $ability->type }}</span>
+                        {{-- ═══════════════════════════════════════════════
+                             Scoped styles — global .badge/.badge-info/.badge-success
+                             theme mein kahin block-level define hain, isliye yahan
+                             independent classes use ki hain taake conflict na ho
+                        ═══════════════════════════════════════════════ --}}
+                        <style>
+                            .ability-header-row {
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                flex-wrap: wrap;
+                                gap: 12px;
+                                margin-bottom: 16px;
+                            }
+                            .ability-pill {
+                                display: inline-flex;
+                                align-items: center;
+                                width: auto;
+                                white-space: nowrap;
+                                font-size: 12.5px;
+                                font-weight: 600;
+                                padding: 4px 12px;
+                                border-radius: 999px;
+                                text-transform: capitalize;
+                                line-height: 1.4;
+                            }
+                            .ability-pill-type      { background: #eef2ff; color: #4338ca; }
+                            .ability-pill-active    { background: #ecfdf3; color: #16a34a; }
+                            .ability-pill-inactive  { background: #fef2f2; color: #dc2626; }
+                            .ability-meta {
+                                font-size: 12.5px;
+                                color: #64748b;
+                            }
+                            .ability-meta code {
+                                background: #f1f5f9;
+                                color: #334155;
+                                padding: 2px 6px;
+                                border-radius: 5px;
+                                font-size: 11.5px;
+                            }
+                            .ability-status-badge {
+                                display: inline-flex;
+                                align-items: center;
+                                width: auto;
+                                white-space: nowrap;
+                                font-size: 12.5px;
+                                font-weight: 600;
+                                padding: 3px 10px;
+                                border-radius: 999px;
+                            }
+                            .ability-status-enabled   { background: #ecfdf3; color: #16a34a; }
+                            .ability-status-disabled  { background: #f1f5f9; color: #64748b; }
+                            .ability-status-idle      { background: #f1f5f9; color: #64748b; }
+                            .ability-status-syncing   { background: #fffbeb; color: #b45309; }
+                            .ability-status-success   { background: #ecfdf3; color: #16a34a; }
+                            .ability-status-failed    { background: #fef2f2; color: #dc2626; }
+                        </style>
+
+                        <div class="ability-header-row">
+                            <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+                                <span class="ability-pill ability-pill-type">{{ $ability->type }}</span>
+
                                 @if($ability->is_active)
-                                    <span class="badge badge-success">{{ trans('admin/main.active') }}</span>
+                                    <span class="ability-pill ability-pill-active">{{ trans('admin/main.active') }}</span>
                                 @else
-                                    <span class="badge badge-danger">{{ trans('admin/main.inactive') }}</span>
+                                    <span class="ability-pill ability-pill-inactive">{{ trans('admin/main.inactive') }}</span>
                                 @endif
-                                <span class="text-gray-500 font-13 ml-2">
+
+                                <span class="ability-meta">
                                     <code>{{ $ability->key }}</code> &middot; <code>{{ $ability->driver_class }}</code>
                                 </span>
                             </div>
@@ -70,22 +137,15 @@
                                                 </td>
                                                 <td class="text-center">
                                                     @if($va->enabled)
-                                                        <span class="badge badge-success">Enabled</span>
+                                                        <span class="ability-status-badge ability-status-enabled">Enabled</span>
                                                     @else
-                                                        <span class="badge badge-secondary">Disabled</span>
+                                                        <span class="ability-status-badge ability-status-disabled">Disabled</span>
                                                     @endif
                                                 </td>
                                                 <td class="text-center">
-                                                    @php
-                                                        $statusColors = [
-                                                            'idle'     => 'secondary',
-                                                            'syncing'  => 'warning',
-                                                            'success'  => 'success',
-                                                            'failed'   => 'danger',
-                                                        ];
-                                                        $color = $statusColors[$va->sync_status] ?? 'secondary';
-                                                    @endphp
-                                                    <span class="badge badge-{{ $color }} text-capitalize">{{ $va->sync_status }}</span>
+                                                    <span class="ability-status-badge ability-status-{{ $va->sync_status }}">
+                                                        {{ $va->sync_status }}
+                                                    </span>
                                                 </td>
                                                 <td class="text-center">
                                                     {{ $va->last_synced_at ? $va->last_synced_at->diffForHumans() : '-' }}
