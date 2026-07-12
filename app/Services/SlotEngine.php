@@ -178,39 +178,28 @@ class SlotEngine
         return $slots;
     }
 
-    private function getBookedSlots(
-        Booking $booking,
-        Carbon $date,
-        ?int $resourceId
-    ): array {
+ private function getBookedSlots(
+    Booking $booking,
+    Carbon $date,
+    ?int $resourceId
+): array {
 
-        $orders = \App\Models\BookingOrderItem::query()
+    $orders = \App\Models\BookingOrder::query()
+        ->where('booking_id', $booking->id)
+        ->where('booking_date', $date->toDateString())
+        ->when($resourceId, function ($q) use ($resourceId) {
+            $q->where('resource_id', $resourceId);
+        })
+        ->whereIn('status', [\App\Models\BookingOrder::$pending, \App\Models\BookingOrder::$success])
+        ->get(['start_time', 'end_time']);
 
-            ->where('booking_id', $booking->id)
+    $booked = [];
 
-            ->where('booking_date', $date->toDateString())
-
-            ->when($resourceId, function ($q) use ($resourceId) {
-
-                $q->where('resource_id', $resourceId);
-            })
-
-            ->whereIn('status', ['pending', 'confirmed'])
-
-            ->get([
-                'start_time',
-                'end_time',
-            ]);
-
-        $booked = [];
-
-        foreach ($orders as $order) {
-
-            $key = $order->start_time . '-' . $order->end_time;
-
-            $booked[$key] = ($booked[$key] ?? 0) + 1;
-        }
-
-        return $booked;
+    foreach ($orders as $order) {
+        $key = $order->start_time . '-' . $order->end_time;
+        $booked[$key] = ($booked[$key] ?? 0) + 1;
     }
+
+    return $booked;
+}
 }

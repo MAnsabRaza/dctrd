@@ -4894,6 +4894,7 @@ return [
     'new_booking_page_title' => 'New Booking Page Title',
     'check_booking' => 'Check Booking',
     'add_to_favorites' => 'Add To Favorites',
+    'select_date_and_slot_first'=>'Select Date and Slot First',
     'select_date_check_slots' => 'Select Date to Check Slots',
     'resource' => 'Resource',
     'any_resource' => 'Any Resource',
