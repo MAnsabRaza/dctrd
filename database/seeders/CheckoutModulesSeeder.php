@@ -23,7 +23,8 @@ class CheckoutModulesSeeder extends Seeder
                     'max_days' => 365,
                 ]),
                 'price_rule'  => json_encode([
-                    'type' => 'per_day',
+                    'type'   => 'per_day',
+                    'amount' => 15, // ✅ har extra din ka charge — TEST VALUE, admin panel se change kar sakte ho
                 ]),
                 'order_index' => 1,
                 'is_active'   => true,
@@ -45,7 +46,8 @@ class CheckoutModulesSeeder extends Seeder
                     ],
                 ]),
                 'price_rule'  => json_encode([
-                    'type' => 'per_hour',
+                    'type'   => 'per_hour',
+                    'amount' => 8, // ✅ har hour slot ka charge — TEST VALUE
                 ]),
                 'order_index' => 2,
                 'is_active'   => true,
@@ -77,13 +79,14 @@ class CheckoutModulesSeeder extends Seeder
             [
                 'name'        => 'persons_children',
                 'input_type'  => 'stepper',
-                  'config'      => json_encode([
-        'adults'   => ['min' => 1, 'max' => 20, 'price' => 10], // ← price per adult
-        'children' => ['min' => 0, 'max' => 10, 'price' => 5],  // ← price per child
-        'rooms'    => ['min' => 1, 'max' => 10, 'price' => 0],   // ← rooms ka price nahi
-    ]),
+                'config'      => json_encode([
+                    'adults'   => ['min' => 1, 'max' => 20, 'price' => 10], // ← price per adult
+                    'children' => ['min' => 0, 'max' => 10, 'price' => 5],  // ← price per child
+                    'rooms'    => ['min' => 1, 'max' => 10, 'price' => 0],  // ← rooms ka price nahi
+                ]),
                 'price_rule'  => json_encode([
-                    'type'   => 'per_person',
+                    'type' => 'per_person',
+                    // amount yahan zaroori nahi — service ab config.adults.price / config.children.price use karti hai
                 ]),
                 'order_index' => 4,
                 'is_active'   => true,

@@ -285,73 +285,81 @@
     @endif
 
     {{-- PERSONS + CHILDREN + ROOMS --}}
-    @if($paxModule = $bottomModules->firstWhere('name', 'persons_children'))
-        @php
-            $paxConfig   = $paxModule->config ?? [];
-            $adultMin    = $paxConfig['adults']['min']   ?? 1;
-            $adultMax    = $paxConfig['adults']['max']   ?? 20;
-            $childMin    = $paxConfig['children']['min'] ?? 0;
-            $childMax    = $paxConfig['children']['max'] ?? 10;
-            $roomMin     = $paxConfig['rooms']['min']    ?? 1;
-            $roomMax     = $paxConfig['rooms']['max']    ?? 10;
-            $oldAdults   = old("checkout_modules.{$itemKey}.persons_children.adults",   $adultMin);
-            $oldChildren = old("checkout_modules.{$itemKey}.persons_children.children", 0);
-            $oldRooms    = old("checkout_modules.{$itemKey}.persons_children.rooms",    $roomMin);
-            $perPerson   = $paxModule->price_rule['amount'] ?? 0;
-        @endphp
-        <div class="booking-cancellation-card" data-module-name="persons_children" data-price-type="per_person" data-price-amount="{{ $perPerson }}">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="booking-info-title">
-                    {{ $paxModule->translated_label ?? trans('cart.guests') ?? 'Guests' }}
-                    @if($paxModule->is_required)<span class="text-danger">*</span>@endif
-                </div>
-                @if($perPerson)
-                    <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perPerson) }}/{{ trans('cart.person') ?? 'person' }}</span>
-                @endif
+   @if($paxModule = $bottomModules->firstWhere('name', 'persons_children'))
+    @php
+        $paxConfig   = $paxModule->config ?? [];
+        $adultMin    = $paxConfig['adults']['min']   ?? 1;
+        $adultMax    = $paxConfig['adults']['max']   ?? 20;
+        $childMin    = $paxConfig['children']['min'] ?? 0;
+        $childMax    = $paxConfig['children']['max'] ?? 10;
+        $roomMin     = $paxConfig['rooms']['min']    ?? 1;
+        $roomMax     = $paxConfig['rooms']['max']    ?? 10;
+        $oldAdults   = old("checkout_modules.{$itemKey}.persons_children.adults",   $adultMin);
+        $oldChildren = old("checkout_modules.{$itemKey}.persons_children.children", 0);
+        $oldRooms    = old("checkout_modules.{$itemKey}.persons_children.rooms",    $roomMin);
+        $adultPrice  = (float) ($paxConfig['adults']['price']   ?? 0);
+        $childPrice  = (float) ($paxConfig['children']['price'] ?? 0);
+    @endphp
+    <div class="booking-cancellation-card"
+         data-module-name="persons_children"
+         data-price-type="per_person"
+         data-adult-price="{{ $adultPrice }}"
+         data-child-price="{{ $childPrice }}">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="booking-info-title">
+                {{ $paxModule->translated_label ?? trans('cart.guests') ?? 'Guests' }}
+                @if($paxModule->is_required)<span class="text-danger">*</span>@endif
             </div>
-
-            <div class="d-flex flex-wrap gap-20 mt-12">
-                {{-- Adults --}}
-                <div class="d-flex align-items-center gap-8">
-                    <span class="font-13 text-gray-600">{{ trans('cart.adults') ?? 'Adults' }}</span>
-                    <div class="d-flex align-items-center gap-4">
-                        <button type="button" class="bmod-stepper-btn" data-target="pax_adults_{{ $itemKey }}" data-action="dec" data-min="{{ $adultMin }}">−</button>
-                        <input type="number" id="pax_adults_{{ $itemKey }}" name="{{ $paxPrefix }}[adults]"
-                               value="{{ $oldAdults }}" min="{{ $adultMin }}" max="{{ $adultMax }}"
-                               class="bmod-stepper-input" readonly>
-                        <button type="button" class="bmod-stepper-btn" data-target="pax_adults_{{ $itemKey }}" data-action="inc" data-max="{{ $adultMax }}">+</button>
-                    </div>
-                </div>
-
-                {{-- Children --}}
-                <div class="d-flex align-items-center gap-8">
-                    <span class="font-13 text-gray-600">{{ trans('cart.children') ?? 'Children' }}</span>
-                    <div class="d-flex align-items-center gap-4">
-                        <button type="button" class="bmod-stepper-btn" data-target="pax_children_{{ $itemKey }}" data-action="dec" data-min="{{ $childMin }}">−</button>
-                        <input type="number" id="pax_children_{{ $itemKey }}" name="{{ $paxPrefix }}[children]"
-                               value="{{ $oldChildren }}" min="{{ $childMin }}" max="{{ $childMax }}"
-                               class="bmod-stepper-input" readonly>
-                        <button type="button" class="bmod-stepper-btn" data-target="pax_children_{{ $itemKey }}" data-action="inc" data-max="{{ $childMax }}">+</button>
-                    </div>
-                </div>
-
-                {{-- Rooms --}}
-                <div class="d-flex align-items-center gap-8">
-                    <span class="font-13 text-gray-600">{{ trans('cart.rooms') ?? 'Rooms' }}</span>
-                    <div class="d-flex align-items-center gap-4">
-                        <button type="button" class="bmod-stepper-btn" data-target="pax_rooms_{{ $itemKey }}" data-action="dec" data-min="{{ $roomMin }}">−</button>
-                        <input type="number" id="pax_rooms_{{ $itemKey }}" name="{{ $paxPrefix }}[rooms]"
-                               value="{{ $oldRooms }}" min="{{ $roomMin }}" max="{{ $roomMax }}"
-                               class="bmod-stepper-input" readonly>
-                        <button type="button" class="bmod-stepper-btn" data-target="pax_rooms_{{ $itemKey }}" data-action="inc" data-max="{{ $roomMax }}">+</button>
-                    </div>
-                </div>
-            </div>
-            @error("checkout_modules.{$itemKey}.persons_children")
-                <div class="text-danger font-11 mt-4">{{ $message }}</div>
-            @enderror
+            @if($adultPrice > 0 || $childPrice > 0)
+                <span class="font-11 font-weight-bold text-primary">
+                    @if($adultPrice > 0){{ handlePrice($adultPrice) }}/{{ trans('cart.adult') ?? 'adult' }}@endif
+                    @if($childPrice > 0) · {{ handlePrice($childPrice) }}/{{ trans('cart.child') ?? 'child' }}@endif
+                </span>
+            @endif
         </div>
-    @endif
+
+        <div class="d-flex flex-wrap gap-20 mt-12">
+            {{-- Adults --}}
+            <div class="d-flex align-items-center gap-8">
+                <span class="font-13 text-gray-600">{{ trans('cart.adults') ?? 'Adults' }}</span>
+                <div class="d-flex align-items-center gap-4">
+                    <button type="button" class="bmod-stepper-btn" data-target="pax_adults_{{ $itemKey }}" data-action="dec" data-min="{{ $adultMin }}">−</button>
+                    <input type="number" id="pax_adults_{{ $itemKey }}" name="{{ $paxPrefix }}[adults]"
+                           value="{{ $oldAdults }}" min="{{ $adultMin }}" max="{{ $adultMax }}"
+                           class="bmod-stepper-input" readonly>
+                    <button type="button" class="bmod-stepper-btn" data-target="pax_adults_{{ $itemKey }}" data-action="inc" data-max="{{ $adultMax }}">+</button>
+                </div>
+            </div>
+
+            {{-- Children --}}
+            <div class="d-flex align-items-center gap-8">
+                <span class="font-13 text-gray-600">{{ trans('cart.children') ?? 'Children' }}</span>
+                <div class="d-flex align-items-center gap-4">
+                    <button type="button" class="bmod-stepper-btn" data-target="pax_children_{{ $itemKey }}" data-action="dec" data-min="{{ $childMin }}">−</button>
+                    <input type="number" id="pax_children_{{ $itemKey }}" name="{{ $paxPrefix }}[children]"
+                           value="{{ $oldChildren }}" min="{{ $childMin }}" max="{{ $childMax }}"
+                           class="bmod-stepper-input" readonly>
+                    <button type="button" class="bmod-stepper-btn" data-target="pax_children_{{ $itemKey }}" data-action="inc" data-max="{{ $childMax }}">+</button>
+                </div>
+            </div>
+
+            {{-- Rooms --}}
+            <div class="d-flex align-items-center gap-8">
+                <span class="font-13 text-gray-600">{{ trans('cart.rooms') ?? 'Rooms' }}</span>
+                <div class="d-flex align-items-center gap-4">
+                    <button type="button" class="bmod-stepper-btn" data-target="pax_rooms_{{ $itemKey }}" data-action="dec" data-min="{{ $roomMin }}">−</button>
+                    <input type="number" id="pax_rooms_{{ $itemKey }}" name="{{ $paxPrefix }}[rooms]"
+                           value="{{ $oldRooms }}" min="{{ $roomMin }}" max="{{ $roomMax }}"
+                           class="bmod-stepper-input" readonly>
+                    <button type="button" class="bmod-stepper-btn" data-target="pax_rooms_{{ $itemKey }}" data-action="inc" data-max="{{ $roomMax }}">+</button>
+                </div>
+            </div>
+        </div>
+        @error("checkout_modules.{$itemKey}.persons_children")
+            <div class="text-danger font-11 mt-4">{{ $message }}</div>
+        @enderror
+    </div>
+@endif
 
     {{-- EXTRA SERVICES --}}
     @if($extrasModule = $bottomModules->firstWhere('name', 'extra_services'))
@@ -653,20 +661,14 @@ $(document).on('checkout:priceUpdate', function () {
       // --- Persons / Children (per_person module) ---
 var $paxCard = $shell.find('[data-module-name="persons_children"]');
 if ($paxCard.length) {
-    var perPerson = parseFloat($paxCard.attr('data-price-amount') || 0);
-    
-    // DEBUG: Console mein dekho kya aa raha hai
-    console.log('Per person price:', perPerson);
-    console.log('PAX card found:', $paxCard.length);
-    
-    if (perPerson > 0) {
+    var adultPrice = parseFloat($paxCard.attr('data-adult-price') || 0);
+    var childPrice = parseFloat($paxCard.attr('data-child-price') || 0);
+
+    if (adultPrice > 0 || childPrice > 0) {
         var itemKey  = $shell.data('item-key');
         var adults   = parseInt($('#pax_adults_'   + itemKey).val() || 0, 10);
         var children = parseInt($('#pax_children_' + itemKey).val() || 0, 10);
-        var paxAmt   = (adults + children) * perPerson;
-        
-        console.log('Adults:', adults, 'Children:', children, 'Amount:', paxAmt);
-        
+        var paxAmt   = (adults * adultPrice) + (children * childPrice);
         personsTotal += paxAmt;
     }
 }

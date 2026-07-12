@@ -71,64 +71,99 @@ class CheckoutModuleService
 
     // =========================================================
 
-    public function calculateExtraPrice(
-        Collection $modules,
-        array $submittedData
-    ): float {
-        $extraTotal = 0.0;
+  public function calculateExtraPrice(Collection $modules, array $submittedData): float
+{
+    $breakdown = $this->calculateExtraPriceBreakdown($modules, $submittedData);
 
-        foreach ($modules as $module) {
-            $priceRule = $module->price_rule ?? [];
-            $type      = $priceRule['type'] ?? 'none';
-            $data      = $submittedData[$module->name] ?? null;
+    return round(array_sum(array_column($breakdown, 'amount')), 2);
+}
 
-            if (empty($data)) {
-                continue;
-            }
+public function calculateExtraPriceBreakdown(Collection $modules, array $submittedData): array
+{
+    $breakdown = [];
 
-            switch ($type) {
-                case 'per_day':
-                    if (!empty($data['check_in']) && !empty($data['check_out'])) {
-                        $checkIn  = \Carbon\Carbon::parse($data['check_in']);
-                        $checkOut = \Carbon\Carbon::parse($data['check_out']);
-                        $days     = max(1, $checkIn->diffInDays($checkOut));
-                        $basePrice = $priceRule['amount'] ?? 0;
-                        $extraTotal += $days * $basePrice;
-                    }
-                    break;
+    foreach ($modules as $module) {
+        $priceRule = $module->price_rule ?? [];
+        $config    = $module->config ?? [];
+        $type      = $priceRule['type'] ?? 'none';
+        $data      = $submittedData[$module->name] ?? null;
 
-                case 'per_hour':
-                    $hours     = isset($data['hours_count']) ? (int) $data['hours_count'] : 1;
-                    $basePrice = $priceRule['amount'] ?? 0;
-                    $extraTotal += $hours * $basePrice;
-                    break;
-
-                case 'per_person':
-                    $adults    = isset($data['adults']) ? (int) $data['adults'] : 0;
-                    $amount    = $priceRule['amount'] ?? 0;
-                    $extraTotal += $adults * $amount;
-                    break;
-
-                case 'additive':
-                    $config  = $module->config ?? [];
-                    $options = $config['options'] ?? [];
-                    $selected = is_array($data) ? $data : [];
-
-                    foreach ($options as $index => $option) {
-                        if (in_array((string) $index, $selected) || in_array($option['label'], $selected)) {
-                            $extraTotal += (float) ($option['price'] ?? 0);
-                        }
-                    }
-                    break;
-
-                case 'none':
-                default:
-                    break;
-            }
+        if ($this->isEmptyValue($data)) {
+            continue;
         }
 
-        return round($extraTotal, 2);
+        $amount = 0.0;
+        $detail = [];
+
+        switch ($type) {
+            case 'per_day':
+                if (!empty($data['check_in']) && !empty($data['check_out'])) {
+                    $checkIn  = \Carbon\Carbon::parse($data['check_in']);
+                    $checkOut = \Carbon\Carbon::parse($data['check_out']);
+                    $days     = max(1, $checkIn->diffInDays($checkOut));
+                    $perDay   = $priceRule['amount'] ?? ($config['price_per_day'] ?? 0);
+                    $amount   = $days * $perDay;
+                    $detail   = ['days' => $days, 'price_per_day' => $perDay];
+                }
+                break;
+
+            case 'per_hour':
+                $hours   = !empty($data) ? 1 : 0; // 1 slot = 1 hour (jaisa JS mein hai)
+                $perHour = $priceRule['amount'] ?? ($config['price_per_hour'] ?? 0);
+                $amount  = $hours * $perHour;
+                $detail  = ['hours' => $hours, 'price_per_hour' => $perHour];
+                break;
+
+            case 'per_person':
+                // ✅ FIX: price 'config' se aati hai (adults/children ka alag-alag rate),
+                // 'price_rule.amount' se NAHI — kyunke seeder mein wo key hai hi nahi.
+                $adults     = isset($data['adults']) ? (int) $data['adults'] : 0;
+                $children   = isset($data['children']) ? (int) $data['children'] : 0;
+                $adultPrice = (float) ($config['adults']['price'] ?? 0);
+                $childPrice = (float) ($config['children']['price'] ?? 0);
+                $adultTotal = $adults * $adultPrice;
+                $childTotal = $children * $childPrice;
+                $amount     = $adultTotal + $childTotal;
+                $detail     = [
+                    'adults'      => $adults,
+                    'adult_price' => $adultPrice,
+                    'adult_total' => round($adultTotal, 2),
+                    'children'    => $children,
+                    'child_price' => $childPrice,
+                    'child_total' => round($childTotal, 2),
+                ];
+                break;
+
+            case 'additive':
+                $options  = $config['options'] ?? [];
+                $selected = is_array($data) ? $data : [];
+                $selectedItems = [];
+
+                foreach ($options as $option) {
+                    if (in_array((string) $option['label'], $selected, true)) {
+                        $optPrice = (float) ($option['price'] ?? 0);
+                        $amount  += $optPrice;
+                        $selectedItems[] = ['label' => $option['label'], 'price' => $optPrice];
+                    }
+                }
+                $detail = ['selected' => $selectedItems];
+                break;
+
+            case 'none':
+            default:
+                break;
+        }
+
+        if ($amount > 0 || !empty($detail)) {
+            $breakdown[$module->name] = array_merge([
+                'type'   => $type,
+                'amount' => round($amount, 2),
+            ], $detail);
+        }
     }
+
+    return $breakdown;
+}
 
     // =========================================================
 

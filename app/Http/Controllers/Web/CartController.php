@@ -66,7 +66,8 @@ class CartController extends Controller
 
             if (!empty($hasPhysicalProduct) and count($hasPhysicalProduct)) {
                 foreach ($hasPhysicalProduct as $physicalProductCart) {
-                    if (!empty($physicalProductCart->productOrder) and
+                    if (
+                        !empty($physicalProductCart->productOrder) and
                         !empty($physicalProductCart->productOrder->product) and
                         !empty($physicalProductCart->productOrder->product->delivery_estimated_time) and
                         $physicalProductCart->productOrder->product->delivery_estimated_time > $deliveryEstimateTime
@@ -152,7 +153,7 @@ class CartController extends Controller
                         'calculatePrices' => $calculate
                     ];
 
-                    $html = (string)view()->make("design_1.web.cart.overview.includes.summary", $data);
+                    $html = (string) view()->make("design_1.web.cart.overview.includes.summary", $data);
 
                     return response()->json([
                         'code' => 200,
@@ -376,6 +377,8 @@ class CartController extends Controller
             $checkoutModules = $request->input('checkout_modules', []);
             $moduleErrors = [];
             $extraPrice = 0;
+            $extraPriceByCart = [];
+            $extraPriceBreakdownByCart = [];
 
             foreach ($carts as $cart) {
                 $entityType = null;
@@ -423,7 +426,11 @@ class CartController extends Controller
                     }
                 }
 
-                $extraPrice += $checkoutModuleService->calculateExtraPrice($modules, $itemData);
+                // ✅ per cart-item extra price + breakdown (adults/children/extra_services etc.)
+                $itemExtraPrice = $checkoutModuleService->calculateExtraPrice($modules, $itemData);
+                $extraPriceByCart[$cart->id] = $itemExtraPrice;
+                $extraPriceBreakdownByCart[$cart->id] = $checkoutModuleService->calculateExtraPriceBreakdown($modules, $itemData);
+                $extraPrice += $itemExtraPrice;
             }
 
             if (!empty($moduleErrors)) {
@@ -434,7 +441,16 @@ class CartController extends Controller
             $calculate['extra_price'] = round($extraPrice, 2);
             $calculate['total'] = round($calculate['total'] + $calculate['extra_price'], 2);
 
-            $order = $this->createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon, $request, $checkoutModules);
+            $order = $this->createOrderAndOrderItems(
+                $carts,
+                $calculate,
+                $user,
+                $discountCoupon,
+                $request,
+                $checkoutModules,
+                $extraPriceByCart,
+                $extraPriceBreakdownByCart
+            );
 
             if (count($hasPhysicalProduct) > 0) {
                 $this->updateProductOrders($request, $carts, $user);
@@ -499,8 +515,16 @@ class CartController extends Controller
         ]);
     }
 
-    public function createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon = null, Request $request = null, array $checkoutModuleData = [])
-    {
+    public function createOrderAndOrderItems(
+        $carts,
+        $calculate,
+        $user,
+        $discountCoupon = null,
+        Request $request = null,
+        array $checkoutModuleData = [],
+        array $extraPriceByCart = [],
+        array $extraPriceBreakdownByCart = []
+    ) {
         $totalAmount = $calculate["total"];
 
         $orderTotalDiscount = $calculate["total_discount"];
@@ -524,11 +548,16 @@ class CartController extends Controller
 
         // Add address fields if provided via request
         if (!empty($request)) {
-            if (!empty($request->input('address_line'))) $orderData['address_line'] = $request->input('address_line');
-            if (!empty($request->input('city'))) $orderData['city'] = $request->input('city');
-            if (!empty($request->input('state'))) $orderData['state'] = $request->input('state');
-            if (!empty($request->input('country'))) $orderData['country'] = $request->input('country');
-            if (!empty($request->input('postal_code'))) $orderData['postal_code'] = $request->input('postal_code');
+            if (!empty($request->input('address_line')))
+                $orderData['address_line'] = $request->input('address_line');
+            if (!empty($request->input('city')))
+                $orderData['city'] = $request->input('city');
+            if (!empty($request->input('state')))
+                $orderData['state'] = $request->input('state');
+            if (!empty($request->input('country')))
+                $orderData['country'] = $request->input('country');
+            if (!empty($request->input('postal_code')))
+                $orderData['postal_code'] = $request->input('postal_code');
         }
 
         $order = Order::create($orderData);
@@ -571,8 +600,12 @@ class CartController extends Controller
                 $productDeliveryFee = $productDeliveryFee > 0 ? $productDeliveryFee / $sellerProductCount : 0;
             }
 
-            $subTotalWithoutDiscount = $price - $totalDiscount;
-            $totalAmount = $subTotalWithoutDiscount + $taxPrice + $productDeliveryFee;
+           // ✅ FIX: is specific item ka module extra price (adults/children/extra_services)
+// ab total_amount mein add ho raha hai, sirf order-level total mein nahi.
+$moduleExtraPrice = $extraPriceByCart[$cart->id] ?? 0;
+
+$subTotalWithoutDiscount = $price - $totalDiscount;
+$totalAmount = $subTotalWithoutDiscount + $taxPrice + $productDeliveryFee + $moduleExtraPrice;
 
             $ticket = $cart->ticket;
             if (!empty($ticket) and !$ticket->isValid()) {
@@ -626,6 +659,17 @@ class CartController extends Controller
                     // Safe fail if module meta storage is unavailable
                 }
             }
+            $moduleBreakdown = $extraPriceBreakdownByCart[$cart->id] ?? [];
+if (!empty($moduleBreakdown)) {
+    try {
+        OrderItemMeta::updateOrCreate(
+            ['order_item_id' => $orderItem->id, 'key' => 'price_breakdown'],
+            ['value' => json_encode($moduleBreakdown)]
+        );
+    } catch (\Throwable $e) {
+        // Safe fail
+    }
+}
         }
 
         return $order;
