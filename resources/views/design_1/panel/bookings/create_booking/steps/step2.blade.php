@@ -1,5 +1,14 @@
 {{--
     Step 2 — Pricing & Availability
+
+    FIX (Step 2 requirement — validation error messages):
+    Pehle is step ke fields (price, capacity, inventory, duration_minutes,
+    deposit_amount/type, rate_plans.*.name/price) pe koi @error() / is-invalid
+    nahi tha. Isse jab required validation fail hoti thi (e.g. rate_plans.*.price
+    required_with), form wapas aa jata tha lekin user ko pata nahi chalta tha
+    exactly konsi field/row galat hai — sirf top-level generic error list
+    (index.blade.php mein) dikhti thi. Ab har field apna khud ka inline error
+    dikhata hai, jaisa admin form mein already ho raha hai.
 --}}
 @php
     $existingPlans = $booking->ratePlans ?? collect();
@@ -20,6 +29,18 @@
     </div>
 </div>
 
+{{-- FIX: general error summary for this step, same pattern as admin form --}}
+@if ($errors->any())
+    <div class="alert alert-danger" id="step2ErrorsAlert">
+        <strong>{{ $errors->count() }} {{ $errors->count() == 1 ? 'error' : 'errors' }} found — please check the highlighted fields below:</strong>
+        <ul class="mb-0 mt-2">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="panel-card">
     <div class="section-head mb-3">
         <div class="badge-icon"><i class="fa fa-money"></i></div>
@@ -30,36 +51,43 @@
         <div class="col-12 col-md-3">
             <div class="form-group">
                 <label>{{ $fieldLabel('price', 'Base Price') }} <span class="text-danger">*</span></label>
-                <input name="price" type="number" step="0.01" min="0" class="form-control"
+                <input name="price" type="number" step="0.01" min="0"
+                       class="form-control @error('price') is-invalid @enderror"
                        value="{{ old('price', $booking->price ?? '') }}" placeholder="0.00">
                 <small class="text-muted">{{ $priceUnitLabel }}</small>
+                @error('price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
 
         <div class="col-12 col-md-3">
             <div class="form-group">
                 <label>Discount Price</label>
-                <input name="discount_price" type="number" step="0.01" min="0" class="form-control"
+                <input name="discount_price" type="number" step="0.01" min="0"
+                       class="form-control @error('discount_price') is-invalid @enderror"
                        value="{{ old('discount_price', $booking->discount_price ?? '') }}" placeholder="0.00">
+                @error('discount_price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
 
         <div class="col-12 col-md-3">
             <div class="form-group">
                 <label>Currency</label>
-                <select name="currency" class="form-control">
+                <select name="currency" class="form-control @error('currency') is-invalid @enderror">
                     @foreach(['USD','EUR','GBP','PKR','AED','SAR','INR'] as $cur)
                         <option value="{{ $cur }}" {{ old('currency', $booking->currency ?? 'USD') === $cur ? 'selected' : '' }}>{{ $cur }}</option>
                     @endforeach
                 </select>
+                @error('currency')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
 
         <div class="col-12 col-md-3">
             <div class="form-group">
                 <label>Price Unit</label>
-                <input name="price_unit" type="text" class="form-control"
+                <input name="price_unit" type="text"
+                       class="form-control @error('price_unit') is-invalid @enderror"
                        value="{{ old('price_unit', $subTemplate ? $priceUnitLabel : ($booking->price_unit ?? $priceUnitLabel)) }}" placeholder="per night, per adult">
+                @error('price_unit')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
 
@@ -67,8 +95,10 @@
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label>Price per Extra Person / Hour</label>
-                    <input name="price_per" type="number" step="0.01" min="0" class="form-control"
+                    <input name="price_per" type="number" step="0.01" min="0"
+                           class="form-control @error('price_per') is-invalid @enderror"
                            value="{{ old('price_per', $booking->price_per ?? '') }}" placeholder="0.00">
+                    @error('price_per')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
             </div>
         @endif
@@ -77,19 +107,17 @@
             <div class="col-12 col-md-4">
                 <div class="form-group mb-0">
                     <label>{{ $fieldLabel('duration_minutes', 'Duration (minutes)') }} @if($isRequired('duration_minutes')) <span class="text-danger">*</span> @endif</label>
-                    <input name="duration_minutes" type="number" min="0" class="form-control"
+                    <input name="duration_minutes" type="number" min="0"
+                           class="form-control @error('duration_minutes') is-invalid @enderror"
                            value="{{ old('duration_minutes', $booking->duration_minutes ?? '') }}" {{ $isRequired('duration_minutes') ? 'required' : '' }}>
+                    @error('duration_minutes')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
             </div>
         @endif
     </div>
 </div>
 
-{{-- ── Capacity & Inventory ────────────────────────────────────────────
-     Only relevant for templates that declare 'capacity' and/or 'inventory'
-     in BookingTemplateConfig (events ticket count, beauty-spa group service,
-     accommodation room capacity). Driving this off $tplFields means a future
-     template added to the config picks this panel up automatically. --}}
+{{-- ── Capacity & Inventory ──────────────────────────────────────────── --}}
 @if(in_array('capacity', $tplFields) || in_array('inventory', $tplFields))
     <div class="panel-card">
         <div class="section-head mb-3">
@@ -112,8 +140,10 @@
                 <div class="col-12 col-md-6">
                     <div class="form-group mb-0">
                         <label>{{ $fieldLabel('capacity', 'Capacity') }} @if($isRequired('capacity')) <span class="text-danger">*</span> @endif</label>
-                        <input name="capacity" type="number" min="1" class="form-control"
+                        <input name="capacity" type="number" min="1"
+                               class="form-control @error('capacity') is-invalid @enderror"
                                value="{{ old('capacity', $booking->capacity ?? '') }}" placeholder="Leave empty for unlimited" {{ $isRequired('capacity') ? 'required' : '' }}>
+                        @error('capacity')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
                 </div>
             @endif
@@ -121,8 +151,10 @@
                 <div class="col-12 col-md-6">
                     <div class="form-group mb-0">
                         <label>{{ $fieldLabel('inventory', 'Available Tickets / Seats') }} @if($isRequired('inventory')) <span class="text-danger">*</span> @endif</label>
-                        <input name="inventory" type="number" min="0" class="form-control"
+                        <input name="inventory" type="number" min="0"
+                               class="form-control @error('inventory') is-invalid @enderror"
                                value="{{ old('inventory', $booking->inventory ?? '') }}" placeholder="Leave empty for unlimited" {{ $isRequired('inventory') ? 'required' : '' }}>
+                        @error('inventory')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
                 </div>
             @endif
@@ -130,9 +162,7 @@
     </div>
 @endif
 
-{{-- ── Deposit ──────────────────────────────────────────────────────────
-     Relevant for accommodation and automotive (both define deposit_enabled
-     /deposit_amount/deposit_type as fields). --}}
+{{-- ── Deposit ──────────────────────────────────────────────────────────── --}}
 @if(in_array('deposit_enabled', $tplFields))
     @php $depositEnabled = old('deposit_enabled', $booking->deposit_enabled ?? false); @endphp
     <div class="panel-card">
@@ -152,17 +182,20 @@
             <div class="col-12 col-md-6">
                 <div class="form-group mb-0">
                     <label>Deposit Amount</label>
-                    <input name="deposit_amount" type="number" step="0.01" min="0" class="form-control"
+                    <input name="deposit_amount" type="number" step="0.01" min="0"
+                           class="form-control @error('deposit_amount') is-invalid @enderror"
                            value="{{ old('deposit_amount', $booking->deposit_amount ?? '') }}">
+                    @error('deposit_amount')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div class="col-12 col-md-6">
                 <div class="form-group mb-0">
                     <label>Deposit Type</label>
-                    <select name="deposit_type" class="form-control">
+                    <select name="deposit_type" class="form-control @error('deposit_type') is-invalid @enderror">
                         <option value="fixed" {{ old('deposit_type', $booking->deposit_type ?? '') === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
                         <option value="percentage" {{ old('deposit_type', $booking->deposit_type ?? '') === 'percentage' ? 'selected' : '' }}>Percentage of Price</option>
                     </select>
+                    @error('deposit_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -178,6 +211,10 @@
         </div>
     </div>
 
+    {{-- FIX: rate_plans ke liye bhi koi field-level error nahi tha.
+         Laravel nested-array error keys "rate_plans.{i}.name" / "rate_plans.{i}.price"
+         format mein aati hain — is index ($i) ke hisaab se hi @error() call
+         karna zaroori hai taake sahi row pe sahi error dikhe. --}}
     <div class="mini-table-wrap">
         <table class="mini-table" id="ratePlansTable">
             <thead>
@@ -186,10 +223,18 @@
             <tbody>
                 @foreach($existingPlans as $i => $plan)
                     <tr>
-                        <td><input type="text" class="form-control form-control-sm" name="rate_plans[{{ $i }}][name]" value="{{ $plan->name }}" placeholder="e.g. Summer"></td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm @error('rate_plans.'.$i.'.name') is-invalid @enderror"
+                                   name="rate_plans[{{ $i }}][name]" value="{{ $plan->name }}" placeholder="e.g. Summer">
+                            @error('rate_plans.'.$i.'.name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </td>
                         <td><input type="text" class="form-control form-control-sm" name="rate_plans[{{ $i }}][from]" value="{{ $plan->conditions['from'] ?? '' }}" placeholder="e.g. June"></td>
                         <td><input type="text" class="form-control form-control-sm" name="rate_plans[{{ $i }}][to]" value="{{ $plan->conditions['to'] ?? '' }}" placeholder="e.g. August"></td>
-                        <td><input type="number" step="0.01" class="form-control form-control-sm" name="rate_plans[{{ $i }}][price]" value="{{ $plan->price }}" placeholder="0.00"></td>
+                        <td>
+                            <input type="number" step="0.01" class="form-control form-control-sm @error('rate_plans.'.$i.'.price') is-invalid @enderror"
+                                   name="rate_plans[{{ $i }}][price]" value="{{ $plan->price }}" placeholder="0.00">
+                            @error('rate_plans.'.$i.'.price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </td>
                         <td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-rate-row"><i class="fa fa-trash"></i></button></td>
                     </tr>
                 @endforeach
@@ -235,5 +280,13 @@
     document.querySelector('#ratePlansTable')?.addEventListener('click', function (e) {
         if (e.target.closest('.remove-rate-row')) e.target.closest('tr').remove();
     });
+
+    // FIX: agar server-side error is step ke kisi field mein hai to us field
+    // tak auto-scroll karo, taake user ko fauran nazar aaye (khaaskar tab
+    // jab wo pehle se scroll ho chuka ho ya field neeche ho).
+    var firstInvalid = document.querySelector('.is-invalid');
+    if (firstInvalid) {
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 })();
 </script>

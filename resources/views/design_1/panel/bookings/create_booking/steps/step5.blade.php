@@ -1,5 +1,12 @@
 {{--
     Step 5 — Prerequisites & Related
+
+    FIX (Step 2 requirement — validation error messages):
+    Nothing here was strictly required, but related_booking_ids.* has an
+    "exists:bookings,id" rule and prerequisite_text/related_booking_ids can
+    still fail (e.g. stale/removed booking id in the checkbox list). Added
+    the same error-summary + field-level pattern used elsewhere so this step
+    is consistent with the rest of the wizard.
 --}}
 @php
     $relatedIds = old('related_booking_ids', $booking->meta['related_booking_ids'] ?? []);
@@ -14,6 +21,18 @@
     </div>
 </div>
 
+{{-- FIX: general error summary for this step --}}
+@if ($errors->any())
+    <div class="alert alert-danger" id="step5ErrorsAlert">
+        <strong>{{ $errors->count() }} {{ $errors->count() == 1 ? 'error' : 'errors' }} found — please check the highlighted fields below:</strong>
+        <ul class="mb-0 mt-2">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="row">
     <div class="col-12 col-md-6">
         <div class="panel-card h-100 mb-0">
@@ -26,8 +45,11 @@
             </div>
 
             <div class="form-group mb-0">
-                <textarea name="prerequisite_text" rows="8" class="form-control"
+                <textarea name="prerequisite_text" rows="8" class="form-control @error('prerequisite_text') is-invalid @enderror"
                           placeholder="e.g. Must be 18+, valid ID required, swimming ability required">{{ old('prerequisite_text', $booking->meta['prerequisite_text'] ?? '') }}</textarea>
+                @error('prerequisite_text')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
             </div>
         </div>
     </div>
@@ -48,10 +70,11 @@
                     <div class="empty-title">No other bookings available yet</div>
                 </div>
             @else
-                <div class="form-group mb-0" style="max-height:260px; overflow-y:auto;">
+                <div class="form-group mb-0 @error('related_booking_ids') is-invalid @enderror" style="max-height:260px; overflow-y:auto;">
                     @foreach($allBookingsList as $related)
                         <div class="form-check py-1">
-                            <input class="form-check-input" type="checkbox"
+                            <input class="form-check-input @error('related_booking_ids.'.$loop->index) is-invalid @enderror"
+                                   type="checkbox"
                                    name="related_booking_ids[]" value="{{ $related->id }}"
                                    id="related_{{ $related->id }}"
                                    {{ in_array($related->id, $relatedIds) ? 'checked' : '' }}>
@@ -59,7 +82,24 @@
                         </div>
                     @endforeach
                 </div>
+                @error('related_booking_ids')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+                @foreach($relatedIds as $idx => $relatedId)
+                    @error('related_booking_ids.'.$idx)
+                        <div class="text-danger small mt-1">{{ $message }}</div>
+                    @enderror
+                @endforeach
             @endif
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var firstInvalid = document.querySelector('.is-invalid');
+    if (firstInvalid) {
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+})();
+</script>
