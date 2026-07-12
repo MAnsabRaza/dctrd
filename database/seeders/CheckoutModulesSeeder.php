@@ -24,11 +24,10 @@ class CheckoutModulesSeeder extends Seeder
                 ]),
                 'price_rule'  => json_encode([
                     'type'   => 'per_day',
-                    'amount' => 15, // ✅ har extra din ka charge — TEST VALUE, admin panel se change kar sakte ho
+                    'amount' => 15, // TEST VALUE — admin panel se change kar sakte ho
                 ]),
                 'order_index' => 1,
                 'is_active'   => true,
-                'is_required' => false,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ],
@@ -47,11 +46,10 @@ class CheckoutModulesSeeder extends Seeder
                 ]),
                 'price_rule'  => json_encode([
                     'type'   => 'per_hour',
-                    'amount' => 8, // ✅ har hour slot ka charge — TEST VALUE
+                    'amount' => 8, // TEST VALUE
                 ]),
                 'order_index' => 2,
                 'is_active'   => true,
-                'is_required' => false,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ],
@@ -61,8 +59,6 @@ class CheckoutModulesSeeder extends Seeder
                 'name'        => 'staff_member',
                 'input_type'  => 'select',
                 'config'      => json_encode([
-                    // 'source' tells frontend to load
-                    // dynamically from org's staff list
                     'source' => 'org_staff',
                 ]),
                 'price_rule'  => json_encode([
@@ -70,7 +66,6 @@ class CheckoutModulesSeeder extends Seeder
                 ]),
                 'order_index' => 3,
                 'is_active'   => true,
-                'is_required' => false,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ],
@@ -80,17 +75,15 @@ class CheckoutModulesSeeder extends Seeder
                 'name'        => 'persons_children',
                 'input_type'  => 'stepper',
                 'config'      => json_encode([
-                    'adults'   => ['min' => 1, 'max' => 20, 'price' => 10], // ← price per adult
-                    'children' => ['min' => 0, 'max' => 10, 'price' => 5],  // ← price per child
-                    'rooms'    => ['min' => 1, 'max' => 10, 'price' => 0],  // ← rooms ka price nahi
+                    'adults'   => ['min' => 1, 'max' => 20, 'price' => 10],
+                    'children' => ['min' => 0, 'max' => 10, 'price' => 5],
+                    'rooms'    => ['min' => 1, 'max' => 10, 'price' => 0],
                 ]),
                 'price_rule'  => json_encode([
                     'type' => 'per_person',
-                    // amount yahan zaroori nahi — service ab config.adults.price / config.children.price use karti hai
                 ]),
                 'order_index' => 4,
                 'is_active'   => true,
-                'is_required' => false,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ],
@@ -109,11 +102,9 @@ class CheckoutModulesSeeder extends Seeder
                 ]),
                 'price_rule'  => json_encode([
                     'type' => 'additive',
-                    // Sum of all selected options prices
                 ]),
                 'order_index' => 5,
                 'is_active'   => true,
-                'is_required' => false,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ],
@@ -132,7 +123,6 @@ class CheckoutModulesSeeder extends Seeder
                 ]),
                 'order_index' => 6,
                 'is_active'   => true,
-                'is_required' => true, // Must agree before checkout
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ],
@@ -151,7 +141,6 @@ class CheckoutModulesSeeder extends Seeder
                 ]),
                 'order_index' => 7,
                 'is_active'   => true,
-                'is_required' => false,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ],
@@ -170,7 +159,6 @@ class CheckoutModulesSeeder extends Seeder
                 ]),
                 'order_index' => 8,
                 'is_active'   => true,
-                'is_required' => false,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ],
