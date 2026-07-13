@@ -28,12 +28,12 @@ class VendorAbility extends Model
 
     public function vendor()
     {
-        return $this->belongsTo(\App\Models\User::class, 'vendor_id');
+        return $this->belongsTo(\App\User::class, 'vendor_id');
     }
 
     public function fieldMappings()
     {
-        return $this->hasMany(AbilityFieldMapping::class);
+        return $this->hasMany(AbilityFieldMappings::class);
     }
 
     public function syncLogs()
