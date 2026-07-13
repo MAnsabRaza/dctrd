@@ -21,7 +21,7 @@ class VendorAbilityController extends Controller
      */
     public function saveConfig(Request $request, int $abilityId): JsonResponse
     {
-        $this->authorize('abilities.connect');
+         $this->authorize('panel_others_abilities');
 
         $ability = Ability::where('is_active', true)->findOrFail($abilityId);
         $user    = auth()->user();
@@ -55,7 +55,7 @@ class VendorAbilityController extends Controller
      */
     public function disable(int $abilityId): JsonResponse
     {
-        $this->authorize('abilities.connect');
+         $this->authorize('panel_others_abilities');
 
         $ability = Ability::findOrFail($abilityId);
         $user    = auth()->user();
