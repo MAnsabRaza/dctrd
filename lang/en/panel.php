@@ -426,5 +426,9 @@ return [
 'external_connections' => 'External Connections',
 'abilities'=>'Ability',
 'disabled'=>'Disabled',
+'enabled'=>'Enabled',
+'ability_enabled_successfully'=>'Ability enabled successfully.',
+'ability_disabled_successfully'=>'Ability disabled successfully.',
+'disable'=>'disable',
 
 ];
