@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;   // ← YE LINE ADD KARO
 
 class VendorAbility extends Model
 {
@@ -33,7 +34,9 @@ class VendorAbility extends Model
     public function fieldMappings()
     {
         return $this->hasMany(AbilityFieldMapping::class);
-    } public function syncLogs()
+    }
+
+    public function syncLogs()
     {
         return $this->hasMany(AbilitySyncLog::class);
     }
@@ -55,7 +58,8 @@ class VendorAbility extends Model
 
         $this->attributes['config_json'] = json_encode($value);
     }
-  public function getConfigJsonAttribute($value)
+
+    public function getConfigJsonAttribute($value)
     {
         $decoded = json_decode($value, true) ?? [];
 
@@ -70,7 +74,8 @@ class VendorAbility extends Model
         }
 
         return $decoded;
-    } 
+    }
+
     protected function isSensitiveField(string $key): bool
     {
         return str_contains(strtolower($key), 'key')
