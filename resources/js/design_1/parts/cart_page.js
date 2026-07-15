@@ -116,27 +116,33 @@
         return 0;
     }
 
-    function calculateCheckoutExtras() {
-        var totalExtras = 0;
-
-        $(".checkout-module-card").each(function () {
-            totalExtras += calculateModuleExtraPrice($(this));
-        });
-
-        setAmount($(".js-cart-extras"), totalExtras);
-
-        var subtotal = readAmount($(".js-cart-subtotal"));
-        var discount = readAmount($(".js-cart-discount"));
-        var tax = readAmount($(".js-cart-tax"));
-        var delivery = readAmount($(".js-cart-delivery_fee"));
-        var total = subtotal - discount + tax + delivery + totalExtras;
-
-        if (total < 0) {
-            total = 0;
-        }
-
-        setAmount($(".js-cart-total"), total);
+  function calculateCheckoutExtras() {
+    // ✅ FIX: agar is page par module cards hi nahi hain (jaise checkout/payment page),
+    // to server ke already-correct rendered totals ko overwrite mat karo.
+    if ($(".checkout-module-card").length === 0) {
+        return;
     }
+
+    var totalExtras = 0;
+
+    $(".checkout-module-card").each(function () {
+        totalExtras += calculateModuleExtraPrice($(this));
+    });
+
+    setAmount($(".js-cart-extras"), totalExtras);
+
+    var subtotal = readAmount($(".js-cart-subtotal"));
+    var discount = readAmount($(".js-cart-discount"));
+    var tax = readAmount($(".js-cart-tax"));
+    var delivery = readAmount($(".js-cart-delivery_fee"));
+    var total = subtotal - discount + tax + delivery + totalExtras;
+
+    if (total < 0) {
+        total = 0;
+    }
+
+    setAmount($(".js-cart-total"), total);
+}
 
     $(document).ready(function () {
         if (typeof hasErrors !== "undefined" && hasErrors === "true") {
