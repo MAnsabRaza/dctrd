@@ -645,6 +645,9 @@
 ════════════════════════════════════════ */
 $(document).on('checkout:priceUpdate', function () {
 
+ if ($('[data-item-key]').length === 0) {
+        return;
+    }
     var extrasTotal = 0;
     var personsTotal = 0;
 

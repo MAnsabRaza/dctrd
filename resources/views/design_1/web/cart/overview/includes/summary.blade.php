@@ -14,13 +14,12 @@
             <span class="js-cart-discount js-cart-summary-amount" data-amount="{{ $calculatePrices['total_discount'] ?? 0 }}">{{ !empty($calculatePrices["total_discount"]) ? handlePrice($calculatePrices["total_discount"]) : 0 }}</span>
         </div>
 
-       <div class="cart-summary-row d-flex align-items-center justify-content-between mt-16">
+     <div class="cart-summary-row d-flex align-items-center justify-content-between mt-16">
     <span class="text-gray-500">{{ trans('checkout.extras') ?? trans('update.extras') ?? 'Extras' }}</span>
     <span class="js-cart-extras js-cart-summary-amount" data-amount="{{ $calculatePrices['extra_price'] ?? 0 }}">
         {{ !empty($calculatePrices['extra_price']) ? handlePrice($calculatePrices['extra_price']) : handlePrice(0) }}
     </span>
 </div>
-
         @if(!empty($calculatePrices['discountCoupon']))
             <input type="hidden" name="discount_id" value="{{ $calculatePrices['discountCoupon']->id }}">
 
