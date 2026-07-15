@@ -83,7 +83,8 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
     $breakdown = [];
 
     foreach ($modules as $module) {
-        $priceRule = $module->price_rule ?? [];
+       $priceRule = $module->price_rule ?? [];
+        $type      = $priceRule['type'] ?? 'none';
         $config    = $module->config ?? [];
         $type      = $priceRule['type'] ?? 'none';
         $data      = $submittedData[$module->name] ?? null;

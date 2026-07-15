@@ -439,6 +439,14 @@ class CartController extends Controller
 
             $calculate = $this->calculatePrice($carts, $user, $discountCoupon);
             $calculate['extra_price'] = round($extraPrice, 2);
+            \Log::info('EXTRA PRICE DEBUG', [
+    'extraPriceByCart' => $extraPriceByCart,
+    'extraPrice_total' => $extraPrice,
+    'modules_sample' => $modules->map(fn($m) => [
+        'name' => $m->name,
+        'price_rule' => $m->price_rule,
+    ]),
+]);
             $calculate['total'] = round($calculate['total'] + $calculate['extra_price'], 2);
 
             $order = $this->createOrderAndOrderItems(
