@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Observers\BookingObserver;
 use App\Observers\OrderObserver;
+use App\Observers\ProductObserver;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -38,7 +39,6 @@ class AppServiceProvider extends ServiceProvider
     {
          Order::observe(OrderObserver::class);
     Booking::observe(BookingObserver::class);
-    Payment::observe(PaymentObserver::class);
     Product::observe(ProductObserver::class);
 
         Validator::extend('check_price', function ($attribute, $value, $parameters, $validator) {
