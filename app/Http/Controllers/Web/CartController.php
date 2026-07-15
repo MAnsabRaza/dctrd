@@ -336,6 +336,9 @@ class CartController extends Controller
     public function checkout(Request $request, $carts = null)
     {
         $user = auth()->user();
+          \Log::info('CHECKOUT RAW REQUEST', [
+        'checkout_modules_raw' => $request->input('checkout_modules'),
+    ]);
 
         if (empty($carts)) {
             $carts = Cart::where('creator_id', $user->id)
@@ -431,6 +434,13 @@ class CartController extends Controller
                 $extraPriceByCart[$cart->id] = $itemExtraPrice;
                 $extraPriceBreakdownByCart[$cart->id] = $checkoutModuleService->calculateExtraPriceBreakdown($modules, $itemData);
                 $extraPrice += $itemExtraPrice;
+                 \Log::info('EXTRA PRICE PER CART ITEM', [
+        'cart_id' => $cart->id,
+        'itemData_submitted' => $itemData,
+        'modules_available' => $modules->pluck('name'),
+        'item_extra_price' => $itemExtraPrice,
+        'breakdown' => $extraPriceBreakdownByCart[$cart->id],
+    ]);
             }
 
             if (!empty($moduleErrors)) {
@@ -439,14 +449,7 @@ class CartController extends Controller
 
             $calculate = $this->calculatePrice($carts, $user, $discountCoupon);
             $calculate['extra_price'] = round($extraPrice, 2);
-            \Log::info('EXTRA PRICE DEBUG', [
-    'extraPriceByCart' => $extraPriceByCart,
-    'extraPrice_total' => $extraPrice,
-    'modules_sample' => $modules->map(fn($m) => [
-        'name' => $m->name,
-        'price_rule' => $m->price_rule,
-    ]),
-]);
+        
             $calculate['total'] = round($calculate['total'] + $calculate['extra_price'], 2);
 
             $order = $this->createOrderAndOrderItems(
