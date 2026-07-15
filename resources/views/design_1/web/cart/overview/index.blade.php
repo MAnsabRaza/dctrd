@@ -72,6 +72,12 @@
             box-shadow: 0 12px 24px rgba(17, 123, 255, .18);
         }
 
+        /* Cancellation policy error highlight (guard state) */
+        .booking-cancellation-card.cp-error {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, .12);
+        }
+
         {{--
             NOTE: Location card styles (.cart-location-card*, .cart-addr-*)
             and booking module card styles (.booking-info-*,
@@ -291,9 +297,22 @@
 
     /* ════════════════════════════════════════
        CHECKOUT BUTTON
+       Ab form submit hone se pehle cancellation-policy
+       checkboxes (jo required hain) validate hoti hain.
+       Agar koi required policy unchecked hai to submit
+       ruk jayega, us card ko highlight/scroll karke
+       user ko dikha diya jayega.
     ════════════════════════════════════════ */
     $(document).on('click', '.js-cart-checkout', function (e) {
         e.preventDefault();
+
+        // Guard: cancellation_policy module (agar page par present hai)
+        if (typeof window.validateBookingCheckoutModules === 'function') {
+            if (!window.validateBookingCheckoutModules()) {
+                return; // block submit — checkout nahi hoga
+            }
+        }
+
         var form = document.getElementById('cartCheckoutForm');
         if (form) { form.submit(); }
     });
