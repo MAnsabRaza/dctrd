@@ -7,7 +7,10 @@
 @section('content')
     <section class="cart-banner position-relative text-center">
         <h1 class="font-30 text-white font-weight-bold">{{ trans('cart.checkout') }}</h1>
-        <span class="payment-hint font-20 text-white d-block">{{ handlePrice($total) . ' ' .  trans('cart.for_items',['count' => $count]) }}</span>
+        @php
+    $total = $calculatePrices['total'] ?? ($total ?? 0);
+@endphp
+<span class="payment-hint font-20 text-white d-block">{{ handlePrice($total) . ' ' .  trans('cart.for_items',['count' => $count]) }}</span>
     </section>
 
     <section class="container mt-45">
@@ -133,10 +136,17 @@
             @endif
 
 
-            <div class="d-flex align-items-center justify-content-between mt-45">
-                <span class="font-16 font-weight-500 text-gray">{{ trans('financial.total_amount') }} {{ handlePrice($total) }}</span>
-                <button type="button" id="paymentSubmit" disabled class="btn btn-sm btn-primary">{{ trans('public.start_payment') }}</button>
-            </div>
+           @if(!empty($calculatePrices['extra_price']))
+    <div class="d-flex align-items-center justify-content-between mt-15">
+        <span class="font-14 text-gray">{{ trans('checkout.extras') ?? 'Extras' }}</span>
+        <span class="font-14 font-weight-500">{{ handlePrice($calculatePrices['extra_price']) }}</span>
+    </div>
+@endif
+
+<div class="d-flex align-items-center justify-content-between mt-45">
+    <span class="font-16 font-weight-500 text-gray">{{ trans('financial.total_amount') }} {{ handlePrice($total) }}</span>
+    <button type="button" id="paymentSubmit" disabled class="btn btn-sm btn-primary">{{ trans('public.start_payment') }}</button>
+</div>
         </form>
 
         @if(!empty($razorpay) and $razorpay)
