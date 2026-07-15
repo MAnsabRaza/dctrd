@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Order;
+use App\Models\Booking;
+use App\Models\Payment;
+use App\Models\Product;
+use App\Observers\BookingObserver;
+use App\Observers\OrderObserver;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -30,6 +36,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+         Order::observe(OrderObserver::class);
+    Booking::observe(BookingObserver::class);
+    Payment::observe(PaymentObserver::class);
+    Product::observe(ProductObserver::class);
 
         Validator::extend('check_price', function ($attribute, $value, $parameters, $validator) {
             return preg_match('/^\d*\.?\d*$/', $value);

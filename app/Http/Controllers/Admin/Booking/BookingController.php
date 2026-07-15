@@ -145,6 +145,10 @@ class BookingController extends Controller
         // priority do (booking-type level se zyada specific).
         $resolvedPriceUnit = $request->price_unit
             ?: ($subTemplate ? $subTemplate->priceUnit() : $templateConfig->priceUnitLabel());
+              $hasLocationData = $request->filled('address_line')
+    || $request->filled('city')
+    || $request->filled('lat')
+    || $request->filled('lng');
 
         $booking = Booking::create([
             'creator_id'       => $request->creator_id ?: auth()->id(),
@@ -196,7 +200,9 @@ class BookingController extends Controller
             'inventory'               => $request->inventory ?: null,
 
             // Location
-            'location_enabled' => $request->boolean('location_enabled'),
+            //'location_enabled' => $request->boolean('location_enabled'),
+          
+'location_enabled' => $hasLocationData,
             'address_line'     => $request->address_line,
             'city'             => $request->city,
             'state'            => $request->state,
@@ -321,6 +327,10 @@ class BookingController extends Controller
 
         $resolvedPriceUnit = $request->price_unit
             ?: ($subTemplate ? $subTemplate->priceUnit() : $templateConfig->priceUnitLabel());
+            $hasLocationData = $request->filled('address_line')
+    || $request->filled('city')
+    || $request->filled('lat')
+    || $request->filled('lng');
 
         $booking->update([
             'creator_id'       => $request->creator_id ?: $booking->creator_id,
@@ -366,7 +376,8 @@ class BookingController extends Controller
             'waitlist_enabled'        => $request->boolean('waitlist_enabled'),
             'inventory'               => $request->inventory ?: null,
 
-            'location_enabled' => $request->boolean('location_enabled'),
+            //'location_enabled' => $request->boolean('location_enabled'),
+            'location_enabled' => $hasLocationData,
             'address_line'     => $request->address_line,
             'city'             => $request->city,
             'state'            => $request->state,

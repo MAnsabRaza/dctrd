@@ -527,7 +527,6 @@ class BookingSubTemplateConfig
         'max_persons'             => 'integer|min:1',
         'max_children'            => 'integer|min:0',
         'sub_type'                => 'string|max:50',
-        'location_enabled'        => 'boolean',
         'deposit_enabled'         => 'boolean',
         'extras'                  => 'array',
         'price'                   => 'numeric|min:0',
@@ -629,24 +628,26 @@ class BookingSubTemplateConfig
      * (title/category_id/price/description/requirements) already have
      * their own rules elsewhere and are never hidden.
      */
-    public function rules(): array
-    {
-        $rules = [];
+   public function rules(): array
+{
+    $rules = [];
 
-        foreach ($this->required() as $field) {
-            if (isset(self::FIELD_RULE_MAP[$field])) {
-                $rules[$field] = 'required|' . self::FIELD_RULE_MAP[$field];
-            }
+    foreach ($this->required() as $field) {
+        if ($field === 'location_enabled') continue;   // <-- skip, ye derived field hai
+        if (isset(self::FIELD_RULE_MAP[$field])) {
+            $rules[$field] = 'required|' . self::FIELD_RULE_MAP[$field];
         }
-
-        foreach ($this->optional() as $field) {
-            if (isset(self::FIELD_RULE_MAP[$field])) {
-                $rules[$field] = 'nullable|' . self::FIELD_RULE_MAP[$field];
-            }
-        }
-
-        return $rules;
     }
+
+    foreach ($this->optional() as $field) {
+        if ($field === 'location_enabled') continue;   // <-- skip
+        if (isset(self::FIELD_RULE_MAP[$field])) {
+            $rules[$field] = 'nullable|' . self::FIELD_RULE_MAP[$field];
+        }
+    }
+
+    return $rules;
+}
 
     public function toArray(): array
     {

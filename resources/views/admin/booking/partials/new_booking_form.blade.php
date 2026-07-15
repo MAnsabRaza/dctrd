@@ -177,14 +177,10 @@
             </div>
 
             <div class="col-12 col-lg-6">
-                <div class="form-group" data-field-key="requirements">
-                    <label class="input-label js-field-label" data-field="requirements">
-                        Cancellation / Policy <span class="text-danger js-dynamic-required" style="display:none">*</span>
-                    </label>
-                    <textarea name="requirements" class="form-control @error('requirements') is-invalid @enderror" rows="4"
-                              placeholder="Cancellation or rescheduling policy...">{{ $field('requirements') }}</textarea>
-                    @error('requirements')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
+                {{-- FIX: "Cancellation / Rescheduling Policy" (requirements) field removed.
+                     This is already surfaced to customers via the `Cancellation Policy`
+                     checkout module (see checkout_modules in the template configs), so
+                     keeping a duplicate free-text field here was redundant and confusing. --}}
 
                 <div class="form-group" data-field-key="description">
                     <label class="input-label js-field-label" data-field="description">Description <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
@@ -282,22 +278,7 @@
                 </div>
             </div>
 
-            {{-- ══════════════════════════════════════════════════════
-                 FIX: capacity aur inventory pehle Accommodation, Events,
-                 aur Education sections mein ALAG-ALAG <input name="capacity">
-                 / <input name="inventory"> ke roop mein duplicate the.
-                 HTML forms mein duplicate `name` wale saare inputs POST
-                 hote hain (chahe wo `display:none` section ke andar ho) —
-                 PHP/Laravel sirf DOM order ki AAKHRI value rakhta hai.
-                 Isi wajah se sahi section mein value bharne ke bawajood
-                 validation fail ho rahi thi (kyunke neeche kisi doosre
-                 hidden section ka khali input value ko overwrite kar
-                 deta tha), aur error ke baad us doosre section ko bhi
-                 force-reveal kar deta tha.
-                 Fix: ab ye dono fields sirf YAHAN ek hi jagah maujood
-                 hain — label sirf text change hota hai (jaisa baaki
-                 shared meta fields ke liye pehle se ho raha hai).
-                 ══════════════════════════════════════════════════════ --}}
+            {{-- capacity aur inventory ek hi jagah maujood hain — label sirf text change hota hai. --}}
             <div class="col-12 col-md-6" data-field-key="capacity">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="capacity">
@@ -329,16 +310,27 @@
         <h3 class="booking-section-title">Location <span class="text-danger js-dynamic-required" style="display:none">*</span></h3>
         <div class="form-group d-flex align-items-center">
             <div class="custom-control custom-switch">
+                {{-- FIX: `location_enabled` "must be true or false" bug.
+                     A lone checkbox with value="on" fails Laravel's `boolean` rule
+                     (it only accepts true/false/1/0/"1"/"0"), and an unchecked
+                     checkbox sends nothing at all. We now always submit a clean
+                     0/1: a hidden default of 0 followed by the checkbox itself
+                     (same name, value="1"). Duplicate scalar field names resolve
+                     to the LAST value in the POST body, so checked -> 1, unchecked -> 0.
+                     On top of that, JS below recalculates this value from whether
+                     the address panel actually has data right before submit, so
+                     the switch is just a UI convenience, not the source of truth. --}}
+                <input type="hidden" name="location_enabled" value="0">
                 <input type="checkbox" name="location_enabled" id="newBookingLocationSwitch"
-                       value="on" class="custom-control-input"
-                       {{ (old('location_enabled') == 'on' || (!empty($booking) && $booking->location_enabled)) ? 'checked' : '' }}>
+                       value="1" class="custom-control-input"
+                       {{ (old('location_enabled') === '1' || (!empty($booking) && $booking->location_enabled)) ? 'checked' : '' }}>
                 <label class="custom-control-label" for="newBookingLocationSwitch"></label>
             </div>
             <label for="newBookingLocationSwitch" class="mb-0 ml-2">Enable Location</label>
         </div>
 
         <div id="newBookingLocationPanel"
-             style="{{ (old('location_enabled') == 'on' || (!empty($booking) && $booking->location_enabled)) ? '' : 'display:none' }}">
+             style="{{ (old('location_enabled') === '1' || (!empty($booking) && $booking->location_enabled)) ? '' : 'display:none' }}">
             @php $locationModel = $booking ?? null; @endphp
             @include('partials._location_picker', [
                 'locationModel' => $locationModel,
@@ -483,11 +475,6 @@
     <div class="booking-section booking-type-section" data-template-section="accommodation" style="display:none">
         <h3 class="booking-section-title">Accommodation Details</h3>
         <div class="row">
-            {{-- FIX: duplicate 'price' input removed — the Pricing section's
-                 Base Price field already covers this; its label auto-switches
-                 to "Price per Night" via field_labels config when this type
-                 is active. A second <input name="price"> here was silently
-                 overwriting the Pricing section's value on submit. --}}
             <div class="col-12 col-md-4">
                 <div class="form-group">
                     <label class="input-label">Price per Extra Person (per night)</label>
@@ -524,9 +511,6 @@
                     @error('max_children')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
-            {{-- FIX: duplicate 'capacity' input removed — now a single shared
-                 field in the Template-Specific Details section (label
-                 switches to "Room Capacity" via field_labels config). --}}
             <div class="col-12" data-field-key="meta.amenities">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.amenities">Amenities <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
@@ -556,13 +540,6 @@
     <div class="booking-section booking-type-section" data-template-section="events" style="display:none">
         <h3 class="booking-section-title">Event Details</h3>
         <div class="row">
-            {{-- FIX: duplicate 'capacity', 'inventory' and 'duration_minutes'
-                 inputs removed from here — 'capacity'/'inventory' now live
-                 once in the Template-Specific Details section (labels switch
-                 to "Total Capacity"/"Available Tickets" via field_labels
-                 config), and 'duration_minutes' already exists in the
-                 Schedule & Availability (time-slot) section, which is
-                 already shown for the 'events' type via TYPE_SECTIONS. --}}
             <div class="col-12 col-md-4" data-field-key="meta.venue_type">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.venue_type">Venue Type <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
@@ -649,9 +626,6 @@
                     @error('meta.level')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
-            {{-- FIX: duplicate 'capacity' ("Class Capacity") and 'inventory'
-                 ("Available Seats") inputs removed — now a single shared
-                 field each in the Template-Specific Details section. --}}
             <div class="col-12 col-md-6" data-field-key="meta.prerequisites">
                 <div class="form-group">
                     <label class="input-label js-field-label" data-field="meta.prerequisites">Prerequisites <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
@@ -883,9 +857,45 @@
     var CURRENT_SUB_TYPE     = {!! json_encode(old('sub_type', $booking->sub_type ?? '')) !!};
     var IS_REFRESHING_CATEGORY_SELECT = false;
 
-    var ALWAYS_VISIBLE_FIELD_KEYS = ['category_id', 'title', 'price', 'description', 'requirements'];
+    // FIX: 'requirements' removed — the field no longer exists in the form.
+    var ALWAYS_VISIBLE_FIELD_KEYS = ['category_id', 'title', 'price', 'description'];
 
     var CURRENT_TYPE_FIELD_LABELS = {};
+
+    // FIX: original, server-rendered label text for every field, captured once
+    // before any template logic runs. Every subsequent label update is
+    // rebuilt from this base layer so leftover labels from a previously
+    // selected template can never "stick" on a field that the new template
+    // doesn't happen to override.
+    var ORIGINAL_FIELD_LABELS = {};
+
+    function captureOriginalLabels() {
+        document.querySelectorAll('.js-field-label').forEach(function (labelEl) {
+            var key = labelEl.dataset.field;
+            var clone = labelEl.cloneNode(true);
+            clone.querySelectorAll('span, i').forEach(function (n) { n.remove(); });
+            ORIGINAL_FIELD_LABELS[key] = clone.textContent.trim();
+        });
+    }
+    captureOriginalLabels();
+
+    function setLabelText(labelEl, newLabel) {
+        if (!newLabel) return;
+        var keepEls = Array.prototype.slice.call(labelEl.querySelectorAll('span, i'));
+        labelEl.textContent = newLabel + ' ';
+        keepEls.forEach(function (node) { labelEl.appendChild(node); });
+    }
+
+    // Layers: sub-template label (most specific) > type-level label > original default.
+    function applyLabelLayers(typeLabels, subLabels) {
+        document.querySelectorAll('.js-field-label').forEach(function (labelEl) {
+            var key = labelEl.dataset.field;
+            var label = (subLabels && subLabels[key])
+                || (typeLabels && typeLabels[key])
+                || ORIGINAL_FIELD_LABELS[key];
+            setLabelText(labelEl, label);
+        });
+    }
 
     var TYPE_SECTIONS = {
         'beauty-spa': ['staff', 'time-slot', 'beauty-extras'],
@@ -998,14 +1008,41 @@
         return (parentId && CATEGORIES_BY_PARENT[parentId]) ? CATEGORIES_BY_PARENT[parentId] : [];
     }
 
-    function updateFieldLabel(containerEl, newLabel) {
-        if (!newLabel) return;
-        var label = containerEl.querySelector('label.input-label');
-        if (!label) return;
+    // FIX: category/type switch should clear previously-entered values, not
+    // just hide them. Always-visible fields (title/price/description/category)
+    // are intentionally left untouched.
+    function clearFieldGroupValue(fieldEl) {
+        fieldEl.querySelectorAll('input, select, textarea').forEach(function (input) {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.checked = false;
+            } else if (input.type !== 'hidden' || input.name !== 'location_enabled') {
+                input.value = '';
+            }
+            if (window.jQuery && window.jQuery(input).data('select2')) {
+                window.jQuery(input).val(null).trigger('change');
+            }
+        });
 
-        var keepEls = Array.prototype.slice.call(label.querySelectorAll('span, i'));
-        label.textContent = newLabel + ' ';
-        keepEls.forEach(function (node) { label.appendChild(node); });
+        // Extras are managed as dynamic rows, not just plain inputs — drop the rows entirely.
+        var extrasContainer = fieldEl.id === 'extrasContainer'
+            ? fieldEl
+            : fieldEl.querySelector('#extrasContainer');
+        if (extrasContainer) {
+            extrasContainer.innerHTML = '';
+        }
+    }
+
+    function clearAllDynamicFieldValues() {
+        document.querySelectorAll('[data-field-key]').forEach(function (fieldEl) {
+            var key = fieldEl.dataset.fieldKey;
+            if (ALWAYS_VISIBLE_FIELD_KEYS.indexOf(key) !== -1) return;
+            clearFieldGroupValue(fieldEl);
+        });
+    }
+
+    function updateFieldLabel(containerEl, newLabel) {
+        var label = containerEl.querySelector('label.input-label.js-field-label');
+        if (label) setLabelText(label, newLabel);
     }
 
     function applyTemplate(type, options) {
@@ -1019,6 +1056,7 @@
                 populateCategoryOptions('', null);
             }
             CURRENT_TYPE_FIELD_LABELS = {};
+            applyLabelLayers(null, null);
             if (shouldResetSubTemplate) {
                 resetSubTemplate();
             }
@@ -1045,16 +1083,7 @@
         }
 
         CURRENT_TYPE_FIELD_LABELS = config.field_labels || {};
-        if (config.field_labels) {
-            document.querySelectorAll('.js-field-label').forEach(function (el) {
-                var fieldKey = el.dataset.field;
-                if (config.field_labels[fieldKey]) {
-                    var stars = el.querySelectorAll('.text-danger');
-                    el.textContent = config.field_labels[fieldKey] + ' ';
-                    stars.forEach(function (star) { el.appendChild(star); });
-                }
-            });
-        }
+        applyLabelLayers(CURRENT_TYPE_FIELD_LABELS, null);
 
         buildSubTypeOptions(type);
 
@@ -1093,18 +1122,14 @@
             allFieldEls.forEach(function (el) {
                 el.style.display = '';
                 setDynamicRequired(el, false);
-                var key = el.dataset.fieldKey;
-                if (CURRENT_TYPE_FIELD_LABELS[key]) {
-                    updateFieldLabel(el, CURRENT_TYPE_FIELD_LABELS[key]);
-                }
             });
+            applyLabelLayers(CURRENT_TYPE_FIELD_LABELS, null);
             if (noteEl) noteEl.textContent = '';
             return;
         }
 
         var required = subConfig.required || [];
         var optional = subConfig.optional || [];
-        var labels   = subConfig.field_labels || {};
 
         allFieldEls.forEach(function (el) {
             var key = el.dataset.fieldKey;
@@ -1122,11 +1147,14 @@
                 el.style.display = 'none';
                 setDynamicRequired(el, false);
             }
-
-            if (labels[key]) {
-                updateFieldLabel(el, labels[key]);
-            }
         });
+
+        // FIX: labels are now always rebuilt in layered order — original
+        // default -> type-level override -> sub-template override — so a
+        // field that this sub-template doesn't mention falls back to the
+        // type-level (or original) label instead of keeping whatever the
+        // previously-selected sub-template last wrote into it.
+        applyLabelLayers(CURRENT_TYPE_FIELD_LABELS, subConfig.field_labels || {});
 
         var currentType = (document.getElementById('bookingTypeSelect') || {}).value || '';
         syncDynamicContainers(currentType);
@@ -1182,11 +1210,8 @@
         document.querySelectorAll('[data-field-key]').forEach(function (el) {
             el.style.display = '';
             setDynamicRequired(el, false);
-            var key = el.dataset.fieldKey;
-            if (CURRENT_TYPE_FIELD_LABELS[key]) {
-                updateFieldLabel(el, CURRENT_TYPE_FIELD_LABELS[key]);
-            }
         });
+        applyLabelLayers(CURRENT_TYPE_FIELD_LABELS, null);
         var noteEl = document.getElementById('subTemplateNote');
         if (noteEl) noteEl.textContent = '';
     }
@@ -1198,6 +1223,7 @@
         hideAllSections();
         resetSubTemplate();
         populateCategoryOptions(type, selectedCategoryId || null);
+        applyLabelLayers(CURRENT_TYPE_FIELD_LABELS, null);
 
         var note = config.meta && config.meta.filter_note ? config.meta.filter_note : '';
         var noteEl = document.getElementById('bookingTypeNote');
@@ -1335,6 +1361,20 @@
         });
     }
 
+    // FIX: `location_enabled` should be derived from whether address data
+    // actually exists, not trusted from the checkbox alone. The switch is
+    // kept purely as a UI convenience to reveal the picker; the real value
+    // gets recalculated right before submit.
+    function hasLocationData() {
+        if (!locationPanel) return false;
+        var inputs = locationPanel.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < inputs.length; i++) {
+            var val = (inputs[i].value || '').trim();
+            if (val) return true;
+        }
+        return false;
+    }
+
     var depositSwitch = document.getElementById('booking_deposit_enabled');
     var depositPanel  = document.getElementById('bookingDepositPanel');
 
@@ -1372,9 +1412,14 @@
     if (typeSelect) {
         typeSelect.addEventListener('change', function () {
             CURRENT_CATEGORY_ID = null;
+            // FIX: user actually changed the booking type — clear anything
+            // that was filled in for the previous type/category before the
+            // new template's sections are drawn.
+            clearAllDynamicFieldValues();
             prepareCategoryPicker(this.value, null);
         });
 
+        // Initial (edit-mode) setup — must NOT clear the booking's existing data.
         prepareCategoryPicker(typeSelect.value, CURRENT_CATEGORY_ID);
 
         @if(!empty($booking) && $booking->sub_type)
@@ -1392,15 +1437,20 @@
     if (categorySelect) {
         categorySelect.addEventListener('change', function () {
             if (IS_REFRESHING_CATEGORY_SELECT) return;
+            // FIX: user actually changed the category — clear previously
+            // entered template-specific values before switching templates.
+            clearAllDynamicFieldValues();
             applySelectedCategoryTemplate();
         });
 
         if (window.jQuery) {
             window.jQuery(categorySelect).on('select2:select', function () {
+                clearAllDynamicFieldValues();
                 applySelectedCategoryTemplate();
             });
         }
 
+        // Initial (edit-mode) setup — must NOT clear the booking's existing data.
         if (selectedCategorySlug()) {
             applySelectedCategoryTemplate();
         }
@@ -1450,6 +1500,12 @@
 
     if (bookingForm) {
         bookingForm.addEventListener('submit', function (e) {
+            // FIX: compute location_enabled from actual address data right
+            // before validation/submit, instead of trusting the switch.
+            if (locationSwitch) {
+                locationSwitch.checked = hasLocationData();
+            }
+
             var firstInvalid = null;
 
             bookingForm.querySelectorAll('[required]').forEach(function (el) {
@@ -1502,15 +1558,6 @@
         var keys = Object.keys(SERVER_ERRORS);
         if (!keys.length) return;
 
-        // FIX: pehle ye function kisi bhi [name] field ka poora parent
-        // [data-template-section] reveal kar deta tha agar uska error-key
-        // SERVER_ERRORS mein match ho jaye — chahe wo section current
-        // booking_type ke liye legally allowed ho ya na ho. Chunke
-        // 'duration_minutes' / 'capacity' / 'inventory' jaisi fields
-        // (duplicate-name bug ki wajah se) multiple sections mein
-        // maujood thin, Beauty Spa ka error Events ka poora section
-        // bhi force-show kar deta tha. Ab sirf TYPE_SECTIONS[currentType]
-        // mein listed sections hi is function se reveal ho sakte hain.
         var currentType     = (document.getElementById('bookingTypeSelect') || {}).value || '';
         var allowedSections = TYPE_SECTIONS[currentType] || [];
 

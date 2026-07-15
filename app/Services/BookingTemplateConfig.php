@@ -212,7 +212,7 @@ class BookingTemplateConfig
                 'price'            => 'Price per Appointment',
                 'extras'           => 'Extras / Add-ons',
                 'capacity'         => 'Capacity (group service)',
-                'requirements'     => 'Cancellation / Rescheduling Policy',
+               // 'requirements'     => 'Cancellation / Rescheduling Policy',
             ],
 
             'required' => [
@@ -291,7 +291,7 @@ class BookingTemplateConfig
                 'duration_minutes'        => 'Appointment Duration (minutes)',
                 'price'                   => 'Consultation Fee',
                 'description'             => 'Patient Notes / Info',
-                'requirements'            => 'Cancellation Policy',
+               // 'requirements'            => 'Cancellation Policy',
                 'meta.appointment_type'   => 'Service Type',
                 'meta.payment_option'     => 'Payment Option',
                 'meta.online_link'        => 'Online Meeting Link',
