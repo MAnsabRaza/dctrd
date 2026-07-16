@@ -150,6 +150,7 @@ class BookingController extends Controller
             'sub_type'     => 'nullable|string|max:255',
             'description'  => 'nullable|string',
             'requirements' => 'nullable|string',
+            'status' => 'nullable|in:draft,pending,published,rejected,inactive',
         ];
 
         $this->validate($request, $rules);
@@ -169,7 +170,7 @@ class BookingController extends Controller
             'sub_type'     => $data['sub_type'] ?? null,
             'description'  => $data['description'] ?? null,
             'requirements' => $data['requirements'] ?? null,
-            'status'       => $isDraft ? 'draft' : 'draft',
+           'status'       => $isDraft ? 'draft' : ($data['status'] ?? 'draft'),
         ]);
 
         $notifyOptions = [
@@ -318,6 +319,7 @@ class BookingController extends Controller
                 'sub_type'     => 'nullable|string|max:255',
                 'description'  => 'nullable|string',
                 'requirements' => 'nullable|string',
+                 'status'       => 'nullable|in:draft,pending,published,rejected,inactive', // <-- YE LINE ADD KI
             ];
         } elseif ($currentStep == 2) {
             $extraRules = collect($config->rules())->only(['capacity', 'inventory'])->toArray();
@@ -419,6 +421,7 @@ class BookingController extends Controller
                 'sub_type'     => $data['sub_type'] ?? null,
                 'description'  => $data['description'] ?? null,
                 'requirements' => $data['requirements'] ?? null,
+           'status'       => $isDraft ? 'draft' : ($data['status'] ?? 'draft'),
             ]);
         } elseif ($currentStep == 2) {
             $ratePlans = $data['rate_plans'] ?? [];

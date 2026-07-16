@@ -41,6 +41,7 @@
     // template, title, sub type etc. are all preserved and the category list
     // filters correctly — all without any JS.
     $currentType       = old('booking_type', request('booking_type', $booking->booking_type ?? ''));
+    $currentStatus = old('status', request('status', $booking->status ?? 'draft'));
     $currentSubType    = old('sub_type', request('sub_type', $booking->sub_type ?? ''));
     $currentCategoryId = old('category_id', request('category_id', $booking->category_id ?? ''));
     $currentTitle       = old('title', request('title', $booking->title ?? ''));
@@ -238,6 +239,20 @@
                        value="{{ $currentRequirements }}">
             </div>
         </div>
+      <div class="col-12 col-md-6">
+    <div class="form-group">
+        <label class="input-label">Status <span class="text-danger">*</span></label>
+        <select name="status" class="form-control @error('status') is-invalid @enderror">
+            <option value="">Select Status</option>
+            <option value="draft"     {{ $currentStatus == 'draft'     ? 'selected' : '' }}>Draft</option>
+            <option value="pending"   {{ $currentStatus == 'pending'   ? 'selected' : '' }}>Pending</option>
+            <option value="published" {{ $currentStatus == 'published' ? 'selected' : '' }}>Published</option>
+            <option value="rejected"  {{ $currentStatus == 'rejected'  ? 'selected' : '' }}>Rejected</option>
+            <option value="inactive"  {{ $currentStatus == 'inactive'  ? 'selected' : '' }}>Inactive</option>
+        </select>
+        @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
+</div>
     </div>
 </div>
 
