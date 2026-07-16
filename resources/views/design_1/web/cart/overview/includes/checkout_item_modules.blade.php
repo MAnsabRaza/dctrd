@@ -137,9 +137,14 @@
     $oldCheckOut = old("checkout_modules.{$itemKey}.days.check_out");
 
     // Fallbacks from cart->meta (slot info captured at "Add to cart" time)
+   // Fallbacks from cart->meta (slot info captured at "Add to cart" time)
     $slotDate  = $cart->meta['slot_date']  ?? null;
     $slotStart = $cart->meta['slot_start'] ?? null;
     $slotEnd   = $cart->meta['slot_end']   ?? null;
+
+    // Actual input values: old() na ho to "Book Now" sa pehla wala slot date use hoga
+    $checkInValue  = $oldCheckIn  ?: $slotDate;
+    $checkOutValue = $oldCheckOut ?: $slotDate;
 
     $checkInLabel = $oldCheckIn
         ? \Carbon\Carbon::parse($oldCheckIn)->format('d M Y')
@@ -190,14 +195,14 @@
                                name="{{ $datePrefix }}[check_in]"
                                id="bmod_cin_{{ $itemKey }}"
                                class="form-control form-control-sm bmod-date-input bmod-cin"
-                               value="{{ $oldCheckIn }}"
+                              value="{{ $checkInValue }}"
                                min="{{ now()->format('Y-m-d') }}"
                                style="border-radius:12px;">
                         <input type="date"
                                name="{{ $datePrefix }}[check_out]"
                                id="bmod_cout_{{ $itemKey }}"
                                class="form-control form-control-sm bmod-date-input bmod-cout"
-                               value="{{ $oldCheckOut }}"
+                               value="{{ $checkOutValue }}"
                                min="{{ now()->format('Y-m-d') }}"
                                style="border-radius:12px;">
                         <div class="booking-info-label bmod-cin-label">{{ $checkInLabel }}</div>
@@ -211,10 +216,18 @@
 
             {{-- HOURS MODULE --}}
             @if($hoursModule)
-                @php
-                    $slots   = $hoursModule->config['slots'] ?? ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
-                    $perHour = $hoursModule->price_rule['amount'] ?? 0;
-                @endphp
+            @php
+                        $slots   = $hoursModule->config['slots'] ?? ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+                        $perHour = $hoursModule->price_rule['amount'] ?? 0;
+
+                        // Book Now sa pehle jo time select hua tha wo agar list mein nahi
+                        // to add kardo, warna select box mein wo "selected" nahi bantа
+                        // aur submit khali chala jata (yehi tha conflict wali wajah)
+                        if ($selectedTime and !in_array($selectedTime, $slots)) {
+                            $slots[] = $selectedTime;
+                            sort($slots);
+                        }
+                    @endphp
                 <div class="booking-info-card" data-module-name="hours" data-price-type="per_hour" data-price-amount="{{ $perHour }}">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="booking-info-title">
@@ -404,8 +417,8 @@
                        id="cp_agree_{{ $itemKey }}"
                        name="{{ $policyPrefix }}"
                        value="1"
-                       {{ old("checkout_modules.{$itemKey}.cancellation_policy") ? 'checked' : '' }}
-                       {{ $policyModule->is_required ? 'required' : '' }}>
+                      {{ old("checkout_modules.{$itemKey}.cancellation_policy") ? 'checked' : '' }}
+                       required>
                 <span class="font-13 font-weight-bold">
                     {{ $policyModule->translated_label ?? trans('cart.cancellation_policy') ?? 'Cancellation Policy' }}
                     @if($policyModule->is_required)<span class="text-danger">*</span>@endif
