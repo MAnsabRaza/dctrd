@@ -170,7 +170,7 @@ class BookingController extends Controller
             'sub_type'     => $data['sub_type'] ?? null,
             'description'  => $data['description'] ?? null,
             'requirements' => $data['requirements'] ?? null,
-           'status'       => $isDraft ? 'draft' : ($data['status'] ?? 'draft'),
+           'status'       => $data['status'] ?? null,
         ]);
 
         $notifyOptions = [
@@ -421,7 +421,7 @@ class BookingController extends Controller
                 'sub_type'     => $data['sub_type'] ?? null,
                 'description'  => $data['description'] ?? null,
                 'requirements' => $data['requirements'] ?? null,
-           'status'       => $isDraft ? 'draft' : ($data['status'] ?? 'draft'),
+                'status'       => $data['status'] ?? null,
             ]);
         } elseif ($currentStep == 2) {
             $ratePlans = $data['rate_plans'] ?? [];
