@@ -687,7 +687,6 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
                 ->where('type', 'import_export|dropshipping')
                 ->name('panel.setting.erp.toggle_subscription');
         });
-    });
     Route::group(['prefix' => 'support'], function () {
         Route::get('/', 'SupportsController@index');
         Route::get('/new', 'SupportsController@create');
