@@ -20,7 +20,7 @@ return new class extends Migration
             $table->enum('type', ['import_export', 'dropshipping']);
 
             $table->string('base_url')->nullable();
-            $table->string('api_key')->nullable();      // encrypted via mutator
+            $table->text('api_key')->nullable();      // encrypted via mutator
             $table->boolean('is_active')->default(false);
 
             // "Export Ability" toggle + checklist (Image 2/3)
