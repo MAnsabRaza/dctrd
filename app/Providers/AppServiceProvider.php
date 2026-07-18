@@ -37,9 +37,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-         Order::observe(OrderObserver::class);
-    Booking::observe(BookingObserver::class);
-    Product::observe(ProductObserver::class);
+         
 
         Validator::extend('check_price', function ($attribute, $value, $parameters, $validator) {
             return preg_match('/^\d*\.?\d*$/', $value);

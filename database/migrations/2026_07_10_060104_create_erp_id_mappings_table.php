@@ -13,23 +13,17 @@ return new class extends Migration
      */
     public function up()
     {
-       Schema::create('erp_id_mappings', function (Blueprint $table) {
+     Schema::create('erp_id_mappings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('vendor_id');
-            $table->unsignedBigInteger('vendor_ability_id');
-            $table->string('entity'); // customer|product|order|booking|payment
-            $table->unsignedBigInteger('local_id')->nullable();
-            $table->string('remote_id')->nullable();
-            $table->string('sync_hash', 64)->nullable(); // md5 of last-synced payload
+            $table->foreignId('vendor_id')->constrained('users')->cascadeOnDelete();
+            $table->enum('entity_type', ['customer', 'product', 'order', 'booking', 'payment']);
+            $table->unsignedBigInteger('local_id');
+            $table->string('remote_id')->nullable(); // ERP (Perfex) side ID, string kyunki kabhi UUID ho sakta hai
             $table->timestamp('last_synced_at')->nullable();
             $table->timestamps();
- 
-            $table->foreign('vendor_ability_id')
-                ->references('id')->on('vendor_abilities')
-                ->onDelete('cascade');
- 
-            $table->unique(['vendor_ability_id', 'entity', 'local_id'], 'erp_map_local_unique');
-            $table->index(['vendor_ability_id', 'entity', 'remote_id'], 'erp_map_remote_idx');
+
+            $table->unique(['vendor_id', 'entity_type', 'local_id'], 'erp_map_unique');
+            $table->index(['vendor_id', 'entity_type', 'remote_id']);
         });
     }
 

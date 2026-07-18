@@ -5,18 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ErpIdMapping extends Model
+class ErpSyncLog extends Model
 {
     use HasFactory;
 
-    protected $table = 'erp_id_mappings';
+    protected $table = 'erp_sync_logs';
 
     protected $fillable = [
-        'vendor_id', 'entity_type', 'local_id', 'remote_id', 'last_synced_at',
+        'vendor_id', 'entity_type', 'local_id', 'remote_id', 'action',
+        'status', 'attempts', 'request_payload', 'response_payload', 'error_message',
     ];
 
     protected $casts = [
-        'last_synced_at' => 'datetime',
+        'request_payload'  => 'array',
+        'response_payload' => 'array',
     ];
 
     public function vendor()
