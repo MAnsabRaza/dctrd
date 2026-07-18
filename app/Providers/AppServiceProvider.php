@@ -37,7 +37,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-         
+        // ✅ YAHAN ADD KARO — sabse pehle, boot() ke andar
+        $this->app['router']->aliasMiddleware('erp.key', \App\Http\Middleware\VerifyErpApiKey::class);
 
         Validator::extend('check_price', function ($attribute, $value, $parameters, $validator) {
             return preg_match('/^\d*\.?\d*$/', $value);
