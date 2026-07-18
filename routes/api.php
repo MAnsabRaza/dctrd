@@ -40,6 +40,10 @@ Route::group(['prefix' => '/development'], function () {
 
 
 });
+Route::group(['prefix' => '_ERP/api/v1', 'middleware' => 'erp.key:import_export'], function () {
+    Route::get('/clients', [ClientsController::class, 'index']);
+    Route::post('/clients', [ClientsController::class, 'store']);
+});
 
 Route::prefix('v1')->group(function () {
     Route::get('/courses', [\App\Http\Controllers\LocationController::class, 'courses']);
