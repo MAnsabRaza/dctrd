@@ -13,18 +13,18 @@ return new class extends Migration
      */
     public function up()
     {
-     Schema::create('erp_id_mappings', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('vendor_id')->constrained('users')->cascadeOnDelete();
-            $table->enum('entity_type', ['customer', 'product', 'order', 'booking', 'payment']);
-            $table->unsignedBigInteger('local_id');
-            $table->string('remote_id')->nullable(); // ERP (Perfex) side ID, string kyunki kabhi UUID ho sakta hai
-            $table->timestamp('last_synced_at')->nullable();
-            $table->timestamps();
+    Schema::create('erp_id_mappings', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('vendor_id')->constrained('users')->cascadeOnDelete();
+    $table->enum('entity_type', ['customer', 'product', 'order', 'booking', 'payment']);
+    $table->unsignedBigInteger('local_id');
+    $table->string('remote_id')->nullable();
+    $table->timestamp('last_synced_at')->nullable();
+    $table->timestamps();
 
-            $table->unique(['vendor_id', 'entity_type', 'local_id'], 'erp_map_unique');
-            $table->index(['vendor_id', 'entity_type', 'remote_id']);
-        });
+    $table->unique(['vendor_id', 'entity_type', 'local_id'], 'erp_map_unique');
+    $table->index(['vendor_id', 'entity_type', 'remote_id']);
+});
     }
 
     /**
