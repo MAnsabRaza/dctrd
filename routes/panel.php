@@ -674,19 +674,19 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
         ->name('panel.setting.abilities.disable');
     });
 
-      Route::group(['prefix' => 'erp'], function () {
-            Route::post('/{type}/save', 'ErpSettingsController@save')
-                ->where('type', 'import_export|dropshipping')
-                ->name('panel.setting.erp.save');
+    Route::group(['prefix' => 'setting/erp'], function () {
+    Route::post('/{type}/save', 'ErpSettingsController@save')
+        ->where('type', 'import_export|dropshipping')
+        ->name('panel.setting.erp.save');
 
-            Route::post('/{type}/regenerate-key', 'ErpSettingsController@regenerateKey')
-                ->where('type', 'import_export|dropshipping')
-                ->name('panel.setting.erp.regenerate_key');
+    Route::post('/{type}/regenerate-key', 'ErpSettingsController@regenerateKey')
+        ->where('type', 'import_export|dropshipping')
+        ->name('panel.setting.erp.regenerate_key');
 
-            Route::post('/{type}/toggle-subscription', 'ErpSettingsController@toggleSubscription')
-                ->where('type', 'import_export|dropshipping')
-                ->name('panel.setting.erp.toggle_subscription');
-        });
+    Route::post('/{type}/toggle-subscription', 'ErpSettingsController@toggleSubscription')
+        ->where('type', 'import_export|dropshipping')
+        ->name('panel.setting.erp.toggle_subscription');
+});
     Route::group(['prefix' => 'support'], function () {
         Route::get('/', 'SupportsController@index');
         Route::get('/new', 'SupportsController@create');
