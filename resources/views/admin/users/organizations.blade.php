@@ -207,6 +207,7 @@
                         <th>{{ trans('admin/main.instructors') }}</th>
                         <th>{{ trans('admin/main.students') }}</th>
                         <th>{{ trans('admin/main.register_date') }}</th>
+                         <th class="text-center">API Status</th> 
                         <th>{{ trans('admin/main.status') }}</th>
                         <th width="120">{{ trans('admin/main.actions') }}</th>
                     </tr>
@@ -277,6 +278,19 @@
                             <td class="mt-0 mb-1">{{ $user->getOrganizationStudents()->count() }}</td>
 
                             <td>{{ dateTimeFormat($user->created_at, 'j M Y - H:i') }}</td>
+                              <td class="text-center">   {{-- ← NAYA <td> --}}
+                                @php $creds = ($erpCredentials ?? collect())->get($user->id, collect()); @endphp
+                                @foreach($creds as $cred)
+                                    @if($cred->is_active)
+                                        <span class="badge badge-success text-capitalize mr-1">
+                                            {{ $cred->type === 'import_export' ? 'Import/Export' : 'Dropshipping' }}
+                                        </span>
+                                    @endif
+                                @endforeach
+                                @if($creds->where('is_active', true)->isEmpty())
+                                    <span class="badge badge-light text-muted">—</span>
+                                @endif
+                            </td>
 
                             <td>
                                 <div class="media-body">

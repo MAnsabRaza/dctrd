@@ -36,6 +36,7 @@ use App\Http\Controllers\Admin\Booking\BookingContentSettingsController;
 use App\Http\Controllers\Admin\Booking\BookingFeaturedController;
 use App\Http\Controllers\Admin\Booking\BookingTopCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingFeatureCategoryController;
+use App\Http\Controllers\Admin\ErpCredentialController;
 use App\Http\Controllers\Admin\CalendarLogController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
@@ -150,6 +151,19 @@ Route::group(['prefix' => 'time-slot'], function () {
     Route::get('/excel', [BookingOrderController::class, 'exportExcel']);
     Route::get('/{id}/invoice', [BookingOrderController::class, 'invoice']);
     Route::get('/{id}/refund', [BookingOrderController::class, 'refund']);
+});
+Route::group(['prefix' => 'users/{id}/erp'], function () {
+    Route::post('/{type}/save', [ErpCredentialController::class, 'save'])
+        ->name('admin.users.erp.save')
+        ->where('type', 'import_export|dropshipping');
+
+    Route::post('/{type}/regenerate-key', [ErpCredentialController::class, 'regenerateKey'])
+        ->name('admin.users.erp.regenerate_key')
+        ->where('type', 'import_export|dropshipping');
+
+    Route::post('/{type}/toggle-status', [ErpCredentialController::class, 'toggleStatus'])
+        ->name('admin.users.erp.toggle_status')
+        ->where('type', 'import_export|dropshipping');
 });
     
     // Booking sellers list

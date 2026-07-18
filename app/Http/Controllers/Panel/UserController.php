@@ -93,6 +93,7 @@ class UserController extends Controller
         $availabilitySettingsData = [];
         $calendarConnectionsData = [];
         $abilitiesSettingsData = [];
+        $erpSettingsData = [];
 
         if ($step == "extra_information") {
             $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
@@ -140,7 +141,14 @@ elseif ($step == "abilities") {
 
     $abilitiesSettingsData = $this->makeAbilitiesViewData($user->id);
 }
-         elseif ($step == "availability") {
+elseif ($step == "erp") {
+    if (!($user->isOrganization() or $user->isTeacher())) {
+        abort(404);
+    }
+
+    $erpSettingsData = app(\App\Http\Controllers\Panel\ErpSettingsController::class)->viewData($user->id);
+}
+   elseif ($step == "availability") {
             if (!($user->isOrganization() or $user->isTeacher())) {
                 abort(404);
             }
@@ -172,7 +180,7 @@ elseif ($step == "abilities") {
             'attachments' => $attachments,
             'userLoginHistories' => $userLoginHistories,
             'moduleSettings' => $moduleSettings,
-        ], $bookingSettingsData, $availabilitySettingsData,$calendarConnectionsData,$abilitiesSettingsData);
+        ], $bookingSettingsData, $availabilitySettingsData,$calendarConnectionsData,$abilitiesSettingsData,$erpSettingsData );
     }
     private function makeAbilitiesViewData(int $vendorId): array
 {

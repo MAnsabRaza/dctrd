@@ -326,6 +326,14 @@
                                                 aria-selected="true">{{ trans('panel.external_connections') }}</a>
                                         </li>
 
+                                        @can('admin_users_erp_credentials')
+<li class="nav-item">
+    <a class="nav-link {{ (request()->get('tab') == 'apis') ? 'active' : '' }}"
+        id="apis-tab" data-toggle="tab" href="#apis" role="tab"
+        aria-controls="apis" aria-selected="true">API Status</a>
+</li>
+@endcan
+
 
                                         @if(!empty($becomeInstructor))
                                             <li class="nav-item">
@@ -441,6 +449,9 @@
                                         @endif
 
                                         @include('admin.users.editTabs.checkout_options')
+                                        @can('admin_users_erp_credentials')
+    @include('admin.users.editTabs.apis')
+@endcan
 
                                         @include('admin.users.editTabs.availability')
 

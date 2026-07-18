@@ -103,6 +103,11 @@ class UserController extends Controller
         if ($is_export_excel) {
             return $users;
         }
+        // ===== NAYA BLOCK (ERP module) =====
+    $erpCredentials = \App\Models\ErpCredential::whereIn('vendor_id', $users->pluck('id'))
+        ->get()
+        ->groupBy('vendor_id');
+    // ===== NAYA BLOCK END =====
 
         $data = [
             'pageTitle' => trans('admin/main.organizations'),
@@ -111,6 +116,7 @@ class UserController extends Controller
             'verifiedOrganizations' => $verifiedOrganizations,
             'totalOrganizationsTeachers' => $totalOrganizationsTeachers,
             'totalOrganizationsStudents' => $totalOrganizationsStudents,
+            'erpCredentials' => $erpCredentials,
             'userGroups' => $userGroups,
         ];
 
@@ -658,6 +664,7 @@ class UserController extends Controller
         }
 
         $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
+        $erpData = app(ErpCredentialController::class)->viewData($user->id);
 
         $bookingSettingsData = app(BookingCategorySettingsController::class)->makeViewData($user->id);
 
@@ -717,6 +724,8 @@ $calendarLogs = \App\Models\CalendarLog::where('user_id', $user->id)
     'calendarIcalUrl' => $calendarIcalUrl,
     'calendarLogs' => $calendarLogs,
 ];
+ // ===== YAHAN ADD KARO =====
+        $data = array_merge($data, $erpData);
 
         if (!empty($bookingSettingsData)) {
             $data = array_merge($data, $bookingSettingsData);
