@@ -15,7 +15,8 @@ return new class extends Migration
     {
     Schema::create('erp_id_mappings', function (Blueprint $table) {
     $table->id();
-    $table->foreignId('vendor_id')->constrained('users')->cascadeOnDelete();
+    $table->unsignedInteger('vendor_id');
+            $table->foreign('vendor_id')->references('id')->on('users')->onDelete('cascade');
     $table->enum('entity_type', ['customer', 'product', 'order', 'booking', 'payment']);
     $table->unsignedBigInteger('local_id');
     $table->string('remote_id')->nullable();
