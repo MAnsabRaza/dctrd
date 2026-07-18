@@ -1,6 +1,6 @@
 @php
-    $erpImportExport  = $erpImportExport  ?? null;
-    $erpDropshipping  = $erpDropshipping  ?? null;
+  $erpImportExport  = $erpImportExport  ?? new \App\Models\ErpCredential();
+    $erpDropshipping  = $erpDropshipping  ?? new \App\Models\ErpCredential();
     $erpChecklistKeys = $erpChecklistKeys ?? \App\Models\ErpCredential::CHECKLIST_KEYS;
 
     $checklistLabels = [

@@ -60,128 +60,118 @@ class UserController extends Controller
     }
 
     public function getUserEditPageData(Request $request, $user, $step): array
-    {
-        $categories = Category::getCategories();
+{
+    $categories = Category::getCategories();
 
-        $userMetas = $user->userMetas;
+    $userMetas = $user->userMetas;
 
-        if (!empty($userMetas)) {
-            foreach ($userMetas as $meta) {
-                $user->{$meta->name} = $meta->value;
-            }
+    if (!empty($userMetas)) {
+        foreach ($userMetas as $meta) {
+            $user->{$meta->name} = $meta->value;
         }
-
-        $occupations = $user->occupations->pluck('category_id')->toArray();
-
-
-        $userLanguages = getGeneralSettings('user_languages');
-        if (!empty($userLanguages) and is_array($userLanguages)) {
-            $userLanguages = getLanguages($userLanguages);
-        } else {
-            $userLanguages = [];
-        }
-
-        $countries = null;
-        $provinces = null;
-        $cities = null;
-        $districts = null;
-        $attachments = null;
-        $userLoginHistories = null;
-        $moduleSettings = null;
-        $formFieldsHtml = null;
-        $bookingSettingsData = [];
-        $availabilitySettingsData = [];
-        $calendarConnectionsData = [];
-        $abilitiesSettingsData = [];
-        $erpSettingsData = [];
-
-        if ($step == "extra_information") {
-            $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
-                ->where('type', Region::$country)
-                ->get();
-
-            $userType = "organization";
-            if ($user->isTeacher()) {
-                $userType = "teacher";
-            } elseif ($user->isUser()) {
-                $userType = "user";
-            }
-
-            $formFieldsHtml = $this->getFormFieldsByUserType($request, $userType, true, $user);
-
-        } elseif ($step == "about") {
-            $attachments = $user->profileAttachments;
-        } elseif ($step == "login_history") {
-            $userLoginHistories = UserLoginHistory::query()->where('user_id', $user->id)
-                ->orderBy('created_at', 'desc')
-                ->get();
-        } elseif ($step == "checkout_options") {
-            if (!($user->isOrganization() or $user->isTeacher())) {
-                abort(404);
-            }
-
-            $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
-        } elseif ($step == "booking_settings") {
-            if (!($user->isOrganization() or $user->isTeacher())) {
-                abort(404);
-            }
-
-            $bookingSettingsData = $this->makeBookingSettingsViewData($user->id);
-        } elseif ($step == "external_connections") {
-    if (!($user->isOrganization() or $user->isTeacher())) {
-        abort(404);
     }
 
-    $calendarConnectionsData = $this->makeExternalConnectionsViewData($user->id);
-}
-elseif ($step == "abilities") {
-    if (!($user->isOrganization() or $user->isTeacher())) {
-        abort(404);
+    $occupations = $user->occupations->pluck('category_id')->toArray();
+
+    $userLanguages = getGeneralSettings('user_languages');
+    if (!empty($userLanguages) and is_array($userLanguages)) {
+        $userLanguages = getLanguages($userLanguages);
+    } else {
+        $userLanguages = [];
     }
 
-    $abilitiesSettingsData = $this->makeAbilitiesViewData($user->id);
-}
-elseif ($step == "erp") {
-    if (!($user->isOrganization() or $user->isTeacher())) {
-        abort(404);
+    $countries = null;
+    $provinces = null;
+    $cities = null;
+    $districts = null;
+    $attachments = null;
+    $userLoginHistories = null;
+    $moduleSettings = null;
+    $formFieldsHtml = null;
+    $bookingSettingsData = [];
+    $availabilitySettingsData = [];
+    $calendarConnectionsData = [];
+    $abilitiesSettingsData = [];
+    $erpSettingsData = [];
+
+    // ===== ERP DATA — HAMESHA COMPUTE HO (step-independent) =====
+    if ($user->isOrganization() or $user->isTeacher()) {
+        $erpSettingsData = app(\App\Http\Controllers\Panel\ErpSettingsController::class)->viewData($user->id);
     }
+    // ================================================================
 
-    $erpSettingsData = app(\App\Http\Controllers\Panel\ErpSettingsController::class)->viewData($user->id);
-}
-   elseif ($step == "availability") {
-            if (!($user->isOrganization() or $user->isTeacher())) {
-                abort(404);
-            }
-
-            $availabilitySettingsData = $this->makeAvailabilitySettingsViewData($user->id);
-        }
-
-        $userBanks = UserBank::query()
-            ->with([
-                'specifications'
-            ])
-            ->orderBy('created_at', 'desc')
+    if ($step == "extra_information") {
+        $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
+            ->where('type', Region::$country)
             ->get();
 
-        return array_merge([
-            'categories' => $categories,
-            'educations' => $userMetas->where('name', 'education'),
-            'experiences' => $userMetas->where('name', 'experience'),
-            'occupations' => $occupations,
-            'userLanguages' => $userLanguages,
-            'currentStep' => $step,
-            'countries' => $countries,
-            'provinces' => $provinces,
-            'cities' => $cities,
-            'districts' => $districts,
-            'userBanks' => $userBanks,
-            'unitPreferences' => $this->getUnitPreferencesData(),
-            'formFieldsHtml' => $formFieldsHtml,
-            'attachments' => $attachments,
-            'userLoginHistories' => $userLoginHistories,
-            'moduleSettings' => $moduleSettings,
-        ], $bookingSettingsData, $availabilitySettingsData,$calendarConnectionsData,$abilitiesSettingsData,$erpSettingsData );
+        $userType = "organization";
+        if ($user->isTeacher()) {
+            $userType = "teacher";
+        } elseif ($user->isUser()) {
+            $userType = "user";
+        }
+
+        $formFieldsHtml = $this->getFormFieldsByUserType($request, $userType, true, $user);
+
+    } elseif ($step == "about") {
+        $attachments = $user->profileAttachments;
+    } elseif ($step == "login_history") {
+        $userLoginHistories = UserLoginHistory::query()->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    } elseif ($step == "checkout_options") {
+        if (!($user->isOrganization() or $user->isTeacher())) {
+            abort(404);
+        }
+        $moduleSettings = app(CheckoutModuleService::class)->getOrgModuleSettings($user->id);
+    } elseif ($step == "booking_settings") {
+        if (!($user->isOrganization() or $user->isTeacher())) {
+            abort(404);
+        }
+        $bookingSettingsData = $this->makeBookingSettingsViewData($user->id);
+    } elseif ($step == "external_connections") {
+        if (!($user->isOrganization() or $user->isTeacher())) {
+            abort(404);
+        }
+        $calendarConnectionsData = $this->makeExternalConnectionsViewData($user->id);
+    } elseif ($step == "abilities") {
+        if (!($user->isOrganization() or $user->isTeacher())) {
+            abort(404);
+        }
+        $abilitiesSettingsData = $this->makeAbilitiesViewData($user->id);
+    } elseif ($step == "availability") {
+        if (!($user->isOrganization() or $user->isTeacher())) {
+            abort(404);
+        }
+        $availabilitySettingsData = $this->makeAvailabilitySettingsViewData($user->id);
     }
+    // ⚠️ "erp" step ka alag elseif ab yahan NAHI hai — upar unconditional ho chuka hai
+
+    $userBanks = UserBank::query()
+        ->with(['specifications'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return array_merge([
+        'categories' => $categories,
+        'educations' => $userMetas->where('name', 'education'),
+        'experiences' => $userMetas->where('name', 'experience'),
+        'occupations' => $occupations,
+        'userLanguages' => $userLanguages,
+        'currentStep' => $step,
+        'countries' => $countries,
+        'provinces' => $provinces,
+        'cities' => $cities,
+        'districts' => $districts,
+        'userBanks' => $userBanks,
+        'unitPreferences' => $this->getUnitPreferencesData(),
+        'formFieldsHtml' => $formFieldsHtml,
+        'attachments' => $attachments,
+        'userLoginHistories' => $userLoginHistories,
+        'moduleSettings' => $moduleSettings,
+    ], $bookingSettingsData, $availabilitySettingsData, $calendarConnectionsData, $abilitiesSettingsData, $erpSettingsData);
+}
     private function makeAbilitiesViewData(int $vendorId): array
 {
     $abilities = app(\App\Services\AbilityService::class)->getAvailableAbilitiesForVendor($vendorId);
