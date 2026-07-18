@@ -58,7 +58,7 @@ class ClientsController extends Controller
                 'full_name'  => $data['full_name'],
                 'email'      => $data['email'] ?? null,
                 'mobile'     => $data['mobile'] ?? null,
-                'role_name'  => \App\Models\Role::$user,
+                'role_name'  => 1,
                 'password'   => User::generatePassword(str()->random(12)),
                 'verified'   => true,
                 'created_at' => time(),
