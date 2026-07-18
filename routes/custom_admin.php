@@ -152,19 +152,7 @@ Route::group(['prefix' => 'time-slot'], function () {
     Route::get('/{id}/invoice', [BookingOrderController::class, 'invoice']);
     Route::get('/{id}/refund', [BookingOrderController::class, 'refund']);
 });
-Route::group(['prefix' => 'users/{id}/erp'], function () {
-    Route::post('/{type}/save', [ErpCredentialController::class, 'save'])
-        ->name('admin.users.erp.save')
-        ->where('type', 'import_export|dropshipping');
 
-    Route::post('/{type}/regenerate-key', [ErpCredentialController::class, 'regenerateKey'])
-        ->name('admin.users.erp.regenerate_key')
-        ->where('type', 'import_export|dropshipping');
-
-    Route::post('/{type}/toggle-status', [ErpCredentialController::class, 'toggleStatus'])
-        ->name('admin.users.erp.toggle_status')
-        ->where('type', 'import_export|dropshipping');
-});
     
     // Booking sellers list
     Route::get('/sellers', [BookingSellerController::class, 'index']);
@@ -303,6 +291,20 @@ Route::post('/users/{id}/booking-options-update', [UserController::class, 'booki
 
 Route::post('/users/{id}/checkout-options-update', [UserController::class, 'checkoutOptionsUpdate'])
     ->name('admin.users.checkout_options.update');
+
+    Route::group(['prefix' => 'users/{id}/erp'], function () {
+    Route::post('/{type}/save', [ErpCredentialController::class, 'save'])
+        ->name('admin.users.erp.save')
+        ->where('type', 'import_export|dropshipping');
+
+    Route::post('/{type}/regenerate-key', [ErpCredentialController::class, 'regenerateKey'])
+        ->name('admin.users.erp.regenerate_key')
+        ->where('type', 'import_export|dropshipping');
+
+    Route::post('/{type}/toggle-status', [ErpCredentialController::class, 'toggleStatus'])
+        ->name('admin.users.erp.toggle_status')
+        ->where('type', 'import_export|dropshipping');
+});
 
 Route::group(['prefix' => 'financial/location-sales'], function () {
     Route::get('/city', [SaleController::class, 'salesByCity'])->name('admin.sales.reports.city');

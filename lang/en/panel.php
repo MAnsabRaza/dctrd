@@ -430,5 +430,6 @@ return [
 'ability_enabled_successfully'=>'Ability enabled successfully.',
 'ability_disabled_successfully'=>'Ability disabled successfully.',
 'disable'=>'disable',
+'apis'=>'Apis',
 
 ];
