@@ -139,7 +139,7 @@ class ProductController extends Controller
         $data = $request->all();
         $data['location_enabled'] = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
 
-        $product = Product::create([
+      $product = Product::create([
             'creator_id' => $user->id,
             'type' => $data['type'],
             'slug' => Product::makeSlug($data['title']),
@@ -156,6 +156,7 @@ class ProductController extends Controller
             'delivery_estimated_time' => null,
             'message_for_reviewer' => null,
             'location_enabled' => $data['location_enabled'],
+            'qr_enabled' => $request->boolean('qr_enabled'),
             'status' => ((!empty($data['draft']) and $data['draft'] == 1) or (!empty($data['get_next']) and $data['get_next'] == 1)) ? Product::$draft : Product::$pending,
             'updated_at' => time(),
             'created_at' => time(),
@@ -358,9 +359,9 @@ class ProductController extends Controller
 
         $data['status'] = ($isDraft or $productRulesRequired) ? Product::$draft : Product::$pending;
         $data['updated_at'] = time();
-
-        if ($currentStep == 1) {
+if ($currentStep == 1) {
             $data['ordering'] = (!empty($data['ordering']) and $data['ordering'] == 'on');
+            $data['qr_enabled'] = $request->boolean('qr_enabled');
 
             ProductTranslation::updateOrCreate([
                 'product_id' => $product->id,
@@ -527,6 +528,27 @@ class ProductController extends Controller
             ]);
         }
     }
+    public function regenerateQr($id)
+{
+    $user = auth()->user();
+
+    $product = Product::where('id', $id)
+        ->where('creator_id', $user->id)
+        ->first();
+
+    if (empty($product)) {
+        abort(404);
+    }
+
+    if (empty($product->qr_enabled)) {
+        return back()->with('error', 'QR Code is not enabled for this product.');
+    }
+
+    app(\App\Services\PusClient::class)->createLink($product);
+
+    return redirect('/panel/store/products/' . $id . '/step/1')
+        ->with('success', 'QR Code and Short URL re-generated successfully.');
+}
 
     public function destroy(Request $request, $id)
     {

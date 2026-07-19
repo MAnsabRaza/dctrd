@@ -783,8 +783,9 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
                 Route::post('/{id}/update', 'ProductController@update');
                 Route::get('/{id}/delete', 'ProductController@destroy');
                 Route::get('/{id}/media/{mediaId}/delete', 'ProductController@deleteMediaById');
-                Route::post('/{id}/getContentItemByLocale', 'ProductController@getContentItemByLocale');
+             Route::post('/{id}/getContentItemByLocale', 'ProductController@getContentItemByLocale');
                 Route::post('/search', 'ProductController@search');
+                Route::get('/{id}/qr/regenerate', 'ProductController@regenerateQr');
 
                 Route::group(['prefix' => 'filters'], function () {
                     Route::get('/get-by-category-id/{categoryId}', 'ProductFilterController@getByCategoryId');

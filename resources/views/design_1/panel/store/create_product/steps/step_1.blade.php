@@ -105,7 +105,7 @@
         </div>
     </div>
 
-    <div id="productLocationFields" style="{{ (old('location_enabled') == 'on' || (!empty($product) && $product->location_enabled)) ? '' : 'display:none' }}">
+  <div id="productLocationFields" style="{{ (old('location_enabled') == 'on' || (!empty($product) && $product->location_enabled)) ? '' : 'display:none' }}">
         @php $locationModel = $product ?? null; @endphp
         @include('partials._location_picker', [
             'locationModel' => $locationModel,
@@ -114,6 +114,12 @@
     </div>
 </div>
 
+@if(!empty($product))
+    @include('admin.partials.qr-toggle-section', [
+        'item'          => $product,
+        'regenerateUrl' => url('/panel/store/products/'.$product->id.'/qr/regenerate'),
+    ])
+@endif
 
 @push('scripts_bottom')
     <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
