@@ -13,7 +13,7 @@ return new class extends Migration
 {
     protected array $tables = [
         'products',
-        'courses',
+        'webinars',
         'bookings',
         'bundles',
     ];
