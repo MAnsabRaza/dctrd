@@ -212,10 +212,11 @@ class BookingController extends Controller
             'lng'              => $request->lng ?: null,
 
             // Status & misc
-            'featured'         => $request->boolean('featured'),
+        'featured'         => $request->boolean('featured'),
             'forum_enabled'    => $request->boolean('forum_enabled'),
             'comments_enabled' => $request->boolean('comments_enabled'),
             'reviews_enabled'  => $request->boolean('reviews_enabled'),
+            'qr_enabled'       => $request->boolean('qr_enabled'),
             'sales'            => 0,
             'views'            => 0,
             'rating'           => 0,
@@ -390,6 +391,7 @@ class BookingController extends Controller
             'forum_enabled'    => $request->boolean('forum_enabled'),
             'comments_enabled' => $request->boolean('comments_enabled'),
             'reviews_enabled'  => $request->boolean('reviews_enabled'),
+            'qr_enabled'       => $request->boolean('qr_enabled'),
             'reviewer_message' => $request->reviewer_message ?: null,
             'checkout_message' => $request->checkout_message ?: null,
             'meta'             => $newMeta,
@@ -411,6 +413,21 @@ class BookingController extends Controller
 
         return redirect(getAdminPanelUrl('/booking/list'))
             ->with('success', trans('admin/main.deleted_successfully'));
+    }
+      public function regenerateQr($id)
+    {
+        $this->authorize('admin_booking_edit');
+
+        $booking = Booking::findOrFail($id);
+
+        if (empty($booking->qr_enabled)) {
+            return back()->with('error', 'QR Code is not enabled for this booking.');
+        }
+
+        app(\App\Services\PusClient::class)->createLink($booking);
+
+        return redirect(getAdminPanelUrl('/booking/' . $id . '/edit'))
+            ->with('success', 'QR Code and Short URL re-generated successfully.');
     }
 
     // ── Export Excel ──────────────────────────────────────────────────

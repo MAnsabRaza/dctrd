@@ -182,7 +182,7 @@
                      checkout module (see checkout_modules in the template configs), so
                      keeping a duplicate free-text field here was redundant and confusing. --}}
 
-                <div class="form-group" data-field-key="description">
+           <div class="form-group" data-field-key="description">
                     <label class="input-label js-field-label" data-field="description">Description <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <textarea name="description" class="summernote form-control @error('description') is-invalid @enderror"
                               placeholder="Detailed description (min 300 words)">{{ $field('description') }}</textarea>
@@ -191,6 +191,11 @@
             </div>
         </div>
     </div>
+
+    @include('admin.partials.qr-toggle-section', [
+        'item'          => $editBooking ?? null,
+        'regenerateUrl' => !empty($editBooking) ? getAdminPanelUrl('/booking/'.$editBooking->id.'/qr/regenerate') : null,
+    ])
 
     <div class="booking-section" id="section-shared-meta">
         <h3 class="booking-section-title">Template-Specific Details</h3>

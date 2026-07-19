@@ -70,15 +70,15 @@ use Illuminate\Support\Facades\Route;
 Route::group(['prefix' => 'booking'], function () {
 
     // Booking index, store, edit, update, delete
-    Route::get('/', [BookingController::class, 'index']);
+   Route::get('/', [BookingController::class, 'index']);
     Route::get('/list', [BookingController::class, 'list']);
     Route::get('/excel', [BookingController::class, 'exportExcel']);
     Route::post('/store', [BookingController::class, 'store']);
     Route::get('/{id}/edit', [BookingController::class, 'edit']);
     Route::post('/{id}/update', [BookingController::class, 'update']);
     Route::get('/{id}/delete', [BookingController::class, 'delete']);
+    Route::get('/{id}/qr/regenerate', [BookingController::class, 'regenerateQr']);
     Route::get('/in-house-bookings', [BookingController::class, 'inHouseBookings'])->name('admin.booking.in-house');
-
     // Booking Categories
     Route::group(['prefix' => 'categories'], function () {
         Route::get('/', [BookingCategoryController::class, 'index']);
