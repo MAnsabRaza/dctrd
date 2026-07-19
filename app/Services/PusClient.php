@@ -9,62 +9,53 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * PUS = Premium URL Shortener (subdomain, e.g. s.rocket-lms.com), config/pus.php se configure hota hai.
+ * PusClient — ab poori tarah LOCAL generation karta hai:
+ *  - short_code + short_url apne hi /r/{code} redirect route se banta hai
+ *    (koi external subdomain/API token ki zaroorat nahi).
+ *  - QR image ek free public QR API (api.qrserver.com) se generate hoti hai
+ *    aur phir apne server ke storage/public disk par save hoti hai.
+ *
+ * Agar kabhi aap real Premium URL Shortener app (alag subdomain) use karna
+ * chahen, config/pus.php mein 'base_url'/'api_token' set kar dena aur
+ * neeche wale methods mein wapas Http::withToken(...) wala external-API
+ * approach use kar lena — filhal yeh sab kuch locally hi karta hai.
  */
 class PusClient
 {
-    protected string $baseUrl;
-    protected ?string $token;
-
-    public function __construct()
-    {
-        $this->baseUrl = rtrim((string) config('pus.base_url'), '/');
-        $this->token   = config('pus.api_token');
-    }
-
     /**
      * Naya short link + QR image banao aur model par save karo.
      */
     public function createLink($model): bool
     {
-        $destinationUrl = $model->public_url ?? url('/');
-
         try {
-            $response = Http::withToken($this->token)
-                ->post("{$this->baseUrl}/api/links", [
-                    'destination_url' => $destinationUrl,
-                    'label'           => class_basename($model) . '#' . $model->id,
-                ]);
+            $code = $this->generateUniqueCode($model);
+            $shortUrl = url('/r/' . $code);
 
-            if (!$response->successful()) {
-                Log::warning('PusClient::createLink failed', [
-                    'model' => class_basename($model),
-                    'id'    => $model->id,
-                    'body'  => $response->body(),
-                ]);
-                return false;
-            }
-
-            $body = $response->json();
-            $code = $body['code'] ?? Str::random(7);
+            $qrImagePath = $this->generateAndStoreQrImage($model, $shortUrl);
 
             $model->forceFill([
                 'short_code'           => $code,
-                'short_url'            => $body['short_url'] ?? "{$this->baseUrl}/{$code}",
-                'qr_image_path'        => $this->storeQrImage($model, $body['qr_image_base64'] ?? null),
+                'short_url'            => $shortUrl,
+                'qr_image_path'        => $qrImagePath,
                 'qr_last_refreshed_at' => now(),
                 'qr_revoked_at'        => null,
             ])->saveQuietly(); // saveQuietly -> observer/trait dobara trigger na ho (loop se bacha)
 
             return true;
         } catch (\Throwable $e) {
-            Log::error('PusClient::createLink exception', ['error' => $e->getMessage()]);
+            Log::error('PusClient::createLink exception', [
+                'model' => class_basename($model),
+                'id'    => $model->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
             return false;
         }
     }
 
     /**
-     * PUS side link disable/delete karo aur local record par revoke timestamp lagao.
+     * Link disable karo — local record par revoke timestamp lagao.
+     * (Local generation hai, isliye kisi external API ko delete call
+     * bhejne ki zaroorat nahi — bas revoke timestamp save karo.)
      */
     public function deleteOrDisable($model): bool
     {
@@ -73,9 +64,6 @@ class PusClient
         }
 
         try {
-            Http::withToken($this->token)
-                ->delete("{$this->baseUrl}/api/links/{$model->short_code}");
-
             $model->forceFill([
                 'qr_revoked_at' => now(),
             ])->saveQuietly();
@@ -124,18 +112,55 @@ class PusClient
     }
 
     /**
-     * Base64 QR image ko public disk par save karke relative path return karta hai.
+     * Random 7-char code banao jo kisi bhi QR-enabled table (products, webinars,
+     * bookings, bundles) mein short_code column se clash na kare.
      */
-    protected function storeQrImage($model, ?string $base64): ?string
+    protected function generateUniqueCode($model): string
     {
-        if (!$base64) {
-            return $model->qr_image_path; // kuch naya na mile to jo pehle se hai wahi rakho
+        $tables = ['products', 'webinars', 'bookings', 'bundles'];
+
+        do {
+            $code = Str::random(7);
+            $exists = false;
+
+            foreach ($tables as $table) {
+                if (\Illuminate\Support\Facades\Schema::hasTable($table)
+                    && \Illuminate\Support\Facades\DB::table($table)->where('short_code', $code)->exists()) {
+                    $exists = true;
+                    break;
+                }
+            }
+        } while ($exists);
+
+        return $code;
+    }
+
+    /**
+     * Free public QR API se PNG image banwao aur public disk par save karke
+     * relative path return karo.
+     */
+    protected function generateAndStoreQrImage($model, string $shortUrl): ?string
+    {
+        $size = (int) config('pus.qr_size', 400);
+
+        $response = Http::timeout(15)->get('https://api.qrserver.com/v1/create-qr-code/', [
+            'size' => "{$size}x{$size}",
+            'data' => $shortUrl,
+        ]);
+
+        if (!$response->successful()) {
+            Log::warning('PusClient::generateAndStoreQrImage failed', [
+                'model'  => class_basename($model),
+                'id'     => $model->id ?? null,
+                'status' => $response->status(),
+            ]);
+            return null;
         }
 
         $folder   = 'qr-codes/' . Str::plural(Str::snake(class_basename($model)));
         $filename = "{$folder}/{$model->id}.png";
 
-        Storage::disk('public')->put($filename, base64_decode($base64));
+        Storage::disk('public')->put($filename, $response->body());
 
         return $filename;
     }
