@@ -18,11 +18,12 @@
                 @include('design_1.web.bookings.show.includes.booking_image')
             </div>
 
-            {{-- MAIN INFO + SLOT PANEL --}}
-            <div class="col-12 col-lg-6 mt-32 mt-lg-0">
-                @include('design_1.web.bookings.show.includes.main_info')
-                @include('design_1.web.bookings.show.includes.slot_panel')
-            </div>
+          {{-- MAIN INFO + SLOT PANEL --}}
+<div class="col-12 col-lg-6 mt-32 mt-lg-0">
+    @include('design_1.web.bookings.show.includes.main_info')
+    @include('design_1.web.bookings.show.includes.slot_panel')
+    @include('partials.qr-share-box', ['item' => $booking])
+</div>
         </div>
 
         {{-- TABS --}}

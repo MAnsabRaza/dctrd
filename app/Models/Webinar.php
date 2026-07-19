@@ -13,6 +13,7 @@ use Cviebrock\EloquentSluggable\Services\SlugService;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Google\Service\Classroom\Student;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasQrCode;
 use Jorenvh\Share\ShareFacade;
 use Spatie\CalendarLinks\Link;
 
@@ -22,6 +23,7 @@ class Webinar extends Model implements TranslatableContract
     use Sluggable;
     use CascadeDeletes;
     use HasNearbyLocation;
+     use HasQrCode;
 
     protected $table = 'webinars';
     public $timestamps = false;
@@ -856,6 +858,10 @@ class Webinar extends Model implements TranslatableContract
         return url('/course/' . $this->slug);
     }
 
+    public function getPublicUrlAttribute(): string
+    {
+        return $this->getUrl();
+    }
     public function getLearningPageUrl()
     {
         return url('/course/learning/' . $this->slug);

@@ -8,6 +8,7 @@ use App\User;
 use Cviebrock\EloquentSluggable\Services\SlugService;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasQrCode;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,7 @@ class Product extends Model implements TranslatableContract
     use Sluggable;
     use CascadeDeletes;
     use HasNearbyLocation;
-
+use HasQrCode;
     protected $table = 'products';
     public $timestamps = false;
     protected $dateFormat = 'U';
@@ -321,6 +322,11 @@ class Product extends Model implements TranslatableContract
     public function getUrl()
     {
         return url('/products/' . $this->slug);
+    }
+
+    public function getPublicUrlAttribute(): string
+    {
+        return $this->getUrl();
     }
 
     public function getShareLink($social)

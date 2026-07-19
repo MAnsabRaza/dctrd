@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use App\Models\Traits\HasNearbyLocation;
+use App\Traits\HasQrCode;
 
 class Booking extends Model
 {
-    use HasFactory, SoftDeletes, HasNearbyLocation;
+    use HasFactory, SoftDeletes, HasNearbyLocation,HasQrCode;
 
     protected $table = 'bookings';
 
@@ -219,6 +220,10 @@ class Booking extends Model
         if (!$this->slug)
             return null;
         return url('/bookings/' . $this->slug);
+    }
+    public function getPublicUrlAttribute(): string
+    {
+        return $this->getUrl() ?? url('/');
     }
 
     public function getPriceLabelAttribute(): string

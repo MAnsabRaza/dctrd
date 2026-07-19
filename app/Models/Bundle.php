@@ -13,12 +13,14 @@ use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Services\SlugService;
 use Illuminate\Support\Facades\DB;
 use Jorenvh\Share\ShareFacade;
+use App\Traits\HasQrCode;
 
 class Bundle extends Model implements TranslatableContract
 {
     use Translatable;
     use Sluggable;
     use CascadeDeletes;
+    use HasQrCode;
 
     protected $table = 'bundles';
     public $timestamps = false;
@@ -180,6 +182,11 @@ class Bundle extends Model implements TranslatableContract
         return url('/bundles/' . $this->slug);
     }
 
+    public function getPublicUrlAttribute(): string
+    {
+        return $this->getUrl();
+    }
+    
     public function getImageCover()
     {
         return config('app_url') . $this->image_cover;

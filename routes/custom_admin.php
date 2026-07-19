@@ -9,6 +9,7 @@
 
 use App\Http\Controllers\Admin\AvailabilitySettingsController;
 use App\Http\Controllers\Admin\AbilityController;
+use App\Http\Controllers\Admin\QrAnalyticsController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\Admin\BookingCategorySettingsController;
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
@@ -305,6 +306,8 @@ Route::post('/users/{id}/checkout-options-update', [UserController::class, 'chec
         ->name('admin.users.erp.toggle_status')
         ->where('type', 'import_export|dropshipping');
 });
+Route::get('/qr-analytics', [QrAnalyticsController::class, 'index'])
+    ->name('admin.qr.analytics');
 
 Route::group(['prefix' => 'financial/location-sales'], function () {
     Route::get('/city', [SaleController::class, 'salesByCity'])->name('admin.sales.reports.city');

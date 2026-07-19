@@ -33,9 +33,10 @@
                 {{-- ./ Ads Bannaer --}}
             </div>
 
-            {{-- Right Side --}}
+         {{-- Right Side --}}
             <div class="course-right-side position-relative">
                 @include('design_1.web.courses.show.includes.right_side')
+                @include('partials.qr-share-box', ['item' => $course])
 
                 {{-- Sidebar ads Banner --}}
                 @include('design_1.web.components.advertising_banners.sidebar_banner')

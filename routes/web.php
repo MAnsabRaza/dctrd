@@ -56,6 +56,10 @@ Route::group(['prefix' => 'captcha'], function () {
     Route::get('{config?}', '\Mews\Captcha\CaptchaController@getCaptcha');
 });
 
+// QR Code + Short Link redirect
+Route::get('/r/{code}', [\App\Http\Controllers\RedirectController::class, '__invoke'])
+    ->name('qr.redirect');
+
 
 /* Emergency Database Update */
 Route::get('/emergencyDatabaseUpdate', function () {
