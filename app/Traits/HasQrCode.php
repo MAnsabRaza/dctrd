@@ -52,12 +52,12 @@ trait HasQrCode
     /**
      * Blade mein $item->qr_image_url use karne ke liye.
      */
-    public function getQrImageUrlAttribute(): ?string
-    {
-        return $this->qr_image_path
-            ? asset('storage/' . $this->qr_image_path)
-            : null;
-    }
+   public function getQrImageUrlAttribute(): ?string
+{
+    return $this->qr_image_path
+        ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->qr_image_path)
+        : null;
+}
 
     /**
      * Har model apna "asli" public URL is method se batayega
