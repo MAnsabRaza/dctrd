@@ -280,7 +280,8 @@ class BundleController extends Controller
             'price' => $data['price'],
             'access_days' => $data['access_days'] ?? null,
             'category_id' => $data['category_id'],
-            'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
+           'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
+            'qr_enabled' => (!empty($data['qr_enabled']) and $data['qr_enabled'] == 1),
             'status' => Bundle::$pending,
             'created_at' => time(),
             'updated_at' => time(),
@@ -477,11 +478,11 @@ class BundleController extends Controller
             'price' => $data['price'],
             'access_days' => $data['access_days'] ?? null,
             'category_id' => $data['category_id'],
-            'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
+           'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
+            'qr_enabled' => (!empty($data['qr_enabled']) and $data['qr_enabled'] == 1),
             'status' => $data['status'],
             'updated_at' => time(),
         ]);
-
         if ($bundle) {
             BundleTranslation::updateOrCreate([
                 'bundle_id' => $bundle->id,
@@ -531,6 +532,22 @@ class BundleController extends Controller
 
         return redirect(getAdminPanelUrl() . '/bundles');
     }
+
+    public function regenerateQr($id)
+{
+    $this->authorize('admin_bundles_edit');
+
+    $bundle = Bundle::findOrFail($id);
+
+    if (empty($bundle->qr_enabled)) {
+        return back()->with('error', 'QR Code is not enabled for this bundle.');
+    }
+
+    app(\App\Services\PusClient::class)->createLink($bundle);
+
+    return redirect(getAdminPanelUrl() . '/bundles/' . $id . '/edit')
+        ->with('success', 'QR Code and Short URL re-generated successfully.');
+}
 
     public function studentsLists(Request $request, $id)
     {

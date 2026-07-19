@@ -40,9 +40,11 @@ use App\Http\Controllers\Admin\Booking\BookingFeatureCategoryController;
 use App\Http\Controllers\Admin\ErpCredentialController;
 use App\Http\Controllers\Admin\CalendarLogController;
 use App\Http\Controllers\Admin\Store\ProductsController;
+use App\Http\Controllers\Admin\BundleController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\WebinarController;
 
 /**
  * Define your custom admin panel routes here
@@ -71,6 +73,9 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('/store/products/{id}/qr/regenerate', [ProductsController::class, 'regenerateQr']);
+Route::get('/bundles/{id}/qr/regenerate', [BundleController::class, 'regenerateQr']);
+Route::get('/webinars/{id}/qr/regenerate', [WebinarController::class, 'regenerateQr']);
+
 Route::group(['prefix' => 'booking'], function () {
 
     // Booking index, store, edit, update, delete

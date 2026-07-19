@@ -626,7 +626,12 @@
                                     </div>
                                 </section>
 
-                                @if(!empty($webinar))
+                          @if(!empty($webinar))
+                                    @include('admin.partials.qr-toggle-section', [
+                                        'item'          => $webinar,
+                                        'regenerateUrl' => getAdminPanelUrl('/webinars/'.$webinar->id.'/qr/regenerate'),
+                                    ])
+
                                     <section class="mt-30">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h2 class="section-title after-line">{{ trans('admin/main.price_plans') }}</h2>

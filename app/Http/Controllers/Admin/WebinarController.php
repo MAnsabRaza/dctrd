@@ -429,6 +429,7 @@ class WebinarController extends Controller
             'checkout_message'=> $data['checkout_message'] ?? null,
             'reviewer_message'=> $data['reviewer_message'] ?? null,
             'location_enabled' => $data['location_enabled'],
+            'qr_enabled' => (!empty($data['qr_enabled']) and $data['qr_enabled'] == 1),
             'status' => Webinar::$pending,
             'created_at' => time(),
             'updated_at' => time(),
@@ -782,13 +783,13 @@ class WebinarController extends Controller
             'category_id' => $data['category_id'],
             'points' => $data['points'] ?? null,
             'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
-            'location_enabled' => $data['location_enabled'],
+           'location_enabled' => $data['location_enabled'],
+            'qr_enabled' => (!empty($data['qr_enabled']) and $data['qr_enabled'] == 1),
             'status' => $data['status'],
             'checkout_message' => $data['checkout_message'] ?? null,
             'reviewer_message' => $data['reviewer_message'] ?? null,
             'updated_at' => time(),
         ]);
-
         if ($webinar) {
             WebinarTranslation::updateOrCreate([
                 'webinar_id' => $webinar->id,
@@ -848,6 +849,21 @@ class WebinarController extends Controller
         return redirect(getAdminPanelUrl() . '/webinars');
     }
 
+    public function regenerateQr($id)
+{
+    $this->authorize('admin_webinars_edit');
+
+    $webinar = Webinar::findOrFail($id);
+
+    if (empty($webinar->qr_enabled)) {
+        return back()->with('error', 'QR Code is not enabled for this item.');
+    }
+
+    app(\App\Services\PusClient::class)->createLink($webinar);
+
+    return redirect(getAdminPanelUrl() . '/webinars/' . $id . '/edit')
+        ->with('success', 'QR Code and Short URL re-generated successfully.');
+}
     public function approve(Request $request, $id)
     {
         $this->authorize('admin_webinars_edit');

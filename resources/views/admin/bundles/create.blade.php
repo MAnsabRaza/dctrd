@@ -407,6 +407,11 @@
                                 </section>
 
                                 @if(!empty($bundle))
+                                    @include('admin.partials.qr-toggle-section', [
+                                        'item'          => $bundle,
+                                        'regenerateUrl' => getAdminPanelUrl('/bundles/'.$bundle->id.'/qr/regenerate'),
+                                    ])
+
                                     <section class="mt-30">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h2 class="section-title after-line">{{ trans('admin/main.price_plans') }}</h2>
