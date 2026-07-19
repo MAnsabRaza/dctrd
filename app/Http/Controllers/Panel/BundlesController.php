@@ -179,15 +179,15 @@ class BundlesController extends Controller
 
         $data = $request->all();
 
-        $bundle = Bundle::create([
+     $bundle = Bundle::create([
             'teacher_id' => $user->isTeacher() ? $user->id : (!empty($data['teacher_id']) ? $data['teacher_id'] : $user->id),
             'creator_id' => $user->id,
             'slug' => Bundle::makeSlug($data['title']),
             'private' => (!empty($data['private']) and $data['private'] == 'on'),
+            'qr_enabled' => $request->boolean('qr_enabled'),
             'status' => ((!empty($data['draft']) and $data['draft'] == 1) or (!empty($data['get_next']) and $data['get_next'] == 1)) ? Bundle::$isDraft : Bundle::$pending,
             'created_at' => time(),
         ]);
-
         if ($bundle) {
             // Handle Image and Video
             $this->storeWebinarMedia($request, $bundle);
@@ -395,8 +395,9 @@ class BundlesController extends Controller
         $data['status'] = ($isDraft or $bundleRulesRequired) ? Bundle::$isDraft : Bundle::$pending;
         $data['updated_at'] = time();
 
-        if ($currentStep == 1) {
+    if ($currentStep == 1) {
             $data['private'] = (!empty($data['private']) and $data['private'] == 'on');
+            $data['qr_enabled'] = $request->boolean('qr_enabled');
 
             BundleTranslation::updateOrCreate([
                 'bundle_id' => $bundle->id,
@@ -495,6 +496,29 @@ class BundlesController extends Controller
 
         return redirect($url);
     }
+    public function regenerateQr($id)
+{
+    $user = auth()->user();
+
+    $bundle = Bundle::where('id', $id)
+        ->where(function ($query) use ($user) {
+            $query->where('creator_id', $user->id)
+                ->orWhere('teacher_id', $user->id);
+        })->first();
+
+    if (empty($bundle)) {
+        abort(404);
+    }
+
+    if (empty($bundle->qr_enabled)) {
+        return back()->with('error', 'QR Code is not enabled for this bundle.');
+    }
+
+    app(\App\Services\PusClient::class)->createLink($bundle);
+
+    return redirect('/panel/bundles/' . $id . '/step/1')
+        ->with('success', 'QR Code and Short URL re-generated successfully.');
+}
 
     public function destroy(Request $request, $id)
     {

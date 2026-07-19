@@ -843,7 +843,7 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
         });
     });
 
-    Route::group(['prefix' => 'bundles'], function () {
+ Route::group(['prefix' => 'bundles'], function () {
         Route::group(['middleware' => 'user.not.access'], function () {
             Route::get('/', 'BundlesController@index');
             Route::get('/new', 'BundlesController@create');
@@ -855,6 +855,7 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
             Route::post('/{id}/getContentItemByLocale', 'BundlesController@getContentItemByLocale');
             Route::get('/{id}/courses', 'BundlesController@courses');
             Route::get('/{id}/export-students-list', 'BundlesController@exportStudentsList');
+            Route::get('/{id}/qr/regenerate', 'BundlesController@regenerateQr');
         });
     });
 

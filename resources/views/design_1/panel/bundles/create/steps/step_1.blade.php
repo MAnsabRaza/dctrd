@@ -160,7 +160,7 @@
     </div>
 
 
-    {{-- Course Description --}}
+  {{-- Course Description --}}
     <h3 class="font-14 font-weight-bold my-24">{{ trans('update.bundle_description') }}</h3>
 
     <div class="form-group bg-white-editor">
@@ -172,6 +172,13 @@
         </div>
         @enderror
     </div>
+
+    @if(!empty($bundle))
+        @include('admin.partials.qr-toggle-section', [
+            'item'          => $bundle,
+            'regenerateUrl' => url('/panel/bundles/'.$bundle->id.'/qr/regenerate'),
+        ])
+    @endif
 
 
     @if($isOrganization)
