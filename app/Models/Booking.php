@@ -87,6 +87,13 @@ class Booking extends Model
         'views',
         'rating',
         'review_count',
+        //qr scan code 
+        'qr_enabled',
+        'short_url',
+        'short_code',
+        'qr_image_path',
+        'qr_last_refreshed_at',
+        'qr_revoked_at',
     ];
 
     protected $casts = [

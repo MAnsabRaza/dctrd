@@ -14,9 +14,9 @@ return new class extends Migration
 
             // Polymorphic link back to Product / Course / Booking / Bundle
             $table->string('item_type')->nullable();
-            $table->unsignedBigInteger('item_id')->nullable();
+            $table->unsignedInteger('item_id')->nullable();
 
-            $table->unsignedBigInteger('user_id')->nullable(); // agar scan karne wala logged-in ho
+            $table->unsignedInteger('user_id')->nullable(); // agar scan karne wala logged-in ho
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->string('referrer')->nullable();
