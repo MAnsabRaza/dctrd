@@ -4925,6 +4925,8 @@ return [
     'location_detected' => 'Location detected',
     'geolocation_not_supported' => 'Geolocation is not supported by your browser.',
     'location_permission_denied' => 'Location permission denied.',
+    'share_via_qr'=>'Share via QR',
+    'copy_link'=>'Copy Link',
 
 
 ];
