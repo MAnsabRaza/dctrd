@@ -406,6 +406,7 @@ class ProductsController extends Controller
             'commission_type' => $data['commission_type'] ?? 'percent',
             'commission' => $commission,
             'status' => Product::$pending,
+            'qr_enabled' => $request->boolean('qr_enabled'),
             'updated_at' => time(),
             'created_at' => time(),
         ], $locationData));
@@ -614,6 +615,7 @@ class ProductsController extends Controller
             'commission_type' => $data['commission_type'] ?? 'percent',
             'commission' => $commission,
             'status' => $data['status'],
+            'qr_enabled' => $request->boolean('qr_enabled'),
             'updated_at' => time(),
         ], $locationData));
 
@@ -706,6 +708,21 @@ class ProductsController extends Controller
 
         return back();
     }
+    public function regenerateQr($id)
+{
+    $this->authorize('admin_store_edit_product');
+
+    $product = Product::findOrFail($id);
+
+    if (empty($product->qr_enabled)) {
+        return back()->with('error', 'QR Code is not enabled for this product.');
+    }
+
+    app(\App\Services\PusClient::class)->createLink($product);
+
+    return redirect(getAdminPanelUrl('/store/products/' . $id . '/edit'))
+        ->with('success', 'QR Code and Short URL re-generated successfully.');
+}
 
     public function search(Request $request)
     {

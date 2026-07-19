@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\Booking\BookingTopCategoryController;
 use App\Http\Controllers\Admin\Booking\BookingFeatureCategoryController;
 use App\Http\Controllers\Admin\ErpCredentialController;
 use App\Http\Controllers\Admin\CalendarLogController;
+use App\Http\Controllers\Admin\Store\ProductsController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -67,6 +68,9 @@ use Illuminate\Support\Facades\Route;
 /**
  * Booking Categories Routes
  */
+
+
+Route::get('/store/products/{id}/qr/regenerate', [ProductsController::class, 'regenerateQr']);
 Route::group(['prefix' => 'booking'], function () {
 
     // Booking index, store, edit, update, delete
