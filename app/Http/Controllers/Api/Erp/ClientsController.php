@@ -54,15 +54,16 @@ class ClientsController extends Controller
         if ($mapping) {
             $user = User::find($mapping->local_id);
         } else {
-            $user = User::create([
-                'full_name'  => $data['full_name'],
-                'email'      => $data['email'] ?? null,
-                'mobile'     => $data['mobile'] ?? null,
-                'role_name'  => 1,
-                'password'   => User::generatePassword(str()->random(12)),
-                'verified'   => true,
-                'created_at' => time(),
-            ]);
+          $user = User::create([
+    'full_name'  => $data['full_name'],
+    'email'      => $data['email'] ?? null,
+    'mobile'     => $data['mobile'] ?? null,
+    'role_name'  => 'user',
+    'role_id'    => 1,
+    'password'   => User::generatePassword(str()->random(12)),
+    'verified'   => true,
+    'created_at' => time(),
+]);
 
             $mapping = ErpIdMapping::create([
                 'vendor_id'   => $vendorId,
