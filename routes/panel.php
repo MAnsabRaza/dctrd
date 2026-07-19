@@ -122,8 +122,11 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
         Route::delete('/faqs/{faq}', 'Booking\BookingController@destroyFaq')
             ->name('panel.bookings.faqs.destroy');
 
-        Route::get('/specifications/{category}', 'Booking\BookingController@getCategorySpecifications')
+       Route::get('/specifications/{category}', 'Booking\BookingController@getCategorySpecifications')
             ->name('panel.bookings.specifications');
+
+        Route::get('/{id}/qr/regenerate', 'Booking\BookingController@regenerateQr')
+            ->name('panel.bookings.qr.regenerate');
 
         /*
         |--------------------------------------------------------------------------

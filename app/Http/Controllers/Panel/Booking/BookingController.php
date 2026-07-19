@@ -168,11 +168,11 @@ class BookingController extends Controller
             'language'     => $data['language'] ?? app()->getLocale(),
             'booking_type' => $data['booking_type'],
             'sub_type'     => $data['sub_type'] ?? null,
-            'description'  => $data['description'] ?? null,
+           'description'  => $data['description'] ?? null,
             'requirements' => $data['requirements'] ?? null,
            'status'       => $data['status'] ?? null,
+            'qr_enabled'   => $request->boolean('qr_enabled'),
         ]);
-
         $notifyOptions = [
             '[u.name]'      => $user->full_name,
             '[item_title]'  => $booking->title,
@@ -411,7 +411,7 @@ class BookingController extends Controller
 
         $data['status'] = $isDraft ? 'draft' : ($finalSubmit ? 'pending' : $booking->status);
 
-        if ($currentStep == 1) {
+    if ($currentStep == 1) {
             $booking->fill([
                 'title'        => $data['title'],
                 'slug'         => $data['slug'] ?? $booking->slug,
@@ -422,6 +422,7 @@ class BookingController extends Controller
                 'description'  => $data['description'] ?? null,
                 'requirements' => $data['requirements'] ?? null,
                 'status'       => $data['status'] ?? null,
+                'qr_enabled'   => $request->boolean('qr_enabled'),
             ]);
         } elseif ($currentStep == 2) {
             $ratePlans = $data['rate_plans'] ?? [];
@@ -581,6 +582,20 @@ class BookingController extends Controller
             ->route('panel.bookings.index')
             ->with('success', 'Booking deleted successfully.');
     }
+
+    public function regenerateQr($id)
+{
+    $booking = $this->findOwnBooking($id);
+
+    if (empty($booking->qr_enabled)) {
+        return back()->with('error', 'QR Code is not enabled for this booking.');
+    }
+
+    app(\App\Services\PusClient::class)->createLink($booking);
+
+    return redirect('/panel/bookings/' . $id . '/step/1')
+        ->with('success', 'QR Code and Short URL re-generated successfully.');
+}
 
     /*
     |--------------------------------------------------------------------------

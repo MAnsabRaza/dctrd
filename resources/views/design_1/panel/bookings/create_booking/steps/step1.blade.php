@@ -268,6 +268,11 @@
     </div>
 </div>
 
+@include('admin.partials.qr-toggle-section', [
+    'item'          => $booking ?? null,
+    'regenerateUrl' => !empty($booking) ? url('/panel/bookings/'.$booking->id.'/qr/regenerate') : null,
+])
+
 @push('scripts_bottom')
 <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
 <script src="/assets/admin/vendor/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
