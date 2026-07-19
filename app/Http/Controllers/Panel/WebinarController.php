@@ -130,12 +130,13 @@ class WebinarController extends Controller
         $data = $request->all();
         $data['location_enabled'] = !empty($data['location_enabled']);
 
-        $webinar = Webinar::create([
+       $webinar = Webinar::create([
             'teacher_id' => $user->isTeacher() ? $user->id : (!empty($data['teacher_id']) ? $data['teacher_id'] : $user->id),
             'creator_id' => $user->id,
             'slug' => Webinar::makeSlug($data['title']),
             'type' => $data['type'],
             'private' => (!empty($data['private']) and $data['private'] == 'on'),
+            'qr_enabled' => $request->boolean('qr_enabled'),
             'status' => ((!empty($data['draft']) and $data['draft'] == 1) or (!empty($data['get_next']) and $data['get_next'] == 1)) ? Webinar::$isDraft : Webinar::$pending,
             'created_at' => time(),
         ]);
@@ -439,10 +440,10 @@ class WebinarController extends Controller
         $data['status'] = $status;
         $data['updated_at'] = time();
 
-        if ($currentStep == 1) {
+      if ($currentStep == 1) {
             $data['private'] = (!empty($data['private']) and $data['private'] == 'on');
             $data['location_enabled'] = !empty($data['location_enabled']);
-
+            $data['qr_enabled'] = $request->boolean('qr_enabled');
             // Handle Image and Video
             $webinar = $this->storeWebinarMedia($request, $webinar);
 
@@ -614,6 +615,29 @@ class WebinarController extends Controller
 
         return redirect($url);
     }
+    public function regenerateQr($id)
+{
+    $user = auth()->user();
+
+    $webinar = Webinar::where('id', $id)
+        ->where(function ($query) use ($user) {
+            $query->where('creator_id', $user->id)
+                ->orWhere('teacher_id', $user->id);
+        })->first();
+
+    if (empty($webinar)) {
+        abort(404);
+    }
+
+    if (empty($webinar->qr_enabled)) {
+        return back()->with('error', 'QR Code is not enabled for this course.');
+    }
+
+    app(\App\Services\PusClient::class)->createLink($webinar);
+
+    return redirect('/panel/courses/' . $id . '/step/1')
+        ->with('success', 'QR Code and Short URL re-generated successfully.');
+}
 
     public function destroy(Request $request, $id)
     {

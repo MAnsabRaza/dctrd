@@ -289,11 +289,12 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
                 Route::get('/', 'WebinarStatisticController@index');
             });
 
-            Route::group(['prefix' => '{course_id}/media'], function () {
+          Route::group(['prefix' => '{course_id}/media'], function () {
                 Route::get('/delete-icon', 'WebinarController@deleteIcon');
             });
-        });
 
+            Route::get('/{id}/qr/regenerate', 'WebinarController@regenerateQr');
+        });
         Route::get('/organization_classes', 'MyOrganizationCoursesController@index');
 
         Route::get('/{id}/sale/{sale_id}/invoice', 'WebinarController@invoice');

@@ -237,7 +237,7 @@
             'pickerId' => 'webinarLocationPicker'
         ])
     </div>
-    {{-- Course Description --}}
+ {{-- Course Description --}}
     <h3 class="font-14 font-weight-bold mt-24 mb-16">{{ trans('update.course_description') }}</h3>
 
     <div class="form-group bg-white-editor">
@@ -249,6 +249,13 @@
         </div>
         @enderror
     </div>
+
+    @if(!empty($webinar))
+        @include('admin.partials.qr-toggle-section', [
+            'item'          => $webinar,
+            'regenerateUrl' => url('/panel/courses/'.$webinar->id.'/qr/regenerate'),
+        ])
+    @endif
 
     @if($isOrganization)
         <div class="row mt-20">
