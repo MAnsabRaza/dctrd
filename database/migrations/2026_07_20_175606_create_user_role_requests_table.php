@@ -35,7 +35,7 @@ return new class extends Migration
             $table->index(['user_id', 'status']);
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('role_catalog_id')->references('id')->on('role_catalog')->onDelete('cascade');
+            $table->foreign('role_catalog_id')->references('id')->on('role_catalogs')->onDelete('cascade');
         });
     }
 
