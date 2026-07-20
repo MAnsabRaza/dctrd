@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('user_role_requests', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('user_id');
-            $table->unsignedInteger('role_catalog_id');
+             $table->foreignId('role_catalog_id')->constrained('role_catalogs')->onDelete('cascade');
 
             // pending -> user ne submit kiya, admin approve/reject ka intezar
             // active  -> approved, role live hai
@@ -35,7 +35,6 @@ return new class extends Migration
             $table->index(['user_id', 'status']);
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('role_catalog_id')->references('id')->on('role_catalogs')->onDelete('cascade');
         });
     }
 
