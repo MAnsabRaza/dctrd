@@ -18,7 +18,6 @@ return new class extends Migration
             $table->unsignedInteger('user_id');
                 $table->foreignId('role_catalog_id')->constrained('role_catalogs')->onDelete('cascade');
                     $table->foreignId('template_id')->constrained('regulatory_form_templates')->onDelete('cascade');
-            $table->unsignedInteger('template_id');
             $table->enum('level', ['primary', 'secondary', 'tertiary', 'quaternary', 'extra1']);
             $table->json('data'); // submitted field values
             $table->enum('status', ['draft', 'pending', 'approved', 'rejected'])->default('draft');
