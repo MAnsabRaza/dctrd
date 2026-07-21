@@ -411,6 +411,7 @@
                                         'item'          => $bundle,
                                         'regenerateUrl' => getAdminPanelUrl('/bundles/'.$bundle->id.'/qr/regenerate'),
                                     ])
+                                    @include('admin.partials.customer-group-restriction', ['item' => $bundle ?? null])
 
                                     <section class="mt-30">
                                         <div class="d-flex justify-content-between align-items-center">

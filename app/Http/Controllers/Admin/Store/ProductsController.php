@@ -407,6 +407,7 @@ class ProductsController extends Controller
             'commission' => $commission,
             'status' => Product::$pending,
             'qr_enabled' => $request->boolean('qr_enabled'),
+            'allow_customer_groups' => !empty($request->allowed_customer_groups) ? $request->allowed_customer_groups : null,
             'updated_at' => time(),
             'created_at' => time(),
         ], $locationData));
@@ -616,6 +617,7 @@ class ProductsController extends Controller
             'commission' => $commission,
             'status' => $data['status'],
             'qr_enabled' => $request->boolean('qr_enabled'),
+            'allow_customer_groups' => !empty($request->allowed_customer_groups) ? $request->allowed_customer_groups : null,
             'updated_at' => time(),
         ], $locationData));
 

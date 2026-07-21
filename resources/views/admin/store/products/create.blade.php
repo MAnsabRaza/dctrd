@@ -39,6 +39,8 @@
     'regenerateUrl' => getAdminPanelUrl('/store/products/'.$product->id.'/qr/regenerate'),
 ])
 
+    @include('admin.partials.customer-group-restriction', ['item' => $product ?? null])
+
                                     @include('admin.store.products.create.image_and_files')
 
                                     @include('admin.store.products.create.category_and_specification')

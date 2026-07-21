@@ -631,6 +631,7 @@
                                         'item'          => $webinar,
                                         'regenerateUrl' => getAdminPanelUrl('/webinars/'.$webinar->id.'/qr/regenerate'),
                                     ])
+                                     @include('admin.partials.customer-group-restriction', ['item' => $webinar ?? null])
 
                                     <section class="mt-30">
                                         <div class="d-flex justify-content-between align-items-center">
