@@ -105,50 +105,50 @@ class FormsController extends Controller
 
 
     private function storeExtraData($form, $data)
-    {
-        FormTranslation::query()->updateOrCreate([
-            'form_id' => $form->id,
-            'locale' => mb_strtolower($data['locale']),
-        ], [
-            'title' => $data['title'],
-            'subtitle' => $data['subtitle'] ?? null,
-            'heading_title' => $data['heading_title'] ?? null,
-            'description' => $data['description'] ?? null,
-            'welcome_message_title' => $data['welcome_message_title'] ?? null,
-            'welcome_message_description' => $data['welcome_message_description'] ?? null,
-            'tank_you_message_title' => $data['tank_you_message_title'] ?? null,
-            'tank_you_message_description' => $data['tank_you_message_description'] ?? null,
-        ]);
+{
+    FormTranslation::query()->updateOrCreate([
+        'form_id' => $form->id,
+        'locale' => mb_strtolower($data['locale']),
+    ], [
+        'title' => $data['title'],
+        'subtitle' => $data['subtitle'] ?? null,
+        'heading_title' => $data['heading_title'] ?? null,
+        'description' => $data['description'] ?? null,
+        'welcome_message_title' => $data['welcome_message_title'] ?? null,
+        'welcome_message_description' => $data['welcome_message_description'] ?? null,
+        'tank_you_message_title' => $data['tank_you_message_title'] ?? null,
+        'tank_you_message_description' => $data['tank_you_message_description'] ?? null,
+    ]);
 
 
-        /* Roles Users Groups */
-        FormRoleUserGroup::query()->where('form_id', $form->id)->delete();
+    /* Roles Users Groups */
+    FormRoleUserGroup::query()->where('form_id', $form->id)->delete();
 
-        $items = [
-            'role_ids' => 'role_id',
-            'users_ids' => 'users_id',
-            'group_ids' => 'group_id',
-        ];
+    $items = [
+        'role_ids' => 'role_id',
+        'users_ids' => 'user_id',   // ✅ fixed
+        'group_ids' => 'group_id',
+    ];
 
-        foreach ($items as $item => $column) {
-            if (!empty($data[$item])) {
-                $insert = [];
+    foreach ($items as $item => $column) {
+        if (!empty($data[$item])) {
+            $insert = [];
 
-                foreach ($data[$item] as $id) {
-                    if (!empty($id)) {
-                        $insert[] = [
-                            'form_id' => $form->id,
-                            "{$column}" => $id,
-                        ];
-                    }
+            foreach ($data[$item] as $id) {
+                if (!empty($id)) {
+                    $insert[] = [
+                        'form_id' => $form->id,
+                        "{$column}" => $id,
+                    ];
                 }
+            }
 
-                if (!empty($insert)) {
-                    FormRoleUserGroup::query()->insert($insert);
-                }
+            if (!empty($insert)) {
+                FormRoleUserGroup::query()->insert($insert);
             }
         }
     }
+}
 
     public function edit(Request $request, $id)
     {
