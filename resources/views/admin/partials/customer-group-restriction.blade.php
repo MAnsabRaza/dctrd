@@ -8,14 +8,20 @@
 @endphp
 
 <div class="booking-section" id="section-customer-group">
-    <h3 class="booking-section-title">Customer Group Restriction</h3>
-    <p class="text-muted text-small mb-3">Khali chhodo agar sab customer groups khareed sakein.</p>
+    <div class="border rounded-12 p-16" id="customerGroupRestrictionBox">
+        <div class="form-group mb-3">
+            <label class="mb-1 d-block font-weight-bold">Customer Group Restriction</label>
+            <p class="text-muted text-small mb-0">Khali chhodo agar sab customer groups khareed sakein.</p>
+        </div>
 
-    <select name="allowed_customer_groups[]" multiple data-plugin-selectTwo class="form-control">
-        @foreach($customerGroups as $key => $label)
-            <option value="{{ $key }}" {{ in_array($key, (array) $selectedGroups) ? 'selected' : '' }}>
-                {{ $label }}
-            </option>
-        @endforeach
-    </select>
+        <div class="form-group mb-0">
+            <select name="allowed_customer_groups[]" multiple data-plugin-selectTwo class="form-control">
+                @foreach($customerGroups as $key => $label)
+                    <option value="{{ $key }}" {{ in_array($key, (array) $selectedGroups) ? 'selected' : '' }}>
+                        {{ $label }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </div>
 </div>

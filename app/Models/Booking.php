@@ -40,6 +40,7 @@ class Booking extends Model
         'deposit_enabled',
         'deposit_amount',
         'deposit_type',
+        'allowed_customer_groups',
 
         // Capacity
         'capacity',
@@ -124,6 +125,7 @@ class Booking extends Model
 
         // JSON
         'meta' => 'array',
+        'allowed_customer_groups' => 'array',
     ];
 
     // ─── Relationships ───────────────────────────────────────────────
