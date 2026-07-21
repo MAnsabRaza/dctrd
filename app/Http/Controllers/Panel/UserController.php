@@ -58,7 +58,7 @@ class UserController extends Controller
 
         return view('design_1.panel.settings.index', $data);
     }
-    private function makeRegulatoryViewData($user): array
+   private function makeRegulatoryViewData($user): array
 {
     $userRoles = \App\Models\UserRoleRequest::where('user_id', $user->id)
         ->whereIn('status', [\App\Models\UserRoleRequest::STATUS_ACTIVE, \App\Models\UserRoleRequest::STATUS_PENDING])
@@ -105,7 +105,14 @@ class UserController extends Controller
         ];
     }
 
-    return compact('stacks');
+    // ── NAYA: countries list + user ka apna country (login/profile se) ──
+    $countries = \App\Models\Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
+        ->where('type', \App\Models\Region::$country)
+        ->get();
+
+    $userCountry = $user->country; // yehi wahi column hai jo basic_information step mein save hota hai
+
+    return compact('stacks', 'countries', 'userCountry');
 }
 
     public function getUserEditPageData(Request $request, $user, $step): array

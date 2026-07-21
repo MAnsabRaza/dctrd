@@ -1,5 +1,7 @@
 @php
     $stacks = $stacks ?? [];
+    $countries = $countries ?? collect();
+    $userCountry = $userCountry ?? null;
 @endphp
 
 <div class="regulatory-forms">
@@ -16,9 +18,27 @@
 
             {{-- Primary form --}}
             @if($stack['primaryTemplate'])
+                @php
+                    $savedPrimaryCountry = data_get($stack['primarySubmission']->data ?? [], 'country');
+                    $primarySelectedCountry = $savedPrimaryCountry ?: $userCountry;
+                @endphp
+
                 <form class="js-regulatory-form" data-template-id="{{ $stack['primaryTemplate']->id }}"
                       data-submission-id="{{ $stack['primarySubmission']->id ?? '' }}">
                     <h4 class="font-14 font-weight-bold mb-12">{{ $stack['primaryTemplate']->label }}</h4>
+
+                    {{-- Country dropdown — by default user ke apne login/profile country se selected --}}
+                    <div class="form-group">
+                        <label class="form-group-label">Country</label>
+                        <select name="country" class="form-control select2">
+                            <option value="">Select Country</option>
+                            @foreach($countries as $country)
+                                <option value="{{ $country->name }}" {{ $primarySelectedCountry == $country->name ? 'selected' : '' }}>
+                                    {{ $country->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     @foreach($stack['primaryTemplate']->fields as $field)
                         @include('design_1.panel.settings.includes.regulatory_field', [
@@ -45,9 +65,28 @@
 
                     <div class="js-slots-container mt-12">
                         @foreach($stack['extraSubmissions']->get($extraTemplate->id, []) as $slotSubmission)
+                            @php
+                                $savedSlotCountry = data_get($slotSubmission->data, 'country');
+                                $slotSelectedCountry = $savedSlotCountry ?: $userCountry;
+                            @endphp
+
                             <div class="border-gray-200 rounded-12 p-12 mb-12 js-regulatory-slot">
                                 <form class="js-regulatory-form" data-template-id="{{ $extraTemplate->id }}"
                                       data-submission-id="{{ $slotSubmission->id }}">
+
+                                    {{-- Country dropdown for secondary/tertiary slots bhi --}}
+                                    <div class="form-group">
+                                        <label class="form-group-label">Country</label>
+                                        <select name="country" class="form-control select2">
+                                            <option value="">Select Country</option>
+                                            @foreach($countries as $country)
+                                                <option value="{{ $country->name }}" {{ $slotSelectedCountry == $country->name ? 'selected' : '' }}>
+                                                    {{ $country->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
                                     @foreach($extraTemplate->fields as $field)
                                         @include('design_1.panel.settings.includes.regulatory_field', [
                                             'field' => $field,
