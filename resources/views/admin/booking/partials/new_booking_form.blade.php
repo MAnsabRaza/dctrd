@@ -196,6 +196,7 @@
         'item'          => $editBooking ?? null,
         'regenerateUrl' => !empty($editBooking) ? getAdminPanelUrl('/booking/'.$editBooking->id.'/qr/regenerate') : null,
     ])
+    @include('admin.partials.customer-group-restriction', ['item' => $editBooking ?? null])
 
     <div class="booking-section" id="section-shared-meta">
         <h3 class="booking-section-title">Template-Specific Details</h3>

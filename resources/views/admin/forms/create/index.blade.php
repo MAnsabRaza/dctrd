@@ -85,6 +85,11 @@
         var fieldSaveSuccessLang = '{{ trans('update.form_field_data_stored_successfully') }}'
         var chooseTitleLang = '{{ trans('admin/main.choose_title') }}'
     </script>
+    <script>
+    $('#connectRegulatorySwitch').on('change', function () {
+        $('#regulatoryFieldsBox').toggle(this.checked);
+    });
+</script>
 
     <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
     <script src="/assets/default/vendors/feather-icons/dist/feather.min.js"></script>

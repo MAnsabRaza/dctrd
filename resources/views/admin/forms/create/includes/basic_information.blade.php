@@ -348,8 +348,3 @@
 
     </div>
 </div>
-<script>
-    $('#connectRegulatorySwitch').on('change', function () {
-        $('#regulatoryFieldsBox').toggle(this.checked);
-    });
-</script>

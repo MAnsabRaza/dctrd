@@ -224,6 +224,7 @@ class BookingController extends Controller
             'reviewer_message' => $request->reviewer_message ?: null,
             'checkout_message' => $request->checkout_message ?: null,
             'meta'             => $meta,
+            'allowed_customer_groups' => !empty($request->allowed_customer_groups) ? $request->allowed_customer_groups : null,
         ]);
 
         $this->sendBookingNotification($booking, 'booking_created');
@@ -395,6 +396,7 @@ class BookingController extends Controller
             'reviewer_message' => $request->reviewer_message ?: null,
             'checkout_message' => $request->checkout_message ?: null,
             'meta'             => $newMeta,
+            'allowed_customer_groups' => !empty($request->allowed_customer_groups) ? $request->allowed_customer_groups : null,
         ]);
 
         $this->sendBookingNotification($booking, 'booking_updated');
