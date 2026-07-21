@@ -185,7 +185,6 @@ class BundlesController extends Controller
             'slug' => Bundle::makeSlug($data['title']),
             'private' => (!empty($data['private']) and $data['private'] == 'on'),
             'qr_enabled' => $request->boolean('qr_enabled'),
-            'allowed_customer_groups' => !empty($request->allowed_customer_groups) ? $request->allowed_customer_groups : null,
             'status' => ((!empty($data['draft']) and $data['draft'] == 1) or (!empty($data['get_next']) and $data['get_next'] == 1)) ? Bundle::$isDraft : Bundle::$pending,
             'created_at' => time(),
         ]);
@@ -399,7 +398,6 @@ class BundlesController extends Controller
     if ($currentStep == 1) {
             $data['private'] = (!empty($data['private']) and $data['private'] == 'on');
             $data['qr_enabled'] = $request->boolean('qr_enabled');
-            $data['allowed_customer_groups'] = !empty($request->allowed_customer_groups) ? $request->allowed_customer_groups : null;
 
             BundleTranslation::updateOrCreate([
                 'bundle_id' => $bundle->id,

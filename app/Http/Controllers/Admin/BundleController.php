@@ -282,6 +282,7 @@ class BundleController extends Controller
             'category_id' => $data['category_id'],
            'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
             'qr_enabled' => (!empty($data['qr_enabled']) and $data['qr_enabled'] == 1),
+            'allowed_customer_groups' => !empty($request->allowed_customer_groups) ? $request->allowed_customer_groups : null,
             'status' => Bundle::$pending,
             'created_at' => time(),
             'updated_at' => time(),
@@ -480,6 +481,7 @@ class BundleController extends Controller
             'category_id' => $data['category_id'],
            'message_for_reviewer' => $data['message_for_reviewer'] ?? null,
             'qr_enabled' => (!empty($data['qr_enabled']) and $data['qr_enabled'] == 1),
+            'allowed_customer_groups' => !empty($request->allowed_customer_groups) ? $request->allowed_customer_groups : null,
             'status' => $data['status'],
             'updated_at' => time(),
         ]);
