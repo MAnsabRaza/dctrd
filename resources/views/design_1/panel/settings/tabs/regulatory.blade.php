@@ -69,7 +69,7 @@
             @endforeach
         </div>
     @empty
-        <div class="text-gray-500 mt-20">Koi regulatory form abhi applicable nahi hai.</div>
+        <div class="text-gray-500 mt-20">There are no regulatory forms available at the moment.</div>
     @endforelse
 </div>
 
