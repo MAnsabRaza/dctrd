@@ -58,6 +58,55 @@ class UserController extends Controller
 
         return view('design_1.panel.settings.index', $data);
     }
+    private function makeRegulatoryViewData($user): array
+{
+    $userRoles = \App\Models\UserRoleRequest::where('user_id', $user->id)
+        ->whereIn('status', [\App\Models\UserRoleRequest::STATUS_ACTIVE, \App\Models\UserRoleRequest::STATUS_PENDING])
+        ->with('roleCatalog')
+        ->get();
+
+    $stacks = [];
+
+    foreach ($userRoles as $userRole) {
+        $roleCatalogId = $userRole->role_catalog_id;
+
+        $primaryTemplate = \App\Models\RegulatoryFormTemplate::where('role_catalog_id', $roleCatalogId)
+            ->where('level', 'primary')
+            ->where('active', true)
+            ->first();
+
+        if (empty($primaryTemplate)) {
+            continue;
+        }
+
+        $primarySubmission = \App\Models\RegulatoryFormSubmission::where('user_id', $user->id)
+            ->where('role_catalog_id', $roleCatalogId)
+            ->where('level', 'primary')
+            ->first();
+
+        $extraTemplates = \App\Models\RegulatoryFormTemplate::where('role_catalog_id', $roleCatalogId)
+            ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
+            ->where('active', true)
+            ->get();
+
+        $extraSubmissions = \App\Models\RegulatoryFormSubmission::where('user_id', $user->id)
+            ->where('role_catalog_id', $roleCatalogId)
+            ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
+            ->get()
+            ->groupBy('template_id');
+
+        $stacks[] = [
+            'role'              => $userRole->roleCatalog,
+            'roleRequestStatus' => $userRole->status,
+            'primaryTemplate'   => $primaryTemplate,
+            'primarySubmission' => $primarySubmission,
+            'extraTemplates'    => $extraTemplates,
+            'extraSubmissions'  => $extraSubmissions,
+        ];
+    }
+
+    return compact('stacks');
+}
 
     public function getUserEditPageData(Request $request, $user, $step): array
 {
@@ -93,6 +142,7 @@ class UserController extends Controller
     $calendarConnectionsData = [];
     $abilitiesSettingsData = [];
     $erpSettingsData = [];
+    $regulatorySettingsData = [];
 
     // ===== ERP DATA — HAMESHA COMPUTE HO (step-independent) =====
     if ($user->isOrganization() or $user->isTeacher()) {
@@ -145,7 +195,10 @@ class UserController extends Controller
             abort(404);
         }
         $availabilitySettingsData = $this->makeAvailabilitySettingsViewData($user->id);
-    }
+    } elseif ($step == "regulatory") {
+    $regulatorySettingsData = $this->makeRegulatoryViewData($user);
+}
+
     // ⚠️ "erp" step ka alag elseif ab yahan NAHI hai — upar unconditional ho chuka hai
 
     $userBanks = UserBank::query()
@@ -170,7 +223,7 @@ class UserController extends Controller
         'attachments' => $attachments,
         'userLoginHistories' => $userLoginHistories,
         'moduleSettings' => $moduleSettings,
-    ], $bookingSettingsData, $availabilitySettingsData, $calendarConnectionsData, $abilitiesSettingsData, $erpSettingsData);
+    ], $bookingSettingsData, $availabilitySettingsData, $calendarConnectionsData, $abilitiesSettingsData, $erpSettingsData, $regulatorySettingsData);
 }
     private function makeAbilitiesViewData(int $vendorId): array
 {
