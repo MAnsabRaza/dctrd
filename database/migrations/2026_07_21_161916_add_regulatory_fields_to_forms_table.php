@@ -27,7 +27,18 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('forms', function (Blueprint $table) {
-            $table->dropColumn(['connect_regulatory', 'regulatory_role_catalog_id', 'regulatory_level', 'regulatory_countries']);
+            if (Schema::hasColumn('forms', 'connect_regulatory')) {
+                $table->dropColumn('connect_regulatory');
+            }
+            if (Schema::hasColumn('forms', 'regulatory_role_catalog_id')) {
+                $table->dropColumn('regulatory_role_catalog_id');
+            }
+            if (Schema::hasColumn('forms', 'regulatory_level')) {
+                $table->dropColumn('regulatory_level');
+            }
+            if (Schema::hasColumn('forms', 'regulatory_countries')) {
+                $table->dropColumn('regulatory_countries');
+            }
         });
     }
 };
