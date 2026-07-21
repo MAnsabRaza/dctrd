@@ -1938,4 +1938,6 @@ return [
     //abilities
     'abilities'=> 'Abilities',
     'new_ability'=> 'New Ability',
+    'role_requests'=>'Role Request',
+    'role_catalog'  => 'Role Catalog',
 ];

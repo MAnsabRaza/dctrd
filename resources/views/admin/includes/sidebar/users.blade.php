@@ -6,6 +6,7 @@
                 $authUser->can('admin_become_instructors_list') or
                 $authUser->can('admin_delete_account_requests') or
                  $authUser->can('admin_role_requests') or
+                  $authUser->can('admin_role_catalog') or
                 $authUser->can('admin_user_login_history') or
                 $authUser->can('admin_user_ip_restriction')
             )
@@ -172,6 +173,15 @@
         <a href="{{ getAdminPanelUrl() }}/role-requests" class="nav-link">
             <x-iconsax-bul-security-user class="icons" width="24px" height="24px"/>
             <span>{{ trans('admin/main.role_requests') }}</span>
+        </a>
+    </li>
+@endcan
+
+@can('admin_role_catalog')
+    <li class="nav-item {{ (request()->is(getAdminPanelUrl('/role-catalog*', false))) ? 'active' : '' }}">
+        <a href="{{ getAdminPanelUrl() }}/role-catalog" class="nav-link">
+            <x-iconsax-bul-book class="icons" width="24px" height="24px"/>
+            <span>{{ trans('admin/main.role_catalog') }}</span>
         </a>
     </li>
 @endcan
