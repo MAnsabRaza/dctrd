@@ -138,7 +138,7 @@
             </div>
         </div>
 
-        <div class="form-group mt-15">
+       <div class="form-group mt-15">
             <label class="input-label">{{ trans('update.heading_title') }}</label>
             <input type="text" name="heading_title" value="{{ !empty($form) ? $form->heading_title : old('heading_title') }}" class="form-control @error('heading_title')  is-invalid @enderror" placeholder=""/>
             @error('heading_title')
@@ -149,8 +149,58 @@
         </div>
 
     </div>
-</div>
 
+    <div class="col-12 col-md-6 mt-15 mt-md-0">
+        <div class="border rounded-12 p-16" id="regulatoryConnectBox">
+            <div class="form-group d-flex align-items-center mb-3">
+                <label class="mr-2 mb-0">Connect with Regulatory/Badges</label>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" name="connect_regulatory" id="connectRegulatorySwitch"
+                           class="custom-control-input" {{ (!empty($form) and $form->connect_regulatory) ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="connectRegulatorySwitch"></label>
+                </div>
+            </div>
+
+            <div id="regulatoryFieldsBox" style="{{ (!empty($form) and $form->connect_regulatory) ? '' : 'display:none' }}">
+                <div class="form-group">
+                    <label class="input-label">Role</label>
+                    <select name="regulatory_role_catalog_id" class="form-control select2">
+                        <option value="">Select role</option>
+                        @foreach($roleCatalogOptions ?? [] as $roleOption)
+                            <option value="{{ $roleOption->id }}"
+                                {{ (!empty($form) and $form->regulatory_role_catalog_id == $roleOption->id) ? 'selected' : '' }}>
+                                [{{ ucfirst($roleOption->family) }}] {{ $roleOption->label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label">Form Level</label>
+                    <select name="regulatory_level" class="form-control">
+                        @foreach(['primary' => 'Primary', 'secondary' => 'Secondary', 'tertiary' => 'Tertiary', 'quaternary' => 'Quaternary', 'extra1' => 'Extra 1'] as $level => $label)
+                            <option value="{{ $level }}" {{ (!empty($form) and $form->regulatory_level == $level) ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="form-group mb-0">
+                    <label class="input-label">Choose Country's Regulation Laws</label>
+                    <select name="regulatory_countries[]" multiple class="form-control select2">
+                        @foreach($countries ?? [] as $country)
+                            <option value="{{ $country->id }}"
+                                {{ (!empty($form) and in_array($country->id, $form->regulatory_countries ?? [])) ? 'selected' : '' }}>
+                                {{ $country->title }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="row">
     <div class="col-12">
@@ -298,3 +348,8 @@
 
     </div>
 </div>
+<script>
+    $('#connectRegulatorySwitch').on('change', function () {
+        $('#regulatoryFieldsBox').toggle(this.checked);
+    });
+</script>

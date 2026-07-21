@@ -221,11 +221,15 @@
         <div class="card-body">
             <div class="table-responsive text-center">
                 <table class="table custom-table font-14">
-                    <tr>
+                   <tr>
                         <th>ID</th>
                         <th class="text-left">{{ trans('admin/main.name') }}</th>
                         <th>{{ trans('admin/main.classes') }}</th>
                         <th>{{ trans('admin/main.appointments') }}</th>
+                        <th>Products</th>
+                        <th>Bookings</th>
+                        <th>Classified</th>
+                        <th>Tickets</th>
                         <th>{{ trans('admin/main.wallet_charge') }}</th>
                         <th>{{ trans('admin/main.income') }}</th>
                         <th>{{ trans('admin/main.user_group') }}</th>
@@ -269,12 +273,17 @@
                                 </div>
                             </td>
 
-                            <td>
+                         <td>
                                 <div class="media-body">
                                     <div class="text-dark mt-0 mb-1">{{ $user->meetingsPurchasedsCount }}</div>
                                     <div class="text-small font-12 text-gray-500">{{ handlePrice($user->meetingsPurchasedsSum) }}</div>
                                 </div>
                             </td>
+
+                            <td>{{ $user->productsCount }}</td>
+                            <td>{{ $user->bookingsCount }}</td>
+                            <td>{{ $user->classifiedCount }}</td>
+                            <td>{{ $user->ticketsCount }}</td>
 
                             <td>{{ handlePrice($user->getAccountingBalance()) }}</td>
 

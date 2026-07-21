@@ -235,9 +235,17 @@ class UserController extends Controller
         return view('admin.users.instructors', $data);
     }
 
-    private function addUsersExtraInfo($users)
+   private function addUsersExtraInfo($users)
     {
         foreach ($users as $user) {
+            // Phase 8: Products / Bookings / Classified / Tickets counts (jo user ne khud create kiye)
+            $user->productsCount    = \App\Models\Product::where('creator_id', $user->id)->count();
+            $user->bookingsCount    = \App\Models\Booking::where('creator_id', $user->id)->count();
+            $user->classifiedCount  = class_exists(\App\Models\Classified::class)
+                ? \App\Models\Classified::where('creator_id', $user->id)->count()
+                : 0;
+            $user->ticketsCount     = \App\Models\Ticket::where('creator_id', $user->id)->count();
+
             $salesQuery = Sale::where('seller_id', $user->id)
                 ->whereNull('refund_at');
 

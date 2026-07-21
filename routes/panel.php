@@ -906,6 +906,17 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
         Route::get('/', 'AiContentController@index');
         Route::post('/generate', 'AiContentController@generate');
     });
+    Route::group(['prefix' => 'roles'], function () {
+    Route::get('/', 'RoleManagementController@index')->name('panel.roles.index');
+    Route::post('/request', 'RoleManagementController@requestRole')->name('panel.roles.request');
+});
+Route::group(['prefix' => 'regulatory'], function () {
+    Route::get('/', 'RegulatoryFormController@show')->name('panel.regulatory.show');
+    Route::post('/save-draft', 'RegulatoryFormController@saveDraft')->name('panel.regulatory.draft');
+    Route::post('/submit', 'RegulatoryFormController@submitForReview')->name('panel.regulatory.submit');
+    Route::post('/add-slot', 'RegulatoryFormController@addSlot')->name('panel.regulatory.add_slot');
+    Route::delete('/{submissionId}', 'RegulatoryFormController@destroy')->name('panel.regulatory.destroy');
+});
 
     // Events Routes
     Route::group(['prefix' => 'events', 'middleware' => 'check_event_feature_status'], function () {

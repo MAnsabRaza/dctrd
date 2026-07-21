@@ -84,8 +84,12 @@ class FormsController extends Controller
             'tank_you_message_image' => $data['tank_you_message_image'] ?? null,
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'enable' => false,
-            'created_at' => time(),
+          'enable' => false,
+'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
+'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
+'regulatory_level'           => $data['regulatory_level'] ?? null,
+'regulatory_countries'       => !empty($data['regulatory_countries']) ? $data['regulatory_countries'] : null,
+'created_at' => time(),
         ]);
 
         $this->storeExtraData($form, $data);
@@ -211,7 +215,11 @@ class FormsController extends Controller
             'tank_you_message_image' => $data['tank_you_message_image'] ?? null,
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'enable' => (!empty($data['enable']) and $data['enable'] == "on"),
+         'enable' => (!empty($data['enable']) and $data['enable'] == "on"),
+'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
+'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
+'regulatory_level'           => $data['regulatory_level'] ?? null,
+'regulatory_countries'       => !empty($data['regulatory_countries']) ? $data['regulatory_countries'] : null,
         ]);
 
         $this->storeExtraData($form, $data);

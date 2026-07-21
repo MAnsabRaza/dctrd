@@ -10,6 +10,8 @@
 use App\Http\Controllers\Admin\AvailabilitySettingsController;
 use App\Http\Controllers\Admin\AbilityController;
 use App\Http\Controllers\Admin\QrAnalyticsController;
+use App\Http\Controllers\Admin\RoleCatalogController;
+use App\Http\Controllers\Admin\RoleRequestController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\Admin\BookingCategorySettingsController;
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
@@ -70,6 +72,17 @@ use App\Http\Controllers\Admin\WebinarController;
 /**
  * Booking Categories Routes
  */
+
+Route::group(['prefix' => 'role-requests'], function () {
+    Route::get('/', [RoleRequestController::class, 'index'])->name('admin.role_requests.index');
+    Route::post('/{id}/approve', [RoleRequestController::class, 'approve'])->name('admin.role_requests.approve');
+    Route::post('/{id}/reject', [RoleRequestController::class, 'reject'])->name('admin.role_requests.reject');
+});
+Route::group(['prefix' => 'role-catalog'], function () {
+    Route::get('/', [RoleCatalogController::class, 'index'])->name('admin.role_catalog.index');
+    Route::get('/{id}/edit', [RoleCatalogController::class, 'edit'])->name('admin.role_catalog.edit');
+    Route::post('/{id}/update', [RoleCatalogController::class, 'update'])->name('admin.role_catalog.update');
+});
 
 
 Route::get('/store/products/{id}/qr/regenerate', [ProductsController::class, 'regenerateQr']);
