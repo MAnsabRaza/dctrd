@@ -115,15 +115,15 @@
 {{-- Confirmation modal for "add slot" buttons --}}
 <div class="modal fade" id="addSlotConfirmModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body text-center p-24">
-                <p id="addSlotConfirmText" class="mb-16"></p>
-                <div class="d-flex justify-content-center gap-3">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">No, I chose it by Mistake</button>
-                    <button type="button" class="btn btn-primary" id="addSlotConfirmYes">Yes, I want to apply for this</button>
-                </div>
-            </div>
-        </div>
+        <div class="modal-body text-center p-24">
+    <p class="mb-8 font-weight-bold">Are you sure the choice that you made?</p>
+    <p id="addSlotConfirmText" class="mb-16 text-gray-500"></p>
+    <p class="text-small mb-16">After you make your choice, you can not undo it!!</p>
+    <div class="d-flex justify-content-center gap-3">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">No, I chose it by Mistake</button>
+        <button type="button" class="btn btn-primary" id="addSlotConfirmYes">Yes, I want to apply for this</button>
+    </div>
+</div>
     </div>
 </div>
 
@@ -132,10 +132,10 @@
     var pendingTemplateId = null;
 
     $('.js-add-slot-btn').on('click', function () {
-        pendingTemplateId = $(this).data('template-id');
-        $('#addSlotConfirmText').text('Are you sure you want to apply for ' + $(this).data('label') + '?');
-        $('#addSlotConfirmModal').modal('show');
-    });
+    pendingTemplateId = $(this).data('template-id');
+    $('#addSlotConfirmText').text('I want to apply for ' + $(this).data('label'));
+    $('#addSlotConfirmModal').modal('show');
+});
 
     $('#addSlotConfirmYes').on('click', function () {
         $.post('{{ route("panel.regulatory.add_slot") }}', {
@@ -156,18 +156,24 @@
         $form.find('[name]').each(function () {
             fields[$(this).attr('name')] = $(this).val();
         });
-
-        $.post(url, {
-            _token: '{{ csrf_token() }}',
-            template_id: $form.data('template-id'),
-            submission_id: $form.data('submission-id'),
-            fields: fields
-        }, function (res) {
-            showToast('success', '', res.msg);
-        }).fail(function () {
-            showToast('error', 'Error', 'Something went wrong');
-        });
-    });
+$.post(url, {
+    _token: '{{ csrf_token() }}',
+    template_id: $form.data('template-id'),
+    submission_id: $form.data('submission-id') || '',
+    fields: fields
+}, function (res) {
+    showToast('success', '', res.msg);
+    // Pehli save ke baad submission_id set kar do, taake agli save "update" ho, naya row na bane
+    $form.attr('data-submission-id', res.submission_id).data('submission-id', res.submission_id);
+}).fail(function (xhr) {
+    var msg = 'Something went wrong';
+    if (xhr.responseJSON && xhr.responseJSON.errors) {
+        msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+        msg = xhr.responseJSON.message;
+    }
+    showToast('error', 'Error', msg);
+});
 
     $('.js-delete-slot').on('click', function () {
         var submissionId = $(this).data('submission-id');

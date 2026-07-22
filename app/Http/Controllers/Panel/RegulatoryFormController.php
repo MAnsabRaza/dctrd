@@ -121,37 +121,47 @@ class RegulatoryFormController extends Controller
         return response()->json(['code' => 200]);
     }
 
-    private function storeSubmission(Request $request, string $status)
-    {
-        $data = $request->validate([
-            'template_id'   => 'required|exists:regulatory_form_templates,id',
-            'submission_id' => 'nullable|exists:regulatory_form_submissions,id',
-            'fields'        => 'nullable|array',
-        ]);
+  private function storeSubmission(Request $request, string $status)
+{
+    $data = $request->validate([
+        'template_id'   => 'required|exists:regulatory_form_templates,id',
+        'submission_id' => 'nullable|integer', // exists rule hata di — empty string safe rahegi
+        'fields'        => 'nullable|array',
+    ]);
 
-        $user     = auth()->user();
-        $template = RegulatoryFormTemplate::findOrFail($data['template_id']);
+    $user     = auth()->user();
+    $template = RegulatoryFormTemplate::findOrFail($data['template_id']);
 
-        $submission = RegulatoryFormSubmission::updateOrCreate(
-            [
-                'id'      => $data['submission_id'] ?? null,
-                'user_id' => $user->id,
-            ],
-            [
-                'role_catalog_id' => $template->role_catalog_id,
-                'template_id'     => $template->id,
-                'level'           => $template->level,
-                'data'            => $data['fields'] ?? [],
-                'status'          => $status,
-            ]
-        );
+    // Empty string / 0 ko null treat karo
+    $submissionId = !empty($data['submission_id']) ? (int) $data['submission_id'] : null;
 
-        return response()->json([
-            'code'   => 200,
-            'msg'    => $status === 'pending'
-                ? 'Form submitted for review — admin approval ka intezar hai.'
-                : 'Draft saved.',
-            'status' => $submission->status,
-        ]);
+    $submission = null;
+
+    if ($submissionId) {
+        $submission = RegulatoryFormSubmission::where('id', $submissionId)
+            ->where('user_id', $user->id)
+            ->first();
     }
+
+    if (empty($submission)) {
+        $submission = new RegulatoryFormSubmission();
+        $submission->user_id = $user->id;
+    }
+
+    $submission->role_catalog_id = $template->role_catalog_id;
+    $submission->template_id     = $template->id;
+    $submission->level           = $template->level;
+    $submission->data            = $data['fields'] ?? [];
+    $submission->status          = $status;
+    $submission->save();
+
+    return response()->json([
+        'code'          => 200,
+        'submission_id' => $submission->id, // JS isay dobara use karega taake next save "update" ho, duplicate na bane
+        'msg'           => $status === 'pending'
+            ? 'Form submitted for review — admin approval ka intezar hai.'
+            : 'Draft saved.',
+        'status'        => $submission->status,
+    ]);
+}
 }
