@@ -866,6 +866,8 @@
     var IS_EDIT_MODE = {{ !empty($booking) ? 'true' : 'false' }};
     var CATEGORY_BY_TYPE_URL = '{{ getAdminPanelUrl('/booking/categories-by-type') }}';
     var CATEGORY_REQUEST_TOKEN = 0;
+    var CLEAR_RESTORED_FIELD_VALUES = false;
+    var CLEAR_RESTORED_EXCEPT_FIELD_KEYS = [];
 
     // FIX: 'requirements' removed — the field no longer exists in the form.
     var ALWAYS_VISIBLE_FIELD_KEYS = ['category_id', 'title', 'price', 'description'];
@@ -1096,6 +1098,9 @@
     function setFieldGroupVisible(fieldEl, isVisible, isRequired) {
         if (isVisible) {
             restoreFieldGroupControls(fieldEl);
+            if (CLEAR_RESTORED_FIELD_VALUES && CLEAR_RESTORED_EXCEPT_FIELD_KEYS.indexOf(fieldEl.dataset.fieldKey) === -1) {
+                clearFieldGroupValue(fieldEl);
+            }
             fieldEl.style.display = '';
             setDynamicRequired(fieldEl, !!isRequired);
             return;
@@ -1147,6 +1152,60 @@
             if (ALWAYS_VISIBLE_FIELD_KEYS.indexOf(key) !== -1) return;
             clearFieldGroupValue(fieldEl);
         });
+    }
+
+    function clearBookingFormValues(keepNames) {
+        keepNames = keepNames || [];
+
+        var form = document.getElementById('bookingAdminForm');
+        if (!form) return;
+
+        form.querySelectorAll('input, select, textarea').forEach(function (input) {
+            var name = input.name || '';
+
+            if (!name || keepNames.indexOf(name) !== -1) return;
+            if (name === '_token' || name === 'creator_id' || name === 'admin_booking_draft_id') return;
+
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.checked = false;
+            } else if (input.type === 'hidden') {
+                input.value = name === 'location_enabled' ? '0' : '';
+            } else {
+                input.value = '';
+            }
+
+            input.classList.remove('is-invalid');
+
+            if (window.jQuery) {
+                var $input = window.jQuery(input);
+
+                if ($input.data('select2')) {
+                    if (input.id === 'bookingCategorySelect') {
+                        $input.val('').trigger('change.select2');
+                    } else {
+                        $input.val('').trigger('change');
+                    }
+                }
+
+                if ($input.hasClass('summernote') && typeof $input.summernote === 'function') {
+                    $input.summernote('code', '');
+                }
+            }
+        });
+
+        form.querySelectorAll('.js-custom-invalid-feedback, .js-server-invalid-feedback').forEach(function (node) {
+            node.remove();
+        });
+
+        var errorAlert = document.getElementById('bookingFormErrorsAlert');
+        if (errorAlert) errorAlert.remove();
+
+        var locationSwitchEl = document.getElementById('newBookingLocationSwitch');
+        var locationPanelEl = document.getElementById('newBookingLocationPanel');
+        if (locationSwitchEl) locationSwitchEl.checked = false;
+        if (locationPanelEl) locationPanelEl.style.display = 'none';
+
+        extraIndex = 0;
     }
 
     function removeAllTemplateSpecificControls() {
@@ -1555,9 +1614,13 @@
         typeSelect.addEventListener('change', function () {
             CURRENT_CATEGORY_ID = null;
             CURRENT_SUB_TYPE = '';
-            clearAllDynamicFieldValues();
+            CLEAR_RESTORED_FIELD_VALUES = true;
+            CLEAR_RESTORED_EXCEPT_FIELD_KEYS = [];
+            clearBookingFormValues(['booking_type']);
             removeAllTemplateSpecificControls();
             prepareCategoryPicker(this.value, null);
+            CLEAR_RESTORED_FIELD_VALUES = false;
+            CLEAR_RESTORED_EXCEPT_FIELD_KEYS = [];
         });
 
         if (!IS_EDIT_MODE && !typeSelect.value) {
@@ -1584,16 +1647,24 @@
             if (IS_REFRESHING_CATEGORY_SELECT) return;
             // FIX: user actually changed the category — clear previously
             // entered template-specific values and remove stale hidden inputs.
-            clearAllDynamicFieldValues();
+            CLEAR_RESTORED_FIELD_VALUES = true;
+            CLEAR_RESTORED_EXCEPT_FIELD_KEYS = ['category_id'];
+            clearBookingFormValues(['booking_type', 'category_id']);
             removeAllTemplateSpecificControls();
             applySelectedCategoryTemplate();
+            CLEAR_RESTORED_FIELD_VALUES = false;
+            CLEAR_RESTORED_EXCEPT_FIELD_KEYS = [];
         });
 
         if (window.jQuery) {
             window.jQuery(categorySelect).on('select2:select', function () {
-                clearAllDynamicFieldValues();
+                CLEAR_RESTORED_FIELD_VALUES = true;
+                CLEAR_RESTORED_EXCEPT_FIELD_KEYS = ['category_id'];
+                clearBookingFormValues(['booking_type', 'category_id']);
                 removeAllTemplateSpecificControls();
                 applySelectedCategoryTemplate();
+                CLEAR_RESTORED_FIELD_VALUES = false;
+                CLEAR_RESTORED_EXCEPT_FIELD_KEYS = [];
             });
         }
 
