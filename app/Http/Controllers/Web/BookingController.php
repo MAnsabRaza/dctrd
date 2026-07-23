@@ -20,7 +20,10 @@ use App\Services\SlotEngine;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class BookingController extends Controller
 {
@@ -342,59 +345,165 @@ class BookingController extends Controller
        DIRECT PAYMENT  (AJAX)
     ══════════════════════════════════════════════ */
 
-    public function directPayment(Request $request)
+    public function directPayment(Request $request, SlotEngine $slotEngine)
     {
         $user = auth()->user();
 
-        if (empty($user) || empty(getFeaturesSettings('direct_bookings_payment_button_status'))) {
-            return response()->json([], 422);
+        if (empty($user)) {
+            return response()->json([
+                'message' => trans('public.request_failed') ?: 'Request failed.',
+            ], 422);
         }
 
-        $this->validate($request, ['item_id' => 'required']);
+        $itemValidator = Validator::make($request->all(), [
+            'item_id' => ['required', 'integer'],
+        ], [
+            'item_id.required' => 'Booking item is required.',
+        ]);
+
+        if ($itemValidator->fails()) {
+            return response()->json([
+                'message' => 'Please fix the highlighted fields.',
+                'errors' => $itemValidator->errors(),
+            ], 422);
+        }
 
         $data       = $request->except('_token');
-        $bookingId  = $data['item_id'];
+        $bookingId  = (int) $data['item_id'];
         $quantity   = (int) ($data['quantity'] ?? 1);
 
         $booking = Booking::query()->where('id', $bookingId)->where('status', 'published')->first();
 
         if (empty($booking)) {
-            return response()->json([], 422);
+            return response()->json([
+                'message' => 'The selected booking is no longer available.',
+                'errors' => [
+                    'item_id' => ['The selected booking is no longer available.'],
+                ],
+            ], 422);
+        }
+
+        $resourceRequired = $booking->resources()->where('status', true)->exists();
+        $validator = Validator::make($request->all(), [
+            'slot_date' => ['required', 'date', 'after_or_equal:today'],
+            'slot_start' => ['required', 'date_format:H:i'],
+            'slot_end' => ['required', 'date_format:H:i'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'resource_id' => [
+                $resourceRequired ? 'required' : 'nullable',
+                'integer',
+                Rule::exists('booking_resources', 'id')->where(function ($query) use ($booking) {
+                    $query->where('booking_id', $booking->id)->where('status', true);
+                }),
+            ],
+        ], [
+            'slot_date.required' => 'Please select a booking date.',
+            'slot_start.required' => 'Please select an available slot.',
+            'slot_end.required' => 'Please select an available slot.',
+            'quantity.required' => 'Quantity is required.',
+            'quantity.min' => 'Quantity must be at least 1.',
+            'resource_id.required' => 'Please select a resource.',
+            'resource_id.exists' => 'The selected resource is not available for this booking.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Please fix the highlighted fields.',
+                'errors' => $validator->errors(),
+            ], 422);
         }
 
         $activeDiscount = method_exists($booking, 'getActiveDiscount') ? $booking->getActiveDiscount() : null;
+        $slotDate = Carbon::parse($request->input('slot_date'))->toDateString();
+        $slotStart = $request->input('slot_start');
+        $slotEnd = $request->input('slot_end');
+        $resourceId = $request->filled('resource_id') ? (int) $request->input('resource_id') : null;
 
-        $bookingOrder = BookingOrder::where([
+        $payloadHash = md5(json_encode([
+            'user_id' => $user->id,
+            'session_id' => $request->session()->getId(),
             'booking_id' => $booking->id,
-            'seller_id'  => $booking->creator_id,
-            'buyer_id'   => $user->id,
-        ])->first();
+            'resource_id' => $resourceId,
+            'slot_date' => $slotDate,
+            'slot_start' => $slotStart,
+            'slot_end' => $slotEnd,
+            'quantity' => $quantity,
+        ]));
 
-        if ($bookingOrder) {
-            $bookingOrder->update([
-                'quantity'            => $quantity,
-                'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
-                'status'              => BookingOrder::$pending,
-            ]);
-        } else {
-            $bookingOrder = BookingOrder::create([
-                'booking_id'          => $booking->id,
-                'seller_id'           => $booking->creator_id,
-                'buyer_id'            => $user->id,
-                'quantity'            => $quantity,
-                'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
-                'status'              => BookingOrder::$pending,
-                'created_at'          => time(),
-            ]);
+        $lock = Cache::lock("booking_cart_submit:{$payloadHash}", 10);
+
+        try {
+            $bookingOrder = $lock->block(5, function () use ($booking, $user, $activeDiscount, $quantity, $slotEngine, $slotDate, $slotStart, $slotEnd, $resourceId) {
+                $existingOrderQuery = BookingOrder::query()
+                    ->where('booking_id', $booking->id)
+                    ->where('seller_id', $booking->creator_id)
+                    ->where('buyer_id', $user->id)
+                    ->where('booking_date', $slotDate)
+                    ->where('start_time', $slotStart)
+                    ->where('end_time', $slotEnd)
+                    ->where('quantity', $quantity)
+                    ->where('status', BookingOrder::$pending);
+
+                if ($resourceId) {
+                    $existingOrderQuery->where('resource_id', $resourceId);
+                } else {
+                    $existingOrderQuery->whereNull('resource_id');
+                }
+
+                $existingOrder = $existingOrderQuery->first();
+
+                if ($existingOrder) {
+                    Cart::updateOrCreate(
+                        ['creator_id' => $user->id, 'booking_order_id' => $existingOrder->id],
+                        ['created_at' => time()]
+                    );
+
+                    return $existingOrder;
+                }
+
+                if (!$slotEngine->isSlotAvailable($booking, Carbon::parse($slotDate), $slotStart, $slotEnd, $resourceId)) {
+                    return null;
+                }
+
+                return DB::transaction(function () use ($booking, $user, $activeDiscount, $quantity, $slotDate, $slotStart, $slotEnd, $resourceId) {
+                    $bookingOrder = BookingOrder::create([
+                        'booking_id'          => $booking->id,
+                        'seller_id'           => $booking->creator_id,
+                        'buyer_id'            => $user->id,
+                        'resource_id'         => $resourceId,
+                        'booking_date'        => $slotDate,
+                        'start_time'          => $slotStart,
+                        'end_time'            => $slotEnd,
+                        'quantity'            => $quantity,
+                        'booking_discount_id' => !empty($activeDiscount) ? $activeDiscount->id : null,
+                        'status'              => BookingOrder::$pending,
+                        'created_at'          => time(),
+                    ]);
+
+                    Cart::updateOrCreate(
+                        ['creator_id' => $user->id, 'booking_order_id' => $bookingOrder->id],
+                        ['created_at' => time()]
+                    );
+
+                    return $bookingOrder;
+                });
+            });
+        } finally {
+            optional($lock)->release();
         }
 
-        Cart::updateOrCreate(
-            ['creator_id' => $user->id, 'booking_order_id' => $bookingOrder->id],
-            ['created_at' => time()]
-        );
+        if (!$bookingOrder) {
+            return response()->json([
+                'message' => 'This time slot is no longer available. Please select another slot.',
+                'errors' => [
+                    'slot_start' => ['This time slot is no longer available. Please select another slot.'],
+                ],
+            ], 422);
+        }
 
         return response()->json([
             'code'        => 200,
+            'status'      => 'success',
             'title'       => trans('cart.cart_add_success_title'),
             'msg'         => trans('cart.cart_add_success_msg'),
             'redirect_to' => '/cart',

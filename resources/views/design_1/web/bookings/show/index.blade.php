@@ -137,6 +137,51 @@
         }
     }
 
+    function clearBookingErrors() {
+        $('.js-booking-field-error').text('').hide();
+        $('#slotDateInput, #slotResourceId').removeClass('is-invalid');
+        $('#availabilityMessage').hide().removeClass('alert alert-danger alert-success').text('');
+    }
+
+    function showBookingFieldError(field, message) {
+        var normalizedField = field === 'date' ? 'slot_date' : field;
+        var $error = $('.js-booking-field-error[data-field="' + normalizedField + '"]');
+
+        if (!$error.length && (normalizedField === 'slot_end' || normalizedField === 'selected_slot')) {
+            $error = $('.js-booking-field-error[data-field="slot_start"]');
+        }
+
+        if ($error.length) {
+            $error.text(message).show();
+        }
+
+        if (normalizedField === 'slot_date') {
+            $('#slotDateInput').addClass('is-invalid');
+        } else if (normalizedField === 'resource_id') {
+            $('#slotResourceId').addClass('is-invalid');
+        }
+    }
+
+    function setBookButtonLoading($btn, isLoading) {
+        if (!$btn.data('original-text')) {
+            $btn.data('original-text', $btn.html());
+        }
+
+        if (isLoading) {
+            $btn.addClass('loadingbar').prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-8" role="status" aria-hidden="true"></span><span class="text-white">Loading...</span>');
+        } else {
+            $btn.removeClass('loadingbar').prop('disabled', false).html($btn.data('original-text'));
+        }
+    }
+
+    function showBookingMessage(type, message) {
+        $('#availabilityMessage')
+            .removeClass('alert-success alert-danger')
+            .addClass('alert alert-' + type)
+            .text(message)
+            .show();
+    }
+
     // Slot radio select hone par summary update
     $(document).on('change', 'input[name="selected_slot"]', function () {
         var $r = $(this);
@@ -161,6 +206,7 @@
     $('#checkSlotsBtn').on('click', function () {
         var date       = $('#slotDateInput').val();
         var resourceId = $('#slotResourceId').val() || '';
+        clearBookingErrors();
         if (!date) { showToast('error', 'Error', 'Please select a date'); return; }
 
         var $btn = $(this).addClass('loadingbar').prop('disabled', true);
@@ -204,14 +250,19 @@
     // Agar slot select hai -> poori booking flow (check-availability + cart + redirect) chalao.
     $('#bookingAddToCartBtn').on('click', function () {
         var $bookBtn = $(this);
+        if ($bookBtn.prop('disabled')) {
+            return;
+        }
+
+        clearBookingErrors();
 
         if (!selectedSlot || !selectedSlot.date || !selectedSlot.start_time) {
+            showBookingFieldError('slot_start', 'Please select an available slot.');
             document.getElementById('bookingSlotPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             return;
         }
 
-        $bookBtn.addClass('loadingbar').prop('disabled', true);
-        $('#availabilityMessage').hide();
+        setBookButtonLoading($bookBtn, true);
 
         $.ajax({
             url: '/bookings/' + bookingSlug + '/check-availability',
@@ -220,28 +271,21 @@
                 _token: '{{ csrf_token() }}',
                 date: selectedSlot.date,
                 start_time: selectedSlot.start_time,
+                end_time: selectedSlot.end_time,
                 resource_id: $('#slotResourceId').val() || ''
             },
             dataType: 'json'
         }).done(function (res) {
 
             if (!res.available) {
-                $('#availabilityMessage')
-                    .removeClass('alert-success')
-                    .addClass('alert alert-danger')
-                    .text(res.message)
-                    .show();
-                $bookBtn.removeClass('loadingbar').prop('disabled', false);
+                showBookingMessage('danger', res.message || 'This time slot is no longer available. Please select another slot.');
+                setBookButtonLoading($bookBtn, false);
                 return;
             }
 
-            $('#availabilityMessage')
-                .removeClass('alert-danger')
-                .addClass('alert alert-success')
-                .text(res.message)
-                .show();
+            showBookingMessage('success', res.message || 'This slot is available.');
 
-            $.post('/cart/store', {
+            $.post('/bookings/direct-payment', {
                 _token:      '{{ csrf_token() }}',
                 item_id:     bookingId,
                 item_name:   'booking_id',
@@ -249,33 +293,49 @@
                 slot_date:   selectedSlot.date,
                 slot_start:  selectedSlot.start_time,
                 slot_end:    selectedSlot.end_time,
-                resource_id: $('#slotResourceId').val() || ''
+                resource_id: $('#slotResourceId').val() || '',
+                quantity:    1
             }, function (result) {
                 if (result && result.title) {
                     showToast(result.status || 'success', result.title, result.msg || '');
                 }
                 if (result && result.status === 'error') {
-                    $bookBtn.removeClass('loadingbar').prop('disabled', false);
+                    showBookingMessage('danger', result.msg || 'Could not add this booking to cart.');
+                    setBookButtonLoading($bookBtn, false);
                     return;
                 }
-                if ($('.js-view-cart-drawer').length) {
-                    $('.js-view-cart-drawer').trigger('click');
-                } else {
-                    setTimeout(function () { window.location.href = '/cart'; }, 800);
-                }
+                showBookingMessage('success', result.msg || 'Booking added to cart.');
+                window.location.href = (result && result.redirect_to) ? result.redirect_to : '/cart';
             }).fail(function (err) {
-                $bookBtn.removeClass('loadingbar').prop('disabled', false);
-                var errors = err.responseJSON;
-                if (errors && errors.toast_alert) {
-                    showToast('error', errors.toast_alert.title, errors.toast_alert.msg);
+                setBookButtonLoading($bookBtn, false);
+                var response = err.responseJSON || {};
+
+                if (response.errors) {
+                    Object.keys(response.errors).forEach(function (field) {
+                        showBookingFieldError(field, response.errors[field][0]);
+                    });
+                    showBookingMessage('danger', response.message || 'Please fix the highlighted fields.');
+                } else if (response.toast_alert) {
+                    showToast('error', response.toast_alert.title, response.toast_alert.msg);
+                    showBookingMessage('danger', response.toast_alert.msg || 'Could not add this booking to cart.');
                 } else {
-                    showToast('error', 'Error', 'Something went wrong');
+                    showToast('error', 'Error', response.message || 'Something went wrong. Please try again.');
+                    showBookingMessage('danger', response.message || 'Something went wrong. Please try again.');
                 }
             });
 
         }).fail(function (xhr) {
-            $bookBtn.removeClass('loadingbar').prop('disabled', false);
-            showToast('error', 'Error', 'Could not verify availability, please try again.');
+            setBookButtonLoading($bookBtn, false);
+            var response = xhr.responseJSON || {};
+
+            if (response.errors) {
+                Object.keys(response.errors).forEach(function (field) {
+                    showBookingFieldError(field, response.errors[field][0]);
+                });
+            }
+
+            showBookingMessage('danger', response.message || 'Could not verify availability, please try again.');
+            showToast('error', 'Error', response.message || 'Could not verify availability, please try again.');
         });
     });
 

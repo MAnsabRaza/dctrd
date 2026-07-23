@@ -10,6 +10,7 @@
                     <input type="date" id="slotDateInput" class="form-control"
                            value="{{ request()->get('date', now()->toDateString()) }}"
                            min="{{ now()->toDateString() }}">
+                    <div class="invalid-feedback d-block js-booking-field-error" data-field="slot_date" style="display:none;"></div>
                 </div>
             </div>
 
@@ -23,6 +24,7 @@
                                 <option value="{{ $resource->id }}">{{ $resource->name }}</option>
                             @endforeach
                         </select>
+                        <div class="invalid-feedback d-block js-booking-field-error" data-field="resource_id" style="display:none;"></div>
                     </div>
                 </div>
             @endif
@@ -55,5 +57,7 @@
         @endif
     </div>
 
+    <div class="invalid-feedback d-block js-booking-field-error mt-8" data-field="slot_start" style="display:none;"></div>
+    <div class="invalid-feedback d-block js-booking-field-error mt-8" data-field="quantity" style="display:none;"></div>
     <div id="availabilityMessage" class="mt-12" style="display:none;"></div>
 </div>
