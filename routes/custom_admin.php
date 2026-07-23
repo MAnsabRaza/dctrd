@@ -95,6 +95,7 @@ Route::group(['prefix' => 'booking'], function () {
    Route::get('/', [BookingController::class, 'index']);
     Route::get('/list', [BookingController::class, 'list']);
     Route::get('/excel', [BookingController::class, 'exportExcel']);
+    Route::get('/categories-by-type', [BookingController::class, 'categoriesByType']);
     Route::post('/store', [BookingController::class, 'store']);
     Route::get('/{id}/edit', [BookingController::class, 'edit']);
     Route::post('/{id}/update', [BookingController::class, 'update']);

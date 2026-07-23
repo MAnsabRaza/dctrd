@@ -18,6 +18,7 @@
       class="booking-admin-form">
     {{ csrf_field() }}
     <input type="hidden" name="creator_id" value="{{ auth()->id() }}">
+    <input type="hidden" name="admin_booking_draft_id" value="{{ $draftId ?? '' }}">
 
     {{-- FIX: general error summary — pehle koi visible error message nahi tha --}}
     @if ($errors->any())
@@ -862,11 +863,15 @@
     var CURRENT_CATEGORY_ID  = {!! !empty($currentCategoryId) ? json_encode((string) $currentCategoryId) : 'null' !!};
     var CURRENT_SUB_TYPE     = {!! json_encode(old('sub_type', $booking->sub_type ?? '')) !!};
     var IS_REFRESHING_CATEGORY_SELECT = false;
+    var IS_EDIT_MODE = {{ !empty($booking) ? 'true' : 'false' }};
+    var CATEGORY_BY_TYPE_URL = '{{ getAdminPanelUrl('/booking/categories-by-type') }}';
+    var CATEGORY_REQUEST_TOKEN = 0;
 
     // FIX: 'requirements' removed — the field no longer exists in the form.
     var ALWAYS_VISIBLE_FIELD_KEYS = ['category_id', 'title', 'price', 'description'];
 
     var CURRENT_TYPE_FIELD_LABELS = {};
+    var ORIGINAL_FIELD_GROUP_HTML = {};
 
     // FIX: original, server-rendered label text for every field, captured once
     // before any template logic runs. Every subsequent label update is
@@ -884,6 +889,13 @@
         });
     }
     captureOriginalLabels();
+
+    function captureOriginalFieldGroups() {
+        document.querySelectorAll('[data-field-key]').forEach(function (fieldEl) {
+            ORIGINAL_FIELD_GROUP_HTML[fieldEl.dataset.fieldKey] = fieldEl.innerHTML;
+        });
+    }
+    captureOriginalFieldGroups();
 
     function setLabelText(labelEl, newLabel) {
         if (!newLabel) return;
@@ -926,11 +938,11 @@
                            'sub-type':   'Booking Sub-type (Rental or Service)' },
     };
 
-    function populateCategoryOptions(type, selectedCategoryId) {
+    function populateCategoryOptions(type, selectedCategoryId, childrenOverride) {
         var select = document.getElementById('bookingCategorySelect');
         if (!select) return;
 
-        var children = getCategoryChildrenForType(type);
+        var children = childrenOverride || getCategoryChildrenForType(type);
 
         select.innerHTML = '';
 
@@ -956,6 +968,49 @@
         });
 
         triggerSelectTwoRefresh(select);
+    }
+
+    function resetCategorySelectLoading(type) {
+        var select = document.getElementById('bookingCategorySelect');
+        if (!select) return;
+
+        select.innerHTML = '';
+        select.disabled = true;
+        select.appendChild(makeOption('', type ? 'Loading categories...' : 'Select booking type first'));
+        triggerSelectTwoRefresh(select);
+    }
+
+    function fetchCategoryOptions(type, selectedCategoryId) {
+        var requestToken = ++CATEGORY_REQUEST_TOKEN;
+
+        if (!type) {
+            populateCategoryOptions('', null);
+            return Promise.resolve([]);
+        }
+
+        resetCategorySelectLoading(type);
+
+        return fetch(CATEGORY_BY_TYPE_URL + '?booking_type=' + encodeURIComponent(type), {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(function (response) {
+                if (!response.ok) throw new Error('Category request failed');
+                return response.json();
+            })
+            .then(function (payload) {
+                if (requestToken !== CATEGORY_REQUEST_TOKEN) return [];
+                var children = payload.categories || [];
+                populateCategoryOptions(type, selectedCategoryId || null, children);
+                return children;
+            })
+            .catch(function () {
+                if (requestToken !== CATEGORY_REQUEST_TOKEN) return [];
+                populateCategoryOptions(type, selectedCategoryId || null);
+                return getCategoryChildrenForType(type);
+            });
     }
 
     function makeOption(value, label, selected, slug) {
@@ -1014,9 +1069,57 @@
         return (parentId && CATEGORIES_BY_PARENT[parentId]) ? CATEGORIES_BY_PARENT[parentId] : [];
     }
 
-    // FIX: category/type switch should clear previously-entered values, not
-    // just hide them. Always-visible fields (title/price/description/category)
-    // are intentionally left untouched.
+    // Template-specific values are removed from the submitted DOM when the
+    // field does not belong to the selected category. This prevents stale
+    // hidden inputs from being posted.
+    function restoreFieldGroupControls(fieldEl) {
+        var key = fieldEl.dataset.fieldKey;
+        if (!key || ORIGINAL_FIELD_GROUP_HTML[key] === undefined) return;
+        if (!fieldEl.querySelector('input, select, textarea, button')) {
+            fieldEl.innerHTML = ORIGINAL_FIELD_GROUP_HTML[key];
+            initializeRestoredControls(fieldEl);
+        }
+    }
+
+    function removeFieldGroupControls(fieldEl) {
+        fieldEl.querySelectorAll('.select2-container, .js-custom-invalid-feedback, .js-server-invalid-feedback').forEach(function (node) {
+            node.remove();
+        });
+
+        clearFieldGroupValue(fieldEl);
+
+        fieldEl.querySelectorAll('input, select, textarea, button').forEach(function (input) {
+            input.remove();
+        });
+    }
+
+    function setFieldGroupVisible(fieldEl, isVisible, isRequired) {
+        if (isVisible) {
+            restoreFieldGroupControls(fieldEl);
+            fieldEl.style.display = '';
+            setDynamicRequired(fieldEl, !!isRequired);
+            return;
+        }
+
+        setDynamicRequired(fieldEl, false);
+        removeFieldGroupControls(fieldEl);
+        fieldEl.style.display = 'none';
+    }
+
+    function initializeRestoredControls(rootEl) {
+        if (window.jQuery) {
+            window.jQuery(rootEl).find('[data-plugin-selectTwo]').each(function () {
+                var $select = window.jQuery(this);
+                if (!$select.data('select2') && window.jQuery.fn.select2) {
+                    $select.select2();
+                }
+            });
+        }
+
+        bindRestoredDynamicControls();
+    }
+
+    // Clear values before removing a stale field from the DOM.
     function clearFieldGroupValue(fieldEl) {
         fieldEl.querySelectorAll('input, select, textarea').forEach(function (input) {
             if (input.type === 'checkbox' || input.type === 'radio') {
@@ -1046,6 +1149,15 @@
         });
     }
 
+    function removeAllTemplateSpecificControls() {
+        document.querySelectorAll('[data-field-key]').forEach(function (fieldEl) {
+            var key = fieldEl.dataset.fieldKey;
+            if (ALWAYS_VISIBLE_FIELD_KEYS.indexOf(key) !== -1) return;
+            removeFieldGroupControls(fieldEl);
+            fieldEl.style.display = 'none';
+        });
+    }
+
     function updateFieldLabel(containerEl, newLabel) {
         var label = containerEl.querySelector('label.input-label.js-field-label');
         if (label) setLabelText(label, newLabel);
@@ -1059,7 +1171,7 @@
         if (!type) {
             hideAllSections();
             if (shouldPopulateCategory) {
-                populateCategoryOptions('', null);
+                fetchCategoryOptions('', null);
             }
             CURRENT_TYPE_FIELD_LABELS = {};
             applyLabelLayers(null, null);
@@ -1094,7 +1206,7 @@
         buildSubTypeOptions(type);
 
         if (shouldPopulateCategory) {
-            populateCategoryOptions(type, CURRENT_CATEGORY_ID);
+            fetchCategoryOptions(type, CURRENT_CATEGORY_ID);
         }
 
         var titleOverrides = SECTION_TITLES[type] || {};
@@ -1126,11 +1238,12 @@
 
         if (!subConfig) {
             allFieldEls.forEach(function (el) {
-                el.style.display = '';
-                setDynamicRequired(el, false);
+                var key = el.dataset.fieldKey;
+                setFieldGroupVisible(el, ALWAYS_VISIBLE_FIELD_KEYS.indexOf(key) !== -1, false);
             });
             applyLabelLayers(CURRENT_TYPE_FIELD_LABELS, null);
             if (noteEl) noteEl.textContent = '';
+            bindRestoredDynamicControls();
             return;
         }
 
@@ -1141,17 +1254,13 @@
             var key = el.dataset.fieldKey;
 
             if (ALWAYS_VISIBLE_FIELD_KEYS.indexOf(key) !== -1) {
-                el.style.display = '';
-                setDynamicRequired(el, required.indexOf(key) !== -1);
+                setFieldGroupVisible(el, true, required.indexOf(key) !== -1);
             } else if (required.indexOf(key) !== -1) {
-                el.style.display = '';
-                setDynamicRequired(el, true);
+                setFieldGroupVisible(el, true, true);
             } else if (optional.indexOf(key) !== -1) {
-                el.style.display = '';
-                setDynamicRequired(el, false);
+                setFieldGroupVisible(el, true, false);
             } else {
-                el.style.display = 'none';
-                setDynamicRequired(el, false);
+                setFieldGroupVisible(el, false, false);
             }
         });
 
@@ -1180,6 +1289,8 @@
             noteEl.textContent = 'Template: ' + subConfig.label +
                 (modules ? ' — Checkout modules: ' + modules : '');
         }
+
+        bindRestoredDynamicControls();
     }
 
     function syncDynamicContainers(currentType) {
@@ -1214,8 +1325,8 @@
 
     function resetSubTemplate() {
         document.querySelectorAll('[data-field-key]').forEach(function (el) {
-            el.style.display = '';
-            setDynamicRequired(el, false);
+            var key = el.dataset.fieldKey;
+            setFieldGroupVisible(el, ALWAYS_VISIBLE_FIELD_KEYS.indexOf(key) !== -1, false);
         });
         applyLabelLayers(CURRENT_TYPE_FIELD_LABELS, null);
         var noteEl = document.getElementById('subTemplateNote');
@@ -1228,7 +1339,11 @@
 
         hideAllSections();
         resetSubTemplate();
-        populateCategoryOptions(type, selectedCategoryId || null);
+        fetchCategoryOptions(type, selectedCategoryId || null).then(function () {
+            if (selectedCategoryId && selectedCategorySlug()) {
+                applySelectedCategoryTemplate();
+            }
+        });
         applyLabelLayers(CURRENT_TYPE_FIELD_LABELS, null);
 
         var note = config.meta && config.meta.filter_note ? config.meta.filter_note : '';
@@ -1361,11 +1476,16 @@
     var locationSwitch = document.getElementById('newBookingLocationSwitch');
     var locationPanel  = document.getElementById('newBookingLocationPanel');
 
-    if (locationSwitch && locationPanel) {
+    function bindLocationSwitch() {
+        locationSwitch = document.getElementById('newBookingLocationSwitch');
+        locationPanel  = document.getElementById('newBookingLocationPanel');
+        if (!locationSwitch || !locationPanel || locationSwitch.dataset.bookingBound === 'true') return;
+        locationSwitch.dataset.bookingBound = 'true';
         locationSwitch.addEventListener('change', function () {
             locationPanel.style.display = this.checked ? '' : 'none';
         });
     }
+    bindLocationSwitch();
 
     // FIX: `location_enabled` should be derived from whether address data
     // actually exists, not trusted from the checkbox alone. The switch is
@@ -1384,17 +1504,26 @@
     var depositSwitch = document.getElementById('booking_deposit_enabled');
     var depositPanel  = document.getElementById('bookingDepositPanel');
 
-    if (depositSwitch && depositPanel) {
+    function bindDepositSwitch() {
+        depositSwitch = document.getElementById('booking_deposit_enabled');
+        depositPanel  = document.getElementById('bookingDepositPanel');
+        if (!depositSwitch || !depositPanel || depositSwitch.dataset.bookingBound === 'true') return;
+        depositSwitch.dataset.bookingBound = 'true';
         depositSwitch.addEventListener('change', function () {
             depositPanel.style.display = this.checked ? '' : 'none';
         });
     }
+    bindDepositSwitch();
 
     var extrasContainer = document.getElementById('extrasContainer');
     var addExtraBtn     = document.getElementById('addExtraBtn');
     var extraIndex      = {{ count($meta['extras'] ?? []) }};
 
-    if (addExtraBtn && extrasContainer) {
+    function bindExtrasControls() {
+        extrasContainer = document.getElementById('extrasContainer');
+        addExtraBtn     = document.getElementById('addExtraBtn');
+        if (!addExtraBtn || !extrasContainer || addExtraBtn.dataset.bookingBound === 'true') return;
+        addExtraBtn.dataset.bookingBound = 'true';
         addExtraBtn.addEventListener('click', function () {
             var row = document.createElement('div');
             row.className = 'extra-row d-flex gap-2 mb-2';
@@ -1413,19 +1542,29 @@
         });
     }
 
+    function bindRestoredDynamicControls() {
+        bindLocationSwitch();
+        bindDepositSwitch();
+        bindExtrasControls();
+    }
+    bindExtrasControls();
+
     var typeSelect = document.getElementById('bookingTypeSelect');
 
     if (typeSelect) {
         typeSelect.addEventListener('change', function () {
             CURRENT_CATEGORY_ID = null;
-            // FIX: user actually changed the booking type — clear anything
-            // that was filled in for the previous type/category before the
-            // new template's sections are drawn.
+            CURRENT_SUB_TYPE = '';
             clearAllDynamicFieldValues();
+            removeAllTemplateSpecificControls();
             prepareCategoryPicker(this.value, null);
         });
 
-        // Initial (edit-mode) setup — must NOT clear the booking's existing data.
+        if (!IS_EDIT_MODE && !typeSelect.value) {
+            removeAllTemplateSpecificControls();
+        }
+
+        // Initial setup — edit mode keeps existing data, new mode starts fresh.
         prepareCategoryPicker(typeSelect.value, CURRENT_CATEGORY_ID);
 
         @if(!empty($booking) && $booking->sub_type)
@@ -1444,14 +1583,16 @@
         categorySelect.addEventListener('change', function () {
             if (IS_REFRESHING_CATEGORY_SELECT) return;
             // FIX: user actually changed the category — clear previously
-            // entered template-specific values before switching templates.
+            // entered template-specific values and remove stale hidden inputs.
             clearAllDynamicFieldValues();
+            removeAllTemplateSpecificControls();
             applySelectedCategoryTemplate();
         });
 
         if (window.jQuery) {
             window.jQuery(categorySelect).on('select2:select', function () {
                 clearAllDynamicFieldValues();
+                removeAllTemplateSpecificControls();
                 applySelectedCategoryTemplate();
             });
         }

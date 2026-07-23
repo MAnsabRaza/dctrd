@@ -26,6 +26,12 @@ class BookingController extends Controller
         $this->authorize('admin_booking');
         removeContentLocale();
 
+        if (!$request->session()->has('errors')) {
+            $request->session()->forget('_old_input');
+        }
+
+        $request->session()->put('admin_booking_draft_id', (string) Str::uuid());
+
         $productCategories = BookingCategory::query()
             ->whereNull('parent_id')
             ->with('children')
@@ -78,6 +84,35 @@ class BookingController extends Controller
             'templateConfigs'        => json_encode($templateConfigs),
             'subTemplateConfigs'     => json_encode($subTemplateConfigs),
             'categoriesByParent'     => json_encode($categoriesByParent),
+            'draftId'                => $request->session()->get('admin_booking_draft_id'),
+        ]);
+    }
+
+    public function categoriesByType(Request $request)
+    {
+        $this->authorize('admin_booking');
+
+        $type = (string) $request->get('booking_type', '');
+
+        if (empty($type) || !array_key_exists($type, BookingTemplateConfig::allTypes())) {
+            return response()->json(['categories' => []]);
+        }
+
+        $validCategoryIds = $this->validCategoryIdsForBookingType($type);
+
+        $categories = BookingCategory::query()
+            ->whereIn('id', $validCategoryIds)
+            ->whereNotNull('parent_id')
+            ->where('status', 1)
+            ->orderBy('title')
+            ->get(['id', 'title', 'slug']);
+
+        return response()->json([
+            'categories' => $categories->map(fn($category) => [
+                'id' => $category->id,
+                'title' => $category->title,
+                'slug' => $category->slug,
+            ])->values(),
         ]);
     }
 
