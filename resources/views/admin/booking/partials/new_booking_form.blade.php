@@ -319,20 +319,10 @@
         </div>
     </div>
 
-    <div class="booking-section" id="section-location" data-field-key="location_enabled">
-        <h3 class="booking-section-title">Location <span class="text-danger js-dynamic-required" style="display:none">*</span></h3>
+    <div class="booking-section" id="section-location">
+        <h3 class="booking-section-title">Location</h3>
         <div class="form-group d-flex align-items-center">
             <div class="custom-control custom-switch">
-                {{-- FIX: `location_enabled` "must be true or false" bug.
-                     A lone checkbox with value="on" fails Laravel's `boolean` rule
-                     (it only accepts true/false/1/0/"1"/"0"), and an unchecked
-                     checkbox sends nothing at all. We now always submit a clean
-                     0/1: a hidden default of 0 followed by the checkbox itself
-                     (same name, value="1"). Duplicate scalar field names resolve
-                     to the LAST value in the POST body, so checked -> 1, unchecked -> 0.
-                     On top of that, JS below recalculates this value from whether
-                     the address panel actually has data right before submit, so
-                     the switch is just a UI convenience, not the source of truth. --}}
                 <input type="hidden" name="location_enabled" value="0">
                 <input type="checkbox" name="location_enabled" id="newBookingLocationSwitch"
                        value="1" class="custom-control-input"
@@ -1572,20 +1562,6 @@
     }
     bindLocationSwitch();
 
-    // FIX: `location_enabled` should be derived from whether address data
-    // actually exists, not trusted from the checkbox alone. The switch is
-    // kept purely as a UI convenience to reveal the picker; the real value
-    // gets recalculated right before submit.
-    function hasLocationData() {
-        if (!locationPanel) return false;
-        var inputs = locationPanel.querySelectorAll('input, select, textarea');
-        for (var i = 0; i < inputs.length; i++) {
-            var val = (inputs[i].value || '').trim();
-            if (val) return true;
-        }
-        return false;
-    }
-
     var depositSwitch = document.getElementById('booking_deposit_enabled');
     var depositPanel  = document.getElementById('bookingDepositPanel');
 
@@ -1756,12 +1732,6 @@
     if (bookingForm) {
         bookingForm.addEventListener('submit', function (e) {
             removeRequiredFromHiddenControls();
-
-            // FIX: compute location_enabled from actual address data right
-            // before validation/submit, instead of trusting the switch.
-            if (locationSwitch) {
-                locationSwitch.checked = hasLocationData();
-            }
 
             var firstInvalid = null;
 

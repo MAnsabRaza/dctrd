@@ -177,10 +177,7 @@ class BookingController extends Controller
         // priority do (booking-type level se zyada specific).
         $resolvedPriceUnit = $request->price_unit
             ?: ($subTemplate ? $subTemplate->priceUnit() : $templateConfig->priceUnitLabel());
-              $hasLocationData = $request->filled('address_line')
-    || $request->filled('city')
-    || $request->filled('lat')
-    || $request->filled('lng');
+        $locationEnabled = $request->boolean('location_enabled');
 
         $booking = Booking::create([
             'creator_id'       => $request->creator_id ?: auth()->id(),
@@ -232,16 +229,14 @@ class BookingController extends Controller
             'inventory'               => $request->inventory ?: null,
 
             // Location
-            //'location_enabled' => $request->boolean('location_enabled'),
-          
-'location_enabled' => $hasLocationData,
-            'address_line'     => $request->address_line,
-            'city'             => $request->city,
-            'state'            => $request->state,
-            'country'          => $request->country,
-            'postal_code'      => $request->postal_code,
-            'lat'              => $request->lat ?: null,
-            'lng'              => $request->lng ?: null,
+            'location_enabled' => $locationEnabled,
+            'address_line'     => $locationEnabled ? $request->address_line : null,
+            'city'             => $locationEnabled ? $request->city : null,
+            'state'            => $locationEnabled ? $request->state : null,
+            'country'          => $locationEnabled ? $request->country : null,
+            'postal_code'      => $locationEnabled ? $request->postal_code : null,
+            'lat'              => $locationEnabled ? ($request->lat ?: null) : null,
+            'lng'              => $locationEnabled ? ($request->lng ?: null) : null,
 
             // Status & misc
         'featured'         => $request->boolean('featured'),
@@ -360,10 +355,7 @@ class BookingController extends Controller
 
         $resolvedPriceUnit = $request->price_unit
             ?: ($subTemplate ? $subTemplate->priceUnit() : $templateConfig->priceUnitLabel());
-            $hasLocationData = $request->filled('address_line')
-    || $request->filled('city')
-    || $request->filled('lat')
-    || $request->filled('lng');
+        $locationEnabled = $request->boolean('location_enabled');
 
         $booking->update([
             'creator_id'       => $request->creator_id ?: $booking->creator_id,
@@ -409,15 +401,14 @@ class BookingController extends Controller
             'waitlist_enabled'        => $request->boolean('waitlist_enabled'),
             'inventory'               => $request->inventory ?: null,
 
-            //'location_enabled' => $request->boolean('location_enabled'),
-            'location_enabled' => $hasLocationData,
-            'address_line'     => $request->address_line,
-            'city'             => $request->city,
-            'state'            => $request->state,
-            'country'          => $request->country,
-            'postal_code'      => $request->postal_code,
-            'lat'              => $request->lat ?: null,
-            'lng'              => $request->lng ?: null,
+            'location_enabled' => $locationEnabled,
+            'address_line'     => $locationEnabled ? $request->address_line : null,
+            'city'             => $locationEnabled ? $request->city : null,
+            'state'            => $locationEnabled ? $request->state : null,
+            'country'          => $locationEnabled ? $request->country : null,
+            'postal_code'      => $locationEnabled ? $request->postal_code : null,
+            'lat'              => $locationEnabled ? ($request->lat ?: null) : null,
+            'lng'              => $locationEnabled ? ($request->lng ?: null) : null,
 
             'featured'         => $request->boolean('featured'),
             'forum_enabled'    => $request->boolean('forum_enabled'),
