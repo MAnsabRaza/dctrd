@@ -23,7 +23,7 @@
     {{-- FIX: general error summary — pehle koi visible error message nahi tha --}}
     @if ($errors->any())
         <div class="alert alert-danger" id="bookingFormErrorsAlert">
-            <strong>{{ $errors->count() }} {{ $errors->count() == 1 ? 'error' : 'errors' }} — neeche highlighted fields check karein:</strong>
+            <strong>{{ $errors->count() }} {{ $errors->count() == 1 ? 'error' : 'errors' }} found. Please check the highlighted fields below:</strong>
             <ul class="mb-0 mt-2">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -178,16 +178,22 @@
             </div>
 
             <div class="col-12 col-lg-6">
-                {{-- FIX: "Cancellation / Rescheduling Policy" (requirements) field removed.
-                     This is already surfaced to customers via the `Cancellation Policy`
-                     checkout module (see checkout_modules in the template configs), so
-                     keeping a duplicate free-text field here was redundant and confusing. --}}
-
-           <div class="form-group" data-field-key="description">
+                <div class="form-group" data-field-key="description">
                     <label class="input-label js-field-label" data-field="description">Description <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
                     <textarea name="description" class="summernote form-control @error('description') is-invalid @enderror"
                               placeholder="Detailed description (min 300 words)">{{ $field('description') }}</textarea>
                     @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="form-group" data-field-key="requirements">
+                    <label class="input-label js-field-label" data-field="requirements">
+                        Policy / Requirements <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
+                    <textarea name="requirements"
+                              class="form-control @error('requirements') is-invalid @enderror"
+                              rows="4"
+                              placeholder="Cancellation policy, house rules, preparation notes, or booking requirements">{{ $field('requirements') }}</textarea>
+                    @error('requirements')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -354,7 +360,7 @@
             <div class="col-12 col-md-6">
                 <div class="form-group" data-field-key="staff_id">
                     <label class="input-label js-field-label" data-field="staff_id">Staff / Provider <span class="text-danger js-dynamic-required" style="display:none">*</span></label>
-                    <select name="staff_id" data-plugin-selectTwo class="form-control @error('meta.staff_id') is-invalid @enderror">
+                    <select name="staff_id" data-plugin-selectTwo class="form-control @error('staff_id') is-invalid @enderror">
                         <option value="">Select Staff / Provider</option>
                         @foreach($instructors ?? [] as $instructor)
                             <option value="{{ $instructor->id }}"
@@ -363,7 +369,7 @@
                             </option>
                         @endforeach
                     </select>
-                    @error('meta.staff_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                    @error('staff_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
@@ -413,18 +419,22 @@
                     @error('duration_minutes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="buffer_before">
                 <div class="form-group">
-                    <label class="input-label">Buffer Before (minutes)</label>
+                    <label class="input-label js-field-label" data-field="buffer_before">
+                        Buffer Before (minutes) <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
                     <input type="number" name="buffer_before" min="0"
                            value="{{ $field('buffer_before', 0) }}"
                            class="form-control @error('buffer_before') is-invalid @enderror">
                     @error('buffer_before')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" data-field-key="buffer_after">
                 <div class="form-group">
-                    <label class="input-label">Buffer After (minutes)</label>
+                    <label class="input-label js-field-label" data-field="buffer_after">
+                        Buffer After (minutes) <span class="text-danger js-dynamic-required" style="display:none">*</span>
+                    </label>
                     <input type="number" name="buffer_after" min="0"
                            value="{{ $field('buffer_after', 0) }}"
                            class="form-control @error('buffer_after') is-invalid @enderror">
@@ -869,8 +879,7 @@
     var CLEAR_RESTORED_FIELD_VALUES = false;
     var CLEAR_RESTORED_EXCEPT_FIELD_KEYS = [];
 
-    // FIX: 'requirements' removed — the field no longer exists in the form.
-    var ALWAYS_VISIBLE_FIELD_KEYS = ['category_id', 'title', 'price', 'description'];
+    var ALWAYS_VISIBLE_FIELD_KEYS = ['category_id', 'title', 'price', 'description', 'requirements'];
 
     var CURRENT_TYPE_FIELD_LABELS = {};
     var ORIGINAL_FIELD_GROUP_HTML = {};
@@ -958,7 +967,7 @@
         select.disabled = false;
 
         if (!children.length) {
-            select.appendChild(makeOption('', 'Is Booking Type ke liye koi subcategory nahi mili'));
+            select.appendChild(makeOption('', 'No subcategories were found for this booking type'));
             triggerSelectTwoRefresh(select);
             return;
         }
@@ -1765,7 +1774,7 @@
 
                 var value = (el.value || '').trim();
                 if (!value) {
-                    markFieldInvalid(el, 'Ye field zaroori hai.');
+                    markFieldInvalid(el, 'This field is required.');
                     if (!firstInvalid) firstInvalid = el;
                 } else {
                     clearFieldInvalid(el);

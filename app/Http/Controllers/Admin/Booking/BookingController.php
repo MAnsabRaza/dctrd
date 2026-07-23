@@ -150,16 +150,13 @@ class BookingController extends Controller
         //    mila to) sub-template rules. Sub-template rules baad mein
         //    merge hoti hain taake wo required/optional ko override kar
         //    saken (zyada specific config jeetni chahiye).
-        $validationRules = array_merge(
-            $this->globalValidationRules($request),
-            $templateConfig->rules(),
-            $subTemplate ? $subTemplate->rules() : []
+        $validationRules = $this->bookingValidationRules(
+            $request,
+            $templateConfig,
+            $subTemplate
         );
-        $validationRules['category_id'] = $this->categoryValidationRule($request->booking_type ?? '');
 
-        $this->validate($request, $validationRules, [
-            'category_id.exists' => 'Selected category is Booking Type se match nahi karti. Pehle sahi Booking Type select karein, phir usi ki subcategory chunein.',
-        ]);
+        $this->validate($request, $validationRules, $this->validationMessages(), $this->validationAttributes());
 
         $nextOrder = (Booking::max('order') ?? 0) + 1;
 
@@ -265,7 +262,7 @@ class BookingController extends Controller
         $this->sendBookingNotification($booking, 'booking_created');
 
         return redirect(getAdminPanelUrl('/booking/list'))
-            ->with('success', trans('admin/main.created_successfully'));
+            ->with('success', 'Booking created successfully.');
     }
 
     // ── Edit ──────────────────────────────────────────────────────────
@@ -339,16 +336,15 @@ class BookingController extends Controller
         $categorySlug = $this->categorySlugFromId($request->category_id ?? $booking->category_id);
         $subTemplate  = BookingSubTemplateConfig::forSlug($categorySlug);
 
-        $validationRules = array_merge(
-            $this->globalValidationRules($request, $booking->id),
-            $templateConfig->rules(),
-            $subTemplate ? $subTemplate->rules() : []
+        $validationRules = $this->bookingValidationRules(
+            $request,
+            $templateConfig,
+            $subTemplate,
+            $booking->id,
+            $booking->booking_type ?? ''
         );
-        $validationRules['category_id'] = $this->categoryValidationRule($request->booking_type ?? $booking->booking_type ?? '');
 
-        $this->validate($request, $validationRules, [
-            'category_id.exists' => 'Selected category is Booking Type se match nahi karti. Pehle sahi Booking Type select karein, phir usi ki subcategory chunein.',
-        ]);
+        $this->validate($request, $validationRules, $this->validationMessages(), $this->validationAttributes());
 
         // Merge existing meta with new template meta (preserve non-overwritten keys).
         // FIX: extractTemplateMeta() ab sub-template bhi pass leta hai aur
@@ -437,7 +433,7 @@ class BookingController extends Controller
         $this->sendBookingNotification($booking, 'booking_updated');
 
         return redirect(getAdminPanelUrl('/booking/list'))
-            ->with('success', trans('admin/main.updated_successfully'));
+            ->with('success', 'Booking updated successfully.');
     }
 
     // ── Delete ────────────────────────────────────────────────────────
@@ -449,7 +445,7 @@ class BookingController extends Controller
         Booking::findOrFail($id)->delete();
 
         return redirect(getAdminPanelUrl('/booking/list'))
-            ->with('success', trans('admin/main.deleted_successfully'));
+            ->with('success', 'Booking deleted successfully.');
     }
       public function regenerateQr($id)
     {
@@ -638,7 +634,7 @@ class BookingController extends Controller
         $validCategoryIds = $this->validCategoryIdsForBookingType($bookingType);
 
         return [
-            'nullable',
+            'required',
             Rule::exists('booking_categories', 'id')->where(function ($q) use ($validCategoryIds) {
                 if (!empty($validCategoryIds)) {
                     $q->whereIn('id', $validCategoryIds);
@@ -647,6 +643,98 @@ class BookingController extends Controller
                     $q->whereRaw('1 = 0');
                 }
             }),
+        ];
+    }
+
+    private function bookingValidationRules(
+        Request $request,
+        BookingTemplateConfig $templateConfig,
+        ?BookingSubTemplateConfig $subTemplate = null,
+        ?int $ignoreId = null,
+        ?string $fallbackBookingType = null
+    ): array {
+        $templateRules = $templateConfig->rules();
+
+        $rules = array_merge(
+            $this->globalValidationRules($request, $ignoreId),
+            $templateRules,
+            $subTemplate ? $subTemplate->rules() : []
+        );
+
+        if ($subTemplate) {
+            $subTemplateFields = $subTemplate->relevantFields();
+
+            foreach (array_keys($templateRules) as $field) {
+                if ($this->isGlobalValidationField($field)) {
+                    continue;
+                }
+
+                if (!in_array($field, $subTemplateFields, true)) {
+                    unset($rules[$field]);
+                }
+            }
+        }
+
+        $bookingType = $request->booking_type ?? $fallbackBookingType ?? '';
+        $rules['category_id'] = $this->categoryValidationRule($bookingType);
+
+        return $rules;
+    }
+
+    private function isGlobalValidationField(string $field): bool
+    {
+        return in_array($field, [
+            'title',
+            'slug',
+            'category_id',
+            'language',
+            'booking_type',
+            'status',
+            'creator_id',
+            'tax',
+            'commission',
+            'deposit_amount',
+            'discount_price',
+            'price',
+            'price_per',
+        ], true);
+    }
+
+    private function validationMessages(): array
+    {
+        return [
+            'category_id.required' => 'Please select a category for this booking type.',
+            'category_id.exists'   => 'The selected category does not match the selected booking type. Please choose a category from the selected booking type.',
+        ];
+    }
+
+    private function validationAttributes(): array
+    {
+        return [
+            'booking_type'           => 'booking type',
+            'category_id'            => 'category',
+            'sub_type'               => 'sub type',
+            'staff_id'               => 'staff member',
+            'duration_minutes'       => 'duration',
+            'max_persons'            => 'maximum guests',
+            'max_children'           => 'maximum children',
+            'meta.appointment_type'  => 'appointment type',
+            'meta.payment_option'    => 'payment option',
+            'meta.online_link'       => 'online meeting link',
+            'meta.required_docs'     => 'required documents',
+            'meta.service_type'      => 'service type',
+            'meta.vehicle_type'      => 'vehicle information',
+            'meta.required_notes'    => 'required notes',
+            'meta.pickup_location'   => 'pickup location',
+            'meta.dropoff_location'  => 'drop-off location',
+            'meta.vehicle_specs'     => 'vehicle specifications',
+            'meta.room_type'         => 'room or resource',
+            'meta.venue_type'        => 'venue type',
+            'meta.specifications'    => 'specifications',
+            'meta.level'             => 'level',
+            'meta.prerequisites'     => 'prerequisites',
+            'meta.check_in_date'     => 'check-in date',
+            'meta.check_out_date'    => 'check-out date',
         ];
     }
 
