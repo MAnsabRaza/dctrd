@@ -1355,6 +1355,26 @@
     function syncDynamicContainers(currentType) {
         var allowedSections = TYPE_SECTIONS[currentType] || [];
 
+        document.querySelectorAll('[data-template-section]').forEach(function (section) {
+            var sectionKey = section.dataset.templateSection;
+            var hasVisibleTemplateField = false;
+
+            section.querySelectorAll('[data-field-key]').forEach(function (fieldEl) {
+                if (fieldEl.style.display !== 'none' && fieldEl.querySelector('input, select, textarea')) {
+                    hasVisibleTemplateField = true;
+                }
+            });
+
+            if (allowedSections.indexOf(sectionKey) !== -1 || hasVisibleTemplateField) {
+                section.style.display = '';
+            } else {
+                section.style.display = 'none';
+                section.querySelectorAll('[required]').forEach(function (input) {
+                    input.removeAttribute('required');
+                });
+            }
+        });
+
         document.querySelectorAll('[data-field-key]').forEach(function (fieldEl) {
             if (fieldEl.style.display === 'none') return;
 
@@ -1366,9 +1386,6 @@
             var section = fieldEl.closest('[data-template-section]');
             if (section) {
                 var sectionKey = section.dataset.templateSection;
-                if (allowedSections.indexOf(sectionKey) === -1) {
-                    return;
-                }
                 section.style.display = '';
 
                 if (sectionKey === 'automotive') {
@@ -1687,6 +1704,17 @@
         );
     }
 
+    function removeRequiredFromHiddenControls() {
+        if (!bookingForm) return;
+
+        bookingForm.querySelectorAll('[required]').forEach(function (el) {
+            if (isInsideHidden(el) || !el.offsetParent) {
+                el.removeAttribute('required');
+                clearFieldInvalid(el);
+            }
+        });
+    }
+
     function markFieldInvalid(el, message) {
         el.classList.add('is-invalid');
         var group = el.closest('.form-group') || el.parentElement;
@@ -1718,6 +1746,8 @@
 
     if (bookingForm) {
         bookingForm.addEventListener('submit', function (e) {
+            removeRequiredFromHiddenControls();
+
             // FIX: compute location_enabled from actual address data right
             // before validation/submit, instead of trusting the switch.
             if (locationSwitch) {
