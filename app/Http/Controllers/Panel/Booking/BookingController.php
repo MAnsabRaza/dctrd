@@ -157,8 +157,9 @@ class BookingController extends Controller
 
         $data = $request->all();
 
-        $isDraft   = (!empty($data['draft']) and $data['draft'] == 1);
-        $getNext   = (!empty($data['get_next']) and $data['get_next'] == 1);
+        $isDraft   = $this->isEnabledRequestValue($data['draft'] ?? null);
+        $getNext   = $this->isEnabledRequestValue($data['get_next'] ?? null);
+        $status     = ($isDraft || $getNext) ? 'draft' : 'pending';
 
         $booking = Booking::create([
             'creator_id'   => $user->id,
@@ -168,9 +169,9 @@ class BookingController extends Controller
             'language'     => $data['language'] ?? app()->getLocale(),
             'booking_type' => $data['booking_type'],
             'sub_type'     => $data['sub_type'] ?? null,
-           'description'  => $data['description'] ?? null,
+            'description'  => $data['description'] ?? null,
             'requirements' => $data['requirements'] ?? null,
-           'status'       => $data['status'] ?? null,
+            'status'       => $status,
             'qr_enabled'   => $request->boolean('qr_enabled'),
         ]);
         $notifyOptions = [
@@ -293,8 +294,8 @@ class BookingController extends Controller
         $data = $request->all();
         $currentStep = (int) $data['current_step'];
         $getStep     = $data['get_step'] ?? null;
-        $getNextStep = (!empty($data['get_next']) and $data['get_next'] == 1);
-        $isDraft     = (!empty($data['draft']) and $data['draft'] == 1);
+        $getNextStep = $this->isEnabledRequestValue($data['get_next'] ?? null);
+        $isDraft     = $this->isEnabledRequestValue($data['draft'] ?? null);
 
         $booking = Booking::where('id', $id)
             ->where('creator_id', $user->id)
@@ -401,7 +402,7 @@ class BookingController extends Controller
             $rules = [
                 'reviewer_message' => 'nullable|string',
                 'checkout_message' => 'nullable|string',
-                'terms_accepted'   => 'required|in:on',
+                'terms_accepted'   => (!$isDraft && !$getNextStep) ? 'required|in:on' : 'nullable|in:on',
             ];
         }
 
@@ -411,7 +412,7 @@ class BookingController extends Controller
 
         $data['status'] = $isDraft ? 'draft' : ($finalSubmit ? 'pending' : $booking->status);
 
-    if ($currentStep == 1) {
+        if ($currentStep == 1) {
             $booking->fill([
                 'title'        => $data['title'],
                 'slug'         => $data['slug'] ?? $booking->slug,
@@ -421,7 +422,6 @@ class BookingController extends Controller
                 'sub_type'     => $data['sub_type'] ?? null,
                 'description'  => $data['description'] ?? null,
                 'requirements' => $data['requirements'] ?? null,
-                'status'       => $data['status'] ?? null,
                 'qr_enabled'   => $request->boolean('qr_enabled'),
             ]);
         } elseif ($currentStep == 2) {
@@ -995,6 +995,11 @@ class BookingController extends Controller
         return Booking::query()
             ->where('creator_id', auth()->id())
             ->findOrFail($id);
+    }
+
+    private function isEnabledRequestValue($value): bool
+    {
+        return in_array($value, [1, '1', true, 'true', 'on'], true);
     }
 
     private function sendBookingNotification(Booking $booking, string $template): void

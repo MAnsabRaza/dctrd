@@ -232,13 +232,16 @@
         Any other step (or step 1 while editing) -> POST to update()
     --}}
     @if(!$isEditing)
-        <form method="POST" action="{{ route('panel.bookings.store') }}" enctype="multipart/form-data" id="bookingStepForm">
+        <form method="POST" action="{{ route('panel.bookings.store') }}" enctype="multipart/form-data" id="webinarForm">
             @csrf
     @else
-        <form method="POST" action="{{ route('panel.bookings.update.post', $booking->id) }}" enctype="multipart/form-data" id="bookingStepForm">
+        <form method="POST" action="{{ route('panel.bookings.update.post', $booking->id) }}" enctype="multipart/form-data" id="webinarForm">
             @csrf
-            <input type="hidden" name="current_step" value="{{ $currentStep }}">
     @endif
+        <input type="hidden" name="current_step" value="{{ !empty($currentStep) ? $currentStep : 1 }}">
+        <input type="hidden" name="draft" value="no" id="forDraft">
+        <input type="hidden" name="get_next" value="no" id="getNext">
+        <input type="hidden" name="get_step" value="0" id="getStep">
 
         <div class="step-panel">
             @include('design_1.panel.bookings.create_booking.steps.step' . $currentStep)
@@ -253,16 +256,14 @@
                 @endif
             </div>
             <div class="d-flex align-items-center">
-                @if($isEditing)
-                    <button type="submit" name="draft" value="1" class="btn btn-light mr-2">Save as Draft</button>
-                @endif
+                <button type="button" id="saveAsDraft" class="btn btn-light mr-2">Save as Draft</button>
 
                 @if($currentStep < $stepCount)
-                    <button type="submit" name="get_next" value="1" class="btn btn-primary">
+                    <button type="button" id="getNextStep" class="btn btn-primary">
                         Next <i class="fa fa-arrow-right ml-1"></i>
                     </button>
                 @else
-                    <button type="submit" class="btn btn-primary">
+                    <button type="button" id="sendForReview" class="btn btn-primary">
                         <i class="fa fa-paper-plane mr-1"></i> Submit for Review
                     </button>
                 @endif
@@ -272,3 +273,7 @@
 </div>
 
 @endsection
+
+@push('scripts_bottom')
+    <script src="/assets/design_1/js/panel/create_webinar.min.js"></script>
+@endpush
