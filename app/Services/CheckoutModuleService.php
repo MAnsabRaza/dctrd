@@ -23,7 +23,8 @@ class CheckoutModuleService
     public function getModulesForEntity(
         string $entityType,
         int $entityId,
-        int $orgId
+        int $orgId,
+        ?string $bookingType = null
     ): Collection {
         $allModules = CheckoutModule::where('is_active', true)
             ->orderBy('order_index', 'asc')
@@ -52,7 +53,7 @@ class CheckoutModuleService
             return false;
         });
 
-        $enabledModules = $enabledModules->map(function ($module) use ($entityOverrides) {
+        $enabledModules = $enabledModules->map(function ($module) use ($entityOverrides, $bookingType) {
             if ($entityOverrides->has($module->id)) {
                 $override = $entityOverrides[$module->id];
                 if (!empty($override->config_override)) {
@@ -63,10 +64,45 @@ class CheckoutModuleService
                 }
             }
 
+            $this->applyBookingTypeConfig($module, $bookingType);
+
             return $module;
         });
 
         return $enabledModules->values();
+    }
+
+   use Illuminate\Support\Str; // top pe add karo
+
+private function applyBookingTypeConfig($module, ?string $bookingType): void
+{
+    if ($module->name !== 'extra_services') {
+        return;
+    }
+
+    $config = $module->config ?? [];
+    $optionsByBookingType = $config['options_by_booking_type'] ?? null;
+
+    // Agar naya multi-type structure hi nahi hai (purana flat 'options'),
+    // toh kuch mat chhero — backward compatible rehne do.
+    if (!is_array($optionsByBookingType)) {
+        return;
+    }
+
+    $key = ($bookingType && array_key_exists($bookingType, $optionsByBookingType))
+        ? $bookingType
+        : 'default';
+
+    $config['options'] = (isset($optionsByBookingType[$key]) && is_array($optionsByBookingType[$key]))
+        ? $optionsByBookingType[$key]
+        : [];
+
+    $module->config = $config;
+}
+
+    private function getConfigOptions(array $config): array
+    {
+        return is_array($config['options'] ?? null) ? $config['options'] : [];
     }
 
     // =========================================================
@@ -142,7 +178,7 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
                 break;
 
             case 'additive':
-                $options  = $config['options'] ?? [];
+                $options  = $this->getConfigOptions($config);
                 $selected = is_array($data) ? $data : [];
                 $selectedItems = [];
 
@@ -329,7 +365,7 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
                     break;
 
                 case 'checkbox_list':
-                    $validLabels = collect($config['options'] ?? [])->pluck('label')->toArray();
+                    $validLabels = collect($this->getConfigOptions($config))->pluck('label')->toArray();
                     $selected    = is_array($data) ? $data : [];
 
                     foreach ($selected as $item) {
@@ -389,6 +425,28 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
             ];
         })->toArray();
     }
+    /**
+ * Booking/Meeting/Package se uski category slug nikalta hai
+ * aur usko config keys ke saath match karne layak banata hai
+ * (spaces/dashes -> underscore, lowercase).
+ */
+public function resolveBookingType($entity): ?string
+{
+    if (empty($entity)) {
+        return null;
+    }
+
+    $category = optional($entity)->category;
+
+    while (!empty($category)) {
+        if (!empty($category->slug)) {
+            return Str::of($category->slug)->lower()->replace(['-', ' '], '_')->toString();
+        }
+        $category = $category->parent;
+    }
+
+    return null;
+}
 
     // =========================================================
 

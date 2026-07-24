@@ -89,25 +89,39 @@ class CheckoutModulesSeeder extends Seeder
             ],
 
             // 5. Extra Services (Checkbox List with Prices)
-            [
-                'name'        => 'extra_services',
-                'input_type'  => 'checkbox_list',
-                'config'      => json_encode([
-                    'options' => [
-                        ['id' => 1, 'label' => 'Breakfast',     'price' => 10],
-                        ['id' => 2, 'label' => 'Transfer',      'price' => 20],
-                        ['id' => 3, 'label' => 'Late Check-out','price' => 15],
-                        ['id' => 4, 'label' => 'Airport Pickup','price' => 25],
-                    ],
-                ]),
-                'price_rule'  => json_encode([
-                    'type' => 'additive',
-                ]),
-                'order_index' => 5,
-                'is_active'   => true,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+         [
+    'name'        => 'extra_services',
+    'input_type'  => 'checkbox_list',
+    'config'      => json_encode([
+        'options_by_booking_type' => [
+            'hotel' => [
+                ['id' => 1, 'label' => 'Breakfast',      'price' => 400],
+                ['id' => 2, 'label' => 'Late Check-out', 'price' => 15],
+                ['id' => 3, 'label' => 'Airport Pickup', 'price' => 25],
             ],
+            'car_rental' => [
+                ['id' => 1, 'label' => 'GPS Device',         'price' => 10],
+                ['id' => 2, 'label' => 'Child Seat',         'price' => 8],
+                ['id' => 3, 'label' => 'Additional Driver',  'price' => 20],
+            ],
+            'beauty_and_spa' => [
+                ['id' => 1, 'label' => 'Aromatherapy Add-on',       'price' => 12],
+                ['id' => 2, 'label' => 'Extended Session (+30min)', 'price' => 18],
+                ['id' => 3, 'label' => 'Home Service',              'price' => 30],
+            ],
+            'default' => [
+                ['id' => 1, 'label' => 'Transfer', 'price' => 200],
+            ],
+        ],
+    ]),
+    'price_rule'  => json_encode([
+        'type' => 'additive',
+    ]),
+    'order_index' => 5,
+    'is_active'   => true,
+    'created_at'  => now(),
+    'updated_at'  => now(),
+],
 
             // 6. Cancellation Policy (Info + Agree Checkbox)
             [

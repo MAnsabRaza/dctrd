@@ -214,51 +214,57 @@ class CartController extends Controller
         return $productCount;
     }
 
-    private function getCheckoutModulesByCart($carts): array
-    {
-        $checkoutModuleService = app(CheckoutModuleService::class);
-        $modulesByCart = [];
+   private function getCheckoutModulesByCart($carts): array
+{
+    $checkoutModuleService = app(CheckoutModuleService::class);
+    $modulesByCart = [];
 
-        foreach ($carts as $cart) {
-            $entityType = null;
-            $entityId = null;
-            $orgId = null;
+    foreach ($carts as $cart) {
+        $entityType = null;
+        $entityId = null;
+        $orgId = null;
+        $bookingType = null;
 
-            if (!empty($cart->webinar_id)) {
-                $entityType = 'course';
-                $entityId = $cart->webinar_id;
-                $orgId = optional($cart->webinar)->teacher_id;
-            } elseif (!empty($cart->product_order_id) && !empty($cart->productOrder->product_id)) {
-                $entityType = 'product';
-                $entityId = $cart->productOrder->product_id;
-                $orgId = optional(optional($cart->productOrder)->product)->creator_id;
-            } elseif (!empty($cart->reserve_meeting_id)) {
-                $entityType = 'booking';
-                $entityId = $cart->reserve_meeting_id;
-                $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
-            } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
-                $entityType = 'booking';
-                $entityId = optional($cart->booking)->id;
-                $orgId = optional($cart->booking)->creator_id;
-            } elseif (!empty($cart->meeting_package_id)) {
-                $entityType = 'booking';
-                $entityId = $cart->meeting_package_id;
-                $orgId = optional($cart->meetingPackage)->creator_id;
-            }
-
-            if (empty($entityType) || empty($entityId) || empty($orgId)) {
-                continue;
-            }
-
-            try {
-                $modulesByCart[$cart->id] = $checkoutModuleService->getModulesForEntity($entityType, $entityId, $orgId);
-            } catch (\Throwable $e) {
-                $modulesByCart[$cart->id] = collect();
-            }
+        if (!empty($cart->webinar_id)) {
+            $entityType = 'course';
+            $entityId = $cart->webinar_id;
+            $orgId = optional($cart->webinar)->teacher_id;
+        } elseif (!empty($cart->product_order_id) && !empty($cart->productOrder->product_id)) {
+            $entityType = 'product';
+            $entityId = $cart->productOrder->product_id;
+            $orgId = optional(optional($cart->productOrder)->product)->creator_id;
+        } elseif (!empty($cart->reserve_meeting_id)) {
+            $entityType = 'booking';
+            $entityId = $cart->reserve_meeting_id;
+            $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
+            $bookingType = $checkoutModuleService->resolveBookingType(optional($cart->reserveMeeting)->meeting);
+        } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
+            $entityType = 'booking';
+            $entityId = optional($cart->booking)->id;
+            $orgId = optional($cart->booking)->creator_id;
+            $bookingType = $checkoutModuleService->resolveBookingType($cart->booking);
+        } elseif (!empty($cart->meeting_package_id)) {
+            $entityType = 'booking';
+            $entityId = $cart->meeting_package_id;
+            $orgId = optional($cart->meetingPackage)->creator_id;
+            $bookingType = $checkoutModuleService->resolveBookingType($cart->meetingPackage);
         }
 
-        return $modulesByCart;
+        if (empty($entityType) || empty($entityId) || empty($orgId)) {
+            continue;
+        }
+
+        try {
+            $modulesByCart[$cart->id] = $checkoutModuleService->getModulesForEntity(
+                $entityType, $entityId, $orgId, $bookingType
+            );
+        } catch (\Throwable $e) {
+            $modulesByCart[$cart->id] = collect();
+        }
     }
+
+    return $modulesByCart;
+}
 
     private function calculateProductDeliveryFee($carts)
     {
