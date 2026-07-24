@@ -10,6 +10,7 @@ use App\Models\OrderMeta;
 use App\Models\OrgCheckoutModule;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str; 
 
 class CheckoutModuleService
 {
