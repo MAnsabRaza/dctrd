@@ -10,8 +10,7 @@ use App\Models\OrderMeta;
 use App\Models\OrgCheckoutModule;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str; 
-
+use Illuminate\Support\Str;
 class CheckoutModuleService
 {
     /**
@@ -73,7 +72,6 @@ class CheckoutModuleService
         return $enabledModules->values();
     }
 
-   use Illuminate\Support\Str; // top pe add karo
 
 private function applyBookingTypeConfig($module, ?string $bookingType): void
 {
