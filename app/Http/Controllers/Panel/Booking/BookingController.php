@@ -213,7 +213,7 @@ class BookingController extends Controller
             ->with(['category', 'ratePlans']);
 
         if ($step == 3) {
-            $query->with(['resources', 'timeSlots']);
+               $query->with(['resources', 'timeSlots.resource', 'availabilities.resource']);
         } elseif ($step == 6) {
             $query->with(['faqs' => function ($q) {
                 $q->orderBy('id', 'asc');
