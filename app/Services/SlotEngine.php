@@ -20,14 +20,20 @@ class SlotEngine
      * @return Collection
      */
     public function getAvailableSlots(
-        Booking $booking,
-        Carbon $date,
-        ?int $resourceId = null
-    ): Collection {
-        $cacheKey = 'booking_slots:' . md5($booking->id . '|' . $date->toDateString() . '|' . $resourceId . '|' . optional($booking->updated_at)->timestamp);
+    Booking $booking,
+    Carbon $date,
+    ?int $resourceId = null
+): Collection {
+    $ordersFingerprint = $this->ordersFingerprint($booking, $date, $resourceId);
 
-        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($booking, $date, $resourceId) {
-            if (!$this->isDateOpen($booking, $date, $resourceId)) {
+    $cacheKey = 'booking_slots:' . md5(
+        $booking->id . '|' . $date->toDateString() . '|' . $resourceId
+        . '|' . optional($booking->updated_at)->timestamp
+        . '|' . $ordersFingerprint
+    );
+
+    return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($booking, $date, $resourceId) {
+        if (!$this->isDateOpen($booking, $date, $resourceId)) {
                 return collect();
             }
 
@@ -183,4 +189,15 @@ class SlotEngine
 
     return $booked;
 }
+
+
+private function ordersFingerprint(Booking $booking, Carbon $date, ?int $resourceId): string
+    {
+        return (string) BookingOrder::query()
+            ->where('booking_id', $booking->id)
+            ->where('booking_date', $date->toDateString())
+            ->when($resourceId, fn ($q) => $q->where('resource_id', $resourceId))
+            ->whereIn('status', [BookingOrder::$pending, BookingOrder::$success])
+            ->max('updated_at');
+    }
 }
