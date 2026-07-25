@@ -88,15 +88,37 @@ private function applyBookingTypeConfig($module, ?string $bookingType): void
         return;
     }
 
-    $key = ($bookingType && array_key_exists($bookingType, $optionsByBookingType))
-        ? $bookingType
-        : 'default';
+    $key = $this->resolveBookingTypeConfigKey($bookingType, $optionsByBookingType) ?? 'default';
 
     $config['options'] = (isset($optionsByBookingType[$key]) && is_array($optionsByBookingType[$key]))
         ? $optionsByBookingType[$key]
         : [];
 
     $module->config = $config;
+}
+
+private function resolveBookingTypeConfigKey(?string $bookingType, array $optionsByBookingType): ?string
+{
+    if (empty($bookingType)) {
+        return null;
+    }
+
+    $normalized = Str::of($bookingType)->lower()->replace(['-', ' '], '_')->toString();
+    $candidates = array_unique([
+        $bookingType,
+        $normalized,
+        str_replace('_', '-', $normalized),
+        $normalized === 'beauty_spa' ? 'beauty_and_spa' : null,
+        $normalized === 'beauty_and_spa' ? 'beauty_spa' : null,
+    ]);
+
+    foreach ($candidates as $candidate) {
+        if (!empty($candidate) && array_key_exists($candidate, $optionsByBookingType)) {
+            return $candidate;
+        }
+    }
+
+    return null;
 }
 
     private function getConfigOptions(array $config): array
