@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use App\Http\Controllers\Panel\Booking\Traits\MyBookingsListsTrait;
+use App\Models\BookingAvailability;
 
 class BookingController extends Controller
 {
@@ -775,6 +776,51 @@ if ($finalSubmit) {
     | SUB-RESOURCE: FAQ
     |--------------------------------------------------------------------------
     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUB-RESOURCE: AVAILABILITY OVERRIDES
+    |--------------------------------------------------------------------------
+    */
+
+    public function storeAvailabilityOverride(Request $request, $bookingId)
+    {
+        $booking = $this->findOwnBooking($bookingId);
+
+        $data = $request->validate([
+            'date'            => 'required|date',
+            'resource_id'     => 'nullable|integer|exists:booking_resources,id',
+            'is_available'    => 'nullable|in:on',
+            'slots_available' => 'nullable|integer|min:0',
+            'price_override'  => 'nullable|numeric|min:0',
+            'close_reason'    => 'nullable|string|max:255',
+        ]);
+
+        // agar resource_id diya gaya hai to verify wo isi booking ka ho, kisi aur ka na ho
+        if (!empty($data['resource_id'])) {
+            $ownsResource = $booking->resources()->where('id', $data['resource_id'])->exists();
+            if (!$ownsResource) {
+                abort(422, 'Invalid resource for this booking.');
+            }
+        }
+
+        $data['is_available'] = !empty($data['is_available']) && $data['is_available'] === 'on';
+
+        $availability = $booking->availabilities()->create($data);
+
+        return response()->json(['success' => true, 'availability' => $availability]);
+    }
+
+    public function destroyAvailabilityOverride($availabilityId)
+    {
+        $availability = BookingAvailability::whereHas('booking', function ($q) {
+            $q->where('creator_id', auth()->id());
+        })->findOrFail($availabilityId);
+
+        $availability->delete();
+
+        return response()->json(['success' => true]);
+    }
 
     public function storeFaq(Request $request, $bookingId)
     {

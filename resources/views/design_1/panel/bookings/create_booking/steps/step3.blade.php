@@ -7,6 +7,11 @@
     small AJAX calls — this avoids losing the rest of the form's state on every
     add/remove, while everything else on this page still uses the normal
     page-reload submit like the other steps.
+
+    NOTE: Time slots and availability overrides no longer show a resource
+    picker. Whichever resource was most recently added (or the last existing
+    one on page load) is tracked silently in JS as "currentResourceId" and
+    sent automatically with every new time slot / availability override.
 --}}
 @php
     $meta = $booking->meta ?? [];
@@ -22,6 +27,8 @@
     $availabilityRows = $booking->availabilities ?? collect();
 
     $weekDays = ['mon' => 'Mon', 'tue' => 'Tue', 'wed' => 'Wed', 'thu' => 'Thu', 'fri' => 'Fri', 'sat' => 'Sat', 'sun' => 'Sun'];
+
+    $lastResource = $resourceRows->last();
 @endphp
 
 <div class="section-head">
@@ -188,13 +195,21 @@
         </div>
 
         <div id="recurringBlock" class="mt-2" style="{{ $recurringEnabled ? '' : 'display:none' }}">
+            {{-- Shows which resource new slots will be attached to (auto, read-only) --}}
+            <div class="alert alert-light border small mb-2" id="slotResourceHint">
+                Slot will be linked to resource:
+                <strong id="slotResourceHintName">{{ $lastResource->name ?? 'Any / Whole Booking' }}</strong>
+                <span class="text-muted">(auto — set by the most recently added resource above)</span>
+            </div>
+
             <div class="mini-table-wrap">
                 <table class="mini-table" id="timeSlotsTable">
-                    <thead><tr><th>Days</th><th>Start</th><th>End</th><th>Duration</th><th>Max</th><th></th></tr></thead>
+                    <thead><tr><th>Days</th><th>Resource</th><th>Start</th><th>End</th><th>Duration</th><th>Max</th><th></th></tr></thead>
                     <tbody>
                         @foreach($timeSlots as $slot)
                             <tr data-id="{{ $slot->id }}">
                                 <td>{{ implode(', ', array_map(fn($d) => $weekDays[$d] ?? $d, $slot->day_of_week ?? [])) }}</td>
+                                <td>{{ optional($slot->resource)->name ?? 'Any / Whole Booking' }}</td>
                                 <td>{{ $slot->start_time }}</td><td>{{ $slot->end_time }}</td>
                                 <td>{{ $slot->duration_minutes }}</td><td>{{ $slot->max_bookings }}</td>
                                 <td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-timeslot"><i class="fa fa-trash"></i></button></td>
@@ -244,6 +259,13 @@
         </div>
 
         <div id="availabilityBlock" class="mt-2" style="{{ $availabilityEnabled ? '' : 'display:none' }}">
+            {{-- Shows which resource new overrides will be attached to (auto, read-only) --}}
+            <div class="alert alert-light border small mb-2" id="avResourceHint">
+                Override will be linked to resource:
+                <strong id="avResourceHintName">{{ $lastResource->name ?? 'Any / Whole Booking' }}</strong>
+                <span class="text-muted">(auto — set by the most recently added resource above)</span>
+            </div>
+
             <div class="mini-table-wrap">
                 <table class="mini-table" id="availabilityTable">
                     <thead><tr><th>Date</th><th>Resource</th><th>Status</th><th>Slots</th><th>Price Override</th><th>Reason</th><th></th></tr></thead>
@@ -270,16 +292,7 @@
                 @endif
             </div>
             <div class="row align-items-end">
-                <div class="col-6 col-md-2"><label class="small">Date</label><input type="date" class="form-control form-control-sm" id="avDate"></div>
-                <div class="col-6 col-md-3">
-                    <label class="small">Resource</label>
-                    <select class="form-control form-control-sm" id="avResourceId">
-                        <option value="">Any / Whole Booking</option>
-                        @foreach($resourceRows as $r)
-                            <option value="{{ $r->id }}">{{ $r->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <div class="col-6 col-md-3"><label class="small">Date</label><input type="date" class="form-control form-control-sm" id="avDate"></div>
                 <div class="col-6 col-md-2">
                     <label class="small d-block">Available?</label>
                     <div class="booking-switch-row py-0">
@@ -289,8 +302,8 @@
                         </label>
                     </div>
                 </div>
-                <div class="col-6 col-md-1"><label class="small">Slots</label><input type="number" min="0" class="form-control form-control-sm" id="avSlots" placeholder="opt."></div>
-                <div class="col-6 col-md-2"><label class="small">Price Override</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="avPrice" placeholder="opt."></div>
+                <div class="col-6 col-md-2"><label class="small">Slots</label><input type="number" min="0" class="form-control form-control-sm" id="avSlots" placeholder="opt."></div>
+                <div class="col-6 col-md-3"><label class="small">Price Override</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="avPrice" placeholder="opt."></div>
                 <div class="col-12 col-md-2"><button type="button" class="btn btn-sm btn-primary btn-block" id="addAvailabilityBtn"><i class="fa fa-plus mr-1"></i> Add</button></div>
                 <div class="col-12 mt-2">
                     <input type="text" class="form-control form-control-sm" id="avReason" placeholder="Reason if blocked, e.g. Public holiday, fully booked">
@@ -306,6 +319,21 @@
     @if(!empty($booking->id))
     const bookingId = {{ $booking->id }};
     const csrf = '{{ csrf_token() }}';
+
+    // Silently tracks the most recently added resource. New time slots and
+    // availability overrides are auto-linked to this resource without the
+    // user having to pick anything from a dropdown.
+    let currentResourceId = {{ optional($lastResource)->id ?? 'null' }};
+    let currentResourceName = @json($lastResource->name ?? 'Any / Whole Booking');
+
+    function setCurrentResource(id, name) {
+        currentResourceId = id;
+        currentResourceName = name;
+        const slotHint = document.getElementById('slotResourceHintName');
+        if (slotHint) slotHint.textContent = name;
+        const avHint = document.getElementById('avResourceHintName');
+        if (avHint) avHint.textContent = name;
+    }
 
     function post(path, payload) {
         return fetch(`/panel/bookings/${path}`, {
@@ -340,14 +368,9 @@
             tbody.appendChild(row);
             document.getElementById('newResourceName').value = '';
 
-            // keep the availability-override "Resource" dropdown in sync
-            const avSelect = document.getElementById('avResourceId');
-            if (avSelect) {
-                const opt = document.createElement('option');
-                opt.value = r.id;
-                opt.textContent = r.name;
-                avSelect.appendChild(opt);
-            }
+            // whichever resource was just added becomes the "current" one —
+            // next time slot / availability override will silently use its id
+            setCurrentResource(r.id, r.name);
         });
     });
 
@@ -355,7 +378,21 @@
         const btn = e.target.closest('.remove-resource');
         if (!btn) return;
         const row = btn.closest('tr');
-        del(`resources/${row.dataset.id}`).then(d => { if (d.success) row.remove(); });
+        del(`resources/${row.dataset.id}`).then(d => {
+            if (!d.success) return;
+            const removedId = Number(row.dataset.id);
+            row.remove();
+            // if the resource we removed was the "current" one, fall back
+            if (currentResourceId === removedId) {
+                const remainingRow = document.querySelector('#resourcesTable tbody tr:last-child');
+                if (remainingRow) {
+                    const cells = remainingRow.querySelectorAll('td');
+                    setCurrentResource(Number(remainingRow.dataset.id), cells[0]?.textContent ?? 'Any / Whole Booking');
+                } else {
+                    setCurrentResource(null, 'Any / Whole Booking');
+                }
+            }
+        });
     });
 
     document.getElementById('addAssetBtn')?.addEventListener('click', function () {
@@ -395,6 +432,7 @@
             return;
         }
         post(`${bookingId}/time-slots`, {
+            resource_id: currentResourceId,
             day_of_week: days,
             start_time: start,
             end_time: end,
@@ -409,7 +447,7 @@
             row.dataset.id = s.id;
             const dayLabels = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
             const daysText = (s.day_of_week || []).map(d => dayLabels[d] || d).join(', ');
-            row.innerHTML = `<td>${daysText}</td><td>${s.start_time}</td><td>${s.end_time}</td><td>${s.duration_minutes ?? ''}</td><td>${s.max_bookings}</td><td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-timeslot"><i class="fa fa-trash"></i></button></td>`;
+            row.innerHTML = `<td>${daysText}</td><td>${currentResourceName}</td><td>${s.start_time}</td><td>${s.end_time}</td><td>${s.duration_minutes ?? ''}</td><td>${s.max_bookings}</td><td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-timeslot"><i class="fa fa-trash"></i></button></td>`;
             tbody.appendChild(row);
             document.querySelectorAll('#recurringBlock input[id^="newSlotDay_"]').forEach(el => el.checked = false);
             document.getElementById('newSlotStart').value = '';
@@ -434,7 +472,7 @@
         }
         post(`${bookingId}/availability-overrides`, {
             date,
-            resource_id: document.getElementById('avResourceId').value || null,
+            resource_id: currentResourceId,
             is_available: document.getElementById('avIsAvailable').checked ? 'on' : '',
             slots_available: document.getElementById('avSlots').value || null,
             price_override: document.getElementById('avPrice').value || null,
@@ -444,11 +482,9 @@
             document.getElementById('availabilityEmptyHint')?.remove();
             const a = data.availability;
             const tbody = document.querySelector('#availabilityTable tbody');
-            const resourceSelect = document.getElementById('avResourceId');
-            const resourceText = resourceSelect.selectedOptions[0] ? resourceSelect.selectedOptions[0].text : 'Any / Whole Booking';
             const row = document.createElement('tr');
             row.dataset.id = a.id;
-            row.innerHTML = `<td>${a.date}</td><td>${resourceText}</td><td>${a.is_available ? 'Open' : 'Blocked'}</td><td>${a.slots_available ?? '—'}</td><td>${a.price_override ?? '—'}</td><td>${a.close_reason ?? '—'}</td><td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-availability"><i class="fa fa-trash"></i></button></td>`;
+            row.innerHTML = `<td>${a.date}</td><td>${currentResourceName}</td><td>${a.is_available ? 'Open' : 'Blocked'}</td><td>${a.slots_available ?? '—'}</td><td>${a.price_override ?? '—'}</td><td>${a.close_reason ?? '—'}</td><td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-availability"><i class="fa fa-trash"></i></button></td>`;
             tbody.appendChild(row);
 
             document.getElementById('avDate').value = '';
