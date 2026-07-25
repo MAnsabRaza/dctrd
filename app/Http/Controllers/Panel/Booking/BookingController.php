@@ -737,28 +737,37 @@ if ($finalSubmit) {
     |--------------------------------------------------------------------------
     */
 
-    public function storeTimeSlot(Request $request, $bookingId)
-    {
-        $booking = $this->findOwnBooking($bookingId);
+   public function storeTimeSlot(Request $request, $bookingId)
+{
+    $booking = $this->findOwnBooking($bookingId);
 
-        $data = $request->validate([
-            'resource_id'      => 'nullable|integer|exists:booking_resources,id',
-            'day_of_week'      => 'required|array|min:1',
-            'day_of_week.*'    => 'string|in:mon,tue,wed,thu,fri,sat,sun',
-            'start_time'       => 'required',
-            'end_time'         => 'required',
-            'duration_minutes' => 'nullable|integer|min:0',
-            'buffer_minutes'   => 'nullable|integer|min:0',
-            'max_bookings'     => 'nullable|integer|min:1',
-        ]);
+    $data = $request->validate([
+        'resource_id'      => 'nullable|integer|exists:booking_resources,id',
+        'day_of_week'      => 'required|array|min:1',
+        'day_of_week.*'    => 'string|in:mon,tue,wed,thu,fri,sat,sun',
+        'start_time'       => 'required',
+        'end_time'         => 'required',
+        'duration_minutes' => 'nullable|integer|min:0',
+        'buffer_minutes'   => 'nullable|integer|min:0',
+        'max_bookings'     => 'nullable|integer|min:1',
+    ]);
 
-        $data['status'] = true;
-        $data['max_bookings'] = $data['max_bookings'] ?? 1;
+    // Admin panel ke BookingTimeSlotController@store wali hi convention:
+    // 0 = Sunday ... 6 = Saturday (Carbon::dayOfWeek jaisa), integer array.
+    $dayMap = ['sun' => 0, 'mon' => 1, 'tue' => 2, 'wed' => 3, 'thu' => 4, 'fri' => 5, 'sat' => 6];
+    $data['day_of_week'] = collect($data['day_of_week'])
+        ->map(fn ($d) => $dayMap[$d])
+        ->unique()
+        ->values()
+        ->all();
 
-        $timeSlot = $booking->timeSlots()->create($data);
+    $data['status'] = true;
+    $data['max_bookings'] = $data['max_bookings'] ?? 1;
 
-        return response()->json(['success' => true, 'time_slot' => $timeSlot]);
-    }
+    $timeSlot = $booking->timeSlots()->create($data);
+
+    return response()->json(['success' => true, 'time_slot' => $timeSlot]);
+}
 
     public function destroyTimeSlot($timeSlotId)
     {

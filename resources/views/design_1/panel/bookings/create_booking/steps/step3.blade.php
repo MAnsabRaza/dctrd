@@ -27,6 +27,7 @@
     $availabilityRows = $booking->availabilities ?? collect();
 
     $weekDays = ['mon' => 'Mon', 'tue' => 'Tue', 'wed' => 'Wed', 'thu' => 'Thu', 'fri' => 'Fri', 'sat' => 'Sat', 'sun' => 'Sun'];
+    $weekDaysByIndex = [0 => 'Sun', 1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat'];
 
     $lastResource = $resourceRows->last();
 @endphp
@@ -208,7 +209,7 @@
                     <tbody>
                         @foreach($timeSlots as $slot)
                             <tr data-id="{{ $slot->id }}">
-                                <td>{{ implode(', ', array_map(fn($d) => $weekDays[$d] ?? $d, $slot->day_of_week ?? [])) }}</td>
+                            <td>{{ implode(', ', array_map(fn($d) => $weekDaysByIndex[$d] ?? $d, $slot->day_of_week ?? [])) }}</td>
                                 <td>{{ optional($slot->resource)->name ?? 'Any / Whole Booking' }}</td>
                                 <td>{{ $slot->start_time }}</td><td>{{ $slot->end_time }}</td>
                                 <td>{{ $slot->duration_minutes }}</td><td>{{ $slot->max_bookings }}</td>
@@ -445,8 +446,8 @@
             const tbody = document.querySelector('#timeSlotsTable tbody');
             const row = document.createElement('tr');
             row.dataset.id = s.id;
-            const dayLabels = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
-            const daysText = (s.day_of_week || []).map(d => dayLabels[d] || d).join(', ');
+          const dayLabelsByIndex = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
+const daysText = (s.day_of_week || []).map(d => dayLabelsByIndex[d] ?? d).join(', ');
             row.innerHTML = `<td>${daysText}</td><td>${currentResourceName}</td><td>${s.start_time}</td><td>${s.end_time}</td><td>${s.duration_minutes ?? ''}</td><td>${s.max_bookings}</td><td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-timeslot"><i class="fa fa-trash"></i></button></td>`;
             tbody.appendChild(row);
             document.querySelectorAll('#recurringBlock input[id^="newSlotDay_"]').forEach(el => el.checked = false);
