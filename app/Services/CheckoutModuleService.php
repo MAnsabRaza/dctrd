@@ -457,6 +457,17 @@ public function resolveBookingType($entity): ?string
         return null;
     }
 
+    // ✅ FIX: booking_type column (beauty-spa, doctors-clinics, events, etc.)
+    // ko PEHLE check karo — ye BookingTemplateConfig aur checkout_modules
+    // config ke "options_by_booking_type" keys se match karta hai.
+    // Pehle ye method category->slug use kar raha tha, jo kabhi bhi
+    // config keys se match nahi karta tha — isi wajah se hamesha
+    // "default" extras show ho rahe the, chahe booking type kuch bhi ho.
+    if (!empty($entity->booking_type)) {
+        return Str::of($entity->booking_type)->lower()->replace(['-', ' '], '_')->toString();
+    }
+
+    // Fallback: purana category-slug wala logic (agar booking_type khali ho)
     $category = optional($entity)->category;
 
     while (!empty($category)) {
