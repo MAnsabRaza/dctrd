@@ -280,7 +280,7 @@ class BookingSubTemplateConfig
         'mechanic-repair-appointment' => [
             'label'       => 'Mechanic / Repair Appointment',
             'parent_type' => 'automotive',
-            'required'    => ['meta.service_type', 'meta.vehicle_type', 'duration_minutes', 'staff_id', 'price'],
+            'required'    => ['meta.vehicle_type', 'duration_minutes', 'staff_id', 'price'],
             'optional'    => ['meta.required_notes', 'meta.pickup_location', 'meta.dropoff_location'],
             'field_labels' => [
                 'title'                  => 'Service Title',
