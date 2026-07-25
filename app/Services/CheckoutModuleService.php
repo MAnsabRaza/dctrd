@@ -319,105 +319,116 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
      * hoti hai (e.g. check_out > check_in, max_length, valid option),
      * koi field mandatory nahi hai module-level flag se.
      */
-    public function validateModuleData(
-        Collection $modules,
-        array $submittedData
-    ): array {
-        $errors = [];
+   public function validateModuleData(
+    Collection $modules,
+    array $submittedData
+): array {
+    $errors = [];
 
-        foreach ($modules as $module) {
-            $name  = $module->name;
-            $data  = $submittedData[$name] ?? null;
-            $config = $module->config ?? [];
+    foreach ($modules as $module) {
+        $name   = $module->name;
+        $data   = $submittedData[$name] ?? null;
+        $config = $module->config ?? [];
 
+        // ✅ Cancellation Policy — hamesha mandatory hai jab module active ho.
+        // Customer ko checkbox check karna hi hoga, warna checkout nahi hoga.
+        if ($name === 'cancellation_policy') {
             if ($this->isEmptyValue($data)) {
-                continue;
+                $errors[$name] = trans('checkout.validation.cancellation_policy_required')
+                    ?: 'Please agree to the cancellation policy to continue.';
             }
-
-            switch ($module->input_type) {
-
-                case 'date_range':
-                    if (!empty($data['check_in']) && strtotime($data['check_in']) < strtotime('today')) {
-                        $errors[$name . '.check_in'] = trans('checkout.validation.check_in_past');
-                    }
-
-                    if (
-                        !empty($data['check_in']) &&
-                        !empty($data['check_out']) &&
-                        strtotime($data['check_out']) <= strtotime($data['check_in'])
-                    ) {
-                        $errors[$name . '.check_out'] = trans('checkout.validation.check_out_before_check_in');
-                    }
-                    break;
-
-                case 'time_slot':
-                    $availableSlots = $config['slots'] ?? [];
-                    if (!empty($availableSlots) && !in_array($data, $availableSlots)) {
-                        $errors[$name] = trans('checkout.validation.invalid_time_slot');
-                    }
-                    break;
-
-                case 'stepper':
-                    $fields = [
-                        'adults'   => $config['adults']   ?? ['min' => 1, 'max' => 20],
-                        'children' => $config['children'] ?? ['min' => 0, 'max' => 10],
-                        'rooms'    => $config['rooms']    ?? ['min' => 1, 'max' => 10],
-                    ];
-
-                    foreach ($fields as $field => $limits) {
-                        if (!isset($data[$field])) {
-                            continue;
-                        }
-
-                        $val = (int) $data[$field];
-                        if ($val < $limits['min']) {
-                            $errors[$name . '.' . $field] = trans('checkout.validation.min_value', [
-                                'field' => $field,
-                                'min'   => $limits['min']
-                            ]);
-                        }
-                        if ($val > $limits['max']) {
-                            $errors[$name . '.' . $field] = trans('checkout.validation.max_value', [
-                                'field' => $field,
-                                'max'   => $limits['max']
-                            ]);
-                        }
-                    }
-                    break;
-
-                case 'checkbox_list':
-                    $validLabels = collect($this->getConfigOptions($config))->pluck('label')->toArray();
-                    $selected    = is_array($data) ? $data : [];
-
-                    foreach ($selected as $item) {
-                        if (!in_array($item, $validLabels)) {
-                            $errors[$name] = trans('checkout.validation.invalid_option');
-                            break;
-                        }
-                    }
-                    break;
-
-                case 'textarea':
-                    $maxLength = $config['max_length'] ?? 500;
-                    if (mb_strlen($data) > $maxLength) {
-                        $errors[$name] = trans('checkout.validation.max_length', [
-                            'max' => $maxLength
-                        ]);
-                    }
-                    break;
-
-                case 'info_checkbox':
-                    // Ab mandatory nahi - agar data aaya hai (agree kiya)
-                    // to kuch extra validate karne ki zaroorat nahi.
-                    break;
-            }
+            continue;
         }
 
-        return [
-            'valid'  => empty($errors),
-            'errors' => $errors,
-        ];
+        // Baaki tamam modules (including extra_services) optional hain —
+        // agar data hi nahi bheja gaya, to validate karne ki zaroorat nahi.
+        if ($this->isEmptyValue($data)) {
+            continue;
+        }
+
+        switch ($module->input_type) {
+
+            case 'date_range':
+                if (!empty($data['check_in']) && strtotime($data['check_in']) < strtotime('today')) {
+                    $errors[$name . '.check_in'] = trans('checkout.validation.check_in_past');
+                }
+
+                if (
+                    !empty($data['check_in']) &&
+                    !empty($data['check_out']) &&
+                    strtotime($data['check_out']) <= strtotime($data['check_in'])
+                ) {
+                    $errors[$name . '.check_out'] = trans('checkout.validation.check_out_before_check_in');
+                }
+                break;
+
+            case 'time_slot':
+                $availableSlots = $config['slots'] ?? [];
+                if (!empty($availableSlots) && !in_array($data, $availableSlots)) {
+                    $errors[$name] = trans('checkout.validation.invalid_time_slot');
+                }
+                break;
+
+            case 'stepper':
+                $fields = [
+                    'adults'   => $config['adults']   ?? ['min' => 1, 'max' => 20],
+                    'children' => $config['children'] ?? ['min' => 0, 'max' => 10],
+                    'rooms'    => $config['rooms']    ?? ['min' => 1, 'max' => 10],
+                ];
+
+                foreach ($fields as $field => $limits) {
+                    if (!isset($data[$field])) {
+                        continue;
+                    }
+
+                    $val = (int) $data[$field];
+                    if ($val < $limits['min']) {
+                        $errors[$name . '.' . $field] = trans('checkout.validation.min_value', [
+                            'field' => $field,
+                            'min'   => $limits['min']
+                        ]);
+                    }
+                    if ($val > $limits['max']) {
+                        $errors[$name . '.' . $field] = trans('checkout.validation.max_value', [
+                            'field' => $field,
+                            'max'   => $limits['max']
+                        ]);
+                    }
+                }
+                break;
+
+            case 'checkbox_list':
+                // ✅ Extra Services hamesha optional hain — checkbox check na
+                // karna valid hai (upar hi skip ho jata hai). Invalid/mismatched
+                // label aane par bhi checkout ko block nahi karna — pricing
+                // calculation (calculateExtraPriceBreakdown) waise hi sirf
+                // valid config options ko match karke price count karta hai,
+                // baaki khud-ba-khud ignore ho jata hai. Isliye yahan
+                // koi error add nahi karna.
+                break;
+
+            case 'textarea':
+                $maxLength = $config['max_length'] ?? 500;
+                if (mb_strlen($data) > $maxLength) {
+                    $errors[$name] = trans('checkout.validation.max_length', [
+                        'max' => $maxLength
+                    ]);
+                }
+                break;
+
+            case 'info_checkbox':
+                // cancellation_policy upar handle ho chuki hai (continue se
+                // pehle). Agar koi aur info_checkbox module ho to filhal
+                // koi extra validation nahi.
+                break;
+        }
     }
+
+    return [
+        'valid'  => empty($errors),
+        'errors' => $errors,
+    ];
+}
 
     // =========================================================
 
