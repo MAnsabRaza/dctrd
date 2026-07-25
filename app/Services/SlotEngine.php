@@ -193,11 +193,16 @@ class SlotEngine
 
 private function ordersFingerprint(Booking $booking, Carbon $date, ?int $resourceId): string
     {
-        return (string) BookingOrder::query()
+        return BookingOrder::query()
             ->where('booking_id', $booking->id)
             ->where('booking_date', $date->toDateString())
             ->when($resourceId, fn ($q) => $q->where('resource_id', $resourceId))
             ->whereIn('status', [BookingOrder::$pending, BookingOrder::$success])
-            ->max('updated_at');
+            ->count() . ':' . BookingOrder::query()
+                ->where('booking_id', $booking->id)
+                ->where('booking_date', $date->toDateString())
+                ->when($resourceId, fn ($q) => $q->where('resource_id', $resourceId))
+                ->whereIn('status', [BookingOrder::$pending, BookingOrder::$success])
+                ->max('id');
     }
 }
