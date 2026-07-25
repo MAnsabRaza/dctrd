@@ -115,6 +115,11 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'panel', 'middleware' => ['imp
 
         Route::delete('/time-slots/{timeSlot}', 'Booking\BookingController@destroyTimeSlot')
             ->name('panel.bookings.time_slots.destroy');
+                Route::post('/{id}/availability-overrides', 'Booking\BookingController@storeAvailability')
+            ->name('panel.bookings.availability_overrides.store');
+
+        Route::delete('/availability-overrides/{availability}', 'Booking\BookingController@destroyAvailability')
+            ->name('panel.bookings.availability_overrides.destroy');
 
         Route::post('/{id}/faqs', 'Booking\BookingController@storeFaq')
             ->name('panel.bookings.faqs.store');

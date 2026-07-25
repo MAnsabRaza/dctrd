@@ -1,11 +1,12 @@
 {{--
-    Step 3 — Participants, Resources, Assets, Recurring
+    Step 3 — Participants, Resources, Assets, Recurring, Availability Overrides
 
     Participants = plain Booking columns (saved on normal step submit).
-    Resources/Assets (BookingResource, type column) and Recurring (BookingTimeSlot)
-    are added/removed live via small AJAX calls — this avoids losing the rest of
-    the form's state on every add/remove, while everything else on this page
-    still uses the normal page-reload submit like the other steps.
+    Resources/Assets (BookingResource, type column), Recurring (BookingTimeSlot),
+    and Availability Overrides (BookingAvailability) are added/removed live via
+    small AJAX calls — this avoids losing the rest of the form's state on every
+    add/remove, while everything else on this page still uses the normal
+    page-reload submit like the other steps.
 --}}
 @php
     $meta = $booking->meta ?? [];
@@ -13,10 +14,12 @@
     $resourcesEnabled    = old('resources_enabled', $meta['resources_enabled'] ?? false);
     $assetsEnabled       = old('assets_enabled', $meta['assets_enabled'] ?? false);
     $recurringEnabled    = old('recurring_enabled', $meta['recurring_enabled'] ?? false);
+    $availabilityEnabled = old('availability_enabled', $meta['availability_enabled'] ?? false);
 
     $resourceRows = ($booking->resources ?? collect())->where('type', '!=', 'asset');
     $assetRows    = ($booking->resources ?? collect())->where('type', '=', 'asset');
     $timeSlots    = $booking->timeSlots ?? collect();
+    $availabilityRows = $booking->availabilities ?? collect();
 
     $weekDays = ['mon' => 'Mon', 'tue' => 'Tue', 'wed' => 'Wed', 'thu' => 'Thu', 'fri' => 'Fri', 'sat' => 'Sat', 'sun' => 'Sun'];
 @endphp
@@ -169,8 +172,8 @@
         </div>
     </div>
 
-    {{-- ── Recurring ─────────────────────────────────────── --}}
-    <div class="booking-switch-row-bordered mb-0">
+    {{-- ── Recurring (Time Slots) ──────────────────────────── --}}
+    <div class="booking-switch-row-bordered">
         <div class="booking-switch-row">
             <label class="booking-switch" for="toggleRecurring">
                 <input type="checkbox" id="toggleRecurring" name="recurring_enabled"
@@ -225,6 +228,77 @@
         </div>
     </div>
 
+    {{-- ── Availability Overrides (NEW) ────────────────────── --}}
+    <div class="booking-switch-row-bordered mb-0">
+        <div class="booking-switch-row">
+            <label class="booking-switch" for="toggleAvailability">
+                <input type="checkbox" id="toggleAvailability" name="availability_enabled"
+                       {{ $availabilityEnabled ? 'checked' : '' }}
+                       onchange="document.getElementById('availabilityBlock').style.display = this.checked ? 'block' : 'none'">
+                <span class="booking-switch-slider"></span>
+            </label>
+            <label class="booking-switch-label mb-0" for="toggleAvailability">
+                Availability Overrides
+                <small>Block a specific date, or override slots/price for that day only</small>
+            </label>
+        </div>
+
+        <div id="availabilityBlock" class="mt-2" style="{{ $availabilityEnabled ? '' : 'display:none' }}">
+            <div class="mini-table-wrap">
+                <table class="mini-table" id="availabilityTable">
+                    <thead><tr><th>Date</th><th>Resource</th><th>Status</th><th>Slots</th><th>Price Override</th><th>Reason</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach($availabilityRows as $avail)
+                            <tr data-id="{{ $avail->id }}">
+                                <td>{{ optional($avail->date)->format('Y-m-d') ?? $avail->date }}</td>
+                                <td>{{ optional($avail->resource)->name ?? 'Any / Whole Booking' }}</td>
+                                <td>{{ $avail->is_available ? 'Open' : 'Blocked' }}</td>
+                                <td>{{ $avail->slots_available ?? '—' }}</td>
+                                <td>{{ $avail->price_override ?? '—' }}</td>
+                                <td>{{ $avail->close_reason ?? '—' }}</td>
+                                <td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-availability"><i class="fa fa-trash"></i></button></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                @if($availabilityRows->isEmpty())
+                    <div class="empty-state" id="availabilityEmptyHint">
+                        <div class="badge-icon"><i class="fa fa-calendar-times-o"></i></div>
+                        <div class="empty-title">No overrides yet</div>
+                        <div class="empty-sub">By default every day follows the Recurring slots above.</div>
+                    </div>
+                @endif
+            </div>
+            <div class="row align-items-end">
+                <div class="col-6 col-md-2"><label class="small">Date</label><input type="date" class="form-control form-control-sm" id="avDate"></div>
+                <div class="col-6 col-md-3">
+                    <label class="small">Resource</label>
+                    <select class="form-control form-control-sm" id="avResourceId">
+                        <option value="">Any / Whole Booking</option>
+                        @foreach($resourceRows as $r)
+                            <option value="{{ $r->id }}">{{ $r->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="small d-block">Available?</label>
+                    <div class="booking-switch-row py-0">
+                        <label class="booking-switch" for="avIsAvailable">
+                            <input type="checkbox" id="avIsAvailable" checked>
+                            <span class="booking-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-6 col-md-1"><label class="small">Slots</label><input type="number" min="0" class="form-control form-control-sm" id="avSlots" placeholder="opt."></div>
+                <div class="col-6 col-md-2"><label class="small">Price Override</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="avPrice" placeholder="opt."></div>
+                <div class="col-12 col-md-2"><button type="button" class="btn btn-sm btn-primary btn-block" id="addAvailabilityBtn"><i class="fa fa-plus mr-1"></i> Add</button></div>
+                <div class="col-12 mt-2">
+                    <input type="text" class="form-control form-control-sm" id="avReason" placeholder="Reason if blocked, e.g. Public holiday, fully booked">
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -265,6 +339,15 @@
             row.innerHTML = `<td>${r.name}</td><td>${r.type ?? ''}</td><td>${r.capacity ?? '—'}</td><td>${Number(r.extra_price).toFixed(2)}</td><td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-resource"><i class="fa fa-trash"></i></button></td>`;
             tbody.appendChild(row);
             document.getElementById('newResourceName').value = '';
+
+            // keep the availability-override "Resource" dropdown in sync
+            const avSelect = document.getElementById('avResourceId');
+            if (avSelect) {
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.textContent = r.name;
+                avSelect.appendChild(opt);
+            }
         });
     });
 
@@ -340,6 +423,47 @@
         if (!btn) return;
         const row = btn.closest('tr');
         del(`time-slots/${row.dataset.id}`).then(d => { if (d.success) row.remove(); });
+    });
+
+    // ── Availability Overrides (NEW) ──────────────────────
+    document.getElementById('addAvailabilityBtn')?.addEventListener('click', function () {
+        const date = document.getElementById('avDate').value;
+        if (!date) {
+            alert('Please pick a date.');
+            return;
+        }
+        post(`${bookingId}/availability-overrides`, {
+            date,
+            resource_id: document.getElementById('avResourceId').value || null,
+            is_available: document.getElementById('avIsAvailable').checked ? 'on' : '',
+            slots_available: document.getElementById('avSlots').value || null,
+            price_override: document.getElementById('avPrice').value || null,
+            close_reason: document.getElementById('avReason').value || null,
+        }).then(data => {
+            if (!data.success) return;
+            document.getElementById('availabilityEmptyHint')?.remove();
+            const a = data.availability;
+            const tbody = document.querySelector('#availabilityTable tbody');
+            const resourceSelect = document.getElementById('avResourceId');
+            const resourceText = resourceSelect.selectedOptions[0] ? resourceSelect.selectedOptions[0].text : 'Any / Whole Booking';
+            const row = document.createElement('tr');
+            row.dataset.id = a.id;
+            row.innerHTML = `<td>${a.date}</td><td>${resourceText}</td><td>${a.is_available ? 'Open' : 'Blocked'}</td><td>${a.slots_available ?? '—'}</td><td>${a.price_override ?? '—'}</td><td>${a.close_reason ?? '—'}</td><td class="text-right"><button type="button" class="btn btn-sm btn-link text-danger remove-availability"><i class="fa fa-trash"></i></button></td>`;
+            tbody.appendChild(row);
+
+            document.getElementById('avDate').value = '';
+            document.getElementById('avSlots').value = '';
+            document.getElementById('avPrice').value = '';
+            document.getElementById('avReason').value = '';
+            document.getElementById('avIsAvailable').checked = true;
+        });
+    });
+
+    document.getElementById('availabilityTable')?.addEventListener('click', function (e) {
+        const btn = e.target.closest('.remove-availability');
+        if (!btn) return;
+        const row = btn.closest('tr');
+        del(`availability-overrides/${row.dataset.id}`).then(d => { if (d.success) row.remove(); });
     });
     @endif
 })();

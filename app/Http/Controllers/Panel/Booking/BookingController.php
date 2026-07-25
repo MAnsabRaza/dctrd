@@ -157,9 +157,9 @@ class BookingController extends Controller
 
         $data = $request->all();
 
-        $isDraft   = $this->isEnabledRequestValue($data['draft'] ?? null);
-        $getNext   = $this->isEnabledRequestValue($data['get_next'] ?? null);
-        $status     = ($isDraft || $getNext) ? 'draft' : 'pending';
+        $isDraft = $this->isEnabledRequestValue($data['draft'] ?? null);
+        $getNext = $this->isEnabledRequestValue($data['get_next'] ?? null);
+        $status = !empty($data['status']) ? $data['status'] : ($isDraft ? 'draft' : 'pending');
 
         $booking = Booking::create([
             'creator_id'   => $user->id,
@@ -410,10 +410,7 @@ class BookingController extends Controller
 
       $finalSubmit = ($currentStep == 8 and !$getNextStep and !$isDraft);
 
-if ($isDraft) {
-    // "Save as Draft" button always wins
-    $data['status'] = 'draft';
-} elseif ($finalSubmit) {
+if ($finalSubmit) {
     // Final "Submit for Review" on step 8 always wins
     $data['status'] = 'pending';
 } elseif ($currentStep == 1 && !empty($data['status'])) {
@@ -422,6 +419,9 @@ if ($isDraft) {
     // silently overwriting it with the old value.
     // ($data['status'] already comes validated via the step-1 rule:
     //  'status' => 'nullable|in:draft,pending,published,rejected,inactive')
+} elseif ($isDraft) {
+    // Outside step 1, the dedicated "Save as Draft" button should still draft it.
+    $data['status'] = 'draft';
 } else {
     // Any other in-between step (2–7, just clicking "Next") should never
     // change status on its own — keep whatever it currently is.
@@ -493,6 +493,7 @@ if ($isDraft) {
             $meta['resources_enabled']    = !empty($data['resources_enabled']) && $data['resources_enabled'] === 'on';
             $meta['assets_enabled']       = !empty($data['assets_enabled']) && $data['assets_enabled'] === 'on';
             $meta['recurring_enabled']    = !empty($data['recurring_enabled']) && $data['recurring_enabled'] === 'on';
+              $meta['availability_enabled'] = !empty($data['availability_enabled']) && $data['availability_enabled'] === 'on'; // ← YE NAYI LINE
             $booking->meta = $meta;
         } elseif ($currentStep == 4) {
             $meta = $booking->meta ?? [];
