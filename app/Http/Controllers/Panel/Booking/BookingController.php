@@ -408,9 +408,25 @@ class BookingController extends Controller
 
         $this->validate($request, $rules);
 
-        $finalSubmit = ($currentStep == 8 and !$getNextStep and !$isDraft);
+      $finalSubmit = ($currentStep == 8 and !$getNextStep and !$isDraft);
 
-        $data['status'] = $isDraft ? 'draft' : ($finalSubmit ? 'pending' : $booking->status);
+if ($isDraft) {
+    // "Save as Draft" button always wins
+    $data['status'] = 'draft';
+} elseif ($finalSubmit) {
+    // Final "Submit for Review" on step 8 always wins
+    $data['status'] = 'pending';
+} elseif ($currentStep == 1 && !empty($data['status'])) {
+    // Step 1's manual status dropdown (draft/pending/published/rejected/inactive)
+    // — respect whatever the user explicitly selected there instead of
+    // silently overwriting it with the old value.
+    // ($data['status'] already comes validated via the step-1 rule:
+    //  'status' => 'nullable|in:draft,pending,published,rejected,inactive')
+} else {
+    // Any other in-between step (2–7, just clicking "Next") should never
+    // change status on its own — keep whatever it currently is.
+    $data['status'] = $booking->status;
+}
 
         if ($currentStep == 1) {
             $booking->fill([
