@@ -334,7 +334,7 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
         // Customer ko checkbox check karna hi hoga, warna checkout nahi hoga.
         if ($name === 'cancellation_policy') {
             if ($this->isEmptyValue($data)) {
-                $errors[$name] = trans('checkout.validation.cancellation_policy_required')
+                $errors[$name] ="Cancellation Policy is required."
                     ?: 'Please agree to the cancellation policy to continue.';
             }
             continue;
@@ -350,7 +350,7 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
 
             case 'date_range':
                 if (!empty($data['check_in']) && strtotime($data['check_in']) < strtotime('today')) {
-                    $errors[$name . '.check_in'] = trans('checkout.validation.check_in_past');
+                    $errors[$name . '.check_in'] = "Check-in date cannot be in the past.";
                 }
 
                 if (
@@ -358,14 +358,14 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
                     !empty($data['check_out']) &&
                     strtotime($data['check_out']) <= strtotime($data['check_in'])
                 ) {
-                    $errors[$name . '.check_out'] = trans('checkout.validation.check_out_before_check_in');
+                    $errors[$name . '.check_out'] = "Check-out date must be after check-in date.";
                 }
                 break;
 
             case 'time_slot':
                 $availableSlots = $config['slots'] ?? [];
                 if (!empty($availableSlots) && !in_array($data, $availableSlots)) {
-                    $errors[$name] = trans('checkout.validation.invalid_time_slot');
+                    $errors[$name] = "Selected time slot is not available.";
                 }
                 break;
 
@@ -383,16 +383,10 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
 
                     $val = (int) $data[$field];
                     if ($val < $limits['min']) {
-                        $errors[$name . '.' . $field] = trans('checkout.validation.min_value', [
-                            'field' => $field,
-                            'min'   => $limits['min']
-                        ]);
+                        $errors[$name . '.' . $field] = "Value for {$field} is below the minimum allowed.";
                     }
                     if ($val > $limits['max']) {
-                        $errors[$name . '.' . $field] = trans('checkout.validation.max_value', [
-                            'field' => $field,
-                            'max'   => $limits['max']
-                        ]);
+                        $errors[$name . '.' . $field] = "Value for {$field} is above the maximum allowed.";
                     }
                 }
                 break;
@@ -410,9 +404,7 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
             case 'textarea':
                 $maxLength = $config['max_length'] ?? 500;
                 if (mb_strlen($data) > $maxLength) {
-                    $errors[$name] = trans('checkout.validation.max_length', [
-                        'max' => $maxLength
-                    ]);
+                    $errors[$name] = "Text exceeds the maximum allowed length of {$maxLength} characters.";
                 }
                 break;
 

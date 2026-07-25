@@ -176,7 +176,7 @@
         <div class="booking-info-grid">
 
             {{-- DAYS MODULE --}}
-            @if($daysModule)
+            <!-- @if($daysModule)
                 @php $perDay = $daysModule->price_rule['amount'] ?? 0; @endphp
                 <div class="booking-info-card" data-module-name="days" data-price-type="per_day" data-price-amount="{{ $perDay }}">
                     <div class="d-flex align-items-center justify-content-between">
@@ -212,10 +212,49 @@
                         <div class="text-danger font-11 mt-4">{{ $message }}</div>
                     @enderror
                 </div>
+            @endif -->
+
+            {{-- DAYS MODULE --}}
+@if($daysModule)
+    @php $perDay = $daysModule->price_rule['amount'] ?? 0; @endphp
+    <div class="booking-info-card" data-module-name="days" data-price-type="per_day" data-price-amount="{{ $perDay }}">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="booking-info-title">
+                {{ $daysModule->translated_label ?? trans('update.check_in_date') ?? 'Check-in Date' }}
+            </div>
+            @if($perDay)
+                <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perDay) }}/{{ trans('cart.day') ?? 'day' }}</span>
             @endif
+        </div>
+        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
+            <div class="booking-info-icon">
+                <x-iconsax-lin-calendar-2 class="icons" width="16px" height="16px"/>
+            </div>
+            <input type="date"
+                   name="{{ $datePrefix }}[check_in]"
+                   id="bmod_cin_{{ $itemKey }}"
+                   class="form-control form-control-sm bmod-date-input bmod-cin"
+                  value="{{ $checkInValue }}"
+                   min="{{ now()->format('Y-m-d') }}"
+                   style="border-radius:12px;">
+            <input type="date"
+                   name="{{ $datePrefix }}[check_out]"
+                   id="bmod_cout_{{ $itemKey }}"
+                   class="form-control form-control-sm bmod-date-input bmod-cout"
+                   value="{{ $checkOutValue }}"
+                   min="{{ now()->format('Y-m-d') }}"
+                   style="border-radius:12px;">
+            <div class="booking-info-label bmod-cin-label">{{ $checkInLabel }}</div>
+            <div class="cmod-nights" id="bmod_nights_{{ $itemKey }}">0 {{ trans('cart.nights') ?? 'nights' }}</div>
+        </div>
+        @error("checkout_modules.{$itemKey}.days.check_in")
+            <div class="text-danger font-11 mt-4">{{ $message }}</div>
+        @enderror
+    </div>
+@endif
 
             {{-- HOURS MODULE --}}
-            @if($hoursModule)
+            <!-- @if($hoursModule)
             @php
                         $slots   = $hoursModule->config['slots'] ?? ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
                         $perHour = $hoursModule->price_rule['amount'] ?? 0;
@@ -267,8 +306,59 @@
                         <div class="text-danger font-11 mt-4">{{ $message }}</div>
                     @enderror
                 </div>
-            @endif
+            @endif -->
 
+            {{-- HOURS MODULE (READ-ONLY — Book Now par select kiya gaya time slot fixed hai) --}}
+@if($hoursModule)
+@php
+            $perHour = $hoursModule->price_rule['amount'] ?? 0;
+
+            // Display label banate waqt slot_end bhi use karo agar available ho
+            $timeDisplayLabel = $timeLabel;
+            if ($selectedTime) {
+                try {
+                    $sc  = \Carbon\Carbon::createFromFormat('H:i', $selectedTime);
+                    $ec  = $slotEnd ? \Carbon\Carbon::createFromFormat('H:i', $slotEnd) : $sc->copy()->addHour();
+                    $timeDisplayLabel = $sc->format('h:i A') . ' - ' . $ec->format('h:i A');
+                } catch (\Throwable $e) {
+                    $timeDisplayLabel = $timeLabel;
+                }
+            }
+        @endphp
+    <div class="booking-info-card" data-module-name="hours" data-price-type="per_hour" data-price-amount="{{ $perHour }}">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="booking-info-title">
+                {{ $hoursModule->translated_label ?? trans('update.check_in_time') ?? 'Check-in Time' }}
+            </div>
+            @if($perHour)
+                <span class="font-11 font-weight-bold text-primary">{{ handlePrice($perHour) }}/{{ trans('cart.hour') ?? 'hr' }}</span>
+            @endif
+        </div>
+        <div class="booking-info-content" style="flex-direction:column;align-items:flex-start;gap:8px;">
+            <div class="booking-info-icon">
+                <x-iconsax-lin-clock class="icons" width="16px" height="16px"/>
+            </div>
+
+            {{-- Hidden input — form submit ke liye value yehi carry karegi --}}
+            <input type="hidden"
+                   name="{{ $timePrefix }}"
+                   id="bmod_time_{{ $itemKey }}"
+                   value="{{ $selectedTime }}">
+
+            {{-- Read-only display (edit nahi ho sakta) --}}
+            <input type="text"
+                   class="form-control form-control-sm"
+                   value="{{ $timeDisplayLabel }}"
+                   readonly
+                   style="border-radius:12px;background:#f8fafc;">
+
+            <div class="booking-info-label bmod-time-label">{{ $timeDisplayLabel }}</div>
+        </div>
+        @error("checkout_modules.{$itemKey}.hours")
+            <div class="text-danger font-11 mt-4">{{ $message }}</div>
+        @enderror
+    </div>
+@endif
         {{-- CUSTOMER NAME (auto-filled, logged-in user) --}}
 @if($staffModule)
     @php
