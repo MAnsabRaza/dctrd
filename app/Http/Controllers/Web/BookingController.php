@@ -214,8 +214,8 @@ class BookingController extends Controller
     return response()->json([
         'available' => $isAvailable,
         'message' => $isAvailable
-            ? (trans('booking.availability.ok') ?? 'This slot is available.')
-            : (trans('booking.availability.slot_unavailable') ?? 'This time slot is no longer available. Please select another slot.'),
+            ? ('This slot is available.')
+            : ( 'This time slot is no longer available. Please select another slot.'),
     ]);
 }
     /* ══════════════════════════════════════════════
