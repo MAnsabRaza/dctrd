@@ -22,15 +22,19 @@
                 @php
                     $savedPrimaryCountry = data_get($stack['primarySubmission']->data ?? [], 'country');
                     $primarySelectedCountry = $savedPrimaryCountry ?: $userCountry;
+                    $primaryFormKey = 'primary_' . $stack['primaryTemplate']->id;
                 @endphp
 
                 <div class="js-regulatory-form" data-template-id="{{ $stack['primaryTemplate']->id }}"
                      data-submission-id="{{ $stack['primarySubmission']->id ?? '' }}">
+                    <input type="hidden" name="regulatory_forms[{{ $primaryFormKey }}][template_id]" value="{{ $stack['primaryTemplate']->id }}">
+                    <input type="hidden" name="regulatory_forms[{{ $primaryFormKey }}][submission_id]" value="{{ $stack['primarySubmission']->id ?? '' }}">
+
                     <h4 class="font-14 font-weight-bold mb-12">{{ $stack['primaryTemplate']->label }}</h4>
 
                     <div class="form-group">
                         <label class="form-group-label">Country</label>
-                        <select name="country" class="form-control select2">
+                        <select name="regulatory_forms[{{ $primaryFormKey }}][fields][country]" data-field-key="country" class="form-control select2">
                             <option value="">Select Country</option>
                             @foreach($countries as $country)
                                 @php
@@ -47,6 +51,7 @@
                         @include('design_1.panel.settings.includes.regulatory_field', [
                             'field' => $field,
                             'value' => data_get($stack['primarySubmission']->data ?? [], $field['key']),
+                            'inputName' => "regulatory_forms[{$primaryFormKey}][fields][{$field['key']}]",
                         ])
                     @endforeach
 
@@ -71,15 +76,18 @@
                             @php
                                 $savedSlotCountry = data_get($slotSubmission->data, 'country');
                                 $slotSelectedCountry = $savedSlotCountry ?: $userCountry;
+                                $slotFormKey = 'submission_' . $slotSubmission->id;
                             @endphp
 
                             <div class="border-gray-200 rounded-12 p-12 mb-12 js-regulatory-slot">
                                 <div class="js-regulatory-form" data-template-id="{{ $extraTemplate->id }}"
                                      data-submission-id="{{ $slotSubmission->id }}">
+                                    <input type="hidden" name="regulatory_forms[{{ $slotFormKey }}][template_id]" value="{{ $extraTemplate->id }}">
+                                    <input type="hidden" name="regulatory_forms[{{ $slotFormKey }}][submission_id]" value="{{ $slotSubmission->id }}">
 
                                     <div class="form-group">
                                         <label class="form-group-label">Country</label>
-                                        <select name="country" class="form-control select2">
+                                        <select name="regulatory_forms[{{ $slotFormKey }}][fields][country]" data-field-key="country" class="form-control select2">
                                             <option value="">Select Country</option>
                                             @foreach($countries as $country)
                                                 @php
@@ -96,6 +104,7 @@
                                         @include('design_1.panel.settings.includes.regulatory_field', [
                                             'field' => $field,
                                             'value' => data_get($slotSubmission->data, $field['key']),
+                                            'inputName' => "regulatory_forms[{$slotFormKey}][fields][{$field['key']}]",
                                         ])
                                     @endforeach
 
@@ -169,8 +178,8 @@
             : '{{ route("panel.regulatory.submit") }}';
 
         var fields = {};
-        $form.find('[name]').each(function () {
-            fields[$(this).attr('name')] = $(this).val();
+        $form.find('[data-field-key]').each(function () {
+            fields[$(this).data('field-key')] = $(this).val();
         });
 
         $btn.prop('disabled', true);

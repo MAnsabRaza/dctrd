@@ -17,6 +17,8 @@ use App\Models\Newsletter;
 use App\Models\OrgAvailabilityRange;
 use App\Models\OrgAvailabilityRule;
 use App\Models\Region;
+use App\Models\RegulatoryFormSubmission;
+use App\Models\RegulatoryFormTemplate;
 use App\Models\ReserveMeeting;
 use App\Models\Reward;
 use App\Models\RewardAccounting;
@@ -577,6 +579,8 @@ public function update(Request $request)
                 $data['modules'] ?? [],
                 $data['required_modules'] ?? []
             );
+        } elseif ($step == "regulatory") {
+            $this->saveRegulatorySettings($request, $user);
         }
 
         // ── DB update ────────────────────────────────────────────────
@@ -655,6 +659,64 @@ public function update(Request $request)
             }
 
             UserSelectedBankSpecification::query()->insert($specificationInsert);
+        }
+    }
+
+    private function saveRegulatorySettings(Request $request, User $user): void
+    {
+        $forms = $request->input('regulatory_forms', []);
+
+        if (empty($forms) or !is_array($forms)) {
+            return;
+        }
+
+        foreach ($forms as $form) {
+            $templateId = !empty($form['template_id']) ? (int) $form['template_id'] : null;
+
+            if (empty($templateId)) {
+                continue;
+            }
+
+            $template = RegulatoryFormTemplate::find($templateId);
+
+            if (empty($template)) {
+                continue;
+            }
+
+            $submissionId = !empty($form['submission_id']) ? (int) $form['submission_id'] : null;
+            $fields = $form['fields'] ?? [];
+
+            if (!is_array($fields)) {
+                $fields = [];
+            }
+
+            $submission = null;
+
+            if (!empty($submissionId)) {
+                $submission = RegulatoryFormSubmission::where('id', $submissionId)
+                    ->where('user_id', $user->id)
+                    ->first();
+            }
+
+            if (empty($submission)) {
+                $submission = RegulatoryFormSubmission::where('user_id', $user->id)
+                    ->where('template_id', $template->id)
+                    ->first();
+            }
+
+            if (empty($submission)) {
+                $submission = new RegulatoryFormSubmission();
+                $submission->user_id = $user->id;
+            }
+
+            $submission->role_catalog_id = $template->role_catalog_id;
+            $submission->template_id = $template->id;
+            $submission->level = $template->level;
+            $submission->data = array_filter($fields, function ($value) {
+                return $value !== null and $value !== '';
+            });
+            $submission->status = 'draft';
+            $submission->save();
         }
     }
 
