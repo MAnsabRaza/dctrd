@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Services\CustomerGroupAccessService;
 
 class BookingController extends Controller
 {
@@ -372,18 +373,31 @@ class BookingController extends Controller
         $bookingId  = (int) $data['item_id'];
         $quantity   = (int) ($data['quantity'] ?? 1);
 
-        $booking = Booking::query()->where('id', $bookingId)->where('status', 'published')->first();
+       $booking = Booking::query()->where('id', $bookingId)->where('status', 'published')->first();
 
-        if (empty($booking)) {
-            return response()->json([
-                'message' => 'The selected booking is no longer available.',
-                'errors' => [
-                    'item_id' => ['The selected booking is no longer available.'],
-                ],
-            ], 422);
-        }
+if (empty($booking)) {
+    return response()->json([
+        'message' => 'The selected booking is no longer available.',
+        'errors' => [
+            'item_id' => ['The selected booking is no longer available.'],
+        ],
+    ], 422);
+}
 
-        $resourceRequired = $booking->resources()->where('status', true)->exists();
+// 👇 YE NAYA BLOCK ADD KARO
+$customerGroupService = app(CustomerGroupAccessService::class);
+
+if (!$customerGroupService->canPurchase($booking, $user)) {
+    return response()->json([
+        'message' => $customerGroupService->denialMessage($booking),
+        'errors' => [
+            'item_id' => [$customerGroupService->denialMessage($booking)],
+        ],
+    ], 422);
+}
+// 👆 YAHAN TAK
+
+$resourceRequired = $booking->resources()->where('status', true)->exists();
         $validator = Validator::make($request->all(), [
             'slot_date' => ['required', 'date', 'after_or_equal:today'],
             'slot_start' => ['required', 'date_format:H:i'],
