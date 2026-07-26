@@ -9,6 +9,7 @@ use App\Mixins\Events\EventTicketSoldMixins;
 use App\Mixins\MeetingPackages\MeetingPackageSoldMixins;
 use App\Models\Accounting;
 use App\Models\BecomeInstructor;
+use App\Models\BookingOrder;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -17,6 +18,7 @@ use App\Models\ReserveMeeting;
 use App\Models\Sale;
 use App\Models\TicketUser;
 use App\PaymentChannels\ChannelManager;
+use App\Services\Calendar\CalendarSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 
@@ -288,6 +290,10 @@ class PaymentController extends Controller
                 // Set Sale After All Accounting
                 $sale = Sale::createSales($orderItem, $order->payment_method);
 
+                if (!empty($orderItem->booking_order_id)) {
+                    $this->confirmBookingOrder($orderItem->bookingOrder, $sale);
+                }
+
                 if (!empty($orderItem->reserve_meeting_id)) {
                     $reserveMeeting = ReserveMeeting::where('id', $orderItem->reserve_meeting_id)->first();
                     $reserveMeeting->update([
@@ -326,6 +332,20 @@ class PaymentController extends Controller
         }
 
         Cart::emptyCart($order->user_id);
+    }
+
+    private function confirmBookingOrder($bookingOrder, Sale $sale): void
+    {
+        if (empty($bookingOrder)) {
+            return;
+        }
+
+        $bookingOrder->update([
+            'sale_id' => $sale->id,
+            'status'  => BookingOrder::$success,
+        ]);
+
+        app(CalendarSyncService::class)->syncBooking($bookingOrder->fresh(), 'create');
     }
 
     public function payStatus(Request $request)

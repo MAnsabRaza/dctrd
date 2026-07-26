@@ -15,14 +15,14 @@
         </div>
 
         <div class="form-group mb-0">
-            <select name="allowed_customer_groups[]" id="allowedCustomerGroups" multiple
-                data-plugin-selectTwo class="form-control" style="width:100%">
-                @foreach($customerGroups as $key => $label)
-                    <option value="{{ $key }}" {{ in_array($key, (array) $selectedGroups) ? 'selected' : '' }}>
-                        {{ $label }}
-                    </option>
-                @endforeach
-            </select>
+          <select name="allowed_customer_groups[]" id="allowedCustomerGroups" multiple
+    data-plugin-selectTwo class="form-control">
+    @foreach($customerGroups as $key => $label)
+        <option value="{{ $key }}" {{ in_array($key, (array) $selectedGroups) ? 'selected' : '' }}>
+            {{ $label }}
+        </option>
+    @endforeach
+</select>
         </div>
     </div>
 </div>

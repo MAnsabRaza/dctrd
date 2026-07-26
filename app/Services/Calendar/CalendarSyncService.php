@@ -17,7 +17,9 @@ class CalendarSyncService
     // MAIN: Sync booking to all connected calendars (google/outlook only - ical is pull-based)
     public function syncBooking(BookingOrder $order, string $action): void
     {
-        $sellerId = optional(optional($order->items->first())->booking)->creator_id;
+        $order->loadMissing('booking');
+
+        $sellerId = $order->seller_id ?: optional($order->booking)->creator_id;
 
         if (!$sellerId) {
             return;

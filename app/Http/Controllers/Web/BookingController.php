@@ -17,6 +17,7 @@ use App\Models\RewardAccounting;
 use App\Models\Sale;
 use App\Services\PricingEngine;
 use App\Services\SlotEngine;
+use App\Services\Calendar\CalendarSyncService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -323,6 +324,8 @@ class BookingController extends Controller
             'sale_id' => $sale->id,
             'status'  => BookingOrder::$success,
         ]);
+
+        app(CalendarSyncService::class)->syncBooking($bookingOrder->fresh(), 'create');
 
         \App\Models\OrderItem::create([
             'user_id'          => $user->id,

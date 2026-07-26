@@ -26,7 +26,8 @@ return new class extends Migration {
                 'update',
                 'cancel',
                 'sync',
-                'token_refresh'
+                'token_refresh',
+                'disconnect'
             ]);
 
             $table->enum('status', ['success', 'failed', 'pending']);

@@ -69,6 +69,11 @@ class OrderItem extends Model
         return $this->belongsTo('App\Models\ProductOrder', 'product_order_id', 'id');
     }
 
+    public function bookingOrder()
+    {
+        return $this->belongsTo('App\Models\BookingOrder', 'booking_order_id', 'id');
+    }
+
     public function installmentPayment()
     {
         return $this->belongsTo(InstallmentOrderPayment::class, 'installment_payment_id', 'id');
@@ -121,6 +126,8 @@ class OrderItem extends Model
             $seller = $orderItem->eventTicket->event->creator_id;
         } elseif (!empty($orderItem->meeting_package_id)) {
             $seller = $orderItem->meetingPackage->creator_id;
+        } elseif (!empty($orderItem->booking_order_id)) {
+            $seller = $orderItem->bookingOrder->seller_id ?? optional($orderItem->bookingOrder->booking)->creator_id;
         }
 
         return $seller;

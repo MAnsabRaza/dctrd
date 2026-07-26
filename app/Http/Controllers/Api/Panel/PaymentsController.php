@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Panel;
 use App\Http\Controllers\Api\Controller;
 use App\Mixins\Logs\UserLoginHistoryMixin;
 use App\Models\Accounting;
+use App\Models\BookingOrder;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -13,6 +14,7 @@ use App\Models\ReserveMeeting;
 use App\Models\Sale;
 use App\Models\TicketUser;
 use App\PaymentChannels\ChannelManager;
+use App\Services\Calendar\CalendarSyncService;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -202,6 +204,10 @@ class PaymentsController extends Controller
             foreach ($order->orderItems as $orderItem) {
                 $sale = Sale::createSales($orderItem, $order->payment_method);
 
+                if (!empty($orderItem->booking_order_id)) {
+                    $this->confirmBookingOrder($orderItem->bookingOrder, $sale);
+                }
+
                 if (!empty($orderItem->reserve_meeting_id)) {
                     $reserveMeeting = ReserveMeeting::where('id', $orderItem->reserve_meeting_id)->first();
                     $reserveMeeting->update([
@@ -224,6 +230,20 @@ class PaymentsController extends Controller
         }
 
         Cart::emptyCart($order->user_id);
+    }
+
+    private function confirmBookingOrder($bookingOrder, Sale $sale): void
+    {
+        if (empty($bookingOrder)) {
+            return;
+        }
+
+        $bookingOrder->update([
+            'sale_id' => $sale->id,
+            'status'  => BookingOrder::$success,
+        ]);
+
+        app(CalendarSyncService::class)->syncBooking($bookingOrder->fresh(), 'create');
     }
 
     public function payStatus(Request $request)

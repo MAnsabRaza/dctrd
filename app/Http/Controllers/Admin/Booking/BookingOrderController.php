@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingOrder;
 use App\Models\Role;
+use App\Services\Calendar\CalendarSyncService;
 use App\User;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -161,7 +162,9 @@ class BookingOrderController extends Controller
             $order->sale->update(['refund_at' => time()]);
         }
 
-        $order->update(['status' => 'cancelled']);
+        $order->update(['status' => BookingOrder::$canceled]);
+
+        app(CalendarSyncService::class)->syncBooking($order->fresh(), 'cancel');
 
         return back();
     }

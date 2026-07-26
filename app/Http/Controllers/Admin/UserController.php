@@ -812,6 +812,8 @@ $calendarLogs = \App\Models\CalendarLog::where('user_id', $user->id)
 
         $order->sendBookingNotifications('confirmed');
 
+        app(\App\Services\Calendar\CalendarSyncService::class)->syncBooking($order->fresh(), 'create');
+
         $toastData = [
             'title' => trans('public.request_success'),
             'msg' => trans('admin/main.created_successfully'),
