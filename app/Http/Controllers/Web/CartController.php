@@ -10,10 +10,12 @@ use App\Models\CartDiscount;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderItemMeta;
 use App\Models\PaymentChannel;
 use App\Models\Product;
 use App\Models\ProductOrder;
 use App\Services\CheckoutModuleService;
+use App\Services\CustomerGroupAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -351,6 +353,14 @@ class CartController extends Controller
                 ->get();
         }
 
+        if (!empty($carts) and !$carts->isEmpty()) {
+            $deniedResponse = $this->checkCustomerGroupAccess($request, $carts, $user);
+
+            if (!empty($deniedResponse)) {
+                return $deniedResponse;
+            }
+        }
+
         $hasPhysicalProduct = $carts->where('productOrder.product.type', Product::$physical);
         $checkAddressValidation = (count($hasPhysicalProduct) > 0);
 
@@ -507,6 +517,52 @@ class CartController extends Controller
         }
 
         return redirect('/cart');
+    }
+
+    private function checkCustomerGroupAccess(Request $request, $carts, $user)
+    {
+        $accessService = app(CustomerGroupAccessService::class);
+
+        foreach ($carts as $cart) {
+            $item = $this->getCustomerGroupRestrictedCartItem($cart);
+
+            if (!empty($item) and !$accessService->canPurchase($item, $user)) {
+                $toastData = [
+                    'title' => trans('cart.fail_purchase'),
+                    'msg' => $accessService->denialMessage($item),
+                    'status' => 'error',
+                ];
+
+                if ($request->ajax()) {
+                    return response()->json(['toast_alert' => $toastData], 422);
+                }
+
+                return back()->with(['toast' => $toastData]);
+            }
+        }
+
+        return null;
+    }
+
+    private function getCustomerGroupRestrictedCartItem($cart)
+    {
+        if (!empty($cart->webinar_id)) {
+            return $cart->webinar;
+        }
+
+        if (!empty($cart->bundle_id)) {
+            return $cart->bundle;
+        }
+
+        if (!empty($cart->product_order_id) and !empty($cart->productOrder)) {
+            return $cart->productOrder->product;
+        }
+
+        if (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
+            return $cart->booking;
+        }
+
+        return null;
     }
 
     private function updateProductOrders(Request $request, $carts, $user)

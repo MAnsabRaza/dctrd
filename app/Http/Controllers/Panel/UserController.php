@@ -112,6 +112,11 @@ class UserController extends Controller
 
     $userCountry = $user->country; // yehi wahi column hai jo basic_information step mein save hota hai
 
+    if (!empty($user->country_id)) {
+        $country = \App\Models\Region::where('id', $user->country_id)->first();
+        $userCountry = $country->title ?? $userCountry;
+    }
+
     return compact('stacks', 'countries', 'userCountry');
 }
 

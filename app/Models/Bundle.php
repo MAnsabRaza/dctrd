@@ -26,6 +26,9 @@ class Bundle extends Model implements TranslatableContract
     public $timestamps = false;
     protected $dateFormat = 'U';
     protected $guarded = ['id'];
+    protected $casts = [
+        'allowed_customer_groups' => 'array',
+    ];
 
     public $morphsFunctions = ['productBadgeContent', 'relatedCourses', 'deleteRequest'];
 

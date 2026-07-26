@@ -11,7 +11,7 @@ class CustomerGroupAccessService
      */
     public function canPurchase($item, ?User $user): bool
     {
-        $allowedGroups = $item->allowed_customer_groups ?? null;
+        $allowedGroups = $this->normalizeGroups($item->allowed_customer_groups ?? null);
 
         // Restriction hi nahi hai -> sab allowed
         if (empty($allowedGroups)) {
@@ -36,10 +36,30 @@ class CustomerGroupAccessService
 
     public function denialMessage($item): string
     {
-        $labels = \App\Models\RoleCatalog::whereIn('key', $item->allowed_customer_groups ?? [])
+        $allowedGroups = $this->normalizeGroups($item->allowed_customer_groups ?? null);
+
+        $labels = \App\Models\RoleCatalog::whereIn('key', $allowedGroups)
             ->pluck('label')
             ->implode(' or ');
 
         return "You cannot purchase this, you must be {$labels}.";
+    }
+
+    private function normalizeGroups($groups): array
+    {
+        if (empty($groups)) {
+            return [];
+        }
+
+        if (is_string($groups)) {
+            $decoded = json_decode($groups, true);
+            $groups = json_last_error() === JSON_ERROR_NONE ? $decoded : [$groups];
+        }
+
+        if (!is_array($groups)) {
+            return [];
+        }
+
+        return array_values(array_filter($groups));
     }
 }

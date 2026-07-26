@@ -33,6 +33,7 @@ class Webinar extends Model implements TranslatableContract
         'location_enabled' => 'boolean',
         'lat' => 'float',
         'lng' => 'float',
+        'allowed_customer_groups' => 'array',
     ];
 
     public $morphsFunctions = ['productBadgeContents', 'relatedCourses', 'deleteRequest'];

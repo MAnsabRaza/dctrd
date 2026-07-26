@@ -15,6 +15,7 @@ use App\Models\ProductOrder;
 use App\Models\ReserveMeeting;
 use App\Models\Ticket;
 use App\Models\Webinar;
+use App\Services\CustomerGroupAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use App\Services\SlotEngine;
@@ -243,6 +244,12 @@ class CartManagerController extends Controller
                 return $checkCourseForSale;
             }
 
+            $groupAccess = $this->checkCustomerGroupAccess($webinar, $user);
+
+            if ($groupAccess != 'ok') {
+                return $groupAccess;
+            }
+
             $activeSpecialOffer = $webinar->activeSpecialOffer();
 
             Cart::updateOrCreate([
@@ -280,6 +287,12 @@ class CartManagerController extends Controller
             'msg' => trans('public.request_failed'),
             'status' => 'error'
         ];
+    }
+
+    $groupAccess = $this->checkCustomerGroupAccess($booking, $user);
+
+    if ($groupAccess != 'ok') {
+        return $groupAccess;
     }
 
     $resourceId  = !empty($data['resource_id']) ? (int) $data['resource_id'] : null;
@@ -365,6 +378,12 @@ class CartManagerController extends Controller
 
             if ($checkCourseForSale != 'ok') {
                 return $checkCourseForSale;
+            }
+
+            $groupAccess = $this->checkCustomerGroupAccess($bundle, $user);
+
+            if ($groupAccess != 'ok') {
+                return $groupAccess;
             }
 
             $activeSpecialOffer = $bundle->activeSpecialOffer();
@@ -470,6 +489,12 @@ class CartManagerController extends Controller
                 return $checkProductForSale;
             }
 
+            $groupAccess = $this->checkCustomerGroupAccess($product, $user);
+
+            if ($groupAccess != 'ok') {
+                return $groupAccess;
+            }
+
             $activeDiscount = $product->getActiveDiscount();
 
             $productOrder = ProductOrder::updateOrCreate([
@@ -500,6 +525,21 @@ class CartManagerController extends Controller
             'title' => trans('public.request_failed'),
             'msg' => trans('cart.course_not_found'),
             'status' => 'error'
+        ];
+    }
+
+    private function checkCustomerGroupAccess($item, $user)
+    {
+        $accessService = app(CustomerGroupAccessService::class);
+
+        if ($accessService->canPurchase($item, $user)) {
+            return 'ok';
+        }
+
+        return [
+            'title' => trans('cart.fail_purchase'),
+            'msg' => $accessService->denialMessage($item),
+            'status' => 'error',
         ];
     }
 

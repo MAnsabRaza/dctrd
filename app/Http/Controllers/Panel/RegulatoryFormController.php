@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Models\Region;
 use App\Models\RegulatoryFormSubmission;
 use App\Models\RegulatoryFormTemplate;
 use App\Models\UserRoleRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RegulatoryFormController extends Controller
 {
@@ -64,9 +66,22 @@ class RegulatoryFormController extends Controller
             ];
         }
 
+        $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
+            ->where('type', Region::$country)
+            ->get();
+
+        $userCountry = $user->country;
+
+        if (!empty($user->country_id)) {
+            $country = Region::where('id', $user->country_id)->first();
+            $userCountry = $country->title ?? $userCountry;
+        }
+
         return view('design_1.panel.settings.regulatory', [
             'pageTitle' => 'Regulatory & Badges',
             'stacks'    => $stacks,
+            'countries' => $countries,
+            'userCountry' => $userCountry,
         ]);
     }
 

@@ -31,6 +31,7 @@ use HasQrCode;
         'ordering' => 'boolean',
         'lat' => 'float',
         'lng' => 'float',
+        'allowed_customer_groups' => 'array',
     ];
 
     public $morphsFunctions = ['productBadgeContents', 'relatedCourses', 'deleteRequest'];
