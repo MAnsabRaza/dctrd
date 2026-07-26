@@ -33,7 +33,9 @@
                         <select name="country" class="form-control select2">
                             <option value="">Select Country</option>
                             @foreach($countries as $country)
-                                @php($countryName = $country->name ?? $country->title)
+                                @php
+                                    $countryName = $country->name ?? $country->title;
+                                @endphp
                                 <option value="{{ $countryName }}" {{ $primarySelectedCountry == $countryName ? 'selected' : '' }}>
                                     {{ $countryName }}
                                 </option>
@@ -80,7 +82,9 @@
                                         <select name="country" class="form-control select2">
                                             <option value="">Select Country</option>
                                             @foreach($countries as $country)
-                                                @php($countryName = $country->name ?? $country->title)
+                                                @php
+                                                    $countryName = $country->name ?? $country->title;
+                                                @endphp
                                                 <option value="{{ $countryName }}" {{ $slotSelectedCountry == $countryName ? 'selected' : '' }}>
                                                     {{ $countryName }}
                                                 </option>

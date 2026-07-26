@@ -25,7 +25,7 @@ class RoleManagementController extends Controller
     public function requestRole(Request $request, RoleEligibilityService $eligibilityService)
     {
         $data = $request->validate([
-            'role_catalog_id' => 'required|exists:role_catalog,id',
+            'role_catalog_id' => 'required|exists:role_catalogs,id',
         ]);
 
         $user = auth()->user();
