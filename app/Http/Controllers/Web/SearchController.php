@@ -156,22 +156,30 @@ class SearchController extends Controller
      * AND the model actually has scopeNearby defined. (TP6 / TP8)
      */
     private function applyNearby(Builder $query, Request $request, string $modelClass): bool
-    {
-        if (
-            $request->filled('lat') &&
-            $request->filled('lng') &&
-            $request->filled('radius_km') &&
-            method_exists($modelClass, 'scopeNearby')
-        ) {
-            $query->nearby(
-                (float) $request->lat,
-                (float) $request->lng,
-                (float) $request->radius_km
-            );
-            return true;
-        }
-        return false;
+{
+    $hasLat    = $request->filled('lat');
+    $hasLng    = $request->filled('lng');
+    $hasRadius = $request->filled('radius_km');
+    $hasScope  = method_exists($modelClass, 'scopeNearby');
+
+    // TEMP DEBUG
+    \Log::info("applyNearby check for {$modelClass}", [
+        'hasLat'    => $hasLat,
+        'hasLng'    => $hasLng,
+        'hasRadius' => $hasRadius,
+        'hasScope'  => $hasScope,
+    ]);
+
+    if ($hasLat && $hasLng && $hasRadius && $hasScope) {
+        $query->nearby(
+            (float) $request->lat,
+            (float) $request->lng,
+            (float) $request->radius_km
+        );
+        return true;
     }
+    return false;
+}
 
     /**
      * Apply sort order.
@@ -223,6 +231,15 @@ class SearchController extends Controller
         // types[] from search bar checkboxes — if empty, search ALL types
         $selectedTypes       = array_filter((array) $request->get('types', []));
         $searchAll           = empty($selectedTypes);
+
+          \Log::info('SEARCH DEBUG', [
+        'raw_types'     => $request->get('types', []),
+        'selectedTypes' => $selectedTypes,
+        'searchAll'     => $searchAll,
+        'lat'           => $request->get('lat'),
+        'lng'           => $request->get('lng'),
+        'radius_km'     => $request->get('radius_km'),
+    ]);
 
         // Helper: should we search this type?
         $shouldSearch = fn(string $type): bool => $searchAll || in_array($type, $selectedTypes);
@@ -401,6 +418,8 @@ if ($searchOrganizations) {
 
         // ── FIX-A: Bookings ───────────────────────────────────────────────────
         if ($shouldSearch('bookings')) {
+             \Log::info('Total bookings in DB (any status): ' . Booking::count());
+    \Log::info('Bookings with status=published: ' . Booking::where('status', 'published')->count());
             $bookingsQuery = Booking::query()
                 ->where('status', 'published')
                 ->where(function (Builder $q) use ($search) {

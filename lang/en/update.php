@@ -4927,6 +4927,10 @@ return [
     'location_permission_denied' => 'Location permission denied.',
     'share_via_qr'=>'Share via QR',
     'copy_link'=>'Copy Link',
-
+    'expand_all'=>'Expand All',
+    'collapse_all'=>'Collapse All',
+    'clear_location'=>'Clear Location',
+    'from_city'=>'From City',
+    'FIND_NEARBY'=>'Find Nearby',
 
 ];
