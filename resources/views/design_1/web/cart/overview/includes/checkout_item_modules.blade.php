@@ -468,10 +468,7 @@ $staffLabel    = $selectedStaff;
     {{-- EXTRA SERVICES --}}
     @if($extrasModule = $bottomModules->firstWhere('name', 'extra_services'))
     @php
-        $checkoutModuleService = app(\App\Services\CheckoutModuleService::class);
-        $bookingTypeKey = !empty($cart->booking) ? $checkoutModuleService->resolveBookingType($cart->booking) : null;
-        $optionsByType  = $extrasModule->config['options_by_booking_type'] ?? [];
-        $extraOptions   = $optionsByType[$bookingTypeKey] ?? $optionsByType['default'] ?? [];
+      $extraOptions = $extrasModule->config['options'] ?? [];
     @endphp
         <div class="booking-cancellation-card" data-module-name="extra_services" data-price-type="additive">
             <div class="booking-info-title">

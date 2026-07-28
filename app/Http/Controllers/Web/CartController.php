@@ -399,38 +399,41 @@ class CartController extends Controller
             $extraPriceByCart = [];
             $extraPriceBreakdownByCart = [];
 
-            foreach ($carts as $cart) {
-                $entityType = null;
-                $entityId = null;
-                $orgId = null;
+           foreach ($carts as $cart) {
+    $entityType = null;
+    $entityId = null;
+    $orgId = null;
+    $bookingType = null;
 
-                if (!empty($cart->webinar_id)) {
-                    $entityType = 'course';
-                    $entityId = $cart->webinar_id;
-                    $orgId = optional($cart->webinar)->teacher_id;
-                } elseif (!empty($cart->product_order_id) && !empty($cart->productOrder->product_id)) {
-                    $entityType = 'product';
-                    $entityId = $cart->productOrder->product_id;
-                    $orgId = optional(optional($cart->productOrder)->product)->creator_id;
-                } elseif (!empty($cart->reserve_meeting_id)) {
-                    $entityType = 'booking';
-                    $entityId = $cart->reserve_meeting_id;
-                    $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
-                } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
-                    $entityType = 'booking';
-                    $entityId = optional($cart->booking)->id;
-                    $orgId = optional($cart->booking)->creator_id;
-                }
+    if (!empty($cart->webinar_id)) {
+        $entityType = 'course';
+        $entityId = $cart->webinar_id;
+        $orgId = optional($cart->webinar)->teacher_id;
+    } elseif (!empty($cart->product_order_id) && !empty($cart->productOrder->product_id)) {
+        $entityType = 'product';
+        $entityId = $cart->productOrder->product_id;
+        $orgId = optional(optional($cart->productOrder)->product)->creator_id;
+    } elseif (!empty($cart->reserve_meeting_id)) {
+        $entityType = 'booking';
+        $entityId = $cart->reserve_meeting_id;
+        $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
+        $bookingType = $checkoutModuleService->resolveBookingType(optional($cart->reserveMeeting)->meeting);
+    } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
+        $entityType = 'booking';
+        $entityId = optional($cart->booking)->id;
+        $orgId = optional($cart->booking)->creator_id;
+        $bookingType = $checkoutModuleService->resolveBookingType($cart->booking);
+    }
 
-                if (empty($entityType) || empty($entityId) || empty($orgId)) {
-                    continue;
-                }
+    if (empty($entityType) || empty($entityId) || empty($orgId)) {
+        continue;
+    }
 
-                try {
-                    $modules = $checkoutModuleService->getModulesForEntity($entityType, $entityId, $orgId);
-                } catch (\Throwable $e) {
-                    $modules = collect();
-                }
+    try {
+        $modules = $checkoutModuleService->getModulesForEntity($entityType, $entityId, $orgId, $bookingType);
+    } catch (\Throwable $e) {
+        $modules = collect();
+    }
 
                 if ($modules->isEmpty()) {
                     continue;

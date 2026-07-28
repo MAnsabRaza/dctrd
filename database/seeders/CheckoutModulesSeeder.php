@@ -109,7 +109,7 @@ class CheckoutModulesSeeder extends Seeder
                 ['id' => 2, 'label' => 'Extended Session (+30min)', 'price' => 18],
                 ['id' => 3, 'label' => 'Home Service',              'price' => 30],
             ],
-            'beauty_spa' => [
+            'beauty-spa' => [
                 ['id' => 1, 'label' => 'Aromatherapy Add-on',       'price' => 12],
                 ['id' => 2, 'label' => 'Extended Session (+30min)', 'price' => 18],
                 ['id' => 3, 'label' => 'Home Service',              'price' => 30],
