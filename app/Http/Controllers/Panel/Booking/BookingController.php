@@ -1157,23 +1157,33 @@ if ($finalSubmit) {
     {
         // Step 2 — Pricing & Availability (booking table columns only;
         // booking_rate_plans table ko yahan touch nahi kiya ja raha)
-        $booking->price            = null;
-        $booking->discount_price   = null;
-        $booking->price_per        = null;
+        //
+        // FIX: `price` (aur is jaisi kuch numeric columns) migration mein
+        // NOT NULL hain (koi DB default bhi nahi) — agar in ko `null`
+        // diya jaye to save karte waqt "Column 'price' cannot be null"
+        // wali SQL integrity error aati hai. Isliye numeric columns ko
+        // `null` ki bajaye `0` par reset karte hain (jo effectively
+        // empty/blank hi treat hota hai — step 2 par field khud khali/0
+        // dikhegi aur user wahin se dobara price bhar sakta hai), sirf
+        // genuinely nullable columns (price_unit, deposit_type) ko
+        // `null` rehne dete hain.
+        $booking->price            = 0;
+        $booking->discount_price   = 0;
+        $booking->price_per        = 0;
         $booking->price_unit       = null;
-        $booking->duration_minutes = null;
-        $booking->capacity         = null;
-        $booking->inventory        = null;
+        $booking->duration_minutes = 0;
+        $booking->capacity         = 0;
+        $booking->inventory        = 0;
         $booking->deposit_enabled  = false;
-        $booking->deposit_amount   = null;
+        $booking->deposit_amount   = 0;
         $booking->deposit_type     = null;
 
         // Step 3 — Participants & Resources (booking table columns only;
         // booking_resources / booking_time_slots / booking_availabilities
         // tables ko yahan touch nahi kiya ja raha)
-        $booking->min_persons      = null;
-        $booking->max_persons      = null;
-        $booking->max_children     = null;
+        $booking->min_persons      = 0;
+        $booking->max_persons      = 0;
+        $booking->max_children     = 0;
         $booking->children_allowed = false;
 
         // Step 7 — Location & Filters
