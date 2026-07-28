@@ -136,26 +136,21 @@
     $oldCheckIn  = old("checkout_modules.{$itemKey}.days.check_in");
     $oldCheckOut = old("checkout_modules.{$itemKey}.days.check_out");
 
-    // Fallbacks from cart->meta (slot info captured at "Add to cart" time)
-   // Fallbacks from cart->meta (slot info captured at "Add to cart" time)
-    $slotDate  = $cart->meta['slot_date']  ?? null;
-    $slotStart = $cart->meta['slot_start'] ?? null;
-    $slotEnd   = $cart->meta['slot_end']   ?? null;
+   $bookingOrder = $cart->bookingOrder ?? null;
 
-    // Actual input values: old() na ho to "Book Now" sa pehla wala slot date use hoga
-    $checkInValue  = $oldCheckIn  ?: $slotDate;
-    $checkOutValue = $oldCheckOut ?: $slotDate;
+$slotDate  = optional($bookingOrder)->booking_date;
+$slotStart = optional($bookingOrder)->start_time;
+$slotEnd   = optional($bookingOrder)->end_time;
 
-    $checkInLabel = $oldCheckIn
-        ? \Carbon\Carbon::parse($oldCheckIn)->format('d M Y')
-        : ($slotDate ? \Carbon\Carbon::parse($slotDate)->format('d M Y') : (trans('cart.not_selected') ?? 'Not selected'));
+$checkInValue  = $slotDate;
+$checkOutValue = $slotDate;
+$checkInLabel  = $slotDate ? \Carbon\Carbon::parse($slotDate)->format('d M Y') : (trans('cart.not_selected') ?? 'Not selected');
 
-    $selectedTime = old("checkout_modules.{$itemKey}.hours", $slotStart ?? '');
-    $timeLabel    = $selectedTime
-        ?: ($slotStart ? $slotStart . ($slotEnd ? ' - ' . $slotEnd : '') : (trans('cart.not_selected') ?? 'Not selected'));
+$selectedTime = $slotStart ?? '';
+$timeLabel    = $slotStart ? $slotStart . ($slotEnd ? ' - ' . $slotEnd : '') : (trans('cart.not_selected') ?? 'Not selected');
 
-    $selectedStaff = old("checkout_modules.{$itemKey}.staff_member", '');
-    $staffLabel    = $selectedStaff ?: (trans('cart.not_selected') ?? 'Not selected');
+$selectedStaff = optional(auth()->user())->full_name ?: (trans('cart.not_selected') ?? 'Not selected');
+$staffLabel    = $selectedStaff;
 
     $showHeader       = $showHeader ?? false;
     $wrapperClassName = $wrapperClassName ?? '';
@@ -230,7 +225,7 @@
             <div class="booking-info-icon">
                 <x-iconsax-lin-calendar-2 class="icons" width="16px" height="16px"/>
             </div>
-            <input type="date"
+            <!-- <input type="date"
                    name="{{ $datePrefix }}[check_in]"
                    id="bmod_cin_{{ $itemKey }}"
                    class="form-control form-control-sm bmod-date-input bmod-cin"
@@ -243,7 +238,10 @@
                    class="form-control form-control-sm bmod-date-input bmod-cout"
                    value="{{ $checkOutValue }}"
                    min="{{ now()->format('Y-m-d') }}"
-                   style="border-radius:12px;">
+                   style="border-radius:12px;"> -->
+                   <input type="hidden" name="{{ $datePrefix }}[check_in]" id="bmod_cin_{{ $itemKey }}" value="{{ $checkInValue }}">
+<input type="hidden" name="{{ $datePrefix }}[check_out]" id="bmod_cout_{{ $itemKey }}" value="{{ $checkOutValue }}">
+<input type="text" class="form-control form-control-sm" readonly value="{{ $checkInLabel }}" style="border-radius:12px;background:#f1f5f9;">
             <div class="booking-info-label bmod-cin-label">{{ $checkInLabel }}</div>
             <div class="cmod-nights" id="bmod_nights_{{ $itemKey }}">0 {{ trans('cart.nights') ?? 'nights' }}</div>
         </div>
@@ -334,7 +332,7 @@
             <div class="booking-info-icon">
                 <x-iconsax-lin-clock class="icons" width="16px" height="16px"/>
             </div>
-            <select name="{{ $timePrefix }}"
+            <!-- <select name="{{ $timePrefix }}"
                     id="bmod_time_{{ $itemKey }}"
                     class="form-control form-control-sm bmod-time-select"
                     {{ $hoursModule->is_required ? 'required' : '' }}
@@ -352,7 +350,9 @@
                     @endphp
                     <option value="{{ $slot }}" {{ $selectedTime == $slot ? 'selected' : '' }}>{{ $lbl }}</option>
                 @endforeach
-            </select>
+            </select> -->
+            <input type="hidden" name="{{ $timePrefix }}" id="bmod_time_{{ $itemKey }}" value="{{ $selectedTime }}">
+<input type="text" class="form-control form-control-sm" readonly value="{{ $timeLabel }}" style="border-radius:12px;background:#f1f5f9;">
             <div class="booking-info-label bmod-time-label">{{ $timeLabel }}</div>
         </div>
         @error("checkout_modules.{$itemKey}.hours")
@@ -467,7 +467,12 @@
 
     {{-- EXTRA SERVICES --}}
     @if($extrasModule = $bottomModules->firstWhere('name', 'extra_services'))
-        @php $extraOptions = $extrasModule->config['options'] ?? []; @endphp
+    @php
+        $checkoutModuleService = app(\App\Services\CheckoutModuleService::class);
+        $bookingTypeKey = !empty($cart->booking) ? $checkoutModuleService->resolveBookingType($cart->booking) : null;
+        $optionsByType  = $extrasModule->config['options_by_booking_type'] ?? [];
+        $extraOptions   = $optionsByType[$bookingTypeKey] ?? $optionsByType['default'] ?? [];
+    @endphp
         <div class="booking-cancellation-card" data-module-name="extra_services" data-price-type="additive">
             <div class="booking-info-title">
                 {{ $extrasModule->translated_label ?? trans('cart.extra_services') ?? 'Extra Services' }}
@@ -672,11 +677,12 @@
         });
 
         // Initial run on page load (for old()/prefilled values)
-        $(function () {
-            $('[data-item-key]').each(function () {
-                bmodUpdateNights($(this));
-            });
-        });
+       $(function () {
+    $('[data-item-key]').each(function () {
+        bmodUpdateNights($(this));
+    });
+    $(document).trigger('checkout:priceUpdate');
+});
 
         /* ════════════════════════════════════════
            TIME SLOT SELECT (hours module)

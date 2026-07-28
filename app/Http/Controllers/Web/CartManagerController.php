@@ -720,7 +720,15 @@ class CartManagerController extends Controller
                             $installmentOrder->delete();
                         }
                     }
-                }
+                }elseif (!empty($cart->booking_order_id)) {
+    $bookingOrder = BookingOrder::where('id', $cart->booking_order_id)
+        ->where('buyer_id', $user_id)
+        ->first();
+
+    if (!empty($bookingOrder)) {
+        $bookingOrder->delete();
+    }
+}
 
                 $cart->delete();
             }
