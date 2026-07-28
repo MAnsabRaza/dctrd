@@ -252,6 +252,12 @@ class BookingController extends Controller
             'bookingTypeCategoryMap' => $this->buildTypeCategoryMap($parentCategories),
             'categoriesByParent'     => $this->buildCategoriesByParentMap($childCategories),
             'subTemplateConfigs'     => $this->buildSubTemplateConfigsForJs(),
+            // FIX: step1 view ko batata hai ke is booking mein steps 2-8 ka
+            // data already exist karta hai ya nahi — taake wo sirf tab hi
+            // "sab data clear ho jayega" wala confirm dialog dikhaye jab
+            // waqai kuch clear hone wala ho (naya/khali booking par bar bar
+            // confirm popup na aaye).
+            'hasFutureStepData' => $step == 1 ? $this->bookingHasFutureStepData($booking) : false,
         ];
 
         if ($step == 1) {
@@ -408,6 +414,42 @@ class BookingController extends Controller
         }
 
         $this->validate($request, $rules);
+
+        /*
+        |----------------------------------------------------------------
+        | FIX — template/category change on step 1 must reset later steps
+        |----------------------------------------------------------------
+        | Steps 2-8 render their fields dynamically based on the booking's
+        | booking_type + category_id (via BookingTemplateConfig /
+        | BookingSubTemplateConfig — see $tplFields / $config->fields() in
+        | step2/step3/step7 blades). If the user goes back to step 1 (while
+        | creating OR while editing) and picks a different booking type or
+        | category, whatever was already saved in steps 2-8 no longer maps
+        | to a valid/relevant field for the new template — so we clear it
+        | here, BEFORE the new step-1 values are applied below. This runs
+        | regardless of which step the wizard is currently sitting on (2
+        | .. 8 / the last step), because it clears the underlying stored
+        | data, not just what's on screen right now.
+        */
+        if ($currentStep == 1) {
+            $newBookingType = $data['booking_type'] ?? $booking->booking_type;
+            $newCategoryId  = $data['category_id'] ?? null;
+
+            $templateChanged = $newBookingType !== $booking->booking_type
+                || (string) $newCategoryId !== (string) $booking->category_id;
+
+            if ($templateChanged) {
+                $this->resetWizardDataForTemplateChange($booking);
+
+                // config/$subTemplate neeche steps 2-8 ke liye use nahi ho
+                // rahe is method mein, lekin agar aage kabhi use hon to
+                // naye type ke mutabiq refresh kar dete hain.
+                $config = BookingTemplateConfig::for($newBookingType);
+                $subTemplate = $newCategoryId
+                    ? $this->subTemplateFromCategoryId($newCategoryId)
+                    : null;
+            }
+        }
 
       $finalSubmit = ($currentStep == 8 and !$getNextStep and !$isDraft);
 
@@ -1083,5 +1125,101 @@ if ($finalSubmit) {
         ];
 
         sendNotification($template, $notifyOptions, 1);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FIX — reset step 2-8 INPUT FIELDS when booking_type / category_id changes
+    |--------------------------------------------------------------------------
+    | Har step (2, 3, 7 khaas taur par) apni fields BookingTemplateConfig /
+    | BookingSubTemplateConfig ke $tplFields se dynamically decide karta hai.
+    | Jab template/category badal jaye to purana data (dusre template ke
+    | fields / meta.* values) naye template ke liye bilkul irrelevant ho
+    | jata hai — is method mein sirf wahi cheez clear karte hain:
+    |
+    |   - Booking table ke apne columns (price, capacity, min/max persons,
+    |     location fields, checkout/reviewer message, etc.)
+    |   - `meta` JSON column (content_sections, related_booking_ids,
+    |     prerequisite_text, specification_value_ids, staff_id, extras,
+    |     terms_accepted, aur har template-specific meta.* key)
+    |
+    | IMPORTANT: is method mein kisi dusri table (rate_plans, booking
+    | resources, time_slots, availabilities, faqs) ko touch/delete NAHI
+    | kiya jata — wo apni jagah save rehte hain, chahe template/category
+    | badal bhi jaye. Sirf booking ke apne "input fields" khali hote hain
+    | taake naye template ke mutabiq sahi fields dikhayi den aur dobara
+    | bhari ja sakein — ye create aur edit dono flow mein equally chalta
+    | hai, chahe user abhi step 1 par ho ya beech ke kisi bhi step se
+    | wapas step 1 par aaya ho.
+    |--------------------------------------------------------------------------
+    */
+    private function resetWizardDataForTemplateChange(Booking $booking): void
+    {
+        // Step 2 — Pricing & Availability (booking table columns only;
+        // booking_rate_plans table ko yahan touch nahi kiya ja raha)
+        $booking->price            = null;
+        $booking->discount_price   = null;
+        $booking->price_per        = null;
+        $booking->price_unit       = null;
+        $booking->duration_minutes = null;
+        $booking->capacity         = null;
+        $booking->inventory        = null;
+        $booking->deposit_enabled  = false;
+        $booking->deposit_amount   = null;
+        $booking->deposit_type     = null;
+
+        // Step 3 — Participants & Resources (booking table columns only;
+        // booking_resources / booking_time_slots / booking_availabilities
+        // tables ko yahan touch nahi kiya ja raha)
+        $booking->min_persons      = null;
+        $booking->max_persons      = null;
+        $booking->max_children     = null;
+        $booking->children_allowed = false;
+
+        // Step 7 — Location & Filters
+        $booking->location_enabled = false;
+        $booking->address_line     = null;
+        $booking->city             = null;
+        $booking->state            = null;
+        $booking->country          = null;
+        $booking->postal_code      = null;
+        $booking->lat              = null;
+        $booking->lng              = null;
+
+        // Step 8 — Review & Submit
+        $booking->checkout_message = null;
+        $booking->reviewer_message = null;
+
+        // Steps 3 (toggles: participants_enabled/resources_enabled/...),
+        // 4 (content_sections), 5 (related_booking_ids / prerequisite_text),
+        // 7 (specification_value_ids, staff_id, extras and every other
+        // template-specific meta.* field), and 8 (terms_accepted) all live
+        // inside `meta` — wiping it in one shot clears every one of them
+        // consistently, without needing to keep an ever-growing list of
+        // meta keys in sync with every template. Note: this does NOT
+        // touch booking_faqs — FAQ rows stay exactly as they are.
+        $booking->meta = [];
+    }
+
+    /**
+     * FIX: step1 view ke liye — batata hai ke is booking ke steps 2-8 ke
+     * "input fields" (booking columns + meta) mein pehle se koi data
+     * maujood hai ya nahi (taake wahan sirf tab hi "template/category
+     * change karne se ye fields clear ho jayenge" wala confirmation
+     * dikhaya jaye jab sach mein kuch clear hone wala ho). Related tables
+     * (resources/time slots/availability/faqs/rate plans) is check mein
+     * shamil nahi — kyunke wo kabhi delete/clear nahi hoti.
+     */
+    private function bookingHasFutureStepData(Booking $booking): bool
+    {
+        if (!empty($booking->price) || !empty($booking->duration_minutes)
+            || !empty($booking->capacity) || !empty($booking->inventory)
+            || !empty($booking->min_persons) || !empty($booking->max_persons)
+            || !empty($booking->location_enabled) || !empty($booking->checkout_message)
+            || !empty($booking->reviewer_message)) {
+            return true;
+        }
+
+        return !empty($booking->meta) && is_array($booking->meta) && count(array_filter($booking->meta)) > 0;
     }
 }
