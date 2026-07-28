@@ -38,17 +38,50 @@
 
     // IMPORTANT CHANGE: we now also check request()/query string, so that
     // after the "Filter Categories" GET-reload button is used, the selected
-    // template, title, sub type etc. are all preserved and the category list
-    // filters correctly — all without any JS.
+    // template and category list filters correctly — all without any JS.
     $currentType       = old('booking_type', request('booking_type', $booking->booking_type ?? ''));
-    $currentStatus = old('status', request('status', $booking->status ?? 'draft'));
-    $currentSubType    = old('sub_type', request('sub_type', $booking->sub_type ?? ''));
     $currentCategoryId = old('category_id', request('category_id', $booking->category_id ?? ''));
-    $currentTitle       = old('title', request('title', $booking->title ?? ''));
-    $currentSlug        = old('slug', request('slug', $booking->slug ?? ''));
-    $currentDescription = old('description', request('description', $booking->description ?? ''));
-    $currentRequirements = old('requirements', request('requirements', $booking->requirements ?? ''));
-    $currentLanguage     = old('language', request('language', $booking->language ?? app()->getLocale()));
+
+    // FIX: "Apply Template & Filter Categories" (GET reload) pehle sirf
+    // category ko clear/re-filter karta tha, lekin sub_type / slug /
+    // status / title purani values se hi bhare reh jate the — jab ke wo
+    // bhi naye template ke hisaab se ab irrelevant ho sakti hain.
+    //
+    // Hum ye track karte hain ke is GET reload se PEHLE type/category kya
+    // tha (do hidden inputs "previous_booking_type" / "previous_category_id"
+    // ke zariye, jo har render par current value ke sath dobara likhe jate
+    // hain). Agar submit hui request mein ye hidden fields maujood hain
+    // (yani ye waqai "Apply Template" button se aayi GET request hai) AND
+    // naya booking_type ya category_id un se different hai — to sub_type,
+    // slug, status aur title sab ko khali kar dete hain, bilkul category
+    // ki tarah, chahe sirf type badla ho ya sirf category.
+    $isFilterReload = request()->has('previous_booking_type');
+    $previousType       = request('previous_booking_type', '');
+    $previousCategoryId = request('previous_category_id', '');
+
+    $templateOrCategoryChangedOnFilter = $isFilterReload && (
+        (string) $previousType !== (string) $currentType
+        || (string) $previousCategoryId !== (string) $currentCategoryId
+    );
+
+    if ($templateOrCategoryChangedOnFilter) {
+        $currentCategoryId   = '';
+        $currentStatus       = '';
+        $currentSubType      = '';
+        $currentTitle        = '';
+        $currentSlug         = '';
+        $currentDescription  = old('description', $booking->description ?? '');
+        $currentRequirements = old('requirements', $booking->requirements ?? '');
+        $currentLanguage     = old('language', $booking->language ?? app()->getLocale());
+    } else {
+        $currentStatus        = old('status', request('status', $booking->status ?? 'draft'));
+        $currentSubType       = old('sub_type', request('sub_type', $booking->sub_type ?? ''));
+        $currentTitle         = old('title', request('title', $booking->title ?? ''));
+        $currentSlug          = old('slug', request('slug', $booking->slug ?? ''));
+        $currentDescription   = old('description', request('description', $booking->description ?? ''));
+        $currentRequirements  = old('requirements', request('requirements', $booking->requirements ?? ''));
+        $currentLanguage      = old('language', request('language', $booking->language ?? app()->getLocale()));
+    }
 
     $bookingCategoryOptions = collect($allCategoryLists ?? [])
         ->whereNotNull('parent_id')
@@ -85,6 +118,14 @@
 </div>
 
 <div class="panel-card">
+    {{-- FIX: baseline hidden fields used to detect an actual type/category
+         change when "Apply Template & Filter Categories" is clicked (see
+         $templateOrCategoryChangedOnFilter above). Always rendered with the
+         CURRENT (post-this-render) values, so the next GET reload can
+         compare "what it was before" vs "what was just selected". --}}
+    <input type="hidden" name="previous_booking_type" value="{{ $currentType }}">
+    <input type="hidden" name="previous_category_id" value="{{ $currentCategoryId }}">
+
     <label class="font-weight-bold mb-2 d-block">Booking Template <span class="text-danger">*</span></label>
     <div class="row">
         @foreach($templateOptions as $value => $label)
@@ -117,7 +158,7 @@
 
     @if($isEditingTemplate = !empty($booking) && !empty($booking->id))
         <small class="text-muted d-block mt-1">
-            <i class="fa fa-info-circle mr-1"></i> Changing the template after step 2 onward has been filled in may require re-checking those steps' fields.
+            <i class="fa fa-info-circle mr-1"></i> Changing the booking template or category will clear title, slug, status, sub type — and, once you save this step, all data entered in steps 2 onward too. Related items (resources, time slots, availability, FAQs) are kept.
         </small>
     @endif
 </div>
@@ -294,6 +335,26 @@ function initPanelBookingStep1() {
     var categoriesByParent = @json($categoriesByParent ?? []);
     var subTemplateConfigs = @json($subTemplateConfigs ?? []);
 
+    // FIX: baseline values captured at page load, used to detect an actual
+    // type/category change (not just re-rendering with the same value), so
+    // title/slug/status/sub_type only get cleared when something really
+    // changed — same idea as the server-side check above, but instant
+    // (no page reload needed) for whoever just clicks a different radio
+    // or picks a different category from the dropdown.
+    var initialBookingType = {{ json_encode($currentType) }};
+    var initialCategoryId = {{ json_encode((string) $currentCategoryId) }};
+    var titleInput = document.querySelector('input[name="title"]');
+    var slugInput = document.querySelector('input[name="slug"]');
+    var statusSelect = document.querySelector('select[name="status"]');
+
+    function clearStepOneDependentFields() {
+        if (titleInput) titleInput.value = '';
+        if (slugInput) slugInput.value = '';
+        if (statusSelect) statusSelect.value = '';
+        if (subTypeText) subTypeText.value = '';
+        if (subTypeSelect) subTypeSelect.value = '';
+    }
+
     var subTypeSelectWrap = document.getElementById('subTypeSelectWrap');
     var subTypeTextWrap = document.getElementById('subTypeTextWrap');
     var subTypeSelect = document.getElementById('subTypeSelect');
@@ -409,6 +470,14 @@ function initPanelBookingStep1() {
     function applyTemplate(type, isInitial) {
         var options = subTypeOptionsMap[type];
 
+        // FIX: agar ye pehla (initial) load nahi hai aur naya type pehle se
+        // load hue type se waqai different hai, to title/slug/status/sub_type
+        // ko turant khali kar do — category to populateCategories() neeche
+        // khud hi clear/refilter kar deta hai.
+        if (!isInitial && type !== initialBookingType) {
+            clearStepOneDependentFields();
+        }
+
         if (subTypeSelect && subTypeText && subTypeSelectWrap && subTypeTextWrap) {
             if (options) {
                 subTypeSelect.innerHTML = '';
@@ -467,7 +536,16 @@ function initPanelBookingStep1() {
 
     if (categorySelect && categorySelect.dataset.bookingCategoryReady !== 'true') {
         categorySelect.dataset.bookingCategoryReady = 'true';
-        categorySelect.addEventListener('change', updateSubTemplateNote);
+        categorySelect.addEventListener('change', function () {
+            updateSubTemplateNote();
+
+            // FIX: category akele (booking_type same rehte hue) bhi badli
+            // ja sakti hai — is case mein bhi title/slug/status/sub_type
+            // ko clear karo, exactly jaisa type change par hota hai.
+            if (String(categorySelect.value || '') !== initialCategoryId) {
+                clearStepOneDependentFields();
+            }
+        });
     }
 
     applyCheckedTemplate(true);
