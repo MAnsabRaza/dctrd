@@ -35,8 +35,7 @@
         \App\Services\BookingTemplateConfig::PROFESSIONAL_SERVICES => ['online' => 'Online', 'in-person' => 'In-person', 'both' => 'Both'],
         \App\Services\BookingTemplateConfig::EDUCATION_TRAINING    => ['online' => 'Online', 'in-person' => 'In-person', 'both' => 'Both'],
     ];
-
-{{-- NEW --}}
+    
 $currentType       = old('booking_type', request('booking_type', $booking->booking_type ?? ''));
 $currentCategoryId = old('category_id', request('category_id', $booking->category_id ?? ''));
 
