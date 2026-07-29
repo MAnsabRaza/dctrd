@@ -36,43 +36,46 @@
         \App\Services\BookingTemplateConfig::EDUCATION_TRAINING    => ['online' => 'Online', 'in-person' => 'In-person', 'both' => 'Both'],
     ];
 
+{{-- NEW --}}
 $currentType       = old('booking_type', request('booking_type', $booking->booking_type ?? ''));
 $currentCategoryId = old('category_id', request('category_id', $booking->category_id ?? ''));
 
-// FIX: ab "previous_*" hidden fields pe depend nahi karte (wo fragile the —
-// har reload ke baad sync rehna zaroori tha). Ab seedha BOOKING ki DB SAVED
-// value se compare karte hain — ye hamesha reliable hai, chahe sirf type
-// badle, sirf category badle, ya dono. Sirf tab chalta hai jab ye ek existing
-// booking edit ka GET filter-reload ho (nayi booking / step1 pehli baar
-// khulne par nahi).
-$isExistingBooking = !empty($booking) && !empty($booking->id);
-$isFilterReload = $isExistingBooking
-    && request()->isMethod('get')
-    && (request()->has('booking_type') || request()->has('category_id'));
+$isFilterReload = request()->isMethod('get') && request()->has('previous_booking_type');
+$previousType       = request('previous_booking_type', '');
+$previousCategoryId = request('previous_category_id', '');
 
-$templateOrCategoryChangedOnFilter = $isFilterReload && (
-    (string) $currentType !== (string) ($booking->booking_type ?? '')
-    || (string) $currentCategoryId !== (string) ($booking->category_id ?? '')
-);
+$typeChangedOnFilter     = $isFilterReload && (string) $previousType !== (string) $currentType;
+$categoryChangedOnFilter = $isFilterReload && (string) $previousCategoryId !== (string) $currentCategoryId;
 
-    if ($templateOrCategoryChangedOnFilter) {
-        $currentCategoryId   = '';
-        $currentStatus       = '';
-        $currentSubType      = '';
-        $currentTitle        = '';
-        $currentSlug         = '';
-        $currentDescription  = old('description', $booking->description ?? '');
-        $currentRequirements = old('requirements', $booking->requirements ?? '');
-        $currentLanguage     = old('language', $booking->language ?? app()->getLocale());
-    } else {
-        $currentStatus        = old('status', request('status', $booking->status ?? 'draft'));
-        $currentSubType       = old('sub_type', request('sub_type', $booking->sub_type ?? ''));
-        $currentTitle         = old('title', request('title', $booking->title ?? ''));
-        $currentSlug          = old('slug', request('slug', $booking->slug ?? ''));
-        $currentDescription   = old('description', request('description', $booking->description ?? ''));
-        $currentRequirements  = old('requirements', request('requirements', $booking->requirements ?? ''));
-        $currentLanguage      = old('language', request('language', $booking->language ?? app()->getLocale()));
-    }
+if ($typeChangedOnFilter) {
+    // Type badla — category bhi invalid ho gayi naye type ke liye, isko bhi clear karo
+    $currentCategoryId   = '';
+    $currentStatus       = '';
+    $currentSubType      = '';
+    $currentTitle        = '';
+    $currentSlug         = '';
+    $currentDescription  = old('description', $booking->description ?? '');
+    $currentRequirements = old('requirements', $booking->requirements ?? '');
+    $currentLanguage     = old('language', $booking->language ?? app()->getLocale());
+} elseif ($categoryChangedOnFilter) {
+    // FIX: sirf category badli, type same hai — category ko chuye bagair
+    // (jo abhi select ki hai wahi rehne do), baki sab clear karo.
+    $currentStatus       = '';
+    $currentSubType      = '';
+    $currentTitle        = '';
+    $currentSlug         = '';
+    $currentDescription  = old('description', $booking->description ?? '');
+    $currentRequirements = old('requirements', $booking->requirements ?? '');
+    $currentLanguage     = old('language', $booking->language ?? app()->getLocale());
+} else {
+    $currentStatus        = old('status', request('status', $booking->status ?? 'draft'));
+    $currentSubType       = old('sub_type', request('sub_type', $booking->sub_type ?? ''));
+    $currentTitle         = old('title', request('title', $booking->title ?? ''));
+    $currentSlug          = old('slug', request('slug', $booking->slug ?? ''));
+    $currentDescription   = old('description', request('description', $booking->description ?? ''));
+    $currentRequirements  = old('requirements', request('requirements', $booking->requirements ?? ''));
+    $currentLanguage      = old('language', request('language', $booking->language ?? app()->getLocale()));
+}
 
     $bookingCategoryOptions = collect($allCategoryLists ?? [])
         ->whereNotNull('parent_id')
