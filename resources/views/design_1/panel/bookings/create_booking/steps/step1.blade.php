@@ -151,10 +151,11 @@
         available server-side so the category <select> below renders
         already filtered correctly on reload.
     --}}
-    <button type="submit" formmethod="GET" formaction="{{ url()->current() }}"
-            class="btn btn-sm btn-outline-primary mt-2">
-        <i class="fa fa-filter mr-1"></i> Apply Template &amp; Filter Categories
-    </button>
+ {{-- NEW --}}
+<button type="submit" formmethod="GET" formaction="{{ url()->current() }}" formnovalidate
+        class="btn btn-sm btn-outline-primary mt-2">
+    <i class="fa fa-filter mr-1"></i> Apply Template &amp; Filter Categories
+</button>
 
     @if($isEditingTemplate = !empty($booking) && !empty($booking->id))
         <small class="text-muted d-block mt-1">
