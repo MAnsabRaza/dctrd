@@ -35,46 +35,70 @@
         \App\Services\BookingTemplateConfig::PROFESSIONAL_SERVICES => ['online' => 'Online', 'in-person' => 'In-person', 'both' => 'Both'],
         \App\Services\BookingTemplateConfig::EDUCATION_TRAINING    => ['online' => 'Online', 'in-person' => 'In-person', 'both' => 'Both'],
     ];
-    
-$currentType       = old('booking_type', request('booking_type', $booking->booking_type ?? ''));
-$currentCategoryId = old('category_id', request('category_id', $booking->category_id ?? ''));
 
-$isFilterReload = request()->isMethod('get') && request()->has('previous_booking_type');
-$previousType       = request('previous_booking_type', '');
-$previousCategoryId = request('previous_category_id', '');
+    // IMPORTANT CHANGE: we now also check request()/query string, so that
+    // after the "Filter Categories" GET-reload button is used, the selected
+    // template and category list filters correctly — all without any JS.
+    $currentType       = old('booking_type', request('booking_type', $booking->booking_type ?? ''));
+    $currentCategoryId = old('category_id', request('category_id', $booking->category_id ?? ''));
 
-$typeChangedOnFilter     = $isFilterReload && (string) $previousType !== (string) $currentType;
-$categoryChangedOnFilter = $isFilterReload && (string) $previousCategoryId !== (string) $currentCategoryId;
+    // FIX: "Apply Template & Filter Categories" (GET reload) needs to tell
+    // apart TWO different situations, each with its own expected behaviour:
+    //
+    //   1) booking_type actually changed  -> category is no longer valid for
+    //      the new type, so title/slug/status/sub_type AND category_id all
+    //      get cleared (user must re-pick a category from the new list).
+    //
+    //   2) ONLY category_id changed (booking_type stayed the same) -> the
+    //      category the user just picked is still perfectly valid, so we
+    //      keep it selected and only clear title/slug/status/sub_type
+    //      (whatever "belonged" to the old category).
+    //
+    // We detect this by comparing the CURRENT submitted values against the
+    // "previous_booking_type" / "previous_category_id" hidden inputs, which
+    // always carry what was selected on the PREVIOUS render. This works the
+    // same way for both a brand-new booking (create) and an existing one
+    // (edit), since it never depends on $booking->booking_type /
+    // $booking->category_id — only on "what changed since the last render".
+    $isFilterReload = request()->isMethod('get') && request()->has('previous_booking_type');
+    $previousType       = request('previous_booking_type', '');
+    $previousCategoryId = request('previous_category_id', '');
 
-if ($typeChangedOnFilter) {
-    // Type badla — category bhi invalid ho gayi naye type ke liye, isko bhi clear karo
-    $currentCategoryId   = '';
-    $currentStatus       = '';
-    $currentSubType      = '';
-    $currentTitle        = '';
-    $currentSlug         = '';
-    $currentDescription  = old('description', $booking->description ?? '');
-    $currentRequirements = old('requirements', $booking->requirements ?? '');
-    $currentLanguage     = old('language', $booking->language ?? app()->getLocale());
-} elseif ($categoryChangedOnFilter) {
-    // FIX: sirf category badli, type same hai — category ko chuye bagair
-    // (jo abhi select ki hai wahi rehne do), baki sab clear karo.
-    $currentStatus       = '';
-    $currentSubType      = '';
-    $currentTitle        = '';
-    $currentSlug         = '';
-    $currentDescription  = old('description', $booking->description ?? '');
-    $currentRequirements = old('requirements', $booking->requirements ?? '');
-    $currentLanguage     = old('language', $booking->language ?? app()->getLocale());
-} else {
-    $currentStatus        = old('status', request('status', $booking->status ?? 'draft'));
-    $currentSubType       = old('sub_type', request('sub_type', $booking->sub_type ?? ''));
-    $currentTitle         = old('title', request('title', $booking->title ?? ''));
-    $currentSlug          = old('slug', request('slug', $booking->slug ?? ''));
-    $currentDescription   = old('description', request('description', $booking->description ?? ''));
-    $currentRequirements  = old('requirements', request('requirements', $booking->requirements ?? ''));
-    $currentLanguage      = old('language', request('language', $booking->language ?? app()->getLocale()));
-}
+    $typeChangedOnFilter     = $isFilterReload && (string) $previousType !== (string) $currentType;
+    $categoryChangedOnFilter = $isFilterReload && (string) $previousCategoryId !== (string) $currentCategoryId;
+
+    if ($typeChangedOnFilter) {
+        // Booking template itself changed — old category no longer applies,
+        // clear it too (plus everything else tied to step 1).
+        $currentCategoryId   = '';
+        $currentStatus       = '';
+        $currentSubType      = '';
+        $currentTitle        = '';
+        $currentSlug         = '';
+        $currentDescription  = old('description', $booking->description ?? '');
+        $currentRequirements = old('requirements', $booking->requirements ?? '');
+        $currentLanguage     = old('language', $booking->language ?? app()->getLocale());
+    } elseif ($categoryChangedOnFilter) {
+        // FIX: only the category changed — keep the newly picked
+        // $currentCategoryId as-is (don't blank it back out), but still
+        // clear title/slug/status/sub_type since those "belonged" to the
+        // previous category.
+        $currentStatus       = '';
+        $currentSubType      = '';
+        $currentTitle        = '';
+        $currentSlug         = '';
+        $currentDescription  = old('description', $booking->description ?? '');
+        $currentRequirements = old('requirements', $booking->requirements ?? '');
+        $currentLanguage     = old('language', $booking->language ?? app()->getLocale());
+    } else {
+        $currentStatus        = old('status', request('status', $booking->status ?? 'draft'));
+        $currentSubType       = old('sub_type', request('sub_type', $booking->sub_type ?? ''));
+        $currentTitle         = old('title', request('title', $booking->title ?? ''));
+        $currentSlug          = old('slug', request('slug', $booking->slug ?? ''));
+        $currentDescription   = old('description', request('description', $booking->description ?? ''));
+        $currentRequirements  = old('requirements', request('requirements', $booking->requirements ?? ''));
+        $currentLanguage      = old('language', request('language', $booking->language ?? app()->getLocale()));
+    }
 
     $bookingCategoryOptions = collect($allCategoryLists ?? [])
         ->whereNotNull('parent_id')
@@ -113,9 +137,10 @@ if ($typeChangedOnFilter) {
 <div class="panel-card">
     {{-- FIX: baseline hidden fields used to detect an actual type/category
          change when "Apply Template & Filter Categories" is clicked (see
-         $templateOrCategoryChangedOnFilter above). Always rendered with the
-         CURRENT (post-this-render) values, so the next GET reload can
-         compare "what it was before" vs "what was just selected". --}}
+         $typeChangedOnFilter / $categoryChangedOnFilter above). Always
+         rendered with the CURRENT (post-this-render) values, so the next
+         GET reload can compare "what it was before" vs "what was just
+         selected". --}}
     <input type="hidden" name="previous_booking_type" value="{{ $currentType }}">
     <input type="hidden" name="previous_category_id" value="{{ $currentCategoryId }}">
 
@@ -143,16 +168,22 @@ if ($typeChangedOnFilter) {
         vars above reading from request()), and booking_type becomes
         available server-side so the category <select> below renders
         already filtered correctly on reload.
+
+        FIX: formnovalidate added — this button's only job is to
+        filter/reset step 1, not to save the booking. Without it, if the
+        client-side JS has already blanked out required fields (title,
+        category_id) before this button is clicked, the browser's native
+        HTML5 validation silently blocks the GET submit and the page never
+        reloads — so the server-side reset logic above never even runs.
     --}}
- {{-- NEW --}}
-<button type="submit" formmethod="GET" formaction="{{ url()->current() }}" formnovalidate
-        class="btn btn-sm btn-outline-primary mt-2">
-    <i class="fa fa-filter mr-1"></i> Apply Template &amp; Filter Categories
-</button>
+    <button type="submit" formmethod="GET" formaction="{{ url()->current() }}" formnovalidate
+            class="btn btn-sm btn-outline-primary mt-2">
+        <i class="fa fa-filter mr-1"></i> Apply Template &amp; Filter Categories
+    </button>
 
     @if($isEditingTemplate = !empty($booking) && !empty($booking->id))
         <small class="text-muted d-block mt-1">
-            <i class="fa fa-info-circle mr-1"></i> Changing the booking template or category will clear title, slug, status, sub type — and, once you save this step, all data entered in steps 2 onward too. Related items (resources, time slots, availability, FAQs) are kept.
+            <i class="fa fa-info-circle mr-1"></i> Changing the booking template will clear title, slug, status, sub type, category — and, once you save this step, all data entered in steps 2 onward too. Changing only the category (same template) clears title, slug, status, sub type but keeps your category selection. Related items (resources, time slots, availability, FAQs) are kept.
         </small>
     @endif
 </div>
@@ -500,6 +531,9 @@ function initPanelBookingStep1() {
             }
         }
 
+        // FIX: type change ke baad category ko hamesha reset karo (isInitial
+        // par purani currentCategoryId use karo, warna null — user se dobara
+        // select karwao, kyunke purani category naye type ke liye invalid hai).
         populateCategories(type, isInitial ? currentCategoryId : null);
     }
 
@@ -535,7 +569,9 @@ function initPanelBookingStep1() {
 
             // FIX: category akele (booking_type same rehte hue) bhi badli
             // ja sakti hai — is case mein bhi title/slug/status/sub_type
-            // ko clear karo, exactly jaisa type change par hota hai.
+            // ko clear karo (category ki value ko chuye bagair — ye already
+            // categorySelect.value mein sahi hai, hum sirf baaki fields
+            // clear kar rahe hain).
             if (String(categorySelect.value || '') !== initialCategoryId) {
                 clearStepOneDependentFields();
             }
