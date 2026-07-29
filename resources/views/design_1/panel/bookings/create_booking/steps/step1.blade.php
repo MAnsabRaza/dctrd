@@ -36,33 +36,24 @@
         \App\Services\BookingTemplateConfig::EDUCATION_TRAINING    => ['online' => 'Online', 'in-person' => 'In-person', 'both' => 'Both'],
     ];
 
-    // IMPORTANT CHANGE: we now also check request()/query string, so that
-    // after the "Filter Categories" GET-reload button is used, the selected
-    // template and category list filters correctly — all without any JS.
-    $currentType       = old('booking_type', request('booking_type', $booking->booking_type ?? ''));
-    $currentCategoryId = old('category_id', request('category_id', $booking->category_id ?? ''));
+$currentType       = old('booking_type', request('booking_type', $booking->booking_type ?? ''));
+$currentCategoryId = old('category_id', request('category_id', $booking->category_id ?? ''));
 
-    // FIX: "Apply Template & Filter Categories" (GET reload) pehle sirf
-    // category ko clear/re-filter karta tha, lekin sub_type / slug /
-    // status / title purani values se hi bhare reh jate the — jab ke wo
-    // bhi naye template ke hisaab se ab irrelevant ho sakti hain.
-    //
-    // Hum ye track karte hain ke is GET reload se PEHLE type/category kya
-    // tha (do hidden inputs "previous_booking_type" / "previous_category_id"
-    // ke zariye, jo har render par current value ke sath dobara likhe jate
-    // hain). Agar submit hui request mein ye hidden fields maujood hain
-    // (yani ye waqai "Apply Template" button se aayi GET request hai) AND
-    // naya booking_type ya category_id un se different hai — to sub_type,
-    // slug, status aur title sab ko khali kar dete hain, bilkul category
-    // ki tarah, chahe sirf type badla ho ya sirf category.
-    $isFilterReload = request()->has('previous_booking_type');
-    $previousType       = request('previous_booking_type', '');
-    $previousCategoryId = request('previous_category_id', '');
+// FIX: ab "previous_*" hidden fields pe depend nahi karte (wo fragile the —
+// har reload ke baad sync rehna zaroori tha). Ab seedha BOOKING ki DB SAVED
+// value se compare karte hain — ye hamesha reliable hai, chahe sirf type
+// badle, sirf category badle, ya dono. Sirf tab chalta hai jab ye ek existing
+// booking edit ka GET filter-reload ho (nayi booking / step1 pehli baar
+// khulne par nahi).
+$isExistingBooking = !empty($booking) && !empty($booking->id);
+$isFilterReload = $isExistingBooking
+    && request()->isMethod('get')
+    && (request()->has('booking_type') || request()->has('category_id'));
 
-    $templateOrCategoryChangedOnFilter = $isFilterReload && (
-        (string) $previousType !== (string) $currentType
-        || (string) $previousCategoryId !== (string) $currentCategoryId
-    );
+$templateOrCategoryChangedOnFilter = $isFilterReload && (
+    (string) $currentType !== (string) ($booking->booking_type ?? '')
+    || (string) $currentCategoryId !== (string) ($booking->category_id ?? '')
+);
 
     if ($templateOrCategoryChangedOnFilter) {
         $currentCategoryId   = '';
