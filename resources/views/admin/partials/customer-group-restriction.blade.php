@@ -11,7 +11,7 @@
     <div class="border rounded-12 p-16" id="customerGroupRestrictionBox">
         <div class="form-group mb-3">
             <label class="mb-1 d-block font-weight-bold">Customer Group Restriction</label>
-            <p class="text-muted text-small mb-0">Khali chhodo agar sab customer groups khareed sakein.</p>
+            <p class="text-muted text-small mb-0">Leave it blank if all customer groups are allowed to purchase..</p>
         </div>
 
         <div class="form-group mb-0">
