@@ -59,7 +59,6 @@
             </div>
 
                                     </section>
-                                @endif
 
                                 <div class="row">
                                     <div class="col-12">
