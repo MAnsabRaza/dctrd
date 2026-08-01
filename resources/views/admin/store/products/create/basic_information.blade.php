@@ -219,4 +219,13 @@
             <p class="text-gray-500 font-12">{{ trans('update.create_product_enable_ordering_hint') }}</p>
         </div>
     </div>
+       @if(!empty($product))
+                                    @include('admin.store.products.create.extra_information')
+                                    @include('admin.partials.qr-toggle-section', [
+    'item'          => $product,
+    'regenerateUrl' => getAdminPanelUrl('/store/products/'.$product->id.'/qr/regenerate'),
+])
+
+    @include('admin.partials.customer-group-restriction', ['item' => $product ?? null])
+                                @endif
 </section>

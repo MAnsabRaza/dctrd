@@ -121,6 +121,7 @@
     ])
 @endif
 
+
 @push('scripts_bottom')
     <script src="/assets/vendors/summernote/summernote-bs4.min.js"></script>
     <script>
