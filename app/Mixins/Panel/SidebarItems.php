@@ -712,6 +712,14 @@ class SidebarItems
 
            
         }
+           if ($user->can('panel_roles')) {
+            $items['roles'] = [
+                'icon' => self::getIcon('roles'),
+                'text' => trans('panel.my_roles'),
+                'url' => '/panel/roles',
+                'items' => []
+            ];
+        }
 
         if ($user->can('panel_others_logout')) {
             $items['logout'] = [

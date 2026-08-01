@@ -1105,6 +1105,7 @@ Section::updateOrCreate(['id' => 3353], ['name' => 'admin_booking_package_delete
         $this->createPanelSection(['id' => 335], ['name' => 'panel_events_my_purchases', 'section_group_id' => 330, 'caption' => 'My Purchases']);
         $this->createPanelSection(['id' => 336], ['name' => 'panel_events_my_comments', 'section_group_id' => 330, 'caption' => 'My Comments']);
         $this->createPanelSection(['id' => 337], ['name' => 'panel_events_comments', 'section_group_id' => 330, 'caption' => 'Comments']);
+        $this->createPanelSection(['id' => 380], ['name' => 'panel_roles', 'caption' => 'My Roles / Request Role']);
 
         $this->createPanelSection(['id' => 366], [
     'name' => 'panel_bookings_invited_lists',

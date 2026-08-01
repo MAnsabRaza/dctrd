@@ -818,6 +818,10 @@ class PermissionsTableSeeder extends Seeder
         \App\Models\Permission::updateOrCreate(['id' => 300304], ['role_id' => 3, 'section_id' => 100304, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 400304], ['role_id' => 4, 'section_id' => 100304, 'allow' => 1]);
 
+          \App\Models\Permission::updateOrCreate(['id' => 200380], ['role_id' => 2, 'section_id' => 100380, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 300380], ['role_id' => 3, 'section_id' => 100380, 'allow' => 1]);
+        \App\Models\Permission::updateOrCreate(['id' => 400380], ['role_id' => 4, 'section_id' => 100380, 'allow' => 1]);
+
         // Admin Checkout Modules (500-504) - duplicate IDs kept for backward compat
         \App\Models\Permission::updateOrCreate(['id' => 200500], ['role_id' => 2, 'section_id' => 500, 'allow' => 1]);
         \App\Models\Permission::updateOrCreate(['id' => 200501], ['role_id' => 2, 'section_id' => 501, 'allow' => 1]);
