@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\RoleCatalog;
-use App\Models\User;
+use App\User;
 use App\Services\RoleEligibilityService;
 use Illuminate\Http\Request;
 
