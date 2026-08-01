@@ -410,6 +410,12 @@ return [
 'invited_bookings_no_result_hint'=>'You have not been invited to any bookings yet.',
 'organization_bookings_no_result'=>'No organization bookings!',
 'organization_bookings_no_result_hint'=>'Your organization has not created any bookings yet.',
+'my_roles'      => 'My Roles',
+'add_role'      => 'Add Role',
+'role'          => 'Role',
+'requested_at'  => 'Requested At',
+'rejected'      => 'Rejected',
+'no_roles_yet'  => 'No roles yet.',
 
 
 //V2

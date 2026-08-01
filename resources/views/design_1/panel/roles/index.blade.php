@@ -1,7 +1,19 @@
 @extends('design_1.panel.layouts.panel')
 
 @section('content')
+<div class="section-header d-flex justify-content-between align-items-center mb-16">
+    <h1 class="font-20 font-weight-bold">{{ trans('panel.my_roles') }}</h1>
+    <div class="section-header-breadcrumb">
+        <a href="{{ url('/panel') }}">{{ trans('panel.dashboard') }}</a> /
+        <span>{{ trans('panel.my_roles') }}</span>
+    </div>
+</div>
+
 <div class="bg-white p-16 rounded-16 border-gray-200">
+
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
 
     @php
         $createActive = $errors->any() || old('user_id');
@@ -11,13 +23,13 @@
         <li class="nav-item">
             <a class="nav-link {{ $createActive ? '' : 'active' }}" id="rolesList-tab"
                data-toggle="tab" href="#rolesList" role="tab">
-                {{ trans('update.my_roles') ?? 'My Roles' }}
+                {{ trans('panel.my_roles') }}
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link {{ $createActive ? 'active' : '' }}" id="newRole-tab"
                data-toggle="tab" href="#newRole" role="tab">
-                {{ trans('update.add_role') ?? 'Create New' }}
+                {{ trans('panel.add_role') }}
             </a>
         </li>
     </ul>
@@ -31,10 +43,10 @@
                 <div class="table-responsive">
                     <table class="table custom-table font-14">
                         <tr>
-                            <th class="text-left">{{ trans('admin/main.user') ?? 'User' }}</th>
-                            <th class="text-center">{{ trans('update.role') ?? 'Role' }}</th>
+                            <th class="text-left">{{ trans('panel.user') }}</th>
+                            <th class="text-center">{{ trans('panel.role') }}</th>
                             <th class="text-center">{{ trans('admin/main.status') }}</th>
-                            <th class="text-center">{{ trans('admin/main.date') ?? 'Requested At' }}</th>
+                            <th class="text-center">{{ trans('panel.requested_at') }}</th>
                         </tr>
 
                         @foreach($roleRequests as $userRole)
@@ -42,15 +54,19 @@
                                 <td class="text-left">{{ $userRole->user->full_name ?? '-' }}</td>
                                 <td class="text-center">{{ $userRole->roleCatalog->label ?? '-' }}</td>
                                 <td class="text-center">
-                                    @if($userRole->status === 'active')
-                                        <span class="badge badge-success">{{ trans('admin/main.active') }}</span>
-                                    @elseif($userRole->status === 'pending')
-                                        <span class="badge badge-warning">Pending</span>
+                                    @if($userRole->status === \App\Models\UserRoleRequest::STATUS_ACTIVE)
+                                        <span class="badge badge-success">{{ trans('panel.active') }}</span>
+                                    @elseif($userRole->status === \App\Models\UserRoleRequest::STATUS_PENDING)
+                                        <span class="badge badge-warning">{{ trans('panel.pending') }}</span>
+                                    @elseif($userRole->status === \App\Models\UserRoleRequest::STATUS_REJECTED)
+                                        <span class="badge badge-danger">{{ trans('panel.rejected') }}</span>
                                     @else
-                                        <span class="badge badge-danger">{{ ucfirst($userRole->status) }}</span>
+                                        <span class="badge badge-secondary">{{ ucfirst($userRole->status) }}</span>
                                     @endif
                                 </td>
-                                <td class="text-center">{{ optional($userRole->created_at)->format('Y-m-d H:i') }}</td>
+                                <td class="text-center">
+                                    {{ optional($userRole->requested_at ?? $userRole->created_at)->format('Y-m-d H:i') }}
+                                </td>
                             </tr>
                         @endforeach
                     </table>
@@ -59,7 +75,7 @@
                 {{ $roleRequests->links() }}
             @else
                 <div class="text-center text-gray-500 mt-30">
-                    {{ trans('update.no_roles_yet') ?? 'Abhi koi role nahi hai.' }}
+                    {{ trans('panel.no_roles_yet') }}
                 </div>
             @endif
 
@@ -72,11 +88,10 @@
                     <form action="{{ route('panel.roles.request') }}" method="post">
                         @csrf
 
-                        {{-- User dropdown --}}
                         <div class="form-group">
-                            <label class="input-label">{{ trans('admin/main.user') ?? 'User' }}</label>
+                            <label class="input-label">{{ trans('panel.user') }}</label>
                             <select name="user_id" class="form-control select2 @error('user_id') is-invalid @enderror">
-                                <option value="">{{ trans('admin/main.select') }}</option>
+                                <option value="">{{ trans('public.select') }}</option>
                                 @foreach($users as $u)
                                     <option value="{{ $u->id }}" {{ (string) old('user_id') === (string) $u->id ? 'selected' : '' }}>
                                         {{ $u->full_name }} ({{ $u->email }})
@@ -88,11 +103,10 @@
                             @enderror
                         </div>
 
-                        {{-- Role catalog dropdown --}}
                         <div class="form-group">
-                            <label class="input-label">{{ trans('update.role') ?? 'Role' }}</label>
+                            <label class="input-label">{{ trans('panel.role') }}</label>
                             <select name="role_catalog_id" class="form-control select2 @error('role_catalog_id') is-invalid @enderror">
-                                <option value="">{{ trans('admin/main.select') }}</option>
+                                <option value="">{{ trans('public.select') }}</option>
                                 @foreach($roleCatalogs as $role)
                                     <option value="{{ $role->id }}" {{ (string) old('role_catalog_id') === (string) $role->id ? 'selected' : '' }}>
                                         [{{ ucfirst($role->family) }}] {{ $role->label }}
@@ -104,12 +118,11 @@
                             @enderror
                         </div>
 
-                        {{-- Status hidden — always pending on create --}}
                         <input type="hidden" name="status" value="pending">
 
                         <div class="text-right col-12 mt-3 px-0">
                             <button type="submit" class="btn btn-primary">
-                                {{ trans('admin/main.save_change') ?? 'Save' }}
+                                {{ trans('public.save') }}
                             </button>
                         </div>
                     </form>
