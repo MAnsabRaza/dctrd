@@ -4932,5 +4932,6 @@ return [
     'clear_location'=>'Clear Location',
     'from_city'=>'From City',
     'FIND_NEARBY'=>'Find Nearby',
+    'my_roles'=>'My Roles'
 
 ];

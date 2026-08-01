@@ -714,7 +714,7 @@ class SidebarItems
         }
            if ($user->can('panel_roles')) {
             $items['roles'] = [
-                'icon' => self::getIcon('roles'),
+              'icon' => self::getIcon('profile'),
                 'text' => trans('panel.my_roles'),
                 'url' => '/panel/roles',
                 'items' => []

@@ -19,7 +19,7 @@
         $createActive = $errors->any() || old('user_id');
     @endphp
 
-    <ul class="nav nav-pills mb-16" id="rolesTab" role="tablist">
+    <ul class="nav nav-pills roles-tab-pills mb-16" id="rolesTab" role="tablist">
         <li class="nav-item">
             <a class="nav-link {{ $createActive ? '' : 'active' }}" id="rolesList-tab"
                data-toggle="tab" href="#rolesList" role="tab">
@@ -35,7 +35,6 @@
     </ul>
 
     <div class="tab-content">
-
         {{-- LIST --}}
         <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}" id="rolesList" role="tabpanel">
 
@@ -133,3 +132,36 @@
     </div>
 </div>
 @endsection
+
+@push('styles_bottom')
+<style>
+    .roles-tab-pills {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+
+    .roles-tab-pills .nav-item {
+        flex: 0 0 auto;
+    }
+
+    .roles-tab-pills .nav-link {
+        background-color: #f1f2f6;
+        color: #6b7280;
+        border-radius: 8px;
+        padding: 8px 18px;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: background-color .15s ease, color .15s ease;
+    }
+
+    .roles-tab-pills .nav-link:hover {
+        background-color: #e5e7eb;
+    }
+
+    .roles-tab-pills .nav-link.active {
+        background-color: #2563eb;
+        color: #ffffff;
+    }
+</style>
+@endpush
