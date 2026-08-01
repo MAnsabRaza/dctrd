@@ -1,4 +1,4 @@
-@extends("design_1.panel.layouts.app")
+@extends('design_1.panel.layouts.panel')
 
 @section('content')
 <div class="bg-white p-16 rounded-16 border-gray-200">
