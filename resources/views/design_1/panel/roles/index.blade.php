@@ -1,11 +1,6 @@
 @extends('design_1.panel.layouts.panel')
 
 @section('content')
-<div class="section-header d-flex justify-content-between align-items-center mb-16">
-    <h1 class="font-20 font-weight-bold">{{ trans('panel.my_roles') }}</h1>
- 
-</div>
-
 <div class="bg-white p-16 rounded-16 border-gray-200">
 
     @if(session('success'))
