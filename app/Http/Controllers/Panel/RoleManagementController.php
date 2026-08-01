@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class RoleManagementController extends Controller
 {
-    public function index(RoleEligibilityService $eligibilityService)
+  public function index(RoleEligibilityService $eligibilityService)
 {
     $authUser = auth()->user();
 
@@ -20,7 +20,10 @@ class RoleManagementController extends Controller
 
     $roleCatalogs = RoleCatalog::where('active', 1)->orderBy('sort_order')->get();
 
-    $roleRequests = $eligibilityService->userRolesWithStatus($authUser, $users->pluck('id')->toArray());
+    $roleRequests = \App\Models\UserRoleRequest::whereIn('user_id', $users->pluck('id'))
+        ->with(['user', 'roleCatalog'])
+        ->latest()
+        ->paginate(15);
 
     $data = [
         'pageTitle'    => trans('update.my_roles') ?? 'My Roles',
