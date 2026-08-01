@@ -69,6 +69,6 @@ class RoleManagementController extends Controller
 
         return redirect()
             ->route('panel.roles.index')
-            ->with('success', 'Role request submit ho gayi — admin approval ka intezar hai.');
+            ->with('success', 'Role request submit successfully. Admin will review it soon.');
     }
 }
