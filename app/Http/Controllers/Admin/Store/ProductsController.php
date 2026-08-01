@@ -318,6 +318,7 @@ class ProductsController extends Controller
 
         $data = [
             'pageTitle' => trans('update.create_new_product'),
+              'product'           => null,
         ];
 
         return view('admin.store.products.create', $data);
