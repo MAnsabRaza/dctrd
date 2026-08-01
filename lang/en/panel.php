@@ -431,5 +431,6 @@ return [
 'ability_disabled_successfully'=>'Ability disabled successfully.',
 'disable'=>'disable',
 'apis'=>'Apis',
-'regulatory'=>'Regulatory'
+'regulatory'=>'Regulatory',
+'my_roles'=>'My Role',
 ];
