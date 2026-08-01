@@ -312,29 +312,16 @@ class ProductsController extends Controller
         return $query;
     }
 
-   public function create(Request $request)
-{
-    $this->authorize('admin_store_new_product');
+    public function create(Request $request)
+    {
+        $this->authorize('admin_store_new_product');
 
-    $locale = $request->get('locale', app()->getLocale());
+        $data = [
+            'pageTitle' => trans('update.create_new_product'),
+        ];
 
-    $productCategories = ProductCategory::where('parent_id', null)
-        ->with('subCategories')
-        ->get();
-
-    $data = [
-        'pageTitle'         => trans('update.create_new_product'),
-        'product'           => null,
-        'locale'            => mb_strtolower($locale),
-        'defaultLocale'     => getDefaultLocale(),
-        'authUser'          => auth()->user(),
-        'productCategories' => $productCategories,
-        'productCategoryFilters' => [],
-        'productSpecifications'  => [],
-    ];
-
-    return view('admin.store.products.create', $data);
-}
+        return view('admin.store.products.create', $data);
+    }
 
     public function store(Request $request)
     {

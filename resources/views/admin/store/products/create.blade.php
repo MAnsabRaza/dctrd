@@ -32,7 +32,14 @@
 
                                 @include('admin.store.products.create.basic_information')
 
-                             
+                                @if(!empty($product))
+                                    @include('admin.store.products.create.extra_information')
+                                    @include('admin.partials.qr-toggle-section', [
+    'item'          => $product,
+    'regenerateUrl' => getAdminPanelUrl('/store/products/'.$product->id.'/qr/regenerate'),
+])
+
+    @include('admin.partials.customer-group-restriction', ['item' => $product ?? null])
 
                                     @include('admin.store.products.create.image_and_files')
 
@@ -59,6 +66,7 @@
             </div>
 
                                     </section>
+                                @endif
 
                                 <div class="row">
                                     <div class="col-12">

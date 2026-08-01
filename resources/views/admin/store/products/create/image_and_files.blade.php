@@ -85,13 +85,13 @@
             </div>
         </div>
 
-      @if(!empty($product) and $product->isVirtual())
+        @if($product->isVirtual())
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
                     <h2 class="section-title after-line">{{ trans('public.files') }}</h2>
 
                     <div class="px-2 mt-3">
-                       <button id="productAddFile" data-product-id="{{ $product->id }}" type="button" class="btn btn-primary btn-sm">{{ trans('public.add_new_files') }}</button>
+                        <button id="productAddFile" data-product-id="{{ $product->id }}" type="button" class="btn btn-primary btn-sm">{{ trans('public.add_new_files') }}</button>
                     </div>
                 </div>
 
