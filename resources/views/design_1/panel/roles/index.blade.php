@@ -2,85 +2,121 @@
 
 @section('content')
 <div class="bg-white p-16 rounded-16 border-gray-200">
-    <h3 class="font-16 font-weight-bold mb-16">{{ trans('update.my_roles') ?? 'My Roles' }}</h3>
 
-    {{-- Current roles with status badges --}}
-    <div class="d-flex flex-wrap gap-8 mb-24">
-        @forelse($currentRoles as $userRole)
-            <span class="badge-status px-3 py-2 rounded-12 d-flex align-items-center gap-2
-                {{ $userRole->status === 'active' ? 'text-success bg-success-30' : 'text-warning bg-warning-30' }}">
-                {{ $userRole->roleCatalog->label ?? '-' }}
-                <small>({{ $userRole->status === 'active' ? 'Active' : 'Pending' }})</small>
-            </span>
-        @empty
-            <div class="text-gray-500">{{ trans('update.no_roles_yet') ?? 'Abhi koi role nahi hai.' }}</div>
-        @endforelse
-    </div>
+    @php
+        $createActive = $errors->any() || old('user_id');
+    @endphp
 
-    <button type="button" class="btn btn-primary" id="addRoleBtn">
-        + {{ trans('update.add_role') ?? 'Add Role' }}
-    </button>
-</div>
+    <ul class="nav nav-pills mb-16" id="rolesTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link {{ $createActive ? '' : 'active' }}" id="rolesList-tab"
+               data-toggle="tab" href="#rolesList" role="tab">
+                {{ trans('update.my_roles') ?? 'My Roles' }}
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ $createActive ? 'active' : '' }}" id="newRole-tab"
+               data-toggle="tab" href="#newRole" role="tab">
+                {{ trans('update.add_role') ?? 'Create New' }}
+            </a>
+        </li>
+    </ul>
 
-{{-- Confirmation + role select modal --}}
-<div class="modal fade" id="addRoleModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">{{ trans('update.add_role') ?? 'Add Role' }}</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p class="text-gray-500">Are you sure you want to add a new role?</p>
+    <div class="tab-content">
 
-                <div class="form-group">
-                    <label class="input-label">Select Role</label>
-                    <select id="eligibleRoleSelect" class="form-control select2">
-                        <option value="">— Select —</option>
-                        @foreach($eligibleRoles as $role)
-                            <option value="{{ $role->id }}">
-                                [{{ ucfirst($role->family) }}] {{ $role->label }}
-                            </option>
+        {{-- LIST --}}
+        <div class="tab-pane fade {{ $createActive ? '' : 'active show' }}" id="rolesList" role="tabpanel">
+
+            @if($roleRequests->count())
+                <div class="table-responsive">
+                    <table class="table custom-table font-14">
+                        <tr>
+                            <th class="text-left">{{ trans('admin/main.user') ?? 'User' }}</th>
+                            <th class="text-center">{{ trans('update.role') ?? 'Role' }}</th>
+                            <th class="text-center">{{ trans('admin/main.status') }}</th>
+                            <th class="text-center">{{ trans('admin/main.date') ?? 'Requested At' }}</th>
+                        </tr>
+
+                        @foreach($roleRequests as $userRole)
+                            <tr>
+                                <td class="text-left">{{ $userRole->user->full_name ?? '-' }}</td>
+                                <td class="text-center">{{ $userRole->roleCatalog->label ?? '-' }}</td>
+                                <td class="text-center">
+                                    @if($userRole->status === 'active')
+                                        <span class="badge badge-success">{{ trans('admin/main.active') }}</span>
+                                    @elseif($userRole->status === 'pending')
+                                        <span class="badge badge-warning">Pending</span>
+                                    @else
+                                        <span class="badge badge-danger">{{ ucfirst($userRole->status) }}</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">{{ optional($userRole->created_at)->format('Y-m-d H:i') }}</td>
+                            </tr>
                         @endforeach
-                    </select>
+                    </table>
+                </div>
+
+                {{ $roleRequests->links() }}
+            @else
+                <div class="text-center text-gray-500 mt-30">
+                    {{ trans('update.no_roles_yet') ?? 'Abhi koi role nahi hai.' }}
+                </div>
+            @endif
+
+        </div>
+
+        {{-- CREATE NEW --}}
+        <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}" id="newRole" role="tabpanel">
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    <form action="{{ route('panel.roles.request') }}" method="post">
+                        @csrf
+
+                        {{-- User dropdown --}}
+                        <div class="form-group">
+                            <label class="input-label">{{ trans('admin/main.user') ?? 'User' }}</label>
+                            <select name="user_id" class="form-control select2 @error('user_id') is-invalid @enderror">
+                                <option value="">{{ trans('admin/main.select') }}</option>
+                                @foreach($users as $u)
+                                    <option value="{{ $u->id }}" {{ (string) old('user_id') === (string) $u->id ? 'selected' : '' }}>
+                                        {{ $u->full_name }} ({{ $u->email }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('user_id')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{-- Role catalog dropdown --}}
+                        <div class="form-group">
+                            <label class="input-label">{{ trans('update.role') ?? 'Role' }}</label>
+                            <select name="role_catalog_id" class="form-control select2 @error('role_catalog_id') is-invalid @enderror">
+                                <option value="">{{ trans('admin/main.select') }}</option>
+                                @foreach($roleCatalogs as $role)
+                                    <option value="{{ $role->id }}" {{ (string) old('role_catalog_id') === (string) $role->id ? 'selected' : '' }}>
+                                        [{{ ucfirst($role->family) }}] {{ $role->label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('role_catalog_id')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{-- Status hidden — always pending on create --}}
+                        <input type="hidden" name="status" value="pending">
+
+                        <div class="text-right col-12 mt-3 px-0">
+                            <button type="submit" class="btn btn-primary">
+                                {{ trans('admin/main.save_change') ?? 'Save' }}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
-                <button type="button" class="btn btn-primary" id="confirmAddRoleBtn">Yes, Add Role</button>
-            </div>
         </div>
+
     </div>
 </div>
 @endsection
-
-@push('scripts_bottom')
-<script>
-(function ($) {
-    $('#addRoleBtn').on('click', function () {
-        $('#addRoleModal').modal('show');
-    });
-
-    $('#confirmAddRoleBtn').on('click', function () {
-        var roleCatalogId = $('#eligibleRoleSelect').val();
-
-        if (!roleCatalogId) {
-            showToast('error', 'Error', 'Pehle role select karein.');
-            return;
-        }
-
-        $.post('{{ route("panel.roles.request") }}', {
-            _token: '{{ csrf_token() }}',
-            role_catalog_id: roleCatalogId
-        }, function (res) {
-            showToast('success', '', res.msg);
-            $('#addRoleModal').modal('hide');
-            setTimeout(function () { window.location.reload(); }, 1000);
-        }).fail(function (xhr) {
-            var msg = xhr.responseJSON && xhr.responseJSON.msg ? xhr.responseJSON.msg : 'Something went wrong';
-            showToast('error', 'Error', msg);
-        });
-    });
-})(jQuery);
-</script>
-@endpush
