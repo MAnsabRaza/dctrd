@@ -11,33 +11,26 @@ use Illuminate\Http\Request;
 class RoleManagementController extends Controller
 {
     public function index(RoleEligibilityService $eligibilityService)
-    {
-        $authUser = auth()->user();
+{
+    $authUser = auth()->user();
 
-        // Panel account ke scope mein aane wale users (staff/instructors/students).
-        // Apni actual scoping condition (organ_id waghera) ke hisab se yahan adjust kar lena.
-        $users = User::where('organ_id', $authUser->organ_id ?? $authUser->id)
-            ->orWhere('id', $authUser->id)
-            ->get();
+    $users = User::where('organ_id', $authUser->organ_id ?? $authUser->id)
+        ->orWhere('id', $authUser->id)
+        ->get();
 
-        $roleCatalogs = RoleCatalog::where('status', 1)->get();
+    $roleCatalogs = RoleCatalog::where('active', 1)->orderBy('sort_order')->get();
 
-        // NOTE: assuming eligibilityService method signature accepts a list of user ids
-        // to scope the "all requests" table — agar service mein aisa method nahi hai
-        // to ye line apne UserRole model se seedha query mein badal dena, e.g.:
-        // $roleRequests = \App\Models\UserRole::whereIn('user_id', $users->pluck('id'))
-        //     ->with(['user', 'roleCatalog'])->latest()->paginate(15);
-        $roleRequests = $eligibilityService->userRolesWithStatus($authUser, $users->pluck('id')->toArray());
+    $roleRequests = $eligibilityService->userRolesWithStatus($authUser, $users->pluck('id')->toArray());
 
-        $data = [
-            'pageTitle'    => trans('update.my_roles') ?? 'My Roles',
-            'users'        => $users,
-            'roleCatalogs' => $roleCatalogs,
-            'roleRequests' => $roleRequests,
-        ];
+    $data = [
+        'pageTitle'    => trans('update.my_roles') ?? 'My Roles',
+        'users'        => $users,
+        'roleCatalogs' => $roleCatalogs,
+        'roleRequests' => $roleRequests,
+    ];
 
-        return view('design_1.panel.roles.index', $data);
-    }
+    return view('design_1.panel.roles.index', $data);
+}
 
     public function requestRole(Request $request, RoleEligibilityService $eligibilityService)
     {
