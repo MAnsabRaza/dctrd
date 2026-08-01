@@ -325,8 +325,6 @@ class ProductsController extends Controller
     $data = [
         'pageTitle'         => trans('update.create_new_product'),
         'product'           => null,
-        'userLanguages'     => getUserLanguages(),
-        'currency'          => getCurrencySign(),
         'locale'            => mb_strtolower($locale),
         'defaultLocale'     => getDefaultLocale(),
         'authUser'          => auth()->user(),
