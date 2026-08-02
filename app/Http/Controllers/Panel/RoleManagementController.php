@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
-use App\Models\RoleCatalog;
+use App\Models\UserRoleRequest;
 use App\User;
 use App\Services\RoleEligibilityService;
 use Illuminate\Http\Request;
@@ -14,15 +14,14 @@ class RoleManagementController extends Controller
 {
     $authUser = auth()->user();
 
-    $users = User::where('organ_id', $authUser->organ_id ?? $authUser->id)
-        ->orWhere('id', $authUser->id)
-        ->get();
+    $users = collect([$authUser]);
 
-    $roleCatalogs = RoleCatalog::where('active', 1)->orderBy('sort_order')->get();
+    $roleCatalogs = $eligibilityService->eligibleRoles($authUser);
 
-    $roleRequests = \App\Models\UserRoleRequest::whereIn('user_id', $users->pluck('id'))
+    $roleRequests = UserRoleRequest::where('user_id', $authUser->id)
         ->with(['user', 'roleCatalog'])
-        ->latest()
+        ->orderByDesc('requested_at')
+        ->orderByDesc('id')
         ->paginate(15);
 
     $data = [
@@ -50,7 +49,7 @@ class RoleManagementController extends Controller
         if (!in_array((int) $data['role_catalog_id'], $eligible)) {
             return back()
                 ->withInput()
-                ->withErrors(['role_catalog_id' => 'This role is not eligible for the selected user.']);
+                ->withErrors(['role_catalog_id' => $eligibilityService->ineligibilityMessage($targetUser, (int) $data['role_catalog_id'])]);
         }
 
         $roleRequest = $eligibilityService->requestRole($targetUser, (int) $data['role_catalog_id']);
@@ -69,6 +68,11 @@ class RoleManagementController extends Controller
 
         return redirect()
             ->route('panel.roles.index')
-            ->with('success', 'Role request submit successfully. Admin will review it soon.');
+            ->with('toast', [
+                'title' => trans('public.request_success'),
+                'msg' => 'Role request submitted successfully. Admin will review it soon.',
+                'status' => 'success',
+            ])
+            ->with('success', 'Role request submitted successfully. Admin will review it soon.');
     }
 }

@@ -4,7 +4,7 @@
 <div class="bg-white p-16 rounded-16 border-gray-200">
 
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        <div class="alert alert-success mb-16">{{ session('success') }}</div>
     @endif
 
     @php
@@ -38,6 +38,7 @@
                             <th class="text-center">{{ trans('panel.role') }}</th>
                             <th class="text-center">{{ trans('admin/main.status') }}</th>
                             <th class="text-center">{{ trans('panel.requested_at') }}</th>
+                            <th class="text-center">Reason</th>
                         </tr>
 
                         @foreach($roleRequests as $userRole)
@@ -58,6 +59,7 @@
                                 <td class="text-center">
                                     {{ optional($userRole->requested_at ?? $userRole->created_at)->format('Y-m-d H:i') }}
                                 </td>
+                                <td class="text-center">{{ $userRole->status === \App\Models\UserRoleRequest::STATUS_REJECTED ? ($userRole->rejection_reason ?: '-') : '-' }}</td>
                             </tr>
                         @endforeach
                     </table>

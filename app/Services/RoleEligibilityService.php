@@ -63,6 +63,40 @@ class RoleEligibilityService
             ->get();
     }
 
+    public function ineligibilityMessage(User $user, int $roleCatalogId): string
+    {
+        $role = RoleCatalog::find($roleCatalogId);
+
+        if (!$role) {
+            return 'Selected role was not found.';
+        }
+
+        $existing = UserRoleRequest::where('user_id', $user->id)
+            ->where('role_catalog_id', $roleCatalogId)
+            ->whereIn('status', [UserRoleRequest::STATUS_ACTIVE, UserRoleRequest::STATUS_PENDING])
+            ->latest('id')
+            ->first();
+
+        if ($existing && $existing->status === UserRoleRequest::STATUS_ACTIVE) {
+            return "This role is already active for {$user->full_name}.";
+        }
+
+        if ($existing && $existing->status === UserRoleRequest::STATUS_PENDING) {
+            return "This role already has a pending request for {$user->full_name}.";
+        }
+
+        $currentKeys = $this->currentRoleKeys($user);
+        $coveringRole = RoleCatalog::whereIn('key', $currentKeys)
+            ->get()
+            ->first(fn ($currentRole) => in_array($role->key, $currentRole->supersedes ?? [], true));
+
+        if ($coveringRole) {
+            return "{$role->label} is already covered by the active/pending {$coveringRole->label} role.";
+        }
+
+        return 'This role is not eligible for the selected user.';
+    }
+
     /**
      * Naya role request banao (duplicate check ke sath).
      */
@@ -77,6 +111,8 @@ class RoleEligibilityService
             return $existing;
         }
 
+        // Rejected requests are kept as history. A new submission should create
+        // a fresh pending row instead of reusing the rejected row.
         return UserRoleRequest::create([
             'user_id'         => $user->id,
             'role_catalog_id' => $roleCatalogId,

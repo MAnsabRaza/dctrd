@@ -47,7 +47,7 @@ class RoleRequestController extends Controller
         $this->authorize('admin_role_requests');
 
         $data = $request->validate([
-            'reason' => 'nullable|string|max:500',
+            'reason' => 'required|string|max:500',
         ]);
 
         $roleRequest = UserRoleRequest::findOrFail($id);
@@ -55,6 +55,7 @@ class RoleRequestController extends Controller
 
         sendNotification('role_request_rejected', [
             '[role.name]' => $roleRequest->roleCatalog->label ?? '',
+            '[reason]' => $data['reason'],
         ], $roleRequest->user_id);
 
         return back()->with('success', 'Role request rejected.');
