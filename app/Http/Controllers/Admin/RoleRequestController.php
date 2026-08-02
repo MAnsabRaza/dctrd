@@ -33,10 +33,13 @@ class RoleRequestController extends Controller
 
         $roleRequest = UserRoleRequest::findOrFail($id);
         $roleRequest->approve(auth()->id());
+        $roleRequest->loadMissing(['user', 'roleCatalog']);
 
-        // Optional: user ko notification bhejo
         sendNotification('role_request_approved', [
+            '[u.name]' => $roleRequest->user->full_name ?? '',
             '[role.name]' => $roleRequest->roleCatalog->label ?? '',
+            '[request.id]' => $roleRequest->id,
+            '[link]' => route('panel.roles.index'),
         ], $roleRequest->user_id);
 
         return back()->with('success', 'Role request approved.');
@@ -52,10 +55,14 @@ class RoleRequestController extends Controller
 
         $roleRequest = UserRoleRequest::findOrFail($id);
         $roleRequest->reject(auth()->id(), $data['reason'] ?? null);
+        $roleRequest->loadMissing(['user', 'roleCatalog']);
 
         sendNotification('role_request_rejected', [
+            '[u.name]' => $roleRequest->user->full_name ?? '',
             '[role.name]' => $roleRequest->roleCatalog->label ?? '',
             '[reason]' => $data['reason'],
+            '[request.id]' => $roleRequest->id,
+            '[link]' => route('panel.roles.index'),
         ], $roleRequest->user_id);
 
         return back()->with('success', 'Role request rejected.');

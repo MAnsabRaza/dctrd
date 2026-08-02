@@ -60,10 +60,14 @@ class RoleManagementController extends Controller
             $roleRequest->save();
         }
 
+        $roleRequest->loadMissing('roleCatalog');
+
         // Admin ko notify karo taake woh Role Requests queue check kare
         sendNotification('role_request_created', [
             '[u.name]'    => $targetUser->full_name,
             '[role.name]' => $roleRequest->roleCatalog->label ?? '',
+            '[request.id]' => $roleRequest->id,
+            '[link]'      => route('admin.role_requests.index'),
         ], 1); // 1 = admin user id, jaisa baaki jagah pattern hai
 
         return redirect()

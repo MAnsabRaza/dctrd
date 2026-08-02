@@ -86,7 +86,7 @@ class NotificationTemplate extends Model
         'bundles' => ['bundle_submission', 'bundle_submission_for_admin', 'bundle_approved', 'bundle_rejected', 'new_review_for_bundle'],
         'registration_bonus' => ['registration_bonus_achieved', 'registration_bonus_unlocked', 'registration_bonus_unlocked_for_admin'],
         'registration_package' => ['registration_package_activated', 'registration_package_activated_for_admin', 'registration_package_expired'],
-        'misc' => ['contact_message_submission', 'contact_message_submission_for_admin', 'waitlist_submission', 'waitlist_submission_for_admin', 'user_get_new_point', 'new_course_notice'],
+        'misc' => ['contact_message_submission', 'contact_message_submission_for_admin', 'waitlist_submission', 'waitlist_submission_for_admin', 'user_get_new_point', 'new_course_notice', 'role_request_created', 'role_request_approved', 'role_request_rejected'],
         'forms' => ['submit_form_by_users'],
         'attendance' => ['for_present_students', 'for_late_students', 'for_absent_students'],
         'events' => ['new_purchase_ticket_for_students', 'new_sale_ticket_for_provider', 'cancel_event_for_students', 'online_event_sessions_for_students'],
