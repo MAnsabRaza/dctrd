@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\QrAnalyticsController;
 use App\Http\Controllers\Admin\RoleCatalogController;
 use App\Http\Controllers\Admin\RoleRequestController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\Admin\Booking\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\BookingCategorySettingsController;
 use App\Http\Controllers\Admin\Booking\BookingAvailabilityController;
 use App\Http\Controllers\Admin\Booking\BookingBundleController;
@@ -371,18 +372,22 @@ Route::group(['prefix' => 'users/{id}/booking-settings'], function () {
 });
 
 Route::group(['prefix' => 'users/{id}/calendar'], function () {
-    Route::post('/{provider}/credentials', [CalendarController::class, 'saveCredentials'])
+    Route::post('/{provider}/credentials', [AdminCalendarController::class, 'saveCredentials'])
         ->name('admin.users.calendar.credentials')
         ->where('provider', 'google|outlook');
 
-    Route::post('/{provider}/settings', [CalendarController::class, 'saveSettings'])
+    Route::post('/{provider}/settings', [AdminCalendarController::class, 'saveSettings'])
         ->name('admin.users.calendar.settings')
         ->where('provider', 'google|outlook');
 
-    Route::post('/ical/toggle', [CalendarController::class, 'toggleIcal'])
+    Route::post('/{provider}/disconnect', [AdminCalendarController::class, 'disconnect'])
+        ->name('admin.users.calendar.disconnect')
+        ->where('provider', 'google|outlook');
+
+    Route::post('/ical/toggle', [AdminCalendarController::class, 'toggleIcal'])
         ->name('admin.users.calendar.ical.toggle');
 
-    Route::post('/ical/regenerate', [CalendarController::class, 'regenerateIcal'])
+    Route::post('/ical/regenerate', [AdminCalendarController::class, 'regenerateIcal'])
         ->name('admin.users.calendar.ical.regenerate');
 });
 

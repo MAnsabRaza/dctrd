@@ -858,6 +858,8 @@ $calendarLogs = \App\Models\CalendarLog::where('user_id', $user->id)
 
         $tab = !empty($order->bundle_id) ? 'purchased_booking_bundles' : 'purchased_bookings';
 
+        app(\App\Services\Calendar\CalendarSyncService::class)->syncBooking($order->fresh(), 'cancel');
+
         $order->delete(); // soft delete => shows up under "Manually Removed"
 
         $toastData = [

@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\CalendarIntegration;
+use App\Models\CalendarLog;
 use App\Models\CalendarSetting;
 use App\User;
 use App\Services\Calendar\ICalService;
@@ -94,5 +95,34 @@ class CalendarController extends Controller
         app(ICalService::class)->generateToken($id);
 
         return back()->with('success', trans('calendar.ical_token_regenerated'));
+    }
+
+    public function disconnect(Request $request, int $id, string $provider)
+    {
+        User::findOrFail($id);
+
+        if (!in_array($provider, ['google', 'outlook'], true)) {
+            abort(422, 'Unsupported provider.');
+        }
+
+        CalendarIntegration::where('user_id', $id)
+            ->where('provider', $provider)
+            ->update([
+                'access_token'     => null,
+                'refresh_token'    => null,
+                'token_expires_at' => null,
+                'sync_token'       => null,
+                'status'           => 'disconnected',
+                'last_error'       => null,
+            ]);
+
+        CalendarLog::create([
+            'user_id'  => $id,
+            'provider' => $provider,
+            'action'   => 'disconnect',
+            'status'   => 'success',
+        ]);
+
+        return back()->with('success', ucfirst($provider) . ' ' . trans('calendar.disconnected'));
     }
 }

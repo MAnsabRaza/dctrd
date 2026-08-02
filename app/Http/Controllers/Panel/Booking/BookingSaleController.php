@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\BookingOrder;
+use App\Services\Calendar\CalendarSyncService;
 use App\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -253,6 +254,8 @@ class BookingSaleController extends Controller
                 'tracking_code' => $data['tracking_code'],
                 'status' => BookingOrder::$shipped
             ]);
+
+            app(CalendarSyncService::class)->syncBooking($order->fresh(), 'update');
 
             $item = $order->item;
             $seller = $order->seller;

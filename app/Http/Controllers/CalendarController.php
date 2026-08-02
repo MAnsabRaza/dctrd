@@ -54,8 +54,9 @@ class CalendarController extends Controller
     public function outlookRedirect(Request $request)
     {
         $returnTo = $request->get('return_to', route('panel.setting.external-connections'));
+        $userId = $request->get('user_id', auth()->id());
 
-        $url = app(OutlookCalendarService::class)->getAuthUrl(auth()->id(), $returnTo);
+        $url = app(OutlookCalendarService::class)->getAuthUrl($userId, $returnTo);
 
         return redirect($url);
     }
@@ -103,13 +104,20 @@ class CalendarController extends Controller
     */
     public function icalFeed(string $token)
     {
-        $setting = CalendarSetting::where('ical_token', $token)->firstOrFail();
+        $setting = CalendarSetting::where('provider', 'ical')
+            ->where('ical_token', $token)
+            ->firstOrFail();
+
+        if (!$setting->ical_export_enabled) {
+            abort(410);
+        }
 
         $icsContent = app(ICalService::class)->generateIcs($setting->user_id);
 
         return response($icsContent, 200, [
             'Content-Type'        => 'text/calendar; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="bookings.ics"',
+            'Content-Disposition' => 'inline; filename="bookings.ics"',
+            'Cache-Control'       => 'no-store, max-age=0',
         ]);
     }
 

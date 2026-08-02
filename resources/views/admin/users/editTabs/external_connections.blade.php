@@ -67,12 +67,12 @@
                             <a href="#" onclick="event.preventDefault(); document.getElementById('googleDisconnectForm').submit();"
                                class="btn btn-outline-danger">{{ trans('calendar.disconnect') }}</a>
                         @else
-                            <a href="{{ route('calendar.google.redirect', ['return_to' => url()->current()]) }}"
+                            <a href="{{ route('calendar.google.redirect', ['return_to' => url()->current(), 'user_id' => $user->id]) }}"
                                class="btn btn-primary">{{ trans('calendar.connect_google') }}</a>
                         @endif
                     </form>
 
-                    <form id="googleDisconnectForm" action="{{ route('calendar.disconnect', 'google') }}" method="POST" class="d-none">
+                    <form id="googleDisconnectForm" action="{{ route('admin.users.calendar.disconnect', [$user->id, 'google']) }}" method="POST" class="d-none">
                         @csrf
                     </form>
 
@@ -144,12 +144,12 @@
                             <a href="#" onclick="event.preventDefault(); document.getElementById('outlookDisconnectForm').submit();"
                                class="btn btn-outline-danger">{{ trans('calendar.disconnect') }}</a>
                         @else
-                            <a href="{{ route('calendar.outlook.redirect', ['return_to' => url()->current()]) }}"
+                            <a href="{{ route('calendar.outlook.redirect', ['return_to' => url()->current(), 'user_id' => $user->id]) }}"
                                class="btn btn-primary">{{ trans('calendar.connect_outlook') }}</a>
                         @endif
                     </form>
 
-                    <form id="outlookDisconnectForm" action="{{ route('calendar.disconnect', 'outlook') }}" method="POST" class="d-none">
+                    <form id="outlookDisconnectForm" action="{{ route('admin.users.calendar.disconnect', [$user->id, 'outlook']) }}" method="POST" class="d-none">
                         @csrf
                     </form>
 

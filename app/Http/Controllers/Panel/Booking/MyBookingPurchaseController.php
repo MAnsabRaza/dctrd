@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\BookingOrder;
+use App\Services\Calendar\CalendarSyncService;
 use App\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -198,6 +199,8 @@ class MyBookingPurchaseController extends Controller
             $order->update([
                 'status' => BookingOrder::$success   // FIXED: was $completed
             ]);
+
+            app(CalendarSyncService::class)->syncBooking($order->fresh(), 'update');
 
             $item = $order->item; // booking or bundle
             $buyer = $order->buyer;
