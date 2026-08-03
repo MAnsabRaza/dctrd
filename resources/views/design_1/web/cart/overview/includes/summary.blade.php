@@ -61,7 +61,15 @@
             <span class="js-cart-total js-cart-summary-amount font-16 font-weight-bold" data-amount="{{ $calculatePrices['total'] }}">{{ handlePrice($calculatePrices["total"]) }}</span>
         </div>
 
-        <button type="button" class="{{ !empty($isCartPaymentPage) ? 'js-cart-payment-btn' : 'js-cart-checkout' }} btn btn-lg btn-block btn-primary mt-20 js-pay-now-text">
+        @if(!empty($customerGroupDeniedCarts) and $customerGroupDeniedCarts->isNotEmpty())
+            <div class="mt-16 p-12 rounded-8 border border-danger text-danger font-12 bg-white">
+                {{ $customerGroupDeniedCarts->first()['message'] ?? 'Some cart items are not available for your customer role.' }}
+            </div>
+        @endif
+
+        <button type="button"
+                class="{{ !empty($isCartPaymentPage) ? 'js-cart-payment-btn' : 'js-cart-checkout' }} btn btn-lg btn-block btn-primary mt-20 js-pay-now-text"
+                @if(!empty($customerGroupDeniedCarts) and $customerGroupDeniedCarts->isNotEmpty()) disabled data-access-blocked="1" @endif>
             @if(!empty($isCartPaymentPage))
                 {{ trans('update.pay_now') }}
             @else

@@ -4,6 +4,7 @@
         $itemInfo     = $cartItemInfo->getItemInfo($cart);
         $itemKey      = $cart->id;
         $cartModules  = $checkoutModulesByCart[$cart->id] ?? collect();
+        $accessDenied = $customerGroupDeniedCarts[$cart->id] ?? null;
     @endphp
 
     {{-- ════ BOOKING ITEM ════ --}}
@@ -99,6 +100,12 @@
                     'itemKey'          => $itemKey,
                 ])
 
+                @if(!empty($accessDenied))
+                    <div class="mt-12 p-12 rounded-8 border border-danger text-danger font-12">
+                        {{ $accessDenied['message'] }}
+                    </div>
+                @endif
+
             </div>{{-- .flex-1 --}}
         </div>{{-- .cart-booking-row --}}
 
@@ -127,6 +134,12 @@
 
                 @if(!empty($itemInfo['extraHint']))
                     <span class="badge badge-light font-11 mt-4">{{ $itemInfo['extraHint'] }}</span>
+                @endif
+
+                @if(!empty($accessDenied))
+                    <div class="mt-12 p-12 rounded-8 border border-danger text-danger font-12">
+                        {{ $accessDenied['message'] }}
+                    </div>
                 @endif
             </div>
 

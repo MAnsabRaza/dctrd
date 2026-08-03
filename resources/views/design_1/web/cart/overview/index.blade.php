@@ -306,6 +306,10 @@
     $(document).on('click', '.js-cart-checkout', function (e) {
         e.preventDefault();
 
+        if ($(this).data('access-blocked')) {
+            return;
+        }
+
         // Guard: cancellation_policy module (agar page par present hai)
         if (typeof window.validateBookingCheckoutModules === 'function') {
             if (!window.validateBookingCheckoutModules()) {

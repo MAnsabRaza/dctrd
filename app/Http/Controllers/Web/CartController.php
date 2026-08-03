@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Web\traits\RegionsDataByUser;
 use App\Mixins\Cashback\CashbackRules;
+use App\Models\Booking;
 use App\Models\Cart;
 use App\Models\CartDiscount;
 use App\Models\Discount;
@@ -88,6 +89,7 @@ class CartController extends Controller
                     ->where('enable', true)
                     ->first();
                 $checkoutModulesByCart = $this->getCheckoutModulesByCart($carts);
+                $customerGroupDeniedCarts = $this->getCustomerGroupDeniedCarts($carts, $user);
 
 
                 $data = [
@@ -101,6 +103,7 @@ class CartController extends Controller
                     'deliveryEstimateTime' => $deliveryEstimateTime,
                     'totalCashbackAmount' => $totalCashbackAmount,
                     'cartDiscount' => $cartDiscount,
+                    'customerGroupDeniedCarts' => $customerGroupDeniedCarts,
                 ];
 
                 $data = array_merge($data, $this->getLocationsData($user));
@@ -143,6 +146,13 @@ class CartController extends Controller
             }
 
             $carts = Cart::where('creator_id', $user->id)
+                ->with([
+                    'webinar',
+                    'bundle',
+                    'booking',
+                    'bookingOrder.booking',
+                    'productOrder.product',
+                ])
                 ->get();
 
             if (!empty($carts) and !$carts->isEmpty()) {
@@ -152,7 +162,8 @@ class CartController extends Controller
                     $calculate['discountCoupon'] = $discountCoupon;
 
                     $data = [
-                        'calculatePrices' => $calculate
+                        'calculatePrices' => $calculate,
+                        'customerGroupDeniedCarts' => $this->getCustomerGroupDeniedCarts($carts, $user),
                     ];
 
                     $html = (string) view()->make("design_1.web.cart.overview.includes.summary", $data);
@@ -350,6 +361,13 @@ class CartController extends Controller
 
         if (empty($carts)) {
             $carts = Cart::where('creator_id', $user->id)
+                ->with([
+                    'webinar',
+                    'bundle',
+                    'booking',
+                    'bookingOrder.booking',
+                    'productOrder.product',
+                ])
                 ->get();
         }
 
@@ -547,6 +565,25 @@ class CartController extends Controller
         return null;
     }
 
+    private function getCustomerGroupDeniedCarts($carts, $user)
+    {
+        $accessService = app(CustomerGroupAccessService::class);
+        $deniedCarts = collect();
+
+        foreach ($carts as $cart) {
+            $item = $this->getCustomerGroupRestrictedCartItem($cart);
+
+            if (!empty($item) and !$accessService->canPurchase($item, $user)) {
+                $deniedCarts->put($cart->id, [
+                    'message' => $accessService->denialMessage($item),
+                    'title' => $item->title ?? $item->name ?? trans('cart.item'),
+                ]);
+            }
+        }
+
+        return $deniedCarts;
+    }
+
     private function getCustomerGroupRestrictedCartItem($cart)
     {
         if (!empty($cart->webinar_id)) {
@@ -562,7 +599,17 @@ class CartController extends Controller
         }
 
         if (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
-            return $cart->booking;
+            if (!empty($cart->booking)) {
+                return $cart->booking;
+            }
+
+            if (!empty($cart->bookingOrder) and !empty($cart->bookingOrder->booking)) {
+                return $cart->bookingOrder->booking;
+            }
+
+            if (!empty($cart->booking_id)) {
+                return Booking::find($cart->booking_id);
+            }
         }
 
         return null;

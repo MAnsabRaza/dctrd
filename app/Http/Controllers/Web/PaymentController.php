@@ -19,6 +19,7 @@ use App\Models\Sale;
 use App\Models\TicketUser;
 use App\PaymentChannels\ChannelManager;
 use App\Services\Calendar\CalendarSyncService;
+use App\Services\CustomerGroupAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 
@@ -42,6 +43,16 @@ class PaymentController extends Controller
         $order = Order::where('id', $orderId)
             ->where('user_id', $user->id)
             ->first();
+
+        if (empty($order)) {
+            return redirect('/cart');
+        }
+
+        $deniedResponse = $this->checkOrderCustomerGroupAccess($order, $user);
+
+        if (!empty($deniedResponse)) {
+            return $deniedResponse;
+        }
 
         if ($order->type === Order::$meeting) {
             $orderItem = OrderItem::where('order_id', $order->id)->first();
@@ -174,6 +185,59 @@ class PaymentController extends Controller
             ];
             return redirect('/cart')->with(['toast' => $toastData]);
         }
+    }
+
+    private function checkOrderCustomerGroupAccess(Order $order, $user)
+    {
+        $accessService = app(CustomerGroupAccessService::class);
+
+        $orderItems = OrderItem::where('order_id', $order->id)
+            ->with([
+                'webinar',
+                'bundle',
+                'product',
+                'bookingOrder.booking',
+            ])
+            ->get();
+
+        foreach ($orderItems as $orderItem) {
+            $item = $this->getCustomerGroupRestrictedOrderItem($orderItem);
+
+            if (!empty($item) and !$accessService->canPurchase($item, $user)) {
+                $order->update(['status' => Order::$fail]);
+
+                $toastData = [
+                    'title' => trans('cart.fail_purchase'),
+                    'msg' => $accessService->denialMessage($item),
+                    'status' => 'error',
+                ];
+
+                return redirect('/cart')->with(['toast' => $toastData]);
+            }
+        }
+
+        return null;
+    }
+
+    private function getCustomerGroupRestrictedOrderItem(OrderItem $orderItem)
+    {
+        if (!empty($orderItem->webinar_id)) {
+            return $orderItem->webinar;
+        }
+
+        if (!empty($orderItem->bundle_id)) {
+            return $orderItem->bundle;
+        }
+
+        if (!empty($orderItem->product_id)) {
+            return $orderItem->product;
+        }
+
+        if (!empty($orderItem->booking_order_id)) {
+            return optional($orderItem->bookingOrder)->booking;
+        }
+
+        return null;
     }
 
     public function paymentVerify(Request $request, $gateway)

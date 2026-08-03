@@ -318,8 +318,15 @@
                                         id="totalAmount">{{ handlePrice($total) }}</span></span>
                             </div>
 
+                            @if(!empty($customerGroupDeniedCarts) and $customerGroupDeniedCarts->isNotEmpty())
+                                <div class="mt-15 p-10 rounded-sm border border-danger text-danger font-12">
+                                    {{ $customerGroupDeniedCarts->first()['message'] ?? 'Some cart items are not available for your customer role.' }}
+                                </div>
+                            @endif
+
                             <button type="submit"
-                                class="btn btn-sm btn-primary mt-15">{{ trans('cart.checkout') }}</button>
+                                class="btn btn-sm btn-primary mt-15"
+                                @if(!empty($customerGroupDeniedCarts) and $customerGroupDeniedCarts->isNotEmpty()) disabled @endif>{{ trans('cart.checkout') }}</button>
                         </div>
                     </section>
                 </div>
