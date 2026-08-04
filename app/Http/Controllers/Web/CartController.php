@@ -127,65 +127,122 @@ class CartController extends Controller
         return redirect('/');
     }
 
-    public function couponValidate(Request $request)
-    {
-        $user = auth()->user();
-        $coupon = $request->get('coupon');
+   public function couponValidate(Request $request)
+{
+    $user = auth()->user();
+    $coupon = $request->get('coupon');
 
-        $discountCoupon = Discount::where('code', $coupon)
-            ->first();
+    $discountCoupon = Discount::where('code', $coupon)
+        ->first();
 
-        if (!empty($discountCoupon)) {
-            $checkDiscount = $discountCoupon->checkValidDiscount();
-            if ($checkDiscount != 'ok') {
-                return response()->json([
-                    'error' => [
-                        'title' => trans('public.request_failed'),
-                        'msg' => $checkDiscount
-                    ],
-                ], 422);
-            }
-
-            $carts = Cart::where('creator_id', $user->id)
-                ->with([
-                    'webinar',
-                    'bundle',
-                    'booking',
-                    'bookingOrder.booking',
-                    'bookingOrder.resource',
-                    'productOrder.product',
-                ])
-                ->get();
-
-            if (!empty($carts) and !$carts->isEmpty()) {
-                $calculate = $this->calculatePrice($carts, $user, $discountCoupon);
-
-                if (!empty($calculate)) {
-                    $calculate['discountCoupon'] = $discountCoupon;
-
-                    $data = [
-                        'calculatePrices' => $calculate,
-                        'customerGroupDeniedCarts' => $this->getCustomerGroupDeniedCarts($carts, $user),
-                    ];
-
-                    $html = (string) view()->make("design_1.web.cart.overview.includes.summary", $data);
-
-                    return response()->json([
-                        'code' => 200,
-                        'html' => $html,
-                    ]);
-                }
-            }
+    if (!empty($discountCoupon)) {
+        $checkDiscount = $discountCoupon->checkValidDiscount();
+        if ($checkDiscount != 'ok') {
+            return response()->json([
+                'error' => [
+                    'title' => trans('public.request_failed'),
+                    'msg' => $checkDiscount
+                ],
+            ], 422);
         }
 
+        $carts = Cart::where('creator_id', $user->id)
+            ->with([
+                'webinar',
+                'bundle',
+                'booking',
+                'bookingOrder.booking',
+                'bookingOrder.resource',
+                'productOrder.product',
+            ])
+            ->get();
 
-        return response()->json([
-            'error' => [
-                'title' => trans('public.request_failed'),
-                'msg' => trans('cart.coupon_invalid')
-            ],
-        ], 422);
+        if (!empty($carts) and !$carts->isEmpty()) {
+            $calculate = $this->calculatePrice($carts, $user, $discountCoupon);
+
+            if (!empty($calculate)) {
+                $calculate['discountCoupon'] = $discountCoupon;
+
+                // ✅ FIX: checkout modules ka extra price (adults/children/extra_services etc.)
+                // yahan add nahi ho raha tha, isliye coupon apply/remove hone par summary card
+                // sirf base subtotal/tax dikhata tha — DB mein save hui total_amount (jisme
+                // extras add thay) se mismatch ho jata tha. Ab yahan bhi wahi extra_price
+                // recalculate + add kar rahe hain jaisa checkout() method mein hota hai,
+                // taake order_meta se saved checkout_modules submission consistent rahe.
+                $checkoutModuleService = app(\App\Services\CheckoutModuleService::class);
+                $checkoutModules = $request->input('checkout_modules', []);
+                $extraPrice = 0;
+
+                foreach ($carts as $cart) {
+                    $entityType = null;
+                    $entityId = null;
+                    $orgId = null;
+                    $bookingType = null;
+
+                    if (!empty($cart->webinar_id)) {
+                        $entityType = 'course';
+                        $entityId = $cart->webinar_id;
+                        $orgId = optional($cart->webinar)->teacher_id;
+                    } elseif (!empty($cart->product_order_id) && !empty($cart->productOrder->product_id)) {
+                        $entityType = 'product';
+                        $entityId = $cart->productOrder->product_id;
+                        $orgId = optional(optional($cart->productOrder)->product)->creator_id;
+                    } elseif (!empty($cart->reserve_meeting_id)) {
+                        $entityType = 'booking';
+                        $entityId = $cart->reserve_meeting_id;
+                        $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
+                        $bookingType = $checkoutModuleService->resolveBookingType(optional($cart->reserveMeeting)->meeting);
+                    } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
+                        $entityType = 'booking';
+                        $entityId = optional($cart->booking)->id;
+                        $orgId = optional($cart->booking)->creator_id;
+                        $bookingType = $checkoutModuleService->resolveBookingType($cart->booking);
+                    }
+
+                    if (empty($entityType) || empty($entityId) || empty($orgId)) {
+                        continue;
+                    }
+
+                    try {
+                        $modules = $checkoutModuleService->getModulesForEntity($entityType, $entityId, $orgId, $bookingType);
+                    } catch (\Throwable $e) {
+                        $modules = collect();
+                    }
+
+                    if ($modules->isEmpty()) {
+                        continue;
+                    }
+
+                    $itemData = $checkoutModules[$cart->id] ?? [];
+                    $extraPrice += $checkoutModuleService->calculateExtraPrice($modules, $itemData);
+                }
+
+                $calculate['extra_price'] = round($extraPrice, 2);
+                $calculate['total'] = round($calculate['total'] + $calculate['extra_price'], 2);
+
+                $data = [
+                    'calculatePrices' => $calculate,
+                    'customerGroupDeniedCarts' => $this->getCustomerGroupDeniedCarts($carts, $user),
+                ];
+
+                $html = (string) view()->make("design_1.web.cart.overview.includes.summary", $data);
+
+                return response()->json([
+                    'code' => 200,
+                    'html' => $html,
+                ]);
+            }
+        }
     }
+
+
+    return response()->json([
+        'error' => [
+            'title' => trans('public.request_failed'),
+            'msg' => trans('cart.coupon_invalid')
+        ],
+    ], 422);
+}
 
     private function productDeliveryFeeBySeller($carts)
     {

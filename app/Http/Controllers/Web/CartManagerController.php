@@ -698,8 +698,7 @@ class CartManagerController extends Controller
         return response()->json([], 422);
     }
 
-
-    public function destroy($id)
+public function destroy($id)
     {
         if (auth()->check()) {
             $user_id = auth()->id();
@@ -755,8 +754,94 @@ class CartManagerController extends Controller
             }
         }
 
+        // ✅ FIX: pehle sirf code:200 return hota tha, koi updated total nahi —
+        // isliye frontend ko naya total dikhane ke liye page reload karna padta tha.
+        // Ab yahan remaining carts ke basis par updated summary (extras ke saath)
+        // aur naya HTML wapas bhej rahe hain, taake JS isko DOM mein swap kar sake.
+        $isEmpty = true;
+        $html = '';
+
+        if (auth()->check()) {
+            $user = auth()->user();
+
+            $remainingCarts = Cart::where('creator_id', $user->id)
+                ->with([
+                    'webinar', 'bundle', 'eventTicket.event.creator', 'meetingPackage.creator',
+                    'booking.creator', 'bookingOrder.booking.creator', 'bookingOrder.resource',
+                    'subscribe', 'promotion', 'gift',
+                    'installmentPayment.installmentOrder.webinar.teacher',
+                    'installmentPayment.installmentOrder.bundle.teacher',
+                    'installmentPayment.installmentOrder.product.creator',
+                    'installmentPayment.installmentOrder.subscribe',
+                    'installmentPayment.installmentOrder.registrationPackage',
+                    'reserveMeeting' => fn ($q) => $q->with(['meeting', 'meeting.creator', 'meetingTime']),
+                    'ticket',
+                    'productOrder' => fn ($q) => $q->whereHas('product')->with(['product.creator']),
+                ])
+                ->get();
+
+            $isEmpty = $remainingCarts->isEmpty();
+
+            if (!$isEmpty) {
+                $cartController = new \App\Http\Controllers\Web\CartController();
+                $calculate = $cartController->calculatePrice($remainingCarts, $user);
+
+                // Extras: currently-known checkout_modules submission agar frontend bhejti hai
+                $checkoutModuleService = app(\App\Services\CheckoutModuleService::class);
+                $checkoutModules = request()->input('checkout_modules', []);
+                $extraPrice = 0;
+
+                foreach ($remainingCarts as $cart) {
+                    $entityType = null; $entityId = null; $orgId = null; $bookingType = null;
+
+                    if (!empty($cart->webinar_id)) {
+                        $entityType = 'course'; $entityId = $cart->webinar_id;
+                        $orgId = optional($cart->webinar)->teacher_id;
+                    } elseif (!empty($cart->product_order_id) && !empty($cart->productOrder->product_id)) {
+                        $entityType = 'product'; $entityId = $cart->productOrder->product_id;
+                        $orgId = optional(optional($cart->productOrder)->product)->creator_id;
+                    } elseif (!empty($cart->reserve_meeting_id)) {
+                        $entityType = 'booking'; $entityId = $cart->reserve_meeting_id;
+                        $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
+                        $bookingType = $checkoutModuleService->resolveBookingType(optional($cart->reserveMeeting)->meeting);
+                    } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
+                        $entityType = 'booking'; $entityId = optional($cart->booking)->id;
+                        $orgId = optional($cart->booking)->creator_id;
+                        $bookingType = $checkoutModuleService->resolveBookingType($cart->booking);
+                    }
+
+                    if (empty($entityType) || empty($entityId) || empty($orgId)) {
+                        continue;
+                    }
+
+                    try {
+                        $modules = $checkoutModuleService->getModulesForEntity($entityType, $entityId, $orgId, $bookingType);
+                    } catch (\Throwable $e) {
+                        $modules = collect();
+                    }
+
+                    if ($modules->isEmpty()) {
+                        continue;
+                    }
+
+                    $itemData = $checkoutModules[$cart->id] ?? [];
+                    $extraPrice += $checkoutModuleService->calculateExtraPrice($modules, $itemData);
+                }
+
+                $calculate['extra_price'] = round($extraPrice, 2);
+                $calculate['total'] = round($calculate['total'] + $calculate['extra_price'], 2);
+
+                $html = (string) view()->make('design_1.web.cart.overview.includes.summary', [
+                    'calculatePrices' => $calculate,
+                    'customerGroupDeniedCarts' => collect(),
+                ]);
+            }
+        }
+
         return response()->json([
-            'code' => 200
+            'code' => 200,
+            'is_empty' => $isEmpty,
+            'html' => $html,
         ], 200);
     }
 
