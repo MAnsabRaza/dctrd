@@ -11,6 +11,19 @@
     $invalidChannels = [];
     $checkoutWeight = 0;
     $checkoutDistance = data_get($order, 'distance_km', data_get($order, 'delivery_distance'));
+    $checkoutSummaryTotalAmount = (float) ($order->total_amount ?? $calculatePrices['total'] ?? 0);
+    $checkoutSummaryExtraAmount = (float) ($calculatePrices['extra_price'] ?? 0);
+
+    if ($checkoutSummaryExtraAmount <= 0 && $checkoutSummaryTotalAmount > 0) {
+        $summaryBaseTotal = (float) ($calculatePrices['sub_total'] ?? 0)
+            - (float) ($calculatePrices['total_discount'] ?? 0)
+            + (float) ($calculatePrices['tax_price'] ?? 0)
+            + (float) ($calculatePrices['product_delivery_fee'] ?? 0);
+
+        $checkoutSummaryExtraAmount = max(0, round($checkoutSummaryTotalAmount - $summaryBaseTotal, 2));
+        $calculatePrices['extra_price'] = $checkoutSummaryExtraAmount;
+        $calculatePrices['total'] = $checkoutSummaryTotalAmount;
+    }
 
     foreach ($carts as $cart) {
         $product = data_get($cart, 'productOrder.product');
@@ -26,7 +39,7 @@
     <section class="container my-56 position-relative">
         <div class="d-flex-center flex-column text-center">
             <h1 class="font-32">{{ trans('update.checkout') }}</h1>
-            <p class="mt-8 font-16 text-gray-500">{{ handlePrice($calculatePrices["total"], true, true, false, null, true) . ' ' . trans('cart.for_items',['count' => $count]) }}</p>
+            <p class="mt-8 font-16 text-gray-500">{{ handlePrice($checkoutSummaryTotalAmount, true, true, false, null, true) . ' ' . trans('cart.for_items',['count' => $count]) }}</p>
         </div>
 
         <form action="/payments/payment-request" method="post" enctype="multipart/form-data">
@@ -250,12 +263,31 @@
         var selectPaymentGatewayLang = '{{ trans('update.select_a_payment_gateway') }}';
         var pleaseWaitLang = '{{ trans('update.please_wait') }}';
         var transferringToLang = '{{ trans('update.transferring_to_the_payment_gateway') }}';
+        var checkoutSummaryExtraAmount = {{ $checkoutSummaryExtraAmount }};
+        var checkoutSummaryTotalAmount = {{ $checkoutSummaryTotalAmount }};
+        var checkoutSummaryExtraText = @json(handlePrice($checkoutSummaryExtraAmount));
+        var checkoutSummaryTotalText = @json(handlePrice($checkoutSummaryTotalAmount));
     </script>
     <script src="/assets/default/vendors/moment.min.js"></script>
     <script src="/assets/default/vendors/daterangepicker/daterangepicker.min.js"></script>
     <script src="{{ getDesign1ScriptPath("cart_page") }}"></script>
     <script>
         (function() {
+            function forceCheckoutSummaryAmounts() {
+                var extras = document.querySelectorAll('.js-cart-extras');
+                var totals = document.querySelectorAll('.js-cart-total');
+
+                extras.forEach(function (el) {
+                    el.setAttribute('data-amount', checkoutSummaryExtraAmount);
+                    el.textContent = checkoutSummaryExtraText;
+                });
+
+                totals.forEach(function (el) {
+                    el.setAttribute('data-amount', checkoutSummaryTotalAmount);
+                    el.textContent = checkoutSummaryTotalText;
+                });
+            }
+
             function toggleOfflineFields() {
                 var offlineRadio = document.getElementById('gateway_offline');
                 var container = document.querySelector('.js-offline-payment-input');
@@ -271,7 +303,11 @@
                     toggleOfflineFields();
                 }
             });
-            document.addEventListener('DOMContentLoaded', toggleOfflineFields);
+            document.addEventListener('DOMContentLoaded', function () {
+                toggleOfflineFields();
+                forceCheckoutSummaryAmounts();
+                setTimeout(forceCheckoutSummaryAmounts, 300);
+            });
         })();
     </script>
 @endpush
