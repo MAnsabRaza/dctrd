@@ -37,6 +37,7 @@ class CartController extends Controller
                 'meetingPackage.creator',
                 'booking.creator',
                 'bookingOrder.booking.creator',
+                'bookingOrder.resource',
                 'subscribe',
                 'promotion',
                 'gift',
@@ -151,6 +152,7 @@ class CartController extends Controller
                     'bundle',
                     'booking',
                     'bookingOrder.booking',
+                    'bookingOrder.resource',
                     'productOrder.product',
                 ])
                 ->get();
@@ -364,8 +366,9 @@ class CartController extends Controller
                 ->with([
                     'webinar',
                     'bundle',
-                    'booking',
-                    'bookingOrder.booking',
+                        'booking',
+                        'bookingOrder.booking',
+                        'bookingOrder.resource',
                     'productOrder.product',
                 ])
                 ->get();

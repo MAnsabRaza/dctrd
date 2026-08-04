@@ -221,6 +221,8 @@ class Sale extends Model
             $title = $orderItem->eventTicket->title;
         } else if (!empty($orderItem->meeting_package_id)) {
             $title = $orderItem->meetingPackage->title;
+        } else if (!empty($orderItem->booking_order_id)) {
+            $title = optional(optional($orderItem->bookingOrder)->booking)->title;
         }
 
         if (!empty($orderItem->gift_id) and !empty($orderItem->gift)) {

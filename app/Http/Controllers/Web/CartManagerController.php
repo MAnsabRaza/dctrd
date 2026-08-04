@@ -304,7 +304,16 @@ class CartManagerController extends Controller
     if (!empty($data['slot_date']) and !empty($data['slot_start'])) {
 
         try {
-            $date = \Carbon\Carbon::parse($data['slot_date']);
+            $timezone = function_exists('getGeneralSettings') ? (getGeneralSettings('default_time_zone') ?: config('app.timezone')) : config('app.timezone');
+            $date = \Carbon\Carbon::parse($data['slot_date'], $timezone);
+
+            if ($date->lt(\Carbon\Carbon::now($timezone)->startOfDay())) {
+                return [
+                    'title' => trans('public.request_failed'),
+                    'msg'   => 'Please select a current or future booking date.',
+                    'status'=> 'error'
+                ];
+            }
         } catch (\Throwable $e) {
             return [
                 'title' => trans('public.request_failed'),

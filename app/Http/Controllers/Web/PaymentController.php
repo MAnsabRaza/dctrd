@@ -21,6 +21,8 @@ use App\PaymentChannels\ChannelManager;
 use App\Services\Calendar\CalendarSyncService;
 use App\Services\CustomerGroupAccessService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 
 class PaymentController extends Controller
@@ -70,15 +72,34 @@ class PaymentController extends Controller
                 return redirect('/payments/status');
             }
 
-            $order->update([
-                'payment_method' => Order::$credit
-            ]);
+            try {
+                DB::transaction(function () use ($order) {
+                    $order->update([
+                        'payment_method' => Order::$credit
+                    ]);
 
-            $this->setPaymentAccounting($order, 'credit');
+                    $this->setPaymentAccounting($order->fresh(['orderItems']), 'credit');
 
-            $order->update([
-                'status' => Order::$paid
-            ]);
+                    $order->update([
+                        'status' => Order::$paid
+                    ]);
+                });
+            } catch (\Throwable $exception) {
+                Log::error('Account charge payment failed', [
+                    'order_id' => $order->id,
+                    'user_id' => $user->id,
+                    'message' => $exception->getMessage(),
+                    'trace' => $exception->getTraceAsString(),
+                ]);
+
+                $order->update(['status' => Order::$fail]);
+
+                return redirect('/cart')->with(['toast' => [
+                    'title' => trans('cart.fail_purchase'),
+                    'msg' => trans('cart.gateway_error') ?: 'Payment failed. Please try again.',
+                    'status' => 'error',
+                ]]);
+            }
 
             session()->put($this->order_session_key, $order->id);
 

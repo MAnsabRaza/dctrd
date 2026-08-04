@@ -290,7 +290,7 @@ class LoginController extends Controller
         if ($user->isAdmin()) {
             return redirect(getAdminPanelUrl());
         } else {
-            return redirect('/panel');
+            return redirect()->intended('/panel');
         }
     }
 

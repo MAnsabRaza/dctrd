@@ -137,6 +137,18 @@
         }
     }
 
+    function clearSelectedSlot() {
+        selectedSlot = null;
+        $('.booking-slot-pill').removeClass('selected');
+        $('input[name="selected_slot"]').prop('checked', false);
+        updateSlotSummary();
+    }
+
+    function clearDisplayedSlots(message) {
+        clearSelectedSlot();
+        $('#slotsContainer').html(message ? '<div class="mt-12 text-gray-500">' + message + '</div>' : '');
+    }
+
     function clearBookingErrors() {
         $('.js-booking-field-error').text('').hide();
         $('#slotDateInput, #slotResourceId').removeClass('is-invalid');
@@ -185,7 +197,7 @@
     // Slot radio select hone par summary update
     $(document).on('change', 'input[name="selected_slot"]', function () {
         var $r = $(this);
-        selectedSlot = { date: $r.data('date'), start_time: $r.val(), end_time: $r.data('end') };
+        selectedSlot = { date: $r.data('date'), start_time: $r.val(), end_time: $r.data('end'), resource_id: $r.data('resource') || '' };
         $('.booking-slot-pill').removeClass('selected');
         $r.closest('.booking-slot-pill').addClass('selected');
         if (selectedSlot.date) { $('#slotDateInput').val(selectedSlot.date); }
@@ -194,11 +206,15 @@
 
     // Date change hone par purani selection reset
     $('#slotDateInput').on('change', function () {
-        if (selectedSlot && selectedSlot.date !== $(this).val()) {
-            selectedSlot = null;
-            $('.booking-slot-pill').removeClass('selected');
-            $('input[name="selected_slot"]').prop('checked', false);
-            updateSlotSummary();
+        clearDisplayedSlots('Please check slots for the selected date.');
+    });
+
+    $('#slotResourceId').on('change', function () {
+        clearBookingErrors();
+        clearDisplayedSlots('Please check slots for the selected resource.');
+
+        if ($('#slotDateInput').val() && $(this).val()) {
+            $('#checkSlotsBtn').trigger('click');
         }
     });
 
@@ -208,10 +224,14 @@
         var resourceId = $('#slotResourceId').val() || '';
         clearBookingErrors();
         if (!date) { showToast('error', 'Error', 'Please select a date'); return; }
+        if ($('#slotResourceId').length && !resourceId) {
+            showBookingFieldError('resource_id', 'Please select a resource.');
+            clearDisplayedSlots('Select a resource to see available slots.');
+            return;
+        }
 
         var $btn = $(this).addClass('loadingbar').prop('disabled', true);
-        selectedSlot = null;
-        updateSlotSummary();
+        clearSelectedSlot();
 
         $.ajax({
             url: '/bookings/' + bookingSlug + '/slots',
@@ -228,7 +248,8 @@
                           + '<input type="radio" name="selected_slot"'
                           + ' value="' + slot.start_time + '"'
                           + ' data-end="' + slot.end_time + '"'
-                          + ' data-date="' + date + '">'
+                          + ' data-date="' + date + '"'
+                          + ' data-resource="' + resourceId + '">'
                           + slot.start_time + ' - ' + slot.end_time
                           + '</label>';
                 });
@@ -259,6 +280,18 @@
         if (!selectedSlot || !selectedSlot.date || !selectedSlot.start_time) {
             showBookingFieldError('slot_start', 'Please select an available slot.');
             document.getElementById('bookingSlotPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+
+        if ($('#slotResourceId').length && !$('#slotResourceId').val()) {
+            showBookingFieldError('resource_id', 'Please select a resource.');
+            document.getElementById('bookingSlotPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+
+        if ($('#slotResourceId').length && selectedSlot.resource_id != ($('#slotResourceId').val() || '')) {
+            clearDisplayedSlots('Please check slots for the selected resource.');
+            showBookingFieldError('slot_start', 'Please select an available slot for this resource.');
             return;
         }
 
@@ -309,6 +342,11 @@
             }).fail(function (err) {
                 setBookButtonLoading($bookBtn, false);
                 var response = err.responseJSON || {};
+
+                if (err.status === 401 && response.redirect_to) {
+                    window.location.href = response.redirect_to;
+                    return;
+                }
 
                 if (response.errors) {
                     Object.keys(response.errors).forEach(function (field) {

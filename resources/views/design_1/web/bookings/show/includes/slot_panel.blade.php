@@ -7,9 +7,10 @@
             <div class="col-12 col-md-6">
                 <div class="form-group">
                     <label class="form-group-label">{{ trans('public.date') }}</label>
+                    @php $bookingTimezone = getGeneralSettings('default_time_zone') ?: config('app.timezone'); @endphp
                     <input type="date" id="slotDateInput" class="form-control"
-                           value="{{ request()->get('date', now()->toDateString()) }}"
-                           min="{{ now()->toDateString() }}">
+                           value="{{ request()->get('date', \Carbon\Carbon::now($bookingTimezone)->toDateString()) }}"
+                           min="{{ \Carbon\Carbon::now($bookingTimezone)->toDateString() }}">
                     <div class="invalid-feedback d-block js-booking-field-error" data-field="slot_date" style="display:none;"></div>
                 </div>
             </div>
@@ -19,9 +20,9 @@
                     <div class="form-group">
                         <label class="form-group-label">{{ trans('update.resource') }}</label>
                         <select id="slotResourceId" class="form-control">
-                            <option value="">{{ trans('update.any_resource') }}</option>
+                            <option value="">Select Resource</option>
                             @foreach($booking->resources as $resource)
-                                <option value="{{ $resource->id }}">{{ $resource->name }}</option>
+                                <option value="{{ $resource->id }}" {{ (string) request()->get('resource_id') === (string) $resource->id ? 'selected' : '' }}>{{ $resource->name }}</option>
                             @endforeach
                         </select>
                         <div class="invalid-feedback d-block js-booking-field-error" data-field="resource_id" style="display:none;"></div>
@@ -45,7 +46,8 @@
                             <input type="radio" name="selected_slot"
                                    value="{{ $slot['start_time'] }}"
                                    data-end="{{ $slot['end_time'] }}"
-                                   data-date="{{ request()->get('date') }}">
+                                   data-date="{{ request()->get('date') }}"
+                                   data-resource="{{ request()->get('resource_id') }}">
                             {{ $slot['start_time'] }} - {{ $slot['end_time'] }}
                         </label>
                     @endforeach

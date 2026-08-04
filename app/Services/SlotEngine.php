@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
 class SlotEngine
 {
+    private function getBusinessTimezone(): string
+    {
+        return function_exists('getGeneralSettings')
+            ? (getGeneralSettings('default_time_zone') ?: config('app.timezone', 'UTC'))
+            : config('app.timezone', 'UTC');
+    }
+
     /**
      * Get available time slots for a booking on a specific date.
      *
@@ -25,11 +32,17 @@ class SlotEngine
     ?int $resourceId = null
 ): Collection {
     $ordersFingerprint = $this->ordersFingerprint($booking, $date, $resourceId);
+    $timezone = $this->getBusinessTimezone();
+    $now = Carbon::now($timezone);
+    $sameDayClockFingerprint = $date->toDateString() === $now->toDateString()
+        ? $now->format('YmdHi')
+        : '';
 
     $cacheKey = 'booking_slots:' . md5(
         $booking->id . '|' . $date->toDateString() . '|' . $resourceId
         . '|' . optional($booking->updated_at)->timestamp
         . '|' . $ordersFingerprint
+        . '|' . $sameDayClockFingerprint
     );
 
     return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($booking, $date, $resourceId) {
@@ -40,16 +53,23 @@ class SlotEngine
             $slots = $this->getTimeSlotsForDate($booking, $date, $resourceId);
 
             $bookedSlots = $this->getBookedSlots($booking, $date, $resourceId);
+            $timezone = $this->getBusinessTimezone();
+            $now = Carbon::now($timezone);
 
-            return $slots->filter(function ($slot) use ($bookedSlots, $date, $booking) {
-                $slotStart = Carbon::parse($date->toDateString() . ' ' . $slot['start_time']);
+            return $slots->filter(function ($slot) use ($bookedSlots, $date, $booking, $timezone, $now) {
+                $slotStart = Carbon::parse($date->toDateString() . ' ' . $slot['start_time'], $timezone);
+
+                if ($slotStart->lessThanOrEqualTo($now)) {
+                    return false;
+                }
+
                 $leadHours = (int) $booking->lead_time_hours;
-                if ($slotStart->diffInHours(now(), false) > -$leadHours) {
+                if ($leadHours > 0 && $slotStart->diffInHours($now, false) > -$leadHours) {
                     return false;
                 }
 
                 $cutoffHours = (int) $booking->cutoff_time_hours;
-                if ($cutoffHours > 0 && now()->greaterThan($slotStart->copy()->subHours($cutoffHours))) {
+                if ($cutoffHours > 0 && $now->greaterThan($slotStart->copy()->subHours($cutoffHours))) {
                     return false;
                 }
 

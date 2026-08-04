@@ -16,6 +16,24 @@
             $country     = $booking->country ?? ($itemInfo['country'] ?? '');
             $locationStr = collect(array_filter([$city, $country]))->implode(', ');
             $thumbUrl    = $itemInfo['imgPath'] ?? $booking->thumbnail_url ?? '';
+            $bookingOrder = $cart->bookingOrder ?? null;
+            $resourceName = optional(optional($bookingOrder)->resource)->name;
+            $bookingDate = optional($bookingOrder)->booking_date;
+            $slotStart = optional($bookingOrder)->start_time;
+            $slotEnd = optional($bookingOrder)->end_time;
+            $durationLabel = null;
+            if (!empty($slotStart) && !empty($slotEnd)) {
+                try {
+                    $minutes = \Carbon\Carbon::createFromFormat('H:i', substr($slotStart, 0, 5))
+                        ->diffInMinutes(\Carbon\Carbon::createFromFormat('H:i', substr($slotEnd, 0, 5)));
+                    $durationLabel = $minutes >= 60 && $minutes % 60 === 0
+                        ? ($minutes / 60) . ' ' . \Illuminate\Support\Str::plural('Hour', $minutes / 60)
+                        : $minutes . ' Minutes';
+                } catch (\Throwable $e) {
+                    $durationLabel = null;
+                }
+            }
+            $quantity = optional($bookingOrder)->quantity ?: ($cart->quantity ?? 1);
 
             // Price
             $rawPrice      = (float) ($booking->price ?? 0);
@@ -68,6 +86,26 @@
                                 <x-iconsax-lin-calendar-2 class="icons" width="11px" height="11px"/> Booking
                             </span>
                         </div>
+
+                        @if(!empty($bookingOrder))
+                            <div class="d-flex align-items-center flex-wrap gap-8 mt-10 font-12 text-gray-500">
+                                @if($resourceName)
+                                    <span><strong>Resource:</strong> {{ $resourceName }}</span>
+                                @endif
+                                @if($bookingDate)
+                                    <span><strong>Date:</strong> {{ \Carbon\Carbon::parse($bookingDate)->format('M d, Y') }}</span>
+                                @endif
+                                @if($slotStart)
+                                    <span><strong>Time:</strong> {{ $slotStart }}{{ $slotEnd ? ' - ' . $slotEnd : '' }}</span>
+                                @endif
+                                @if($durationLabel)
+                                    <span><strong>Duration:</strong> {{ $durationLabel }}</span>
+                                @endif
+                                @if($quantity)
+                                    <span><strong>Qty:</strong> {{ $quantity }}</span>
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Price + Remove --}}

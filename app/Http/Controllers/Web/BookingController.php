@@ -145,11 +145,15 @@ class BookingController extends Controller
         $availableSlots = null;
         if ($request->filled('date')) {
             $resourceId = $request->filled('resource_id') ? (int) $request->get('resource_id') : null;
-            $availableSlots = app(SlotEngine::class)->getAvailableSlots(
-                $booking,
-                Carbon::parse($request->get('date')),
-                $resourceId
-            );
+            $resourceRequired = $booking->resources->isNotEmpty();
+
+            if (!$resourceRequired || !empty($resourceId)) {
+                $availableSlots = app(SlotEngine::class)->getAvailableSlots(
+                    $booking,
+                    Carbon::parse($request->get('date'), function_exists('getGeneralSettings') ? (getGeneralSettings('default_time_zone') ?: config('app.timezone')) : config('app.timezone')),
+                    $resourceId
+                );
+            }
         }
 
         /* ── Favourite state ── */
@@ -195,19 +199,27 @@ class BookingController extends Controller
     public function checkAvailability(Request $request, $slug, SlotEngine $slotEngine)
 {
     $booking = $this->getPublishedBooking($slug);
+    $resourceRequired = $booking->resources()->where('status', true)->exists();
 
     $request->validate([
         'date'        => 'required|date',
         'start_time'  => 'required',
-        'resource_id' => 'nullable|integer|exists:booking_resources,id',
+        'resource_id' => [
+            $resourceRequired ? 'required' : 'nullable',
+            'integer',
+            Rule::exists('booking_resources', 'id')->where(function ($query) use ($booking) {
+                $query->where('booking_id', $booking->id)->where('status', true);
+            }),
+        ],
     ]);
 
-    $date = Carbon::parse($request->get('date'));
+    $timezone = function_exists('getGeneralSettings') ? (getGeneralSettings('default_time_zone') ?: config('app.timezone')) : config('app.timezone');
+    $date = Carbon::parse($request->get('date'), $timezone);
     $startTime = $request->get('start_time');
     $resourceId = $request->filled('resource_id') ? (int) $request->get('resource_id') : null;
 
     $durationMinutes = (int) ($booking->duration_minutes ?? 60);
-    $endTime = Carbon::parse($request->get('date') . ' ' . $startTime)
+    $endTime = Carbon::parse($request->get('date') . ' ' . $startTime, $timezone)
         ->addMinutes($durationMinutes)
         ->format('H:i');
 
@@ -251,10 +263,17 @@ class BookingController extends Controller
     public function getSlots(Request $request, $slug, SlotEngine $slotEngine)
     {
         $booking = $this->getPublishedBooking($slug);
+        $resourceRequired = $booking->resources()->where('status', true)->exists();
 
         $request->validate([
             'date'        => 'required|date',
-            'resource_id' => 'nullable|integer|exists:booking_resources,id',
+            'resource_id' => [
+                $resourceRequired ? 'required' : 'nullable',
+                'integer',
+                Rule::exists('booking_resources', 'id')->where(function ($query) use ($booking) {
+                    $query->where('booking_id', $booking->id)->where('status', true);
+                }),
+            ],
         ]);
 
         return response()->json([
@@ -354,9 +373,12 @@ class BookingController extends Controller
         $user = auth()->user();
 
         if (empty($user)) {
+            $request->session()->put('url.intended', $request->headers->get('referer', url()->previous()));
+
             return response()->json([
-                'message' => trans('public.request_failed') ?: 'Request failed.',
-            ], 422);
+                'message' => 'Please login before adding this booking to cart.',
+                'redirect_to' => '/login',
+            ], 401);
         }
 
         $itemValidator = Validator::make($request->all(), [
@@ -402,7 +424,7 @@ if (!$customerGroupService->canPurchase($booking, $user)) {
 
 $resourceRequired = $booking->resources()->where('status', true)->exists();
         $validator = Validator::make($request->all(), [
-            'slot_date' => ['required', 'date', 'after_or_equal:today'],
+            'slot_date' => ['required', 'date'],
             'slot_start' => ['required', 'date_format:H:i'],
             'slot_end' => ['required', 'date_format:H:i'],
             'quantity' => ['required', 'integer', 'min:1'],
@@ -431,7 +453,18 @@ $resourceRequired = $booking->resources()->where('status', true)->exists();
         }
 
         $activeDiscount = method_exists($booking, 'getActiveDiscount') ? $booking->getActiveDiscount() : null;
-        $slotDate = Carbon::parse($request->input('slot_date'))->toDateString();
+        $timezone = function_exists('getGeneralSettings') ? (getGeneralSettings('default_time_zone') ?: config('app.timezone')) : config('app.timezone');
+        $slotDateCarbon = Carbon::parse($request->input('slot_date'), $timezone);
+        if ($slotDateCarbon->lt(Carbon::now($timezone)->startOfDay())) {
+            return response()->json([
+                'message' => 'Please select a current or future booking date.',
+                'errors' => [
+                    'slot_date' => ['Please select a current or future booking date.'],
+                ],
+            ], 422);
+        }
+
+        $slotDate = $slotDateCarbon->toDateString();
         $slotStart = $request->input('slot_start');
         $slotEnd = $request->input('slot_end');
         $resourceId = $request->filled('resource_id') ? (int) $request->input('resource_id') : null;

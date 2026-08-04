@@ -215,6 +215,8 @@ class Accounting extends Model
             $notifyOptions['[c.title]'] = $orderItem->eventTicket->title . ' ' . trans('update.event_ticket');
         } else if (!empty($orderItem->meeting_package_id)) {
             $notifyOptions['[c.title]'] = $orderItem->meetingPackage->title . ' ' . trans('update.meeting_package');
+        } else if (!empty($orderItem->booking_order_id)) {
+            $notifyOptions['[c.title]'] = optional(optional($orderItem->bookingOrder)->booking)->title;
         }
 
         if (!empty($orderItem->gift_id) and !empty($orderItem->gift)) {

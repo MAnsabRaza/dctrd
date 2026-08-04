@@ -58,6 +58,11 @@ class BookingOrder extends Model
         return $this->belongsTo('App\Models\Booking', 'booking_id', 'id');
     }
 
+    public function resource()
+    {
+        return $this->belongsTo(BookingResource::class, 'resource_id', 'id');
+    }
+
     public function bundle()
     {
         return $this->belongsTo('App\Models\BookingBundle', 'bundle_id', 'id');
