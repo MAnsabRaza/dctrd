@@ -260,30 +260,37 @@ class BookingController extends Controller
        GET SLOTS  (AJAX)
     ══════════════════════════════════════════════ */
 
-    public function getSlots(Request $request, $slug, SlotEngine $slotEngine)
-    {
-        $booking = $this->getPublishedBooking($slug);
-        $resourceRequired = $booking->resources()->where('status', true)->exists();
+   public function getSlots(Request $request, $slug, SlotEngine $slotEngine)
+{
+    $booking = $this->getPublishedBooking($slug);
+    $resourceRequired = $booking->resources()->where('status', true)->exists();
 
-        $request->validate([
-            'date'        => 'required|date',
-            'resource_id' => [
-                $resourceRequired ? 'required' : 'nullable',
-                'integer',
-                Rule::exists('booking_resources', 'id')->where(function ($query) use ($booking) {
-                    $query->where('booking_id', $booking->id)->where('status', true);
-                }),
-            ],
-        ]);
+    $request->validate([
+        'date'        => 'required|date',
+        'resource_id' => [
+            $resourceRequired ? 'required' : 'nullable',
+            'integer',
+            Rule::exists('booking_resources', 'id')->where(function ($query) use ($booking) {
+                $query->where('booking_id', $booking->id)->where('status', true);
+            }),
+        ],
+    ]);
 
-        return response()->json([
-            'slots' => $slotEngine->getAvailableSlots(
-                $booking,
-                Carbon::parse($request->get('date')),
-                $request->filled('resource_id') ? (int) $request->get('resource_id') : null
-            ),
-        ]);
-    }
+    // ✅ FIX: timezone missing thi yahan, baqi controller methods (show, checkAvailability,
+    // directPayment) ki tarah business timezone explicitly pass karo, warna Carbon::parse()
+    // server ki default (app.timezone) mein date resolve karta hai jo business tz se mismatch ho sakti hai.
+    $timezone = function_exists('getGeneralSettings')
+        ? (getGeneralSettings('default_time_zone') ?: config('app.timezone'))
+        : config('app.timezone');
+
+    return response()->json([
+        'slots' => $slotEngine->getAvailableSlots(
+            $booking,
+            Carbon::parse($request->get('date'), $timezone),
+            $request->filled('resource_id') ? (int) $request->get('resource_id') : null
+        ),
+    ]);
+}
 
     /* ══════════════════════════════════════════════
        BUY WITH POINT

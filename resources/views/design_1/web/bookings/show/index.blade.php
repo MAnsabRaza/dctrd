@@ -124,6 +124,44 @@
     var bookingSlug  = '{{ $booking->slug }}';
     var bookingId    = {{ $booking->id }};
     var selectedSlot = null;
+    var bookingDateForSlots = '{{ request()->get('date', \Carbon\Carbon::now($bookingTimezone ?? config('app.timezone'))->toDateString()) }}';
+    var serverNowTs = {{ \Carbon\Carbon::now(function_exists('getGeneralSettings') ? (getGeneralSettings('default_time_zone') ?: config('app.timezone')) : config('app.timezone'))->timestamp * 1000 }};
+    var clientLoadTs = Date.now();
+
+    function disableExpiredSlots() {
+        var todayStr = new Date(serverNowTs + (Date.now() - clientLoadTs))
+            .toISOString().slice(0, 10);
+
+        // Sirf "today" ke liye chalao — future dates ka koi slot expire nahi hota
+        var selectedDate = $('#slotDateInput').val() || bookingDateForSlots;
+        if (selectedDate !== todayStr) return;
+
+        var nowMs = serverNowTs + (Date.now() - clientLoadTs);
+
+        $('input[name="selected_slot"]').each(function () {
+            var $radio = $(this);
+            var slotDate = $radio.data('date');
+            var startTime = $radio.val();
+            if (!slotDate || !startTime) return;
+
+            var slotStartMs = new Date(slotDate + 'T' + startTime + ':00').getTime();
+
+            if (slotStartMs <= nowMs) {
+                var $pill = $radio.closest('.booking-slot-pill');
+                $pill.addClass('disabled').css({ opacity: 0.4, pointerEvents: 'none' });
+                $radio.prop('disabled', true);
+
+                if ($radio.prop('checked')) {
+                    clearSelectedSlot();
+                    showBookingFieldError('slot_start', 'This slot has passed. Please select another slot.');
+                }
+            }
+        });
+    }
+
+    // Har 30 second check karo taake time guzarte hi slot disable ho jaye
+    setInterval(disableExpiredSlots, 30000);
+    disableExpiredSlots(); // page load pe bhi ek dafa chala do
 
     function updateSlotSummary() {
         if (selectedSlot && selectedSlot.date && selectedSlot.start_time) {
@@ -257,7 +295,8 @@
             } else {
                 html += '<div class="mt-12 text-gray-500">No slots available for this date.</div>';
             }
-            $('#slotsContainer').html(html);
+           $('#slotsContainer').html(html);
+           disableExpiredSlots(); 
         }).fail(function (xhr) {
             var err = xhr.responseJSON;
             showToast('error', 'Error', err && err.message ? err.message : 'Could not fetch slots');
