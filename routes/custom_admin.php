@@ -78,6 +78,10 @@ Route::group(['prefix' => 'role-requests'], function () {
     Route::get('/', [RoleRequestController::class, 'index'])->name('admin.role_requests.index');
     Route::post('/{id}/approve', [RoleRequestController::class, 'approve'])->name('admin.role_requests.approve');
     Route::post('/{id}/reject', [RoleRequestController::class, 'reject'])->name('admin.role_requests.reject');
+
+    // NAYE ROUTES — Request List tab ke liye
+    Route::get('/{id}/edit', [RoleRequestController::class, 'edit'])->name('admin.role_requests.edit');
+    Route::get('/{id}/delete', [RoleRequestController::class, 'delete'])->name('admin.role_requests.delete');
 });
 Route::group(['prefix' => 'role-catalog'], function () {
     Route::get('/', [RoleCatalogController::class, 'index'])->name('admin.role_catalog.index');
