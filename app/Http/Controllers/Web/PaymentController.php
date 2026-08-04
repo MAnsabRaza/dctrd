@@ -186,26 +186,35 @@ class PaymentController extends Controller
         $order->save();
 
 
-        try {
-            $channelManager = ChannelManager::makeChannel($paymentChannel);
-            $redirect_url = $channelManager->paymentRequest($order);
+       try {
+    $channelManager = ChannelManager::makeChannel($paymentChannel);
+    $redirect_url = $channelManager->paymentRequest($order);
 
-            if (in_array($paymentChannel->class_name, PaymentChannel::$gatewayIgnoreRedirect)) {
-                return $redirect_url;
-            }
+    if (in_array($paymentChannel->class_name, PaymentChannel::$gatewayIgnoreRedirect)) {
+        return $redirect_url;
+    }
 
-            return Redirect::away($redirect_url);
+    return Redirect::away($redirect_url);
 
-        } catch (\Exception $exception) {
-            //dd($exception->getMessage());
+} catch (\Throwable $exception) {
+    Log::error('Payment gateway request failed', [
+        'order_id'      => $order->id,
+        'user_id'       => $user->id,
+        'gateway'       => $gateway,
+        'channel_class' => $paymentChannel->class_name ?? null,
+        'message'       => $exception->getMessage(),
+        'file'          => $exception->getFile(),
+        'line'          => $exception->getLine(),
+        'trace'         => $exception->getTraceAsString(),
+    ]);
 
-            $toastData = [
-                'title' => trans('cart.fail_purchase'),
-                'msg' => trans('cart.gateway_error'),
-                'status' => 'error'
-            ];
-            return redirect('/cart')->with(['toast' => $toastData]);
-        }
+    $toastData = [
+        'title' => trans('cart.fail_purchase'),
+        'msg' => trans('cart.gateway_error'),
+        'status' => 'error'
+    ];
+    return redirect('/cart')->with(['toast' => $toastData]);
+}
     }
 
     private function checkOrderCustomerGroupAccess(Order $order, $user)
@@ -262,26 +271,34 @@ class PaymentController extends Controller
     }
 
     public function paymentVerify(Request $request, $gateway)
-    {
-        $paymentChannel = PaymentChannel::where('class_name', $gateway)
-            ->where('status', 'active')
-            ->first();
+{
+    $paymentChannel = PaymentChannel::where('class_name', $gateway)
+        ->where('status', 'active')
+        ->first();
 
-        try {
-            $channelManager = ChannelManager::makeChannel($paymentChannel);
-            $order = $channelManager->verify($request);
+    try {
+        $channelManager = ChannelManager::makeChannel($paymentChannel);
+        $order = $channelManager->verify($request);
 
-            return $this->paymentOrderAfterVerify($order);
+        return $this->paymentOrderAfterVerify($order);
 
-        } catch (\Exception $exception) {
-            $toastData = [
-                'title' => trans('cart.fail_purchase'),
-                'msg' => trans('cart.gateway_error'),
-                'status' => 'error'
-            ];
-            return redirect('cart')->with(['toast' => $toastData]);
-        }
+    } catch (\Throwable $exception) {
+        Log::error('Payment verify failed', [
+            'gateway' => $gateway,
+            'message' => $exception->getMessage(),
+            'file'    => $exception->getFile(),
+            'line'    => $exception->getLine(),
+            'trace'   => $exception->getTraceAsString(),
+        ]);
+
+        $toastData = [
+            'title' => trans('cart.fail_purchase'),
+            'msg' => trans('cart.gateway_error'),
+            'status' => 'error'
+        ];
+        return redirect('cart')->with(['toast' => $toastData]);
     }
+}
 
 
     private function paymentOrderAfterVerify($order)
