@@ -107,66 +107,89 @@ class PaymentController extends Controller
         }
 
         // Offline payment for cart checkout
-        if ($gateway === 'offline') {
-            // Validate offline settings enabled and create offline payment request for this order
-            if (empty(getOfflineBankSettings('offline_banks_status'))) {
-                $toastData = [
-                    'title' => trans('cart.fail_purchase'),
-                    'msg' => trans('public.channel_payment_disabled'),
-                    'status' => 'error'
-                ];
-                return redirect('/cart')->with(['toast' => $toastData]);
-            }
+       // Offline payment for cart checkout
+if ($gateway === 'offline') {
+    // Validate offline settings enabled and create offline payment request for this order
+    if (empty(getOfflineBankSettings('offline_banks_status'))) {
+        $toastData = [
+            'title' => trans('cart.fail_purchase'),
+            'msg' => trans('public.channel_payment_disabled'),
+            'status' => 'error'
+        ];
+        return redirect('/cart')->with(['toast' => $toastData]);
+    }
 
-            // Required inputs: account, referral_code, date, attachment (optional)
-            $this->validate($request, [
-                'account' => 'required',
-                'referral_code' => 'required',
-                'date' => 'required',
-                'attachment' => 'nullable|image|mimes:jpeg,png,jpg|max:10240'
-            ]);
+    // Required inputs: account, referral_code, date, attachment (optional)
+    $this->validate($request, [
+        'account' => 'required',
+        'referral_code' => 'required',
+        'date' => 'required',
+        'attachment' => 'nullable|image|mimes:jpeg,png,jpg|max:10240'
+    ]);
 
-            $attachment = null;
-            if (!empty($request->file('attachment'))) {
-                // Reuse AccountingController upload helper behavior
-                $path = 'financial/offlinePayments';
-                $attachment = (new \App\Http\Controllers\Panel\AccountingController())->uploadFile($request->file('attachment'), $path, null, $user->id);
-            }
-
-            $date = convertTimeToUTCzone($request->input('date'), getTimezone());
-
-            \App\Models\OfflinePayment::create([
-                'user_id' => $user->id,
-                'amount' => $order->total_amount,
-                'offline_bank_id' => $request->input('account'),
-                'reference_number' => $request->input('referral_code'),
-                'status' => \App\Models\OfflinePayment::$waiting,
-                'pay_date' => $date->getTimestamp(),
-                'attachment' => $attachment,
-                'created_at' => time(),
-                'type' => \App\Models\OfflinePayment::$typeCart,
-                'order_id' => $order->id,
-            ]);
-
-            $order->update([
-                'status' => \App\Models\Order::$paying,
-                'payment_method' => \App\Models\Order::$paymentChannel,
-            ]);
-
-            // Empty user cart after submitting offline payment
-            \App\Models\Cart::emptyCart($user->id);
-
-            $notifyOptions = [
-                '[amount]' => handlePrice($order->total_amount),
-                '[u.name]' => $user->full_name
-            ];
-            sendNotification('offline_payment_request', $notifyOptions, $user->id);
-            sendNotification('new_offline_payment_request', $notifyOptions, 1);
-
-            session()->put($this->order_session_key, $order->id);
-
-            return redirect('/payments/status');
+    try {
+        $attachment = null;
+        if (!empty($request->file('attachment'))) {
+            // Reuse AccountingController upload helper behavior
+            $path = 'financial/offlinePayments';
+            $attachment = (new \App\Http\Controllers\Panel\AccountingController())->uploadFile($request->file('attachment'), $path, null, $user->id);
         }
+
+        $date = convertTimeToUTCzone($request->input('date'), getTimezone());
+
+        \App\Models\OfflinePayment::create([
+            'user_id' => $user->id,
+            'amount' => $order->total_amount,
+            'offline_bank_id' => $request->input('account'),
+            'reference_number' => $request->input('referral_code'),
+            'status' => \App\Models\OfflinePayment::$waiting,
+            'pay_date' => $date->getTimestamp(),
+            'attachment' => $attachment,
+            'created_at' => time(),
+            'type' => \App\Models\OfflinePayment::$typeCart,
+            'order_id' => $order->id,
+        ]);
+
+        $order->update([
+            'status' => \App\Models\Order::$paying,
+            'payment_method' => \App\Models\Order::$paymentChannel,
+        ]);
+
+        // Empty user cart after submitting offline payment
+        \App\Models\Cart::emptyCart($user->id);
+
+        $notifyOptions = [
+            '[amount]' => handlePrice($order->total_amount),
+            '[u.name]' => $user->full_name
+        ];
+        sendNotification('offline_payment_request', $notifyOptions, $user->id);
+        sendNotification('new_offline_payment_request', $notifyOptions, 1);
+
+        session()->put($this->order_session_key, $order->id);
+
+        return redirect('/payments/status');
+
+    } catch (\Throwable $exception) {
+        Log::error('Offline payment request failed', [
+            'order_id'       => $order->id,
+            'user_id'        => $user->id,
+            'account'        => $request->input('account'),
+            'referral_code'  => $request->input('referral_code'),
+            'date_input'     => $request->input('date'),
+            'message'        => $exception->getMessage(),
+            'file'           => $exception->getFile(),
+            'line'           => $exception->getLine(),
+            'trace'          => $exception->getTraceAsString(),
+        ]);
+
+        $toastData = [
+            'title' => trans('cart.fail_purchase'),
+            'msg' => trans('cart.gateway_error'),
+            'status' => 'error'
+        ];
+        return redirect('/cart')->with(['toast' => $toastData]);
+    }
+}
 
         $paymentChannel = PaymentChannel::where('id', $gateway)
             ->where('status', 'active')
