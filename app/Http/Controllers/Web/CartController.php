@@ -193,10 +193,11 @@ class CartController extends Controller
                         $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
                         $bookingType = $checkoutModuleService->resolveBookingType(optional($cart->reserveMeeting)->meeting);
                     } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
+                        $booking = $this->getCartBooking($cart);
                         $entityType = 'booking';
-                        $entityId = optional($cart->booking)->id;
-                        $orgId = optional($cart->booking)->creator_id;
-                        $bookingType = $checkoutModuleService->resolveBookingType($cart->booking);
+                        $entityId = optional($booking)->id;
+                        $orgId = optional($booking)->creator_id;
+                        $bookingType = $checkoutModuleService->resolveBookingType($booking);
                     }
 
                     if (empty($entityType) || empty($entityId) || empty($orgId)) {
@@ -311,10 +312,11 @@ class CartController extends Controller
             $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
             $bookingType = $checkoutModuleService->resolveBookingType(optional($cart->reserveMeeting)->meeting);
         } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
+            $booking = $this->getCartBooking($cart);
             $entityType = 'booking';
-            $entityId = optional($cart->booking)->id;
-            $orgId = optional($cart->booking)->creator_id;
-            $bookingType = $checkoutModuleService->resolveBookingType($cart->booking);
+            $entityId = optional($booking)->id;
+            $orgId = optional($booking)->creator_id;
+            $bookingType = $checkoutModuleService->resolveBookingType($booking);
         } elseif (!empty($cart->meeting_package_id)) {
             $entityType = 'booking';
             $entityId = $cart->meeting_package_id;
@@ -497,10 +499,11 @@ class CartController extends Controller
         $orgId = optional(optional($cart->reserveMeeting)->meeting)->creator_id;
         $bookingType = $checkoutModuleService->resolveBookingType(optional($cart->reserveMeeting)->meeting);
     } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
+        $booking = $this->getCartBooking($cart);
         $entityType = 'booking';
-        $entityId = optional($cart->booking)->id;
-        $orgId = optional($cart->booking)->creator_id;
-        $bookingType = $checkoutModuleService->resolveBookingType($cart->booking);
+        $entityId = optional($booking)->id;
+        $orgId = optional($booking)->creator_id;
+        $bookingType = $checkoutModuleService->resolveBookingType($booking);
     }
 
     if (empty($entityType) || empty($entityId) || empty($orgId)) {
@@ -670,6 +673,23 @@ class CartController extends Controller
             if (!empty($cart->booking_id)) {
                 return Booking::find($cart->booking_id);
             }
+        }
+
+        return null;
+    }
+
+    private function getCartBooking($cart)
+    {
+        if (!empty($cart->booking)) {
+            return $cart->booking;
+        }
+
+        if (!empty($cart->bookingOrder) and !empty($cart->bookingOrder->booking)) {
+            return $cart->bookingOrder->booking;
+        }
+
+        if (!empty($cart->booking_id)) {
+            return Booking::find($cart->booking_id);
         }
 
         return null;
@@ -881,7 +901,8 @@ if (!empty($moduleBreakdown)) {
         } elseif (!empty($cart->reserve_meeting_id)) {
             $user = $cart->reserveMeeting->meeting->creator;
         } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
-            $user = $cart->booking->creator;
+            $booking = $this->getCartBooking($cart);
+            $user = optional($booking)->creator;
         } elseif (!empty($cart->product_order_id) and !empty($cart->productOrder)) {
             $user = $cart->productOrder->seller;
         } elseif (!empty($cart->event_ticket_id) and !empty($cart->eventTicket)) {
@@ -1071,7 +1092,7 @@ if (!empty($moduleBreakdown)) {
             $totalDiscount += $discount;
             $subTotal += $price;
         } elseif (!empty($cart->booking_order_id) or !empty($cart->booking_id)) {
-            $booking = $cart->booking;
+            $booking = $this->getCartBooking($cart);
 
             if (!empty($booking)) {
                 $price = (float) $booking->price;

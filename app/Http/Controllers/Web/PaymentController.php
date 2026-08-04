@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
@@ -109,6 +110,16 @@ class PaymentController extends Controller
         // Offline payment for cart checkout
        // Offline payment for cart checkout
 if ($gateway === 'offline') {
+    Log::info('Offline payment request received', [
+        'order_id' => $order->id,
+        'user_id' => $user->id,
+        'amount' => $order->total_amount,
+        'account' => $request->input('account'),
+        'referral_code' => $request->input('referral_code'),
+        'date_input' => $request->input('date'),
+        'has_attachment' => $request->hasFile('attachment'),
+    ]);
+
     // Validate offline settings enabled and create offline payment request for this order
     if (empty(getOfflineBankSettings('offline_banks_status'))) {
         $toastData = [
@@ -119,15 +130,45 @@ if ($gateway === 'offline') {
         return redirect('/cart')->with(['toast' => $toastData]);
     }
 
-    // Required inputs: account, referral_code, date, attachment (optional)
-    $this->validate($request, [
-        'account' => 'required',
-        'referral_code' => 'required',
-        'date' => 'required',
-        'attachment' => 'nullable|image|mimes:jpeg,png,jpg|max:10240'
-    ]);
-
     try {
+        $validator = Validator::make($request->all(), [
+            'account' => 'nullable|exists:offline_banks,id',
+            'referral_code' => 'nullable|string|max:255',
+            'date' => 'nullable|string|max:255',
+            'attachment' => 'nullable|image|mimes:jpeg,png,jpg|max:10240'
+        ]);
+
+        if ($validator->fails()) {
+            Log::warning('Offline payment request validation failed', [
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'errors' => $validator->errors()->toArray(),
+            ]);
+
+            return redirect('/payments/status?t=' . $order->id)->with(['toast' => [
+                'title' => trans('cart.fail_purchase'),
+                'msg' => $validator->errors()->first(),
+                'status' => 'error',
+            ]]);
+        }
+
+        $account = $request->input('account') ?: optional(\App\Models\OfflineBank::query()->orderBy('created_at', 'desc')->first())->id;
+        $referenceNumber = $request->input('referral_code') ?: ('ORDER-' . $order->id);
+        $dateInput = $request->input('date') ?: now()->format('Y/m/d H:i');
+
+        if (empty($account)) {
+            Log::warning('Offline payment request failed because no bank account is configured', [
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+            ]);
+
+            return redirect('/payments/status?t=' . $order->id)->with(['toast' => [
+                'title' => trans('cart.fail_purchase'),
+                'msg' => trans('financial.select_the_account'),
+                'status' => 'error',
+            ]]);
+        }
+
         $attachment = null;
         if (!empty($request->file('attachment'))) {
             // Reuse AccountingController upload helper behavior
@@ -135,13 +176,24 @@ if ($gateway === 'offline') {
             $attachment = (new \App\Http\Controllers\Panel\AccountingController())->uploadFile($request->file('attachment'), $path, null, $user->id);
         }
 
-        $date = convertTimeToUTCzone($request->input('date'), getTimezone());
+        try {
+            $date = convertTimeToUTCzone($dateInput, getTimezone());
+        } catch (\Throwable $exception) {
+            Log::warning('Offline payment date parse failed; using current time', [
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'date_input' => $dateInput,
+                'message' => $exception->getMessage(),
+            ]);
+
+            $date = now();
+        }
 
         \App\Models\OfflinePayment::create([
             'user_id' => $user->id,
             'amount' => $order->total_amount,
-            'offline_bank_id' => $request->input('account'),
-            'reference_number' => $request->input('referral_code'),
+            'offline_bank_id' => $account,
+            'reference_number' => $referenceNumber,
             'status' => \App\Models\OfflinePayment::$waiting,
             'pay_date' => $date->getTimestamp(),
             'attachment' => $attachment,
@@ -173,9 +225,9 @@ if ($gateway === 'offline') {
         Log::error('Offline payment request failed', [
             'order_id'       => $order->id,
             'user_id'        => $user->id,
-            'account'        => $request->input('account'),
-            'referral_code'  => $request->input('referral_code'),
-            'date_input'     => $request->input('date'),
+            'account'        => $account ?? $request->input('account'),
+            'referral_code'  => $referenceNumber ?? $request->input('referral_code'),
+            'date_input'     => $dateInput ?? $request->input('date'),
             'message'        => $exception->getMessage(),
             'file'           => $exception->getFile(),
             'line'           => $exception->getLine(),
