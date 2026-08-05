@@ -65,6 +65,12 @@ class PaymentController extends Controller
 
         if ($gateway === 'credit') {
 
+            if ($order->status === Order::$paid) {
+                session()->put($this->order_session_key, $order->id);
+
+                return redirect('/payments/status');
+            }
+
             if ($user->getAccountingCharge() < $order->total_amount) {
                 $order->update(['status' => Order::$fail]);
 
@@ -79,7 +85,19 @@ class PaymentController extends Controller
                         'payment_method' => Order::$credit
                     ]);
 
-                    $this->setPaymentAccounting($order->fresh(['orderItems']), 'credit');
+                    $order = $order->fresh([
+                        'orderItems',
+                        'orderItems.bookingOrder.booking',
+                        'orderItems.reserveMeeting.meeting',
+                        'orderItems.reserveMeeting.meetingTime',
+                        'orderItems.webinar',
+                        'orderItems.bundle',
+                        'orderItems.product',
+                        'orderItems.eventTicket.event',
+                        'orderItems.meetingPackage',
+                    ]);
+
+                    $this->setPaymentAccounting($order, 'credit');
 
                     $order->update([
                         'status' => Order::$paid
