@@ -137,18 +137,18 @@ class BookingTimeSlotController extends Controller
             'status' => $request->has('status') ? 1 : 0,
         ]);
 
-        $validated = $request->validate([
-            'booking_id'       => 'required|exists:bookings,id',
-            'resource_id'      => 'nullable|exists:booking_resources,id',
-            'day_of_week'      => 'required|array|min:1',
-            'day_of_week.*'    => 'required|in:1,2,3,4,5,6,7',
-            'start_time'       => 'required|date_format:H:i',
-            'end_time'         => 'required|date_format:H:i|after:start_time',
-            'duration_minutes' => 'required|integer|min:1',
-            'buffer_minutes'   => 'nullable|integer|min:0',
-            'max_bookings'     => 'required|integer|min:1',
-            'status'           => 'required|boolean',
-        ]);
+      $validated = $request->validate([
+    'booking_id'       => 'required|exists:bookings,id',
+    'resource_id'      => 'nullable|exists:booking_resources,id',
+    'day_of_week'      => 'required|array|min:1',
+    'day_of_week.*'    => 'required|in:0,1,2,3,4,5,6', // yahan fix
+    'start_time'       => 'required|date_format:H:i',
+    'end_time'         => 'required|date_format:H:i|after:start_time',
+    'duration_minutes' => 'required|integer|min:1',
+    'buffer_minutes'   => 'nullable|integer|min:0',
+    'max_bookings'     => 'required|integer|min:1',
+    'status'           => 'required|boolean',
+]);
 
         $validated['resource_id']      = !empty($validated['resource_id']) ? $validated['resource_id'] : null;
         $validated['buffer_minutes']   = isset($validated['buffer_minutes']) ? (int) $validated['buffer_minutes'] : 0;
