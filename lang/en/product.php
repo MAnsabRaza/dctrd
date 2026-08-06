@@ -41,4 +41,9 @@ return [
     'product_quality' => 'Product Quality',
     'delivery_quality' => 'Delivery Quality',
     'seller_quality' => 'Seller Quality',
+    'booking_quality' => 'Booking Quality',
+    'provider_quality'=>'Provider Quality',
+    'value_for_money'=>'Value for Money',
+    'location_quality'=>'Location Quality',
+
 ];
