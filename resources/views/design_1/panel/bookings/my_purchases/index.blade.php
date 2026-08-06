@@ -23,19 +23,20 @@
             {{-- List Table --}}
             <div id="tableListContainer" class="table-responsive-lg" data-view-data-path="/panel/bookings/purchases">
                 <table class="table panel-table">
-                    <thead>
-                    <tr>
-                        <th class="text-left">{{ trans('update.seller') }}</th>
-                        <th class="text-center">{{ trans('update.order_id') }}</th>
-                        <th class="text-center">{{ trans('public.price') }}</th>
-                        <th class="text-center">{{ trans('public.discount') }}</th>
-                        <th class="text-center">{{ trans('cart.tax') }}</th>
-                        <th class="text-center">{{ trans('financial.total_amount') }}</th>
-                        <th class="text-center">{{ trans('public.status') }}</th>
-                        <th class="text-center">{{ trans('public.date') }}</th>
-                        <th class="text-right">{{ trans('update.controls') }}</th>
-                    </tr>
-                    </thead>
+                   <thead>
+<tr>
+    <th class="text-left">{{ trans('update.seller') }}</th>
+    <th class="text-center">{{ trans('update.order_id') }}</th>
+    <th class="text-center">{{ trans('update.booking_resource_schedule') }}</th>
+    <th class="text-center">{{ trans('public.price') }}</th>
+    <th class="text-center">{{ trans('public.discount') }}</th>
+    <th class="text-center">{{ trans('cart.tax') }}</th>
+    <th class="text-center">{{ trans('financial.total_amount') }}</th>
+    <th class="text-center">{{ trans('public.status') }}</th>
+    <th class="text-center">{{ trans('public.date') }}</th>
+    <th class="text-right">{{ trans('update.controls') }}</th>
+</tr>
+</thead>
 
                     <tbody class="js-table-body-lists">
                     @foreach($orders as $orderRow)
@@ -49,6 +50,17 @@
                     {!! $pagination !!}
                 </div>
             </div>
+            <div class="modal fade" id="bookingDetailsModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="bookingDetailsModalTitle"></h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body" id="bookingDetailsModalBody"></div>
+    </div>
+  </div>
+</div>
         </div>
     @else
         @include('design_1.panel.includes.no-result',[
@@ -81,33 +93,63 @@
         (function () {
 
             // ---- View booking details modal ----
-            $(document).on('click', '.js-view-booking-details', function () {
-                var saleId = $(this).data('sale-id');
-                var orderId = $(this).data('order-id');
+     $(document).on('click', '.js-view-booking-details', function () {
+    var saleId = $(this).data('sale-id');
+    var orderId = $(this).data('order-id');
 
-                $.ajax({
-                    url: '/panel/bookings/purchases/' + saleId + '/getBookingOrder/' + orderId,
-                    method: 'GET',
-                    success: function (response) {
-                        if (response && response.order) {
-                            // TODO: render response.order (item title, specifications,
-                            // message_to_seller, tracking_code, address) into your modal markup.
-                            // Example skeleton if you have a modal with id="bookingDetailsModal":
-                            //
-                            // $('#bookingDetailsModalTitle').text(viewBookingDetailsModalTitleLang);
-                            // $('#bookingDetailsModalBody').html(buildBookingDetailsHtml(response.order));
-                            // $('#bookingDetailsModal').modal('show');
-                        }
-                    },
-                    error: function () {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error(setCompletedSaveErrorLang);
-                        }
+    $.ajax({
+        url: '/panel/bookings/purchases/' + saleId + '/getBookingOrder/' + orderId,
+        method: 'GET',
+        success: function (response) {
+            if (response && response.order) {
+                var o = response.order;
+                var itemTitle = (o.bundle ? o.bundle.title : (o.booking ? o.booking.title : ('#' + o.id)));
+                var resourceName = o.resource ? (o.resource.name || o.resource.title) : '-';
+                var scheduleText = o.booking_date ? o.booking_date : '-';
+                var timeText = (o.start_time && o.end_time) ? (o.start_time + ' - ' + o.end_time) : '-';
+                var durationText = o.duration_minutes ? (o.duration_minutes + ' min') : '-';
+                var paymentText = o.payment_method_label || '-';
+
+                var extrasHtml = '';
+                if (o.specifications) {
+                    var specs = o.specifications;
+                    if (Array.isArray(specs.extras) && specs.extras.length) {
+                        extrasHtml = specs.extras.map(function (ex) {
+                            var label = ex.title || ex.name || 'Extra';
+                            var price = ex.price !== undefined ? (' - ' + ex.price) : '';
+                            return '<li>' + label + price + '</li>';
+                        }).join('');
+                    } else {
+                        extrasHtml = Object.keys(specs).map(function (k) {
+                            return '<li>' + k + ': ' + specs[k] + '</li>';
+                        }).join('');
                     }
-                });
-            });
+                }
 
-            // ---- Mark booking as completed (buyer confirms) ----
+                var bodyHtml = ''
+                    + '<p><strong>Item:</strong> ' + itemTitle + '</p>'
+                    + '<p><strong>Resource:</strong> ' + resourceName + '</p>'
+                    + '<p><strong>Date:</strong> ' + scheduleText + '</p>'
+                    + '<p><strong>Time:</strong> ' + timeText + '</p>'
+                    + '<p><strong>Duration:</strong> ' + durationText + '</p>'
+                    + '<p><strong>Payment Method:</strong> ' + paymentText + '</p>'
+                    + (o.message_to_seller ? ('<p><strong>Message:</strong> ' + o.message_to_seller + '</p>') : '')
+                    + (o.tracking_code ? ('<p><strong>Tracking:</strong> ' + o.tracking_code + '</p>') : '')
+                    + (extrasHtml ? ('<p><strong>Extras:</strong></p><ul>' + extrasHtml + '</ul>') : '')
+                    + (o.address ? ('<p><strong>' + addressLang + ':</strong> ' + o.address + '</p>') : '');
+
+                $('#bookingDetailsModalTitle').text(viewBookingDetailsModalTitleLang);
+                $('#bookingDetailsModalBody').html(bodyHtml);
+                $('#bookingDetailsModal').modal('show');
+            }
+        },
+        error: function () {
+            if (typeof toastr !== 'undefined') {
+                toastr.error(setCompletedSaveErrorLang);
+            }
+        }
+    });
+});  // ---- Mark booking as completed (buyer confirms) ----
             $(document).on('click', '.js-set-completed', function () {
                 var saleId = $(this).data('sale-id');
                 var orderId = $(this).data('order-id');

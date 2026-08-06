@@ -4932,6 +4932,14 @@ return [
     'clear_location'=>'Clear Location',
     'from_city'=>'From City',
     'FIND_NEARBY'=>'Find Nearby',
-    'my_roles'=>'My Roles'
+    'my_roles'=>'My Roles',
+    'booking_order_status_pending' => 'Pending',
+'booking_order_status_waiting_delivery' => 'Waiting Delivery',
+'booking_order_status_shipped' => 'Shipped',
+'booking_order_status_success' => 'Completed',
+'booking_order_status_canceled' => 'Canceled',
+
+'booking_resource_schedule' => 'Resource & Schedule',
+'unit' => 'unit',
 
 ];

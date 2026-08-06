@@ -164,27 +164,41 @@ class MyBookingPurchaseController extends Controller
     }
 
     /** Modal data — booking date/time, address, specifications etc. */
-    public function getBookingOrder($saleId, $orderId)
-    {
-        $user = auth()->user();
+ public function getBookingOrder($saleId, $orderId)
+{
+    $user = auth()->user();
 
-        $order = BookingOrder::where('buyer_id', $user->id)
-            ->where('id', $orderId)
-            ->where('sale_id', $saleId)
-            ->first();
+    $order = BookingOrder::where('buyer_id', $user->id)
+        ->where('id', $orderId)
+        ->where('sale_id', $saleId)
+        ->first();
 
-        if (!empty($order)) {
-            $order->load(['booking', 'bundle', 'seller']);
-            $order->address = method_exists($user, 'getAddress') ? $user->getAddress(true) : null;
+    if (!empty($order)) {
+        $order->load(['booking', 'bundle', 'seller', 'resource', 'sale']);
+        $order->address = method_exists($user, 'getAddress') ? $user->getAddress(true) : null;
 
-            return response()->json([
-                'order' => $order,
-            ]);
+        // Duration calculation (start_time / end_time expected as H:i or datetime strings)
+        $order->duration_minutes = null;
+        if (!empty($order->start_time) && !empty($order->end_time)) {
+            try {
+                $start = \Carbon\Carbon::parse($order->start_time);
+                $end = \Carbon\Carbon::parse($order->end_time);
+                $order->duration_minutes = $end->diffInMinutes($start);
+            } catch (\Exception $e) {
+                $order->duration_minutes = null;
+            }
         }
 
-        abort(403);
+        // Payment method — confirm actual column name on your Sale model
+        $order->payment_method_label = optional($order->sale)->payment_method ?? '-';
+
+        return response()->json([
+            'order' => $order,
+        ]);
     }
 
+    abort(403);
+}
     /** Buyer confirms the booking/service was completed — mirrors setGotTheParcel() */
     public function setCompleted($saleId, $orderId)
     {

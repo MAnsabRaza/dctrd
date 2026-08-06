@@ -11,17 +11,36 @@
         </div>
     </td>
 
-    <td class="text-center">
-        <span class="d-block font-weight-500">{{ $order->id }}</span>
-        <span class="d-block font-12 text-gray-500">
-            {{ !empty($order->item) ? $order->item->title : '#'.$order->id }}
-            ({{ $order->quantity }} {{ trans('update.unit') }})
-        </span>
-    </td>
+   <td class="text-center">
+    <span class="d-block font-weight-500">{{ $order->id }}</span>
+    <span class="d-block font-12 text-gray-500">
+        {{ !empty($order->item) ? $order->item->title : '#'.$order->id }}
+        ({{ $order->quantity }} {{ trans('update.unit') }})
+    </span>
+</td>
 
-    <td class="text-center">
-        <span>{{ handlePrice($order->sale->amount) }}</span>
-    </td>
+{{-- ADDED: Resource & Schedule column --}}
+<td class="text-center">
+    @if(!empty($order->resource))
+        <span class="d-block font-weight-500">{{ $order->resource->name ?? $order->resource->title ?? '-' }}</span>
+    @else
+        <span class="d-block">-</span>
+    @endif
+
+    @if(!empty($order->booking_date))
+        <span class="d-block font-12 text-gray-500">
+            {{ dateTimeFormat($order->booking_date, 'j M Y') }}
+            @if(!empty($order->start_time) && !empty($order->end_time))
+                ({{ \Carbon\Carbon::parse($order->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($order->end_time)->format('H:i') }})
+            @endif
+        </span>
+    @endif
+</td>
+
+<td class="text-center">
+    <span>{{ handlePrice($order->sale->amount) }}</span>
+</td>
+
 
     <td class="text-center">
         @if(!empty($order->sale->discount) and (int)$order->sale->discount > 0)
