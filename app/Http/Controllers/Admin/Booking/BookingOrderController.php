@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Booking;
 
 use App\Exports\BookingOrdersExport;
 use App\Http\Controllers\Controller;
+use App\Models\Accounting;
 use App\Models\Booking;
 use App\Models\BookingOrder;
 use App\Models\Role;
@@ -52,9 +53,12 @@ class BookingOrderController extends Controller
             }),
         ];
 
+        $successStatuses = [BookingOrder::$success, 'completed'];
+        $canceledStatuses = [BookingOrder::$canceled, 'cancelled'];
+
         $successOrders = [
-            'count' => deepClone($query)->where('status', 'completed')->count(),
-            'amount' => deepClone($query)->where('status', 'completed')->whereHas('sale')->with('sale')->get()->sum(function ($order) {
+            'count' => deepClone($query)->whereIn('status', $successStatuses)->count(),
+            'amount' => deepClone($query)->whereIn('status', $successStatuses)->whereHas('sale')->with('sale')->get()->sum(function ($order) {
                 return optional($order->sale)->total_amount ?? 0;
             }),
         ];
@@ -67,8 +71,8 @@ class BookingOrderController extends Controller
         ];
 
         $canceledOrders = [
-            'count' => deepClone($query)->where('status', 'cancelled')->count(),
-            'amount' => deepClone($query)->where('status', 'cancelled')->whereHas('sale')->with('sale')->get()->sum(function ($order) {
+            'count' => deepClone($query)->whereIn('status', $canceledStatuses)->count(),
+            'amount' => deepClone($query)->whereIn('status', $canceledStatuses)->whereHas('sale')->with('sale')->get()->sum(function ($order) {
                 return optional($order->sale)->total_amount ?? 0;
             }),
         ];
@@ -115,6 +119,7 @@ class BookingOrderController extends Controller
     private function getOrderFilters($query, $request)
     {
         $item_title = $request->get('item_title');
+        $bookingId = $request->get('booking_id');
         $from = $request->get('from');
         $to = $request->get('to');
         $status = $request->get('status');
@@ -135,9 +140,14 @@ class BookingOrderController extends Controller
             $query->whereIn('booking_id', $bookingIds);
         }
 
+        if (!empty($bookingId)) {
+            $query->where('booking_id', $bookingId);
+        }
+
         $query = fromAndToDateFilter($from, $to, $query, 'booking_orders.created_at');
 
         if (!empty($status)) {
+            $status = $this->normalizeStatus($status);
             $query->where('booking_orders.status', $status);
         }
 
@@ -156,17 +166,65 @@ class BookingOrderController extends Controller
     {
         $this->authorize('admin_booking_orders_refund');
 
-        $order = BookingOrder::findOrFail($id);
+        $order = BookingOrder::with('sale')->findOrFail($id);
 
         if (!empty($order->sale)) {
-            $order->sale->update(['refund_at' => time()]);
+            $sale = $order->sale;
+
+            if (empty($sale->refund_at) and !empty($sale->total_amount)) {
+                Accounting::refundAccounting($sale, $order->id);
+            }
+
+            $sale->update(['refund_at' => time()]);
         }
 
         $order->update(['status' => BookingOrder::$canceled]);
 
         app(CalendarSyncService::class)->syncBooking($order->fresh(), 'cancel');
 
-        return back();
+        return back()->with('success', 'Booking order refunded successfully.');
+    }
+
+    public function cancel($id)
+    {
+        $this->authorize('admin_booking_orders_edit');
+
+        $order = BookingOrder::findOrFail($id);
+
+        if ($order->status !== BookingOrder::$canceled) {
+            $order->update(['status' => BookingOrder::$canceled]);
+            app(CalendarSyncService::class)->syncBooking($order->fresh(), 'cancel');
+        }
+
+        return back()->with('success', 'Booking order canceled successfully.');
+    }
+
+    public function updateStatus($id, $status)
+    {
+        $this->authorize('admin_booking_orders_edit');
+
+        $status = $this->normalizeStatus($status);
+
+        if (!in_array($status, BookingOrder::$status, true)) {
+            abort(404);
+        }
+
+        $order = BookingOrder::findOrFail($id);
+        $oldStatus = $order->status;
+
+        $order->update(['status' => $status]);
+
+        if ($status === BookingOrder::$canceled and $oldStatus !== BookingOrder::$canceled) {
+            app(CalendarSyncService::class)->syncBooking($order->fresh(), 'cancel');
+        } elseif ($oldStatus === BookingOrder::$canceled and $status !== BookingOrder::$canceled) {
+            app(CalendarSyncService::class)->syncBooking($order->fresh(), 'create');
+        }
+
+        if ($status === BookingOrder::$success) {
+            $order->sendBookingNotifications('confirmed');
+        }
+
+        return back()->with('success', 'Booking order status updated successfully.');
     }
 
     public function invoice($id)
@@ -226,5 +284,15 @@ class BookingOrderController extends Controller
         $export = new BookingOrdersExport($orders);
 
         return Excel::download($export, 'booking_orders.xlsx');
+    }
+
+    private function normalizeStatus(string $status): string
+    {
+        return match ($status) {
+            'confirmed' => BookingOrder::$waitingDelivery,
+            'completed' => BookingOrder::$success,
+            'cancelled' => BookingOrder::$canceled,
+            default => $status,
+        };
     }
 }

@@ -469,12 +469,12 @@ class BookingController extends Controller
 
         $bookings = $this->handleFilters($query, $request)
             ->with(['category', 'creator' => fn($qu) => $qu->select('id', 'full_name')])
-            ->withCount(['orders as sales_count' => fn($qu) => $qu->whereIn('status', ['confirmed', 'completed'])])
+            ->withCount(['orders as sales_count' => fn($qu) => $qu->whereIn('status', $this->paidBookingOrderStatuses())])
             ->addSelect(['booking_income' => BookingOrder::query()
                 ->selectRaw('coalesce(sum(sales.total_amount), 0)')
                 ->join('sales', fn($join) => $join->on('sales.id', '=', 'booking_orders.sale_id')->whereNull('sales.refund_at'))
                 ->whereColumn('booking_orders.booking_id', 'bookings.id')
-                ->whereIn('booking_orders.status', ['confirmed', 'completed'])
+                ->whereIn('booking_orders.status', $this->paidBookingOrderStatuses())
             ])
             ->get();
 
@@ -504,12 +504,12 @@ class BookingController extends Controller
 
         $query = $this->handleFilters($query, $request)
             ->with(['category', 'creator' => fn($qu) => $qu->select('id', 'full_name')])
-            ->withCount(['orders as sales_count' => fn($qu) => $qu->whereIn('status', ['confirmed', 'completed'])])
+            ->withCount(['orders as sales_count' => fn($qu) => $qu->whereIn('status', $this->paidBookingOrderStatuses())])
             ->addSelect(['booking_income' => BookingOrder::query()
                 ->selectRaw('coalesce(sum(sales.total_amount), 0)')
                 ->join('sales', fn($join) => $join->on('sales.id', '=', 'booking_orders.sale_id')->whereNull('sales.refund_at'))
                 ->whereColumn('booking_orders.booking_id', 'bookings.id')
-                ->whereIn('booking_orders.status', ['confirmed', 'completed'])
+                ->whereIn('booking_orders.status', $this->paidBookingOrderStatuses())
             ]);
 
         $bookings        = $query->paginate(15);
@@ -932,7 +932,7 @@ class BookingController extends Controller
             case 'sales_asc':
                 $query->leftJoin('booking_orders', function ($join) {
                         $join->on('bookings.id', '=', 'booking_orders.booking_id')
-                             ->whereIn('booking_orders.status', ['confirmed', 'completed']);
+                             ->whereIn('booking_orders.status', $this->paidBookingOrderStatuses());
                     })
                     ->select('bookings.*', DB::raw('count(booking_orders.id) as orders_count'))
                     ->groupBy('bookings.id')
@@ -942,7 +942,7 @@ class BookingController extends Controller
             case 'sales_desc':
                 $query->leftJoin('booking_orders', function ($join) {
                         $join->on('bookings.id', '=', 'booking_orders.booking_id')
-                             ->whereIn('booking_orders.status', ['confirmed', 'completed']);
+                             ->whereIn('booking_orders.status', $this->paidBookingOrderStatuses());
                     })
                     ->select('bookings.*', DB::raw('count(booking_orders.id) as orders_count'))
                     ->groupBy('bookings.id')
@@ -960,7 +960,7 @@ class BookingController extends Controller
             case 'income_asc':
                 $query->leftJoin('booking_orders', function ($join) {
                         $join->on('bookings.id', '=', 'booking_orders.booking_id')
-                             ->whereIn('booking_orders.status', ['confirmed', 'completed']);
+                             ->whereIn('booking_orders.status', $this->paidBookingOrderStatuses());
                     })
                     ->leftJoin('sales', function ($join) {
                         $join->on('sales.id', '=', 'booking_orders.sale_id')
@@ -974,7 +974,7 @@ class BookingController extends Controller
             case 'income_desc':
                 $query->leftJoin('booking_orders', function ($join) {
                         $join->on('bookings.id', '=', 'booking_orders.booking_id')
-                             ->whereIn('booking_orders.status', ['confirmed', 'completed']);
+                             ->whereIn('booking_orders.status', $this->paidBookingOrderStatuses());
                     })
                     ->leftJoin('sales', function ($join) {
                         $join->on('sales.id', '=', 'booking_orders.sale_id')
@@ -1032,6 +1032,17 @@ class BookingController extends Controller
         }
     }
 
+    private function paidBookingOrderStatuses(): array
+    {
+        return [
+            BookingOrder::$waitingDelivery,
+            BookingOrder::$shipped,
+            BookingOrder::$success,
+            'confirmed',
+            'completed',
+        ];
+    }
+
     private function getTopPageStats($query): array
     {
         $totalBookings = deepClone($query)->count();
@@ -1042,11 +1053,11 @@ class BookingController extends Controller
 
         if ($bookingIds->count()) {
             $totalBookingSales = BookingOrder::whereIn('booking_id', $bookingIds)
-                ->whereIn('status', ['confirmed', 'completed'])
+                ->whereIn('status', $this->paidBookingOrderStatuses())
                 ->count();
 
             $totalCustomers = BookingOrder::whereIn('booking_id', $bookingIds)
-                ->whereIn('status', ['confirmed', 'completed'])
+                ->whereIn('status', $this->paidBookingOrderStatuses())
                 ->whereNotNull('buyer_id')
                 ->distinct('buyer_id')
                 ->count('buyer_id');

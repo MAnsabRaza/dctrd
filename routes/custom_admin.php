@@ -178,6 +178,9 @@ Route::group(['prefix' => 'time-slot'], function () {
     Route::get('/', [BookingOrderController::class, 'index']);
     Route::get('/in-house-orders', [BookingOrderController::class, 'inHouseOrders']);
     Route::get('/excel', [BookingOrderController::class, 'exportExcel']);
+    Route::get('/{id}/cancel', [BookingOrderController::class, 'cancel']);
+    Route::get('/{id}/status/{status}', [BookingOrderController::class, 'updateStatus'])
+        ->where('status', 'pending|waiting_delivery|shipped|success|canceled|confirmed|completed|cancelled');
     Route::get('/{id}/invoice', [BookingOrderController::class, 'invoice']);
     Route::get('/{id}/refund', [BookingOrderController::class, 'refund']);
 });

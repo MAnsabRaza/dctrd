@@ -124,10 +124,11 @@
                                     <label class="input-label">{{ trans('admin/main.status') }}</label>
                                     <select name="status" data-plugin-selectTwo class="form-control populate">
                                         <option value="">{{ trans('admin/main.all_status') }}</option>
-                                        <option value="pending" @if(request()->get('status') == 'pending') selected @endif>{{ trans('admin/main.pending') }}</option>
-                                        <option value="confirmed" @if(request()->get('status') == 'confirmed') selected @endif>{{ trans('admin/main.confirmed') ?? 'Confirmed' }}</option>
-                                        <option value="completed" @if(request()->get('status') == 'completed') selected @endif>{{ trans('admin/main.completed') ?? 'Completed' }}</option>
-                                        <option value="cancelled" @if(request()->get('status') == 'cancelled') selected @endif>{{ trans('update.product_order_status_canceled') }}</option>
+                                        <option value="{{ \App\Models\BookingOrder::$pending }}" @if(request()->get('status') == \App\Models\BookingOrder::$pending) selected @endif>{{ trans('admin/main.pending') }}</option>
+                                        <option value="{{ \App\Models\BookingOrder::$waitingDelivery }}" @if(request()->get('status') == \App\Models\BookingOrder::$waitingDelivery) selected @endif>{{ trans('update.product_order_status_waiting_delivery') }}</option>
+                                        <option value="{{ \App\Models\BookingOrder::$shipped }}" @if(request()->get('status') == \App\Models\BookingOrder::$shipped) selected @endif>{{ trans('update.product_order_status_shipped') }}</option>
+                                        <option value="{{ \App\Models\BookingOrder::$success }}" @if(request()->get('status') == \App\Models\BookingOrder::$success) selected @endif>{{ trans('update.product_order_status_success') }}</option>
+                                        <option value="{{ \App\Models\BookingOrder::$canceled }}" @if(request()->get('status') == \App\Models\BookingOrder::$canceled) selected @endif>{{ trans('update.product_order_status_canceled') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -217,6 +218,16 @@
                                         <th width="120">{{ trans('admin/main.actions') }}</th>
                                     </tr>
 
+                                    @php
+                                        $bookingOrderStatusOptions = [
+                                            \App\Models\BookingOrder::$pending => trans('admin/main.pending'),
+                                            \App\Models\BookingOrder::$waitingDelivery => trans('update.product_order_status_waiting_delivery'),
+                                            \App\Models\BookingOrder::$shipped => trans('update.product_order_status_shipped'),
+                                            \App\Models\BookingOrder::$success => trans('update.product_order_status_success'),
+                                            \App\Models\BookingOrder::$canceled => trans('update.product_order_status_canceled'),
+                                        ];
+                                    @endphp
+
                                     @forelse($orders as $order)
                                         <tr>
                                             <td>{{ $order->id }}</td>
@@ -274,20 +285,28 @@
                                             <td>{{ dateTimeFormat($order->created_at, 'j F Y H:i') }}</td>
 
                                             <td>
-                                                @switch($order->status)
-                                                    @case('pending')
-                                                        <span class="badge-status text-warning bg-warning-30">{{ trans('admin/main.pending') }}</span>
-                                                        @break
-                                                    @case('confirmed')
-                                                        <span class="badge-status text-primary bg-primary-30">{{ trans('admin/main.confirmed') ?? 'Confirmed' }}</span>
-                                                        @break
-                                                    @case('completed')
-                                                        <span class="badge-status text-success bg-success-30">{{ trans('admin/main.completed') ?? 'Completed' }}</span>
-                                                        @break
-                                                    @case('cancelled')
-                                                        <span class="badge-status text-danger bg-danger-30">{{ trans('update.product_order_status_canceled') }}</span>
-                                                        @break
-                                                @endswitch
+                                                @php
+                                                    $normalizedStatus = match($order->status) {
+                                                        'confirmed' => \App\Models\BookingOrder::$waitingDelivery,
+                                                        'completed' => \App\Models\BookingOrder::$success,
+                                                        'cancelled' => \App\Models\BookingOrder::$canceled,
+                                                        default => $order->status,
+                                                    };
+                                                @endphp
+
+                                                @if($normalizedStatus == \App\Models\BookingOrder::$pending)
+                                                    <span class="badge-status text-warning bg-warning-30">{{ trans('admin/main.pending') }}</span>
+                                                @elseif($normalizedStatus == \App\Models\BookingOrder::$waitingDelivery)
+                                                    <span class="badge-status text-primary bg-primary-30">{{ trans('update.product_order_status_waiting_delivery') }}</span>
+                                                @elseif($normalizedStatus == \App\Models\BookingOrder::$shipped)
+                                                    <span class="badge-status text-primary bg-primary-30">{{ trans('update.product_order_status_shipped') }}</span>
+                                                @elseif($normalizedStatus == \App\Models\BookingOrder::$success)
+                                                    <span class="badge-status text-success bg-success-30">{{ trans('update.product_order_status_success') }}</span>
+                                                @elseif($normalizedStatus == \App\Models\BookingOrder::$canceled)
+                                                    <span class="badge-status text-danger bg-danger-30">{{ trans('update.product_order_status_canceled') }}</span>
+                                                @else
+                                                    <span class="badge-status text-dark bg-dark-30">{{ $order->status }}</span>
+                                                @endif
                                             </td>
 
 
@@ -305,8 +324,30 @@
                                                             </a>
                                                         @endcan
 
+                                                        @can('admin_booking_orders_edit')
+                                                            @foreach($bookingOrderStatusOptions as $statusKey => $statusLabel)
+                                                                @if($normalizedStatus !== $statusKey)
+                                                                    @include('admin.includes.delete_button',[
+                                                                       'url' => getAdminPanelUrl().'/booking/order/'. $order->id .'/status/'. $statusKey,
+                                                                       'btnClass' => 'dropdown-item text-gray-500 mb-3 py-3 px-0 font-14',
+                                                                       'btnText' => 'Mark as ' . $statusLabel,
+                                                                       'deleteConfirmMsg' => 'Change this booking order status to ' . $statusLabel . '?',
+                                                                    ])
+                                                                @endif
+                                                            @endforeach
+
+                                                            @if($normalizedStatus !== \App\Models\BookingOrder::$canceled)
+                                                                @include('admin.includes.delete_button',[
+                                                                   'url' => getAdminPanelUrl().'/booking/order/'. $order->id .'/cancel',
+                                                                   'btnClass' => 'dropdown-item text-danger mb-3 py-3 px-0 font-14',
+                                                                   'btnText' => trans('admin/main.cancel'),
+                                                                   'deleteConfirmMsg' => 'Cancel this booking order?',
+                                                                ])
+                                                            @endif
+                                                        @endcan
+
                                                         @can('admin_booking_orders_refund')
-                                                            @if($order->status != 'cancelled')
+                                                            @if(!empty($order->sale) and empty($order->sale->refund_at))
                                                                 @include('admin.includes.delete_button',[
                                                                    'url' => getAdminPanelUrl().'/booking/order/'. $order->id .'/refund',
                                                                    'btnClass' => 'dropdown-item text-warning mb-0 py-3 px-0 font-14',
@@ -314,6 +355,7 @@
                                                                    'btnIcon' => 'rotate-left',
                                                                    'iconType' => 'lin',
                                                                    'iconClass' => 'text-warning mr-2',
+                                                                   'deleteConfirmMsg' => 'Refund this booking order and cancel it?',
                                                                 ])
                                                             @endif
                                                         @endcan
