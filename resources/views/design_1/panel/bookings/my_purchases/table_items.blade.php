@@ -99,12 +99,6 @@
                         </li>
                     @endif
 
-                    @if($order->status == \App\Models\BookingOrder::$shipped)
-                        <li class="actions-dropdown__dropdown-menu-item">
-                            <button type="button" data-sale-id="{{ $order->sale_id }}" data-order-id="{{ $order->id }}" class="js-set-completed">{{ trans('update.confirm_booking_completed') }}</button>
-                        </li>
-                    @endif
-
                 </ul>
             </div>
         </div>
