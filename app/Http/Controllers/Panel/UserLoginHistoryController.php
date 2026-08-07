@@ -41,3 +41,4 @@ class UserLoginHistoryController extends Controller
         ]);
     }
 }
+}

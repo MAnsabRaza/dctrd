@@ -128,7 +128,7 @@ class LandingBuilderComponentController extends Controller
                 ])
                 ->orderBy('created_at', 'desc')
                 ->get();
-
+        }
         else if ($landingComponent->landingBuilderComponent->name == LandingBuilderComponentsNames::MEETING_BOOKING_LIST) {
 } else if ($landingComponent->landingBuilderComponent->name == LandingBuilderComponentsNames::MEETING_BOOKING_LIST) {
             $data['meetingInstructors'] = User::query()->select('id', 'full_name', 'username', 'avatar', 'avatar_settings', 'email', 'mobile')

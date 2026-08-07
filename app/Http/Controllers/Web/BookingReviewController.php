@@ -129,10 +129,45 @@ class BookingReviewController extends Controller
         ]);
     }
 
-    public function storeReplyComment(Request $request)
-    {
-        return response()->json([], 404);
+  public function storeReplyComment(Request $request)
+{
+    $user = auth()->user();
+    $data = $request->all();
+
+    $validator = Validator::make($data, [
+        'reply' => 'required|string',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'code'   => 422,
+            'errors' => $validator->errors(),
+        ], 422);
     }
+
+    if (!empty($user)) {
+        $status = Comment::$pending;
+        if (!empty(getGeneralOptionsSettings('direct_publication_of_comments'))) {
+            $status = Comment::$active;
+        }
+
+        Comment::create([
+            'user_id'    => $user->id,
+            'comment'    => $data['reply'],
+            'review_id'  => $data['review_id'],
+            'status'     => $status,
+            'created_at' => time(),
+        ]);
+
+        return response()->json([
+            'code'  => 200,
+            'title' => trans('product.comment_success_store'),
+            'msg'   => trans('product.comment_success_store_msg'),
+        ]);
+    }
+
+    abort(403);
+}
 
     public function destroy($id)
     {

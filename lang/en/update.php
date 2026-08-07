@@ -4941,5 +4941,6 @@ return [
 
 'booking_resource_schedule' => 'Resource & Schedule',
 'unit' => 'unit',
+'no_reviews_yet'=> 'No Review Yets'
 
 ];

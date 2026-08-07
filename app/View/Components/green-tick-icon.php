@@ -4,7 +4,7 @@ namespace App\View\Components;
 
 use Illuminate\View\Component;
 
-class green-tick-icon extends Component
+class greentickicon extends Component
 {
     /**
      * Create a new component instance.
