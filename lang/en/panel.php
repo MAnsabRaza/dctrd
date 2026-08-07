@@ -88,6 +88,7 @@ return [
 'duration_minutes'=>'Duration (minutes)',
 'meta_json_hint'=>'Meta JSON data for the booking. This can include additional information such as amenities, policies, etc.',
 'meta_json'=>'Meta Json',
+'invited_bookings_no_result'=>'No invited bookings!',
 
 
 

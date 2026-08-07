@@ -18,6 +18,7 @@ use App\Models\RewardAccounting;
 use App\Models\Sale;
 use App\Services\PricingEngine;
 use App\Services\SlotEngine;
+use App\Services\BookingCartExpiryService;
 use App\Services\Calendar\CalendarSyncService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -445,6 +446,8 @@ class BookingController extends Controller
                 'redirect_to' => '/login',
             ], 401);
         }
+
+        app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
 
         $itemValidator = Validator::make($request->all(), [
             'item_id' => ['required', 'integer'],

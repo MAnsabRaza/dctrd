@@ -17,6 +17,7 @@
             $locationStr = collect(array_filter([$city, $country]))->implode(', ');
             $thumbUrl    = $itemInfo['imgPath'] ?? $booking->thumbnail_url ?? '';
             $bookingOrder = $cart->bookingOrder ?? null;
+            $holdExpiresAt = app(\App\Services\BookingCartExpiryService::class)->expiresAt($bookingOrder);
             $resourceName = optional(optional($bookingOrder)->resource)->name;
             $bookingDate = optional($bookingOrder)->booking_date;
             $slotStart = optional($bookingOrder)->start_time;
@@ -85,6 +86,11 @@
                             <span class="badge badge-light font-11 text-gray-500">
                                 <x-iconsax-lin-calendar-2 class="icons" width="11px" height="11px"/> Booking
                             </span>
+                            @if(!empty($holdExpiresAt))
+                                <span class="badge badge-warning font-11 text-dark">
+                                    Reserved until {{ $holdExpiresAt->format('h:i A') }}
+                                </span>
+                            @endif
                         </div>
 
                         @if(!empty($bookingOrder))

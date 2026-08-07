@@ -134,26 +134,7 @@ Route::delete('/availability-overrides/{availability}', 'Booking\BookingControll
         Route::get('/{id}/qr/regenerate', 'Booking\BookingController@regenerateQr')
             ->name('panel.bookings.qr.regenerate');
 
-        /*
-        |--------------------------------------------------------------------------
-        | CALENDAR
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/calendar', 'Booking\BookingCalendarController@index')
-            ->name('panel.bookings.calendar');
-
-        /*
-        |--------------------------------------------------------------------------
-        | ORDERS
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/orders/my-orders', 'Booking\MyBookingOrderController@index')
-            ->name('panel.bookings.orders');
-
-        // calender
-        // calender
+     
 
         /*
         |--------------------------------------------------------------------------
@@ -216,15 +197,6 @@ Route::delete('/availability-overrides/{availability}', 'Booking\BookingControll
 
         Route::get('/favorites', 'Booking\BookingFavoriteController@index')
             ->name('panel.bookings.favorites');
-
-        /*
-        |--------------------------------------------------------------------------
-        | REVIEWS
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/reviews', 'Booking\BookingReviewController@index')
-            ->name('panel.bookings.reviews');
 
     });
 

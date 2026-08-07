@@ -27,6 +27,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('exchange:update')
             ->twiceDaily(0, 12)
             ->withoutOverlapping();
+
+        $schedule->command('bookings:expire-cart-holds')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
     }
 
     /**

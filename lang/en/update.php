@@ -4941,6 +4941,11 @@ return [
 
 'booking_resource_schedule' => 'Resource & Schedule',
 'unit' => 'unit',
-'no_reviews_yet'=> 'No Review Yets'
+'no_reviews_yet'=> 'No Review Yets',
+'booking_sales_no_result'=>'Booking sale no result',
+'booking_sales_no_result_hint'=>'Booking sale no result hint',
+'booking_sales_no_result'=>'No booking sales found',
+'booking_sales_no_result_hint'=>'No booking sales found. Try adjusting your filters or search criteria.',
+'booking_order_status_success'=>'Completed',
 
 ];

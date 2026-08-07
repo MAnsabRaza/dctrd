@@ -193,10 +193,6 @@ class SidebarItems
                 }
 
                 $items['bookings']['items'][] = ['text' => trans('public.list'), 'url' => '/panel/bookings'];
-
-                if ($user->can('panel_bookings_calendar')) {
-                    $items['bookings']['items'][] = ['text' => 'Calendar', 'url' => '/panel/bookings/calendar'];
-                }
             }
 
 

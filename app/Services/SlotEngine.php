@@ -31,6 +31,8 @@ class SlotEngine
     Carbon $date,
     ?int $resourceId = null
 ): Collection {
+    app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
+
     $ordersFingerprint = $this->ordersFingerprint($booking, $date, $resourceId);
     $timezone = $this->getBusinessTimezone();
     $now = Carbon::now($timezone);
@@ -214,7 +216,13 @@ private function getTimeSlotsForDate(
         ->when($resourceId, function ($q) use ($resourceId) {
             $q->where('resource_id', $resourceId);
         })
-        ->whereIn('status', [BookingOrder::$pending, BookingOrder::$success])
+        ->where(function ($query) {
+            $query->where('status', BookingOrder::$success)
+                ->orWhere(function ($pendingQuery) {
+                    $pendingQuery->where('status', BookingOrder::$pending)
+                        ->where('created_at', '>', app(BookingCartExpiryService::class)->expiryCutoffTimestamp());
+                });
+        })
         ->get(['start_time', 'end_time']);
 
     $booked = [];
@@ -234,12 +242,24 @@ private function ordersFingerprint(Booking $booking, Carbon $date, ?int $resourc
             ->where('booking_id', $booking->id)
             ->where('booking_date', $date->toDateString())
             ->when($resourceId, fn ($q) => $q->where('resource_id', $resourceId))
-            ->whereIn('status', [BookingOrder::$pending, BookingOrder::$success])
+            ->where(function ($query) {
+                $query->where('status', BookingOrder::$success)
+                    ->orWhere(function ($pendingQuery) {
+                        $pendingQuery->where('status', BookingOrder::$pending)
+                            ->where('created_at', '>', app(BookingCartExpiryService::class)->expiryCutoffTimestamp());
+                    });
+            })
             ->count() . ':' . BookingOrder::query()
                 ->where('booking_id', $booking->id)
                 ->where('booking_date', $date->toDateString())
                 ->when($resourceId, fn ($q) => $q->where('resource_id', $resourceId))
-                ->whereIn('status', [BookingOrder::$pending, BookingOrder::$success])
+                ->where(function ($query) {
+                    $query->where('status', BookingOrder::$success)
+                        ->orWhere(function ($pendingQuery) {
+                            $pendingQuery->where('status', BookingOrder::$pending)
+                                ->where('created_at', '>', app(BookingCartExpiryService::class)->expiryCutoffTimestamp());
+                        });
+                })
                 ->max('id');
     }
 }

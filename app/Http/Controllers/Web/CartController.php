@@ -16,6 +16,7 @@ use App\Models\PaymentChannel;
 use App\Models\Product;
 use App\Models\ProductOrder;
 use App\Services\CheckoutModuleService;
+use App\Services\BookingCartExpiryService;
 use App\Services\CustomerGroupAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -27,6 +28,8 @@ class CartController extends Controller
 
     public function index()
     {
+        app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
+
         $user = auth()->user();
         $carts = Cart::where('creator_id', $user->id)
             ->with([
@@ -129,6 +132,8 @@ class CartController extends Controller
 
    public function couponValidate(Request $request)
 {
+    app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
+
     $user = auth()->user();
     $coupon = $request->get('coupon');
 
@@ -415,6 +420,8 @@ class CartController extends Controller
 
     public function checkout(Request $request, $carts = null)
     {
+        app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
+
         $user = auth()->user();
           \Log::info('CHECKOUT RAW REQUEST', [
         'checkout_modules_raw' => $request->input('checkout_modules'),

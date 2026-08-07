@@ -16,6 +16,7 @@ use App\Models\ReserveMeeting;
 use App\Models\Ticket;
 use App\Models\Webinar;
 use App\Services\CustomerGroupAccessService;
+use App\Services\BookingCartExpiryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use App\Services\SlotEngine;
@@ -25,6 +26,8 @@ class CartManagerController extends Controller
 
     public function getCarts()
     {
+        app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
+
         $carts = collect();
 
         if (auth()->check()) {
@@ -273,6 +276,8 @@ class CartManagerController extends Controller
 
    public function storeUserBookingCart($user, $data, SlotEngine $slotEngine = null)
 {
+    app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
+
     $slotEngine = $slotEngine ?? app(SlotEngine::class);
 
     $booking_id = $data['item_id'];
@@ -576,6 +581,8 @@ class CartManagerController extends Controller
 
     public function store(Request $request)
     {
+        app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
+
         $user = auth()->user();
 
         $this->validate($request, [
@@ -700,6 +707,8 @@ class CartManagerController extends Controller
 
 public function destroy($id)
     {
+        app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
+
         if (auth()->check()) {
             $user_id = auth()->id();
 
