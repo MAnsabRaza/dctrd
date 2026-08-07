@@ -263,6 +263,21 @@ public function getRateCount(): int
         ->count();
 }
 
+public function checkUserHasBought($user = null): bool
+{
+    $user = $user ?: auth()->user();
+
+    if (empty($user)) {
+        return false;
+    }
+
+    return BookingOrder::query()
+        ->where('booking_id', $this->id)
+        ->where('buyer_id', $user->id)
+        ->whereNotIn('status', [BookingOrder::$pending, BookingOrder::$canceled])
+        ->exists();
+}
+
     // ─── Auto Slug ───────────────────────────────────────────────────
 
     protected static function boot()
@@ -518,4 +533,3 @@ public function getCategorySpecificationsAttribute()
     
 
 }   
-

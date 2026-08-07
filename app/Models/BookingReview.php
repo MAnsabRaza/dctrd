@@ -5,11 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\User;
+
 class BookingReview extends Model
 {
     use HasFactory;
 
     protected $table = 'booking_reviews';
+    public $timestamps = false;
+    protected $dateFormat = 'U';
 
     protected $fillable = [
         'booking_id',
@@ -44,6 +47,11 @@ class BookingReview extends Model
         return $this->belongsTo('App\Models\Booking', 'booking_id', 'id');
     }
 
+    public function booking()
+    {
+        return $this->belongsTo('App\Models\Booking', 'booking_id', 'id');
+    }
+
     public function creator()
     {
         return $this->belongsTo('App\User', 'creator_id', 'id');
@@ -51,6 +59,26 @@ class BookingReview extends Model
 
     public function comments()
     {
-        return $this->hasMany('App\Models\Comment', 'product_review_id', 'id');
+        return $this->hasMany('App\Models\Comment', 'booking_review_id', 'id');
+    }
+
+    public function getBookingQualityAttribute()
+    {
+        return $this->product_quality;
+    }
+
+    public function getProviderQualityAttribute()
+    {
+        return $this->seller_quality;
+    }
+
+    public function getValueForMoneyAttribute()
+    {
+        return $this->purchase_worth;
+    }
+
+    public function getLocationQualityAttribute()
+    {
+        return $this->delivery_quality;
     }
 }

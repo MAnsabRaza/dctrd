@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\Comment;
 use App\Models\BookingReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -29,7 +30,7 @@ class BookingReviewController extends Controller
             ->where('booking_id', $booking->id)
             ->where('status', 'active')
             ->with([
-                'comments' => fn ($query) => $query->where('status', 'active'),
+                'comments' => fn ($query) => $query->where('status', 'active')->with('user'),
                 'creator' => fn ($query) => $query->select('id', 'username', 'full_name', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
             ])
             ->orderBy('created_at', 'desc');
@@ -39,7 +40,10 @@ class BookingReviewController extends Controller
         $hasMore = $total > ($page * $count);
 
         if ($request->ajax()) {
-            $html = (string) view()->make('design_1.web.components.reviews.all_cards', ['reviews' => $reviews]);
+            $html = (string) view()->make('design_1.web.components.reviews.all_cards', [
+                'reviews' => $reviews,
+                'deleteUrlPrefix' => '/bookings/reviews',
+            ]);
 
             return response()->json([
                 'code' => 200,
@@ -51,6 +55,7 @@ class BookingReviewController extends Controller
         return [
             'reviews' => $reviews,
             'has_more' => $hasMore,
+            'reviews_count' => $total,
         ];
     }
 
@@ -102,12 +107,25 @@ class BookingReviewController extends Controller
             ], 422);
         }
 
-        $rates = (
-            (int) $data['booking_quality'] +
-            (int) $data['provider_quality'] +
-            (int) $data['value_for_money'] +
-            (int) $data['location_quality']
-        ) / 4;
+        if (!$booking->checkUserHasBought($user)) {
+            return response()->json([
+                'toast_alert' => [
+                    'title' => trans('public.request_failed'),
+                    'msg' => trans('cart.you_not_purchased_this_product'),
+                ],
+            ], 422);
+        }
+
+        $rates = 0;
+        $rates += (int) $data['booking_quality'];
+        $rates += (int) $data['provider_quality'];
+        $rates += (int) $data['value_for_money'];
+        $rates += (int) $data['location_quality'];
+
+        $status = Comment::$pending;
+        if (!empty(getGeneralOptionsSettings('direct_publication_of_reviews'))) {
+            $status = Comment::$active;
+        }
 
         BookingReview::create([
             'booking_id' => $booking->id,
@@ -116,16 +134,30 @@ class BookingReviewController extends Controller
             'purchase_worth' => (int) $data['value_for_money'],
             'delivery_quality' => (int) $data['location_quality'],
             'seller_quality' => (int) $data['provider_quality'],
-            'rates' => $rates,
+            'rates' => $rates > 0 ? $rates / 4 : 0,
             'description' => $data['description'] ?? null,
-            'status' => 'pending',
+            'status' => $status,
             'created_at' => time(),
         ]);
+
+        $notifyOptions = [
+            '[c.title]' => $booking->title,
+            '[item_title]' => $booking->title,
+            '[student.name]' => $user->full_name,
+            '[u.name]' => $user->full_name,
+            '[rate.count]' => $rates > 0 ? $rates / 4 : 0,
+            '[content_type]' => trans('update.booking'),
+        ];
+
+        if (!empty($booking->creator_id)) {
+            sendNotification('booking_new_rating', $notifyOptions, $booking->creator_id);
+        }
+        sendNotification('new_user_item_rating', $notifyOptions, 1);
 
         return response()->json([
             'code' => 200,
             'title' => trans('public.request_success'),
-            'msg' => trans('update.review_submitted_successfully'),
+            'msg' => ($status == Comment::$active) ? trans('webinars.your_reviews_successfully_submitted') : trans('webinars.your_reviews_successfully_submitted_and_waiting_for_admin'),
         ]);
     }
 
@@ -146,6 +178,19 @@ class BookingReviewController extends Controller
     }
 
     if (!empty($user)) {
+        $review = BookingReview::query()
+            ->where('id', $data['review_id'] ?? null)
+            ->first();
+
+        if (empty($review)) {
+            return response()->json([
+                'code' => 422,
+                'errors' => [
+                    'reply' => [trans('update.the_comment_was_not_found')],
+                ],
+            ], 422);
+        }
+
         $status = Comment::$pending;
         if (!empty(getGeneralOptionsSettings('direct_publication_of_comments'))) {
             $status = Comment::$active;
@@ -154,7 +199,7 @@ class BookingReviewController extends Controller
         Comment::create([
             'user_id'    => $user->id,
             'comment'    => $data['reply'],
-            'review_id'  => $data['review_id'],
+            'booking_review_id'  => $review->id,
             'status'     => $status,
             'created_at' => time(),
         ]);
@@ -169,7 +214,7 @@ class BookingReviewController extends Controller
     abort(403);
 }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $user = auth()->user();
 
@@ -177,10 +222,30 @@ class BookingReviewController extends Controller
             abort(403);
         }
 
-        BookingReview::query()
+        $review = BookingReview::query()
             ->where('id', $id)
             ->where('creator_id', $user->id)
-            ->delete();
+            ->first();
+
+        if (!empty($review)) {
+            $review->delete();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'code' => 200,
+                    'title' => trans('public.request_success'),
+                    'msg' => trans('webinars.your_review_deleted'),
+                ]);
+            }
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'code' => 403,
+                'title' => trans('public.request_failed'),
+                'msg' => trans('webinars.you_not_access_review'),
+            ], 403);
+        }
 
         return back();
     }

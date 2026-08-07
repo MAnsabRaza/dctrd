@@ -380,7 +380,7 @@ Route::group(['prefix' => 'bookings'], function () {
     // Reviews
     Route::post('/{slug}/reviews/load-more', 'BookingReviewController@getReviewsByBookingSlug');
 
-    Route::group(['prefix' => 'reviews'], function () {
+    Route::group(['prefix' => 'reviews', 'middleware' => 'web.auth'], function () {
         Route::post('/store', 'BookingReviewController@store');
         Route::post('/store-reply-comment', 'BookingReviewController@storeReplyComment');
         Route::get('/{id}/delete', 'BookingReviewController@destroy');

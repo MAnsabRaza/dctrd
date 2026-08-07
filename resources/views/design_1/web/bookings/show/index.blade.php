@@ -114,9 +114,16 @@
 @endsection
 
 @push('scripts_bottom')
+<script src="/assets/default/vendors/barrating/jquery.barrating.min.js"></script>
 <script src="/assets/default/vendors/swiper/swiper-bundle.min.js"></script>
 <script src="/assets/default/vendors/simplebar/simplebar.min.js"></script>
 <script src="{{ getDesign1ScriptPath("swiper_slider") }}"></script>
+<script>
+    var reportCommentLang = '{{ trans('update.report_comment') }}';
+    var reportLang = '{{ trans('panel.report') }}';
+</script>
+<script src="{{ getDesign1ScriptPath("reviews") }}"></script>
+<script src="{{ getDesign1ScriptPath("comments") }}"></script>
 <script>
 (function ($) {
     'use strict';

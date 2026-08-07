@@ -13,6 +13,7 @@ use App\Models\BookingFeatureCategory;
 use App\Models\BookingOrder;
 use App\Models\BookingTopCategory;
 use App\Models\Cart;
+use App\Models\Comment;
 use App\Models\RewardAccounting;
 use App\Models\Sale;
 use App\Services\PricingEngine;
@@ -108,7 +109,6 @@ class BookingController extends Controller
                 'policy',
                 'faqs',
                 'reviews'  => fn ($q) => $q->where('status', 'active')->latest(),
-                'comments' => fn ($q) => $q->where('is_active', true)->with('user')->latest(),
             ])
             ->first();
 
@@ -178,6 +178,9 @@ class BookingController extends Controller
             ? $booking->getActiveDiscount()
             : null;
 
+        $bookingReviews = $this->getBookingReviews($booking);
+        $bookingComments = $this->getBookingComments($booking);
+
         $pageRobot = getPageRobot('booking_show');
 
         return view('design_1.web.bookings.show.index', [
@@ -192,8 +195,63 @@ class BookingController extends Controller
             'provider'           => $provider,
             'advertisingBanners' => $advertisingBanners,
             'activeSpecialOffer' => $activeSpecialOffer,
+            'bookingReviews'     => $bookingReviews,
+            'bookingComments'    => $bookingComments,
+            'authUser'           => $user,
             'user'               => $user,
         ]);
+    }
+
+    private function getBookingReviews(Booking $booking): array
+    {
+        $count = 10;
+
+        $query = $booking->reviews()
+            ->where('status', 'active')
+            ->with([
+                'comments' => fn ($query) => $query->where('status', 'active')->with('user'),
+                'creator' => fn ($query) => $query->select('id', 'username', 'full_name', 'role_id', 'role_name', 'avatar', 'avatar_settings'),
+            ])
+            ->orderBy('created_at', 'desc');
+
+        $total = $query->count();
+
+        return [
+            'reviews' => $query->limit($count)->get(),
+            'has_more' => $total > $count,
+            'reviews_count' => $total,
+        ];
+    }
+
+    private function getBookingComments(Booking $booking): array
+    {
+        $count = 10;
+
+        $query = Comment::query()
+            ->where('booking_id', $booking->id)
+            ->where('status', 'active')
+            ->whereNull('reply_id')
+            ->whereNull('review_id')
+            ->whereNull('product_review_id')
+            ->whereNull('booking_review_id')
+            ->with([
+                'user' => fn ($query) => $query->select('id', 'full_name', 'role_name', 'role_id', 'username', 'avatar', 'avatar_settings'),
+                'replies' => function ($query) {
+                    $query->where('status', 'active');
+                    $query->with([
+                        'user' => fn ($query) => $query->select('id', 'full_name', 'role_name', 'role_id', 'username', 'avatar', 'avatar_settings'),
+                    ]);
+                },
+            ])
+            ->orderBy('created_at', 'desc');
+
+        $total = $query->count();
+
+        return [
+            'comments' => $query->limit($count)->get(),
+            'comments_count' => $total,
+            'has_more' => $total > $count,
+        ];
     }
 
     public function checkAvailability(Request $request, $slug, SlotEngine $slotEngine)

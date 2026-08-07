@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\CommentReport;
+use App\Models\Booking;
 use App\Models\Reward;
 use App\Models\RewardAccounting;
 use App\Models\Webinar;
@@ -25,6 +26,8 @@ class CommentController extends Controller
         $query->where('status', 'active');
         $query->whereNull('reply_id');
         $query->whereNull('review_id');
+        $query->whereNull('product_review_id');
+        $query->whereNull('booking_review_id');
 
         $query->with([
             'user' => function ($query) {
@@ -114,6 +117,19 @@ class CommentController extends Controller
                 '[u.name]' => $user->full_name
             ];
             sendNotification('product_new_comment', $notifyOptions, 1);
+        } elseif ($item_name == 'booking_id') {
+            $booking = Booking::find($item_id);
+
+            if (!empty($booking)) {
+                $notifyOptions = [
+                    '[c.title]' => $booking->title,
+                    '[item_title]' => $booking->title,
+                    '[u.name]' => $user->full_name,
+                ];
+
+                sendNotification('booking_new_comment', $notifyOptions, $booking->creator_id);
+                sendNotification('booking_new_comment', $notifyOptions, 1);
+            }
         } elseif ($item_name == 'blog_id') {
             $blog = $comment->blog;
 
