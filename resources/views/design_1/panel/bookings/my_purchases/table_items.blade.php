@@ -69,6 +69,8 @@
             <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-primary-30 font-12 text-primary">{{ trans('update.booking_order_status_shipped') }}</span>
         @elseif($order->status == \App\Models\BookingOrder::$success)
             <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('update.booking_order_status_success') }}</span>
+        @elseif($order->status == \App\Models\BookingOrder::$completed)
+            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('update.booking_order_status_completed') }}</span>
         @elseif($order->status == \App\Models\BookingOrder::$canceled)
             <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-danger-30 font-12 text-danger">{{ trans('update.booking_order_status_canceled') }}</span>
         @endif
@@ -98,10 +100,6 @@
                     @endif
 
                     @if($order->status == \App\Models\BookingOrder::$shipped)
-                        <li class="actions-dropdown__dropdown-menu-item">
-                            <button type="button" data-sale-id="{{ $order->sale_id }}" data-order-id="{{ $order->id }}" class="js-view-booking-details">{{ trans('update.view_booking_details') }}</button>
-                        </li>
-
                         <li class="actions-dropdown__dropdown-menu-item">
                             <button type="button" data-sale-id="{{ $order->sale_id }}" data-order-id="{{ $order->id }}" class="js-set-completed">{{ trans('update.confirm_booking_completed') }}</button>
                         </li>
