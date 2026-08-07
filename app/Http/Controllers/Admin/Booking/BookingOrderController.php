@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Services\Calendar\CalendarSyncService;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class BookingOrderController extends Controller
@@ -180,7 +181,7 @@ class BookingOrderController extends Controller
 
         $order->update(['status' => BookingOrder::$canceled]);
 
-        app(CalendarSyncService::class)->syncBooking($order->fresh(), 'cancel');
+        $this->syncCalendarQuietly($order->fresh(), 'cancel');
 
         return back()->with('success', 'Booking order refunded successfully.');
     }
@@ -193,7 +194,7 @@ class BookingOrderController extends Controller
 
         if ($order->status !== BookingOrder::$canceled) {
             $order->update(['status' => BookingOrder::$canceled]);
-            app(CalendarSyncService::class)->syncBooking($order->fresh(), 'cancel');
+            $this->syncCalendarQuietly($order->fresh(), 'cancel');
         }
 
         return back()->with('success', 'Booking order canceled successfully.');
@@ -215,13 +216,13 @@ class BookingOrderController extends Controller
         $order->update(['status' => $status]);
 
         if ($status === BookingOrder::$canceled and $oldStatus !== BookingOrder::$canceled) {
-            app(CalendarSyncService::class)->syncBooking($order->fresh(), 'cancel');
+            $this->syncCalendarQuietly($order->fresh(), 'cancel');
         } elseif ($oldStatus === BookingOrder::$canceled and $status !== BookingOrder::$canceled) {
-            app(CalendarSyncService::class)->syncBooking($order->fresh(), 'create');
+            $this->syncCalendarQuietly($order->fresh(), 'create');
         }
 
         if ($status === BookingOrder::$success) {
-            $order->sendBookingNotifications('confirmed');
+            $this->sendBookingNotificationsQuietly($order, 'confirmed');
         }
 
         return back()->with('success', 'Booking order status updated successfully.');
@@ -294,5 +295,35 @@ class BookingOrderController extends Controller
             'cancelled' => BookingOrder::$canceled,
             default => $status,
         };
+    }
+
+    private function syncCalendarQuietly(?BookingOrder $order, string $action): void
+    {
+        if (empty($order)) {
+            return;
+        }
+
+        try {
+            app(CalendarSyncService::class)->syncBooking($order, $action);
+        } catch (\Throwable $exception) {
+            Log::warning('Booking order calendar sync failed after status change.', [
+                'booking_order_id' => $order->id,
+                'action' => $action,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
+
+    private function sendBookingNotificationsQuietly(BookingOrder $order, string $event): void
+    {
+        try {
+            $order->sendBookingNotifications($event);
+        } catch (\Throwable $exception) {
+            Log::warning('Booking order notification failed after status change.', [
+                'booking_order_id' => $order->id,
+                'event' => $event,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 }

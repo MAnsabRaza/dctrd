@@ -138,12 +138,16 @@ class SlotEngine
         return true;
     }
 
-  private function getTimeSlotsForDate(
+private function getTimeSlotsForDate(
     Booking $booking,
     Carbon $date,
     ?int $resourceId
 ): Collection {
-    $dayOfWeek = $date->dayOfWeek; // 0 = Sunday
+    $dayOfWeek = $date->dayOfWeek; // 0 = Sunday ... 6 = Saturday
+
+    // day_of_week DB me kabhi string names ('mon','tue'...) aur kabhi
+    // integers (0-6) ke tor par ho sakta hai — dono ko yahan normalize karte hain.
+    $dayMap = ['sun' => 0, 'mon' => 1, 'tue' => 2, 'wed' => 3, 'thu' => 4, 'fri' => 5, 'sat' => 6];
 
     // ── booking_slots (explicit override) table STEP 1 hata di gayi ──
     // Ab hum seedha booking_time_slots (weekly recurring template) use karenge.
@@ -152,15 +156,28 @@ class SlotEngine
         ->where('status', true)
         ->when($resourceId, fn($q) => $q->where('resource_id', $resourceId))
         ->get()
-        ->filter(function ($template) use ($dayOfWeek) {
+        ->filter(function ($template) use ($dayOfWeek, $dayMap) {
             if (!$template->day_of_week)
                 return true; // applies all days
 
-            $days = is_array($template->day_of_week)
-                ? array_map('intval', $template->day_of_week)
-                : array_map('intval', explode(',', $template->day_of_week));
+            $rawDays = is_array($template->day_of_week)
+                ? $template->day_of_week
+                : explode(',', $template->day_of_week);
 
-            return in_array($dayOfWeek, $days);
+            // FIX: pehle array_map('intval', ...) use ho raha tha, jo
+            // 'mon'/'tue'/'wed' jaisi non-numeric strings ko 0 bana deta
+            // tha (PHP ka intval() behavior) — isliye sab kuch Sunday (0)
+            // ban jata tha. Ab numeric values ko intval karte hain aur
+            // string names ko $dayMap se sahi index par convert karte hain.
+            $days = array_map(function ($d) use ($dayMap) {
+                if (is_numeric($d)) {
+                    return (int) $d;
+                }
+                $key = strtolower(trim((string) $d));
+                return $dayMap[$key] ?? -1; // unknown string kabhi match nahi hoga
+            }, $rawDays);
+
+            return in_array($dayOfWeek, $days, true);
         });
 
     $slots = collect();
