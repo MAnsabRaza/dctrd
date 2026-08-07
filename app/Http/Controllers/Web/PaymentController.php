@@ -537,7 +537,7 @@ if ($gateway === 'offline') {
 
         $bookingOrder->update([
             'sale_id' => $sale->id,
-            'status'  => BookingOrder::$success,
+            'status'  => BookingOrder::$confirmed,
         ]);
 
         app(CalendarSyncService::class)->syncBooking($bookingOrder->fresh(), 'create');

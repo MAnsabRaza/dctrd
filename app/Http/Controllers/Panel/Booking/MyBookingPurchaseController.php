@@ -35,10 +35,9 @@ class MyBookingPurchaseController extends Controller
 
         $totalOrders = deepClone($copyQuery)->count();
 
-        // FIXED: waiting_delivery is the only "in progress" status now
-        $pendingOrders = deepClone($copyQuery)->where('status', BookingOrder::$waitingDelivery)->count();
+        $pendingOrders = deepClone($copyQuery)->where('status', BookingOrder::$confirmed)->count();
 
-        $canceledOrders = deepClone($copyQuery)->where('status', BookingOrder::$canceled)->count();
+        $canceledOrders = deepClone($copyQuery)->where('status', BookingOrder::$cancelled)->count();
 
         $totalPurchase = deepClone($copyQuery)
             ->join('sales', 'sales.id', '=', 'booking_orders.sale_id')
@@ -211,7 +210,7 @@ class MyBookingPurchaseController extends Controller
 
         if (!empty($order)) {
             $order->update([
-                'status' => BookingOrder::$success   // FIXED: was $completed
+                'status' => BookingOrder::$completed
             ]);
 
             app(CalendarSyncService::class)->syncBooking($order->fresh(), 'update');

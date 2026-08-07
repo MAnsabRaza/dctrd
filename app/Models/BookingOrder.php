@@ -13,21 +13,42 @@ class BookingOrder extends Model
     use HasFactory, SoftDeletes;
     protected $table = 'booking_orders';
 
-    // ---- STATUS CONSTANTS (mirrors ProductOrder naming) ----
+    // ---- Booking status constants ----
     public static $status = [
         'pending',
-        'waiting_delivery',
-        'shipped',
-        'success',
-        'canceled',
+        'confirmed',
+        'completed',
+        'cancelled',
+        'no_show',
     ];
 
     public static $pending = 'pending';
-    public static $waitingDelivery = 'waiting_delivery';
-    public static $shipped = 'shipped';
-    public static $success = 'success';
-    public static $canceled = 'canceled';
+    public static $confirmed = 'confirmed';
+    public static $completed = 'completed';
+    public static $cancelled = 'cancelled';
+    public static $noShow = 'no_show';
+
+    // Deprecated aliases kept so older code paths resolve to canonical values.
+    public static $waitingDelivery = 'confirmed';
+    public static $shipped = 'completed';
+    public static $success = 'completed';
+    public static $canceled = 'cancelled';
     // ----------------------------------------------------------
+
+    public static function activeStatuses(): array
+    {
+        return [self::$confirmed, self::$completed];
+    }
+
+    public static function paidStatuses(): array
+    {
+        return [self::$confirmed, self::$completed];
+    }
+
+    public static function reservingStatuses(): array
+    {
+        return [self::$pending, self::$confirmed, self::$completed];
+    }
 
     protected $fillable = [
         'booking_id',

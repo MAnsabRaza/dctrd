@@ -38,8 +38,8 @@ class BookingSaleController extends Controller
         }
 
         $totalOrders = deepClone($copyQuery)->count();
-        $pendingOrders = deepClone($copyQuery)->where('booking_orders.status', BookingOrder::$waitingDelivery)->count();
-        $canceledOrders = deepClone($copyQuery)->where('booking_orders.status', BookingOrder::$canceled)->count();
+        $pendingOrders = deepClone($copyQuery)->where('booking_orders.status', BookingOrder::$confirmed)->count();
+        $canceledOrders = deepClone($copyQuery)->where('booking_orders.status', BookingOrder::$cancelled)->count();
 
         $totalSales = deepClone($copyQuery)
             ->join('sales', 'sales.booking_order_id', 'booking_orders.id')
@@ -252,7 +252,7 @@ class BookingSaleController extends Controller
         if (!empty($order)) {
             $order->update([
                 'tracking_code' => $data['tracking_code'],
-                'status' => BookingOrder::$shipped
+                'status' => BookingOrder::$completed
             ]);
 
             app(CalendarSyncService::class)->syncBooking($order->fresh(), 'update');
