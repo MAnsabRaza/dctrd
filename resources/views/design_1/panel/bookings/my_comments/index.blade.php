@@ -51,49 +51,6 @@
         ])
     @endif
 
-    {{-- Edit Comment Modal --}}
-    <div class="modal fade" id="editCommentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-
-                <form id="editCommentForm" method="POST" action="">
-                    @csrf
-
-                    <div class="modal-header">
-                        <h5 class="modal-title">{{ trans('panel.edit_comment') }}</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-
-                    <div class="modal-body">
-
-                        <div class="form-group">
-                            <label class="form-group-label">{{ trans('panel.comment') }}</label>
-                            <textarea name="comment" id="editCommentText" class="form-control" rows="5" required></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-group-label">{{ trans('public.status') }}</label>
-                            <select id="editCommentStatus" class="form-control select2" disabled>
-                                <option value="active">{{ trans('public.published') }}</option>
-                                <option value="pending">{{ trans('public.pending') }}</option>
-                            </select>
-                        </div>
-
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-dismiss="modal">{{ trans('public.close') }}</button>
-                        <button type="submit" class="btn btn-primary">{{ trans('public.save') }}</button>
-                    </div>
-
-                </form>
-
-            </div>
-        </div>
-    </div>
-
 @endsection
 
 @push('scripts_bottom')
@@ -111,20 +68,4 @@
     <script src="{{ getDesign1ScriptPath("get_view_data") }}"></script>
 
     <script src="/assets/design_1/js/panel/comments.min.js"></script>
-
-    <script>
-        $(document).on('click', '.js-edit-comment', function () {
-            const commentId = $(this).data('comment-id');
-
-            const description = $('#commentDescription' + commentId).val();
-            const status = $('#commentStatus' + commentId).val();
-
-            $('#editCommentText').val(description);
-            $('#editCommentStatus').val(status).trigger('change');
-
-            $('#editCommentForm').attr('action', '/panel/bookings/my-comments/' + commentId + '/update');
-
-            $('#editCommentModal').modal('show');
-        });
-    </script>
 @endpush
