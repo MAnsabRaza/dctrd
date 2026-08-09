@@ -8,20 +8,17 @@
     </td>
 
     <td class="text-center">
-        <span id="statusBadge{{ $comment->id }}">
-            @if($comment->status == 'active')
-                <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('public.published') }}</span>
-            @else
-                <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">{{ trans('public.pending') }}</span>
-            @endif
-        </span>
+        @if($comment->status == 'active')
+            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('public.published') }}</span>
+        @else
+            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">{{ trans('public.pending') }}</span>
+        @endif
     </td>
 
     <td class="text-center">{{ dateTimeFormat($comment->created_at,'j M Y | H:i') }}</td>
 
     <td class="text-right">
         <input type="hidden" id="commentDescription{{ $comment->id }}" value="{{ nl2br($comment->comment) }}">
-        <input type="hidden" id="commentStatus{{ $comment->id }}" value="{{ $comment->status }}">
 
         <div class="actions-dropdown position-relative d-flex justify-content-end align-items-center">
             <button type="button" class="d-flex-center size-36 bg-gray border-gray-200 rounded-10">
@@ -32,7 +29,7 @@
                 <ul class="my-8">
 
                     <li class="actions-dropdown__dropdown-menu-item">
-                        <button type="button" data-comment-id="{{ $comment->id }}" class="js-edit-booking-comment">{{ trans('public.edit') }}</button>
+                        <button type="button" data-comment-id="{{ $comment->id }}" class="js-edit-comment">{{ trans('public.edit') }}</button>
                     </li>
 
                     <li class="actions-dropdown__dropdown-menu-item">

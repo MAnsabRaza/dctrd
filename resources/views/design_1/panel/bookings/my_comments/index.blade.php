@@ -51,49 +51,6 @@
         ])
     @endif
 
-    {{-- Booking Comment — Dedicated Edit Modal --}}
-    <div class="modal fade" id="editBookingCommentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-16 border-0 shadow-sm">
-
-                <form id="editBookingCommentForm">
-                    @csrf
-
-                    <div class="modal-header px-24 py-16 border-bottom-gray-100">
-                        <h5 class="modal-title font-16 fw-bold mb-0">{{ trans('panel.edit_comment') }}</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-
-                    <div class="modal-body px-24 py-20">
-
-                        <div class="form-group mb-16">
-                            <label class="form-group-label font-14 fw-semibold mb-8">{{ trans('panel.reply_to_the_comment') }}</label>
-                            <textarea id="editBookingCommentText" class="form-control rounded-8" rows="5" required></textarea>
-                        </div>
-
-                        <div class="form-group mb-0">
-                            <label class="form-group-label font-14 fw-semibold mb-8">{{ trans('public.status') }}</label>
-                            <select id="editBookingCommentStatus" class="form-control select2 rounded-8">
-                                <option value="active">{{ trans('public.published') }}</option>
-                                <option value="pending">{{ trans('public.pending') }}</option>
-                            </select>
-                        </div>
-
-                    </div>
-
-                    <div class="modal-footer px-24 py-16 border-top-gray-100">
-                        <button type="button" class="btn btn-light rounded-8" data-dismiss="modal">{{ trans('public.close') }}</button>
-                        <button type="submit" class="btn btn-primary rounded-8">{{ trans('public.save') }}</button>
-                    </div>
-
-                </form>
-
-            </div>
-        </div>
-    </div>
-
 @endsection
 
 @push('scripts_bottom')
@@ -104,8 +61,6 @@
         var saveLang = '{{ trans('public.save') }}';
         var closeLang = '{{ trans('public.close') }}';
         var failedLang = '{{ trans('quiz.failed') }}';
-        var publishedLang = '{{ trans('public.published') }}';
-        var pendingLang = '{{ trans('public.pending') }}';
     </script>
 
     <script src="/assets/default/vendors/moment.min.js"></script>
@@ -113,57 +68,4 @@
     <script src="{{ getDesign1ScriptPath("get_view_data") }}"></script>
 
     <script src="/assets/design_1/js/panel/comments.min.js"></script>
-
-    <script>
-        $(document).on('click', '.js-edit-booking-comment', function () {
-            const commentId = $(this).data('comment-id');
-
-            $('#editBookingCommentForm').data('comment-id', commentId);
-            $('#editBookingCommentText').val($('#commentDescription' + commentId).val());
-            $('#editBookingCommentStatus').val($('#commentStatus' + commentId).val()).trigger('change');
-
-           $('.modal-backdrop').remove();
-$('body').removeClass('modal-open');
-$('#editBookingCommentModal').modal('show');
-        });
-
-        $('#editBookingCommentForm').on('submit', function (e) {
-            e.preventDefault();
-
-            const commentId = $(this).data('comment-id');
-            const comment = $('#editBookingCommentText').val();
-            const status = $('#editBookingCommentStatus').val();
-            const $submitBtn = $(this).find('button[type="submit"]');
-
-            $submitBtn.prop('disabled', true);
-
-            $.ajax({
-                url: '/panel/bookings/my-comments/' + commentId + '/update',
-                method: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    comment: comment,
-                    status: status,
-                },
-                success: function () {
-                    $('#commentDescription' + commentId).val(comment);
-                    $('#commentStatus' + commentId).val(status);
-
-                    const badgeHtml = (status === 'active')
-                        ? '<span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">' + publishedLang + '</span>'
-                        : '<span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">' + pendingLang + '</span>';
-
-                    $('#statusBadge' + commentId).html(badgeHtml);
-
-                    $('#editBookingCommentModal').modal('hide');
-                },
-                error: function () {
-                    alert(failedLang);
-                },
-                complete: function () {
-                    $submitBtn.prop('disabled', false);
-                },
-            });
-        });
-    </script>
 @endpush
