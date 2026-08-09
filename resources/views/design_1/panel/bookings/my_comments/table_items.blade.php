@@ -8,11 +8,13 @@
     </td>
 
     <td class="text-center">
-        @if($comment->status == 'active')
-            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('public.published') }}</span>
-        @else
-            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">{{ trans('public.pending') }}</span>
-        @endif
+        <span id="statusBadge{{ $comment->id }}">
+            @if($comment->status == 'active')
+                <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('public.published') }}</span>
+            @else
+                <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">{{ trans('public.pending') }}</span>
+            @endif
+        </span>
     </td>
 
     <td class="text-center">{{ dateTimeFormat($comment->created_at,'j M Y | H:i') }}</td>
@@ -30,7 +32,7 @@
                 <ul class="my-8">
 
                     <li class="actions-dropdown__dropdown-menu-item">
-                        <button type="button" data-comment-id="{{ $comment->id }}" class="js-edit-comment">{{ trans('public.edit') }}</button>
+                        <button type="button" data-comment-id="{{ $comment->id }}" class="js-edit-booking-comment">{{ trans('public.edit') }}</button>
                     </li>
 
                     <li class="actions-dropdown__dropdown-menu-item">
