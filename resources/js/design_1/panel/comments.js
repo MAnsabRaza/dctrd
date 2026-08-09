@@ -107,33 +107,43 @@
         e.preventDefault();
         var $this = $(this);
         var comment_id = $this.attr('data-comment-id');
-        var description = $('#commentDescription' + comment_id).val();
-        var currentStatus = $this.attr('data-comment-status');
-        var updateUrl = $this.attr('data-update-url') || ('/panel/courses/comments/' + comment_id + '/update');
+        var editFormUrl = $this.attr('data-edit-form-url');
 
-        var statusFieldHtml = '';
-        if (currentStatus) {
-            statusFieldHtml =
-                '            <div class="form-group mt-16">\n' +
-                '                <label class="form-group-label bg-white">' + statusLang + '</label>\n' +
-                '                <select name="status" class="form-control bg-white">\n' +
-                '                    <option value="pending"' + (currentStatus === 'pending' ? ' selected' : '') + '>' + pendingLang + '</option>\n' +
-                '                    <option value="active"' + (currentStatus === 'active' ? ' selected' : '') + '>' + publishedLang + '</option>\n' +
-                '                </select>\n' +
-                '            </div>\n';
+        // NEW behavior: booking comments -> load edit form (with status dropdown) via AJAX
+        if (editFormUrl) {
+            $.get(editFormUrl, function (formHtml) {
+                Swal.fire({
+                    html: formHtml,
+                    showCancelButton: false,
+                    showConfirmButton: false,
+                    customClass: {
+                        content: 'p-0 text-left',
+                    },
+                    width: '40rem',
+                });
+            }).fail(function () {
+                Swal.fire({
+                    icon: 'error',
+                    html: '<h3 class="font-20 text-center text-dark-blue">' + failedLang + '</h3>',
+                    showConfirmButton: false,
+                });
+            });
+            return;
         }
+
+        // OLD behavior: course comments -> unchanged (no status field)
+        var description = $('#commentDescription' + comment_id).val();
 
         var html = '<div class="">\n' +
             '       <div class="section-title">'+
             '             <h3 class="section-title__heading">' + editCommentLang + '</h3>\n' +
             '        </div>'+
-            '        <form action="' + updateUrl + '" method="post" class="mt-20">\n' +
+            '        <form action="/panel/courses/comments/' + comment_id + '/update" method="post" class="mt-20">\n' +
             '            <input type="hidden" name="_token" value="' + csrfToken + '">\n' +
             '            <div class="form-group">\n' +
             '                <label class="form-group-label bg-white">' + replyToCommentLang + '</label>\n' +
             '                <textarea name="comment" rows="6" class="form-control bg-white">' + description + '</textarea>\n' +
             '            </div>\n' +
-            statusFieldHtml +
             '\n' +
             '            <div class="mt-32 d-flex align-items-center justify-content-end">\n' +
             '                <button type="button" class="btn btn-sm btn-primary js-save-form">' + saveLang + '</button>\n' +

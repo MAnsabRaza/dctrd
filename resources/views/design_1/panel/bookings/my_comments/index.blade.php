@@ -61,9 +61,6 @@
         var saveLang = '{{ trans('public.save') }}';
         var closeLang = '{{ trans('public.close') }}';
         var failedLang = '{{ trans('quiz.failed') }}';
-        var statusLang = '{{ trans('public.status') }}';
-        var pendingLang = '{{ trans('public.pending') }}';
-        var publishedLang = '{{ trans('public.published') }}';
     </script>
 
     <script src="/assets/default/vendors/moment.min.js"></script>

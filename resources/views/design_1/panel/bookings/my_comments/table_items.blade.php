@@ -31,8 +31,7 @@
                     <li class="actions-dropdown__dropdown-menu-item">
                         <button type="button"
                             data-comment-id="{{ $comment->id }}"
-                            data-comment-status="{{ $comment->status }}"
-                            data-update-url="/panel/bookings/my-comments/{{ $comment->id }}/update"
+                            data-edit-form-url="/panel/bookings/my-comments/{{ $comment->id }}/edit-form"
                             class="js-edit-comment">{{ trans('public.edit') }}</button>
                     </li>
 

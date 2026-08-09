@@ -119,29 +119,41 @@ class MyBookingCommentController extends Controller
 
         return redirect()->back();
     }
-    public function update(Request $request, $id)
-{
-    $user = auth()->user();
 
-    $comment = Comment::where('user_id', $user->id)->findOrFail($id);
+    public function editForm($id)
+    {
+        $user = auth()->user();
 
-    $this->validate($request, [
-        'comment' => 'required|string',
-        'status'  => 'nullable|in:active,pending',
-    ]);
+        $comment = Comment::where('user_id', $user->id)->findOrFail($id);
 
-    $comment->update([
-        'comment' => $request->input('comment'),
-        'status'  => $request->input('status', $comment->status),
-    ]);
-
-    if ($request->ajax()) {
-        return response()->json([
-            'code' => 200,
-            'msg'  => trans('public.request_success'),
+        return view('design_1.panel.bookings.my_comments.edit_modal', [
+            'comment' => $comment,
         ]);
     }
 
-    return redirect()->back();
-}
+    public function update(Request $request, $id)
+    {
+        $user = auth()->user();
+
+        $comment = Comment::where('user_id', $user->id)->findOrFail($id);
+
+        $this->validate($request, [
+            'comment' => 'required|string',
+            'status'  => 'nullable|in:active,pending',
+        ]);
+
+        $comment->update([
+            'comment' => $request->input('comment'),
+            'status'  => $request->input('status', $comment->status),
+        ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'code' => 200,
+                'msg'  => trans('public.request_success'),
+            ]);
+        }
+
+        return redirect()->back();
+    }
 }
