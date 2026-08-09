@@ -20,7 +20,7 @@ class MyBookingCommentController extends Controller
             ->whereNotNull('booking_id')
             ->with([
                 'booking' => function ($query) {
-                    $query->select('id', 'slug');
+                    $query->select('id', 'slug','title');
                 }
             ]);
 
@@ -119,4 +119,29 @@ class MyBookingCommentController extends Controller
 
         return redirect()->back();
     }
+    public function update(Request $request, $id)
+{
+    $user = auth()->user();
+
+    $comment = Comment::where('user_id', $user->id)->findOrFail($id);
+
+    $this->validate($request, [
+        'comment' => 'required|string',
+        'status'  => 'nullable|in:active,pending',
+    ]);
+
+    $comment->update([
+        'comment' => $request->input('comment'),
+        'status'  => $request->input('status', $comment->status),
+    ]);
+
+    if ($request->ajax()) {
+        return response()->json([
+            'code' => 200,
+            'msg'  => trans('public.request_success'),
+        ]);
+    }
+
+    return redirect()->back();
+}
 }

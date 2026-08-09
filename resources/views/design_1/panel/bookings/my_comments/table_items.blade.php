@@ -18,7 +18,9 @@
     <td class="text-center">{{ dateTimeFormat($comment->created_at,'j M Y | H:i') }}</td>
 
     <td class="text-right">
+        {{-- Hidden fields — JS in edit modal inko read karke fields pre-fill karti hai --}}
         <input type="hidden" id="commentDescription{{ $comment->id }}" value="{{ nl2br($comment->comment) }}">
+        <input type="hidden" id="commentStatus{{ $comment->id }}" value="{{ $comment->status }}">
 
         <div class="actions-dropdown position-relative d-flex justify-content-end align-items-center">
             <button type="button" class="d-flex-center size-36 bg-gray border-gray-200 rounded-10">
