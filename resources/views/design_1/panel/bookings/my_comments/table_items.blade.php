@@ -29,7 +29,11 @@
                 <ul class="my-8">
 
                     <li class="actions-dropdown__dropdown-menu-item">
-                        <button type="button" data-comment-id="{{ $comment->id }}" class="js-edit-comment">{{ trans('public.edit') }}</button>
+                        <button type="button"
+                            data-comment-id="{{ $comment->id }}"
+                            data-comment-status="{{ $comment->status }}"
+                            data-update-url="/panel/bookings/my-comments/{{ $comment->id }}/update"
+                            class="js-edit-comment">{{ trans('public.edit') }}</button>
                     </li>
 
                     <li class="actions-dropdown__dropdown-menu-item">
