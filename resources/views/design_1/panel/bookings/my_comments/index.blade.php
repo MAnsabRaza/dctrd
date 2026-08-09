@@ -122,7 +122,9 @@
             $('#editBookingCommentText').val($('#commentDescription' + commentId).val());
             $('#editBookingCommentStatus').val($('#commentStatus' + commentId).val()).trigger('change');
 
-            $('#editBookingCommentModal').modal('show');
+           $('.modal-backdrop').remove();
+$('body').removeClass('modal-open');
+$('#editBookingCommentModal').modal('show');
         });
 
         $('#editBookingCommentForm').on('submit', function (e) {
