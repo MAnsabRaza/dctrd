@@ -124,15 +124,16 @@ class InvitedBookingsController extends Controller
      * NOTE: 'status' aur 'total_price' column names apne BookingOrder
      * schema ke mutabiq adjust kar len (jaisa "completed/paid" status hota hai)
      */
-    private function getSalesTotal(array $bookingIds): float
-    {
-        if (empty($bookingIds)) {
-            return 0;
-        }
-
-        return (float) \App\Models\BookingOrder::query()
-            ->whereIn('booking_id', $bookingIds)
-            ->where('status', 'completed')
-            ->sum('total_price');
+  private function getSalesTotal(array $bookingIds): float
+{
+    if (empty($bookingIds)) {
+        return 0;
     }
+
+    return (float) \App\Models\BookingOrder::query()
+        ->whereIn('booking_orders.id', $bookingIds)
+        ->where('booking_orders.status', 'completed')
+        ->join('sales', 'sales.booking_order_id', '=', 'booking_orders.id')
+        ->sum(\DB::raw('COALESCE(sales.total_amount, sales.amount)'));
+}
 }
