@@ -77,7 +77,7 @@
         @include('design_1.web.products.show.tabs.about', ['product' => $product])
 
         {{-- Specifications --}}
-        @include('design_1.web.products.show.includes.main_info.tabs.specifications', [
+        @include('design_1.web.products.show.includes.main_info.specifications', [
             'selectedSpecifications' => $selectedSpecifications,
         ])
 
