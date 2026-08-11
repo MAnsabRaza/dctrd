@@ -55,12 +55,12 @@
 
             {{-- Main Info (title, price, quantity, add to cart, buy with points, installments) --}}
             <div class="col-12 col-lg-7 mt-24 mt-lg-0">
-                @include('design_1.web.products.show.include', [
-                    'product' => $product,
-                    'user' => $user,
-                    'selectableSpecifications' => $selectableSpecifications,
-                    'hasInstallments' => $hasInstallments,
-                ])
+             @include('design_1.web.products.show.includes.main_infgito', [
+    'product' => $product,
+    'user' => $user,
+    'selectableSpecifications' => $selectableSpecifications,
+    'hasInstallments' => $hasInstallments,
+])
             </div>
 
         </div>
