@@ -50,12 +50,12 @@
 
             {{-- Images --}}
             <div class="col-12 col-lg-5">
-                @include('design_1.web.products.show.includes.main_info.images', ['product' => $product])
+                @include('design_1.web.products.show.includes.images', ['product' => $product])
             </div>
 
             {{-- Main Info (title, price, quantity, add to cart, buy with points, installments) --}}
             <div class="col-12 col-lg-7 mt-24 mt-lg-0">
-                @include('design_1.web.products.show.includes.main_info.main_info', [
+                @include('design_1.web.products.show.include', [
                     'product' => $product,
                     'user' => $user,
                     'selectableSpecifications' => $selectableSpecifications,
@@ -66,7 +66,7 @@
         </div>
 
         {{-- Promotions (gift card / cashback / instructor discounts) --}}
-        @include('design_1.web.products.show.includes.main_info.promotions', [
+        @include('design_1.web.products.show.includes.promotions', [
             'product' => $product,
             'productAvailability' => $productAvailability,
             'cashbackRules' => $cashbackRules,
@@ -74,7 +74,7 @@
         ])
 
         {{-- About / Description / FAQ --}}
-        @include('design_1.web.products.show.includes.main_info.tabs.about', ['product' => $product])
+        @include('design_1.web.products.show.includes.tabs.about', ['product' => $product])
 
         {{-- Specifications --}}
         @include('design_1.web.products.show.includes.main_info.tabs.specifications', [
@@ -84,12 +84,12 @@
         {{-- Files (only for products that have downloadable files) --}}
         @if(!empty($product->files) and count($product->files))
             <div class="mt-24">
-                @include('design_1.web.products.show.includes.main_info.tabs.files', ['product' => $product])
+                @include('design_1.web.products.show.includes.tabs.files', ['product' => $product])
             </div>
         @endif
 
         {{-- Seller / Instructor Card --}}
-        @include('design_1.web.products.show.includes.main_info.tabs.seller', [
+        @include('design_1.web.products.show.includes.tabs.seller', [
             'product' => $product,
             'seller' => $seller,
             'sellerBadges' => $sellerBadges,
@@ -101,7 +101,7 @@
 
         {{-- Reviews --}}
         <div class="mt-24">
-            @include('design_1.web.products.show.includes.main_info.tabs.reviews', [
+            @include('design_1.web.products.show.includes.tabs.reviews', [
                 'product' => $product,
                 'productReviews' => $productReviews,
             ])
@@ -109,7 +109,7 @@
 
         {{-- Comments --}}
         <div class="mt-24">
-            @include('design_1.web.products.show.includes.main_info.tabs.comments', [
+            @include('design_1.web.products.show.includes.tabs.comments', [
                 'product' => $product,
                 'productComments' => $productComments,
             ])
