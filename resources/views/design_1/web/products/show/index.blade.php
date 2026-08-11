@@ -74,7 +74,7 @@
         ])
 
         {{-- About / Description / FAQ --}}
-        @include('design_1.web.products.show.includes.tabs.about', ['product' => $product])
+        @include('design_1.web.products.show.tabs.about', ['product' => $product])
 
         {{-- Specifications --}}
         @include('design_1.web.products.show.includes.main_info.tabs.specifications', [
@@ -84,12 +84,12 @@
         {{-- Files (only for products that have downloadable files) --}}
         @if(!empty($product->files) and count($product->files))
             <div class="mt-24">
-                @include('design_1.web.products.show.includes.tabs.files', ['product' => $product])
+                @include('design_1.web.products.show.tabs.files', ['product' => $product])
             </div>
         @endif
 
         {{-- Seller / Instructor Card --}}
-        @include('design_1.web.products.show.includes.tabs.seller', [
+        @include('design_1.web.products.show.tabs.seller', [
             'product' => $product,
             'seller' => $seller,
             'sellerBadges' => $sellerBadges,
@@ -101,7 +101,7 @@
 
         {{-- Reviews --}}
         <div class="mt-24">
-            @include('design_1.web.products.show.includes.tabs.reviews', [
+            @include('design_1.web.products.show.tabs.reviews', [
                 'product' => $product,
                 'productReviews' => $productReviews,
             ])
@@ -109,7 +109,7 @@
 
         {{-- Comments --}}
         <div class="mt-24">
-            @include('design_1.web.products.show.includes.tabs.comments', [
+            @include('design_1.web.products.show.tabs.comments', [
                 'product' => $product,
                 'productComments' => $productComments,
             ])
