@@ -20,6 +20,7 @@ use App\Models\TicketUser;
 use App\PaymentChannels\ChannelManager;
 use App\Services\Calendar\CalendarSyncService;
 use App\Services\CustomerGroupAccessService;
+use App\Services\Erp\ErpPostSaleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -484,6 +485,10 @@ if ($gateway === 'offline') {
 
                 // Set Sale After All Accounting
                 $sale = Sale::createSales($orderItem, $order->payment_method);
+
+                if (!empty($orderItem->product_id)) {
+                    app(ErpPostSaleService::class)->syncSale($sale, $orderItem);
+                }
 
                 if (!empty($orderItem->booking_order_id)) {
                     $this->confirmBookingOrder($orderItem->bookingOrder, $sale);

@@ -32,6 +32,9 @@ use HasQrCode;
         'lat' => 'float',
         'lng' => 'float',
         'allowed_customer_groups' => 'array',
+        'erp_post_sale_enabled' => 'boolean',
+        'erp_staff_ids' => 'array',
+        'erp_task_templates' => 'array',
     ];
 
     public $morphsFunctions = ['productBadgeContents', 'relatedCourses', 'deleteRequest'];

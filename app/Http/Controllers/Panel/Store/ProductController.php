@@ -13,8 +13,10 @@ use App\Models\ProductOrder;
 use App\Models\ProductSelectedFilterOption;
 use App\Models\ProductSpecification;
 use App\Models\ProductSpecificationCategory;
+use App\Models\ErpCredential;
 use App\Models\Translation\ProductTranslation;
 use App\Services\LocationService;
+use App\Services\Erp\ErpClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -294,6 +296,67 @@ class ProductController extends Controller
         return view('design_1.panel.store.create_product.index', $data);
     }
 
+    public function erpPostSaleCategories()
+    {
+        return $this->fetchErpOptions('categories');
+    }
+
+    public function erpPostSaleStaff()
+    {
+        return $this->fetchErpOptions('staff');
+    }
+
+    private function normalizeErpPostSaleData(array $data): array
+    {
+        $enabled = !empty($data['erp_post_sale_enabled']) && $data['erp_post_sale_enabled'] === 'on';
+
+        $data['erp_post_sale_enabled'] = $enabled;
+        $data['erp_category_id'] = $enabled ? ($data['erp_category_id'] ?? null) : null;
+        $data['erp_category_name'] = $enabled ? ($data['erp_category_name'] ?? null) : null;
+        $data['erp_subcategory_id'] = $enabled ? ($data['erp_subcategory_id'] ?? null) : null;
+        $data['erp_subcategory_name'] = $enabled ? ($data['erp_subcategory_name'] ?? null) : null;
+        $data['erp_staff_ids'] = $enabled ? array_values(array_filter($data['erp_staff_ids'] ?? [], fn ($id) => is_numeric($id))) : null;
+
+        $templates = preg_split('/\r\n|\r|\n/', (string) ($data['erp_task_templates'] ?? ''));
+        $data['erp_task_templates'] = $enabled
+            ? array_values(array_filter(array_map('trim', $templates)))
+            : null;
+        $data['erp_task_templates_raw'] = null;
+
+        return $data;
+    }
+
+    private function fetchErpOptions(string $type)
+    {
+        $user = auth()->user();
+
+        if (empty($user) || (!$user->isTeacher() && !$user->isOrganization()) || !$user->checkCanAccessToStore()) {
+            abort(403);
+        }
+
+        $credential = ErpCredential::where('vendor_id', $user->id)
+            ->where('type', 'import_export')
+            ->where('is_active', true)
+            ->first();
+
+        if (empty($credential) || empty($credential->base_url) || empty($credential->api_key)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Perfex ERP credential is not configured or inactive.',
+                'data' => [],
+            ], 422);
+        }
+
+        $client = new ErpClient($credential);
+        $result = $type === 'staff' ? $client->getStaff() : $client->getPostSaleCategories();
+
+        return response()->json([
+            'success' => !empty($result['success']),
+            'message' => $result['error'] ?? null,
+            'data' => $result['body']['data'] ?? $result['body'] ?? [],
+        ], !empty($result['success']) ? 200 : 502);
+    }
+
     public function update(Request $request, $id)
     {
         $this->authorize("panel_products_create");
@@ -335,9 +398,18 @@ class ProductController extends Controller
                 'lng' => 'nullable|numeric',
                  'checkout_message' => 'nullable|string',
                  'reviewer_message' => 'nullable|string',
+                'erp_post_sale_enabled' => 'nullable|in:on',
+                'erp_category_id' => 'nullable|string|max:255',
+                'erp_category_name' => 'nullable|string|max:255',
+                'erp_subcategory_id' => 'nullable|string|max:255',
+                'erp_subcategory_name' => 'nullable|string|max:255',
+                'erp_staff_ids' => 'nullable|array',
+                'erp_staff_ids.*' => 'nullable|integer',
+                'erp_task_templates' => 'nullable|string',
             ];
 
             $data['location_enabled'] = !empty($data['location_enabled']) && $data['location_enabled'] === 'on';
+            $data = $this->normalizeErpPostSaleData($data);
         }
 
         if ($currentStep == 2) {
@@ -413,6 +485,7 @@ if ($currentStep == 1) {
             $data['images'],
             $data['video_demo'],
             $data['filters'],
+            $data['erp_task_templates_raw'],
         );
 
         if (isset($product->salesCountCache)) {

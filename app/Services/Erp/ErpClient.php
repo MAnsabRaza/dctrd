@@ -58,6 +58,21 @@ class ErpClient
         return $this->call($remoteId ? 'PUT' : 'POST', '/api/v1/payments' . ($remoteId ? "/{$remoteId}" : ''), $payload);
     }
 
+    public function getPostSaleCategories()
+    {
+        return $this->call('GET', '/api/post_sale_categories');
+    }
+
+    public function getStaff()
+    {
+        return $this->call('GET', '/api/post_sale_staff');
+    }
+
+    public function createProjectFromOrder(array $payload)
+    {
+        return $this->call('POST', '/api/create_project_from_order', $payload);
+    }
+
     /**
      * Flow 2: supplier feed pull — dusre supplier ka inventory
      */

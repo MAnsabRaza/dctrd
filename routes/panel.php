@@ -756,6 +756,8 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
                 Route::get('/', 'ProductController@index');
                 Route::get('/new', 'ProductController@create');
                 Route::post('/store', 'ProductController@store');
+                Route::get('/erp/post-sale/categories', 'ProductController@erpPostSaleCategories');
+                Route::get('/erp/post-sale/staff', 'ProductController@erpPostSaleStaff');
                 Route::get('/{id}/step/{step?}', 'ProductController@edit');
                 Route::get('/{id}/edit', 'ProductController@edit');
                 Route::post('/{id}/update', 'ProductController@update');
