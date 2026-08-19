@@ -62,15 +62,11 @@
         <span>{{ handlePrice($order->sale->total_amount) }}</span>
     </td>
 
-    <td class="text-center">
+       <td class="text-center">
         @if($order->status == \App\Models\BookingOrder::$waitingDelivery)
             <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-warning-30 font-12 text-warning">{{ trans('update.booking_order_status_waiting_delivery') }}</span>
-        @elseif($order->status == \App\Models\BookingOrder::$shipped)
-            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-primary-30 font-12 text-primary">{{ trans('update.booking_order_status_shipped') }}</span>
         @elseif($order->status == \App\Models\BookingOrder::$success)
-            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('update.booking_order_status_success') }}</span>
-        @elseif($order->status == \App\Models\BookingOrder::$completed)
-            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">{{ trans('update.booking_order_status_completed') }}</span>
+            <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-success-30 font-12 text-success">Completed</span>
         @elseif($order->status == \App\Models\BookingOrder::$canceled)
             <span class="d-inline-flex-center px-8 py-6 rounded-8 bg-danger-30 font-12 text-danger">{{ trans('update.booking_order_status_canceled') }}</span>
         @endif

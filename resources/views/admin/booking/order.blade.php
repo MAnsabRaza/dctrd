@@ -126,9 +126,8 @@
                                         <option value="">{{ trans('admin/main.all_status') }}</option>
                                         <option value="{{ \App\Models\BookingOrder::$pending }}" @if(request()->get('status') == \App\Models\BookingOrder::$pending) selected @endif>{{ trans('admin/main.pending') }}</option>
                                         <option value="{{ \App\Models\BookingOrder::$waitingDelivery }}" @if(request()->get('status') == \App\Models\BookingOrder::$waitingDelivery) selected @endif>{{ trans('update.product_order_status_waiting_delivery') }}</option>
-                                        <option value="{{ \App\Models\BookingOrder::$shipped }}" @if(request()->get('status') == \App\Models\BookingOrder::$shipped) selected @endif>{{ trans('update.product_order_status_shipped') }}</option>
-                                        <option value="{{ \App\Models\BookingOrder::$success }}" @if(request()->get('status') == \App\Models\BookingOrder::$success) selected @endif>{{ trans('update.product_order_status_success') }}</option>
-                                        <option value="{{ \App\Models\BookingOrder::$canceled }}" @if(request()->get('status') == \App\Models\BookingOrder::$canceled) selected @endif>{{ trans('update.product_order_status_canceled') }}</option>
+                                        <option value="{{ \App\Models\BookingOrder::$success }}" @if(request()->get('status') == \App\Models\BookingOrder::$success) selected @endif>Completed</option>
+                                      <option value="{{ \App\Models\BookingOrder::$canceled }}" @if(request()->get('status') == \App\Models\BookingOrder::$canceled) selected @endif>{{ trans('update.product_order_status_canceled') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -218,12 +217,11 @@
                                         <th width="120">{{ trans('admin/main.actions') }}</th>
                                     </tr>
 
-                                    @php
+                                                                   @php
                                         $bookingOrderStatusOptions = [
                                             \App\Models\BookingOrder::$pending => trans('admin/main.pending'),
                                             \App\Models\BookingOrder::$waitingDelivery => trans('update.product_order_status_waiting_delivery'),
-                                            \App\Models\BookingOrder::$shipped => trans('update.product_order_status_shipped'),
-                                            \App\Models\BookingOrder::$success => trans('update.product_order_status_success'),
+                                            \App\Models\BookingOrder::$success => 'Completed',
                                             \App\Models\BookingOrder::$canceled => trans('update.product_order_status_canceled'),
                                         ];
                                     @endphp
@@ -293,15 +291,12 @@
                                                         default => $order->status,
                                                     };
                                                 @endphp
-
                                                 @if($normalizedStatus == \App\Models\BookingOrder::$pending)
                                                     <span class="badge-status text-warning bg-warning-30">{{ trans('admin/main.pending') }}</span>
                                                 @elseif($normalizedStatus == \App\Models\BookingOrder::$waitingDelivery)
                                                     <span class="badge-status text-primary bg-primary-30">{{ trans('update.product_order_status_waiting_delivery') }}</span>
-                                                @elseif($normalizedStatus == \App\Models\BookingOrder::$shipped)
-                                                    <span class="badge-status text-primary bg-primary-30">{{ trans('update.product_order_status_shipped') }}</span>
                                                 @elseif($normalizedStatus == \App\Models\BookingOrder::$success)
-                                                    <span class="badge-status text-success bg-success-30">{{ trans('update.product_order_status_success') }}</span>
+                                                    <span class="badge-status text-success bg-success-30">Completed</span>
                                                 @elseif($normalizedStatus == \App\Models\BookingOrder::$canceled)
                                                     <span class="badge-status text-danger bg-danger-30">{{ trans('update.product_order_status_canceled') }}</span>
                                                 @else
