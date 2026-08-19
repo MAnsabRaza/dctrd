@@ -62,8 +62,8 @@ class UserController extends Controller
     }
    private function makeRegulatoryViewData($user): array
 {
-    $userRoles = \App\Models\UserRoleRequest::where('user_id', $user->id)
-        ->whereIn('status', [\App\Models\UserRoleRequest::STATUS_ACTIVE, \App\Models\UserRoleRequest::STATUS_PENDING])
+       $userRoles = \App\Models\UserRoleRequest::where('user_id', $user->id)
+        ->where('status', \App\Models\UserRoleRequest::STATUS_ACTIVE)
         ->with('roleCatalog')
         ->get();
 
@@ -687,7 +687,7 @@ public function update(Request $request)
         }
     }
 
-    private function saveRegulatorySettings(Request $request, User $user): void
+        private function saveRegulatorySettings(Request $request, User $user): void
     {
         $forms = $request->input('regulatory_forms', []);
 
@@ -705,6 +705,17 @@ public function update(Request $request)
             $template = RegulatoryFormTemplate::find($templateId);
 
             if (empty($template)) {
+                continue;
+            }
+
+            // Server-side check: is template ke role_catalog_id par user ka
+            // ACTIVE role hona chahiye — warna ye form silently skip karo
+            $hasActiveRole = \App\Models\UserRoleRequest::where('user_id', $user->id)
+                ->where('role_catalog_id', $template->role_catalog_id)
+                ->where('status', \App\Models\UserRoleRequest::STATUS_ACTIVE)
+                ->exists();
+
+            if (!$hasActiveRole) {
                 continue;
             }
 

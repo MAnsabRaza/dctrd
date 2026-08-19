@@ -19,10 +19,10 @@ class RegulatoryFormController extends Controller
     {
         $user = auth()->user();
 
-        $userRoles = UserRoleRequest::where('user_id', $user->id)
-            ->whereIn('status', [UserRoleRequest::STATUS_ACTIVE, UserRoleRequest::STATUS_PENDING])
-            ->with('roleCatalog')
-            ->get();
+       $userRoles = UserRoleRequest::where('user_id', $user->id)
+    ->where('status', UserRoleRequest::STATUS_ACTIVE)   // pending hata diya
+    ->with('roleCatalog')
+    ->get();
 
         $stacks = [];
 
@@ -98,7 +98,7 @@ class RegulatoryFormController extends Controller
     /**
      * "I want to add Brand" / "I want to add Warehouse" button — naya secondary/tertiary slot banata hai.
      */
-    public function addSlot(Request $request)
+        public function addSlot(Request $request)
     {
         $data = $request->validate([
             'template_id' => 'required|exists:regulatory_form_templates,id',
@@ -106,6 +106,9 @@ class RegulatoryFormController extends Controller
 
         $user     = auth()->user();
         $template = RegulatoryFormTemplate::findOrFail($data['template_id']);
+
+        // Server-side check: is template ke role_catalog_id par user ka ACTIVE role hona chahiye
+        $this->assertUserHasActiveRole($user->id, $template->role_catalog_id);
 
         $submission = RegulatoryFormSubmission::create([
             'user_id'         => $user->id,
@@ -122,7 +125,7 @@ class RegulatoryFormController extends Controller
         ]);
     }
 
-    public function destroy($submissionId)
+       public function destroy($submissionId)
     {
         $user = auth()->user();
 
@@ -131,12 +134,29 @@ class RegulatoryFormController extends Controller
             ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1']) // primary delete nahi ho sakta
             ->firstOrFail();
 
+        // Server-side check: submission jis role_catalog_id ki hai, us par user ka ACTIVE role hona chahiye
+        $this->assertUserHasActiveRole($user->id, $submission->role_catalog_id);
+
         $submission->delete();
 
         return response()->json(['code' => 200]);
     }
 
-  private function storeSubmission(Request $request, string $status)
+    /**
+     * Verify karo ke authenticated user ke paas is role_catalog_id
+     * ke liye ACTIVE role hai. Warna 403 abort.
+     */
+    private function assertUserHasActiveRole($userId, $roleCatalogId): void
+    {
+        $hasActiveRole = UserRoleRequest::where('user_id', $userId)
+            ->where('role_catalog_id', $roleCatalogId)
+            ->where('status', UserRoleRequest::STATUS_ACTIVE)
+            ->exists();
+
+        abort_unless($hasActiveRole, 403, 'Is regulatory form ke liye aapka role active nahi hai.');
+    }
+
+   private function storeSubmission(Request $request, string $status)
 {
     $data = $request->validate([
         'template_id'   => 'required|exists:regulatory_form_templates,id',
@@ -146,6 +166,9 @@ class RegulatoryFormController extends Controller
 
     $user     = auth()->user();
     $template = RegulatoryFormTemplate::findOrFail($data['template_id']);
+
+    // Server-side check: is template ke role_catalog_id par user ka ACTIVE role hona chahiye
+    $this->assertUserHasActiveRole($user->id, $template->role_catalog_id);
 
     // Empty string / 0 ko null treat karo
     $submissionId = !empty($data['submission_id']) ? (int) $data['submission_id'] : null;
