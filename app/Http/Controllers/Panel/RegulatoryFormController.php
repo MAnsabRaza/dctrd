@@ -3,23 +3,68 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
-use App\Models\Form;
 use App\Models\Region;
 use App\Models\RegulatoryFormSubmission;
+use App\Models\RegulatoryFormTemplate;
 use App\Models\UserRoleRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class RegulatoryFormController extends Controller
 {
+    /**
+     * User ke sare (active + pending) roles ke stacked regulatory forms dikhao.
+     */
     public function show()
     {
         $user = auth()->user();
 
-        $userRoles = UserRoleRequest::where('user_id', $user->id)
-            ->where('status', UserRoleRequest::STATUS_ACTIVE)
-            ->with('roleCatalog')
-            ->get();
+       $userRoles = UserRoleRequest::where('user_id', $user->id)
+    ->where('status', UserRoleRequest::STATUS_ACTIVE)   // pending hata diya
+    ->with('roleCatalog')
+    ->get();
+
+        $stacks = [];
+
+        foreach ($userRoles as $userRole) {
+            $roleCatalogId = $userRole->role_catalog_id;
+
+            $primaryTemplate = RegulatoryFormTemplate::where('role_catalog_id', $roleCatalogId)
+                ->where('level', 'primary')
+                ->where('active', true)
+                ->first();
+
+            if (empty($primaryTemplate)) {
+                continue; // is role ka koi regulatory form define nahi hua
+            }
+
+            $primarySubmission = RegulatoryFormSubmission::where('user_id', $user->id)
+                ->where('role_catalog_id', $roleCatalogId)
+                ->where('level', 'primary')
+                ->first();
+
+            // Secondary/Tertiary/Quaternary templates (agar exist karte hon)
+            $extraTemplates = RegulatoryFormTemplate::where('role_catalog_id', $roleCatalogId)
+                ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
+                ->where('active', true)
+                ->get();
+
+            // User ke already-added secondary/tertiary slots (multiple ho sakte hain — Branch1, Branch2, ...)
+            $extraSubmissions = RegulatoryFormSubmission::where('user_id', $user->id)
+                ->where('role_catalog_id', $roleCatalogId)
+                ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
+                ->get()
+                ->groupBy('template_id');
+
+            $stacks[] = [
+                'role'              => $userRole->roleCatalog,
+                'roleRequestStatus' => $userRole->status,
+                'primaryTemplate'   => $primaryTemplate,
+                'primarySubmission' => $primarySubmission,
+                'extraTemplates'    => $extraTemplates,
+                'extraSubmissions'  => $extraSubmissions,
+            ];
+        }
 
         $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
             ->where('type', Region::$country)
@@ -32,85 +77,10 @@ class RegulatoryFormController extends Controller
             $userCountry = $country->title ?? $userCountry;
         }
 
-        $stacks = [];
-
-        foreach ($userRoles as $userRole) {
-            $roleCatalogId = $userRole->role_catalog_id;
-
-            // ── Primary form ─────────────────────────────────────────
-            $primaryForm = Form::query()
-                ->where('connect_regulatory', true)
-                ->where('regulatory_role_catalog_id', $roleCatalogId)
-                ->where('regulatory_level', 'primary')
-                ->where('enable', true)
-                ->with(['fields' => function ($q) {
-                    $q->orderBy('order', 'asc')->with('options');
-                }])
-                ->first();
-
-            if (empty($primaryForm) || !$this->formAppliesToCountry($primaryForm, $userCountry)) {
-                continue; // is role ka koi primary regulatory form nahi mila
-            }
-
-            $primarySubmission = RegulatoryFormSubmission::where('user_id', $user->id)
-                ->where('role_catalog_id', $roleCatalogId)
-                ->where('form_id', $primaryForm->id)
-                ->first();
-
-            // ── Secondary/Tertiary/Quaternary/Extra1 (multi-slot: Branch/Warehouse) ──
-            $extraForms = Form::query()
-                ->where('connect_regulatory', true)
-                ->where('regulatory_role_catalog_id', $roleCatalogId)
-                ->whereIn('regulatory_level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
-                ->where('enable', true)
-                ->with(['fields' => function ($q) {
-                    $q->orderBy('order', 'asc')->with('options');
-                }])
-                ->get()
-                ->filter(fn($form) => $this->formAppliesToCountry($form, $userCountry))
-                ->values();
-
-            $extraSubmissions = RegulatoryFormSubmission::where('user_id', $user->id)
-                ->where('role_catalog_id', $roleCatalogId)
-                ->whereIn('form_id', $extraForms->pluck('id'))
-                ->get()
-                ->groupBy('form_id');
-
-            // ── Level = NULL (badges/certificates — single apply, no slots) ──
-            $badgeForms = Form::query()
-                ->where('connect_regulatory', true)
-                ->where('regulatory_role_catalog_id', $roleCatalogId)
-                ->whereNull('regulatory_level')
-                ->where('enable', true)
-                ->with(['fields' => function ($q) {
-                    $q->orderBy('order', 'asc')->with('options');
-                }])
-                ->get()
-                ->filter(fn($form) => $this->formAppliesToCountry($form, $userCountry))
-                ->values();
-
-            $badgeSubmissions = RegulatoryFormSubmission::where('user_id', $user->id)
-                ->where('role_catalog_id', $roleCatalogId)
-                ->whereIn('form_id', $badgeForms->pluck('id'))
-                ->get()
-                ->keyBy('form_id');
-
-            $stacks[] = [
-                'role'              => $userRole->roleCatalog,
-                'roleRequestStatus' => $userRole->status,
-                'primaryForm'       => $primaryForm,
-                'primarySubmission' => $primarySubmission,
-                'extraForms'        => $extraForms,
-                'extraSubmissions'  => $extraSubmissions,
-                'badgeForms'        => $badgeForms,
-                'badgeSubmissions'  => $badgeSubmissions,
-            ];
-        }
-
         return view('design_1.panel.settings.regulatory', [
-            'pageTitle'   => 'Regulatory & Badges',
-            'stacks'      => $stacks,
-            'countries'   => $countries,
+            'pageTitle' => 'Regulatory & Badges',
+            'stacks'    => $stacks,
+            'countries' => $countries,
             'userCountry' => $userCountry,
         ]);
     }
@@ -126,26 +96,25 @@ class RegulatoryFormController extends Controller
     }
 
     /**
-     * "I want to add Branch" / "I want to add Warehouse" — naya secondary/tertiary slot.
+     * "I want to add Brand" / "I want to add Warehouse" button — naya secondary/tertiary slot banata hai.
      */
-    public function addSlot(Request $request)
+        public function addSlot(Request $request)
     {
         $data = $request->validate([
-            'form_id' => 'required|exists:forms,id',
+            'template_id' => 'required|exists:regulatory_form_templates,id',
         ]);
 
-        $user = auth()->user();
-        $form = Form::where('id', $data['form_id'])
-            ->where('connect_regulatory', true)
-            ->firstOrFail();
+        $user     = auth()->user();
+        $template = RegulatoryFormTemplate::findOrFail($data['template_id']);
 
-        $this->assertUserHasActiveRole($user->id, $form->regulatory_role_catalog_id);
+        // Server-side check: is template ke role_catalog_id par user ka ACTIVE role hona chahiye
+        $this->assertUserHasActiveRole($user->id, $template->role_catalog_id);
 
         $submission = RegulatoryFormSubmission::create([
             'user_id'         => $user->id,
-            'role_catalog_id' => $form->regulatory_role_catalog_id,
-            'form_id'         => $form->id,
-            'level'           => $form->regulatory_level,
+            'role_catalog_id' => $template->role_catalog_id,
+            'template_id'     => $template->id,
+            'level'           => $template->level,
             'data'            => [],
             'status'          => 'draft',
         ]);
@@ -156,15 +125,16 @@ class RegulatoryFormController extends Controller
         ]);
     }
 
-    public function destroy($submissionId)
+       public function destroy($submissionId)
     {
         $user = auth()->user();
 
         $submission = RegulatoryFormSubmission::where('id', $submissionId)
             ->where('user_id', $user->id)
-            ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1']) // primary/badge delete nahi ho sakta
+            ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1']) // primary delete nahi ho sakta
             ->firstOrFail();
 
+        // Server-side check: submission jis role_catalog_id ki hai, us par user ka ACTIVE role hona chahiye
         $this->assertUserHasActiveRole($user->id, $submission->role_catalog_id);
 
         $submission->delete();
@@ -172,6 +142,10 @@ class RegulatoryFormController extends Controller
         return response()->json(['code' => 200]);
     }
 
+    /**
+     * Verify karo ke authenticated user ke paas is role_catalog_id
+     * ke liye ACTIVE role hai. Warna 403 abort.
+     */
     private function assertUserHasActiveRole($userId, $roleCatalogId): void
     {
         $hasActiveRole = UserRoleRequest::where('user_id', $userId)
@@ -182,69 +156,50 @@ class RegulatoryFormController extends Controller
         abort_unless($hasActiveRole, 403, 'Is regulatory form ke liye aapka role active nahi hai.');
     }
 
-    private function storeSubmission(Request $request, string $status)
-    {
-        $data = $request->validate([
-            'form_id'       => 'required|exists:forms,id',
-            'submission_id' => 'nullable|integer',
-            'fields'        => 'nullable|array',
-        ]);
+   private function storeSubmission(Request $request, string $status)
+{
+    $data = $request->validate([
+        'template_id'   => 'required|exists:regulatory_form_templates,id',
+        'submission_id' => 'nullable|integer', // exists rule hata di — empty string safe rahegi
+        'fields'        => 'nullable|array',
+    ]);
 
-        $user = auth()->user();
-        $form = Form::where('id', $data['form_id'])
-            ->where('connect_regulatory', true)
-            ->firstOrFail();
+    $user     = auth()->user();
+    $template = RegulatoryFormTemplate::findOrFail($data['template_id']);
 
-        $this->assertUserHasActiveRole($user->id, $form->regulatory_role_catalog_id);
+    // Server-side check: is template ke role_catalog_id par user ka ACTIVE role hona chahiye
+    $this->assertUserHasActiveRole($user->id, $template->role_catalog_id);
 
-        $submissionId = !empty($data['submission_id']) ? (int) $data['submission_id'] : null;
+    // Empty string / 0 ko null treat karo
+    $submissionId = !empty($data['submission_id']) ? (int) $data['submission_id'] : null;
 
-        $submission = null;
+    $submission = null;
 
-        if ($submissionId) {
-            $submission = RegulatoryFormSubmission::where('id', $submissionId)
-                ->where('user_id', $user->id)
-                ->first();
-        }
-
-        if (empty($submission)) {
-            $submission = new RegulatoryFormSubmission();
-            $submission->user_id = $user->id;
-        }
-
-        $submission->role_catalog_id = $form->regulatory_role_catalog_id;
-        $submission->form_id         = $form->id;
-        $submission->level           = $form->regulatory_level;
-        $submission->data            = $data['fields'] ?? [];
-        $submission->status          = $status;
-        $submission->save();
-
-        return response()->json([
-            'code'          => 200,
-            'submission_id' => $submission->id,
-            'msg'           => $status === 'pending'
-                ? 'Form submitted for review — admin approval ka intezar hai.'
-                : 'Draft saved.',
-            'status'        => $submission->status,
-        ]);
+    if ($submissionId) {
+        $submission = RegulatoryFormSubmission::where('id', $submissionId)
+            ->where('user_id', $user->id)
+            ->first();
     }
 
-    /**
-     * Form ka regulatory_countries JSON check karta hai — agar khaali/null hai
-     * to form har country ke liye applicable hai, warna user ka country list mein hona chahiye.
-     */
-    private function formAppliesToCountry(Form $form, $userCountry): bool
-    {
-        if (empty($form->regulatory_countries)) {
-            return true;
-        }
-
-        $countries = json_decode($form->regulatory_countries, true) ?: [];
-
-        if (empty($countries)) {
-            return true;
-        }
-
-        return in_array($userCountry, $countries, true);
+    if (empty($submission)) {
+        $submission = new RegulatoryFormSubmission();
+        $submission->user_id = $user->id;
     }
+
+    $submission->role_catalog_id = $template->role_catalog_id;
+    $submission->template_id     = $template->id;
+    $submission->level           = $template->level;
+    $submission->data            = $data['fields'] ?? [];
+    $submission->status          = $status;
+    $submission->save();
+
+    return response()->json([
+        'code'          => 200,
+        'submission_id' => $submission->id, // JS isay dobara use karega taake next save "update" ho, duplicate na bane
+        'msg'           => $status === 'pending'
+            ? 'Form submitted for review — admin approval ka intezar hai.'
+            : 'Draft saved.',
+        'status'        => $submission->status,
+    ]);
+}
 }
