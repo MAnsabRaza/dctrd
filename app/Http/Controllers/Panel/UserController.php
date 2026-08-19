@@ -154,9 +154,10 @@ class UserController extends Controller
     $bookingSettingsData = [];
     $availabilitySettingsData = [];
     $calendarConnectionsData = [];
-    $abilitiesSettingsData = [];
+        $abilitiesSettingsData = [];
     $erpSettingsData = [];
     $regulatorySettingsData = [];
+    $rolesSettingsData = [];
 
     // ===== ERP DATA — HAMESHA COMPUTE HO (step-independent) =====
     if ($user->isOrganization() or $user->isTeacher()) {
@@ -209,8 +210,13 @@ class UserController extends Controller
             abort(404);
         }
         $availabilitySettingsData = $this->makeAvailabilitySettingsViewData($user->id);
-    } elseif ($step == "regulatory") {
+        } elseif ($step == "regulatory") {
     $regulatorySettingsData = $this->makeRegulatoryViewData($user);
+} elseif ($step == "roles") {
+    if (!$user->can('panel_roles')) {
+        abort(404);
+    }
+    $rolesSettingsData = $this->makeRolesViewData($user);
 }
 
     // ⚠️ "erp" step ka alag elseif ab yahan NAHI hai — upar unconditional ho chuka hai
@@ -237,14 +243,33 @@ class UserController extends Controller
         'attachments' => $attachments,
         'userLoginHistories' => $userLoginHistories,
         'moduleSettings' => $moduleSettings,
-    ], $bookingSettingsData, $availabilitySettingsData, $calendarConnectionsData, $abilitiesSettingsData, $erpSettingsData, $regulatorySettingsData);
+    ], $bookingSettingsData, $availabilitySettingsData, $calendarConnectionsData, $abilitiesSettingsData, $erpSettingsData, $regulatorySettingsData, $rolesSettingsData);
 }
+    private function makeRolesViewData($user): array
+{
+    $eligibilityService = app(\App\Services\RoleEligibilityService::class);
+
+    $users = collect([$user]);
+    $roleCatalogs = $eligibilityService->eligibleRoles($user);
+
+    $roleRequests = \App\Models\UserRoleRequest::where('user_id', $user->id)
+        ->with(['user', 'roleCatalog'])
+        ->orderByDesc('requested_at')
+        ->orderByDesc('id')
+        ->paginate(15);
+
+    return compact('users', 'roleCatalogs', 'roleRequests');
+}
+
     private function makeAbilitiesViewData(int $vendorId): array
 {
     $abilities = app(\App\Services\AbilityService::class)->getAvailableAbilitiesForVendor($vendorId);
 
     return compact('abilities');
 }
+
+
+
 
     private function makeExternalConnectionsViewData(int $userId): array
 {

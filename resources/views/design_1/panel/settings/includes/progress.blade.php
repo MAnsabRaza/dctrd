@@ -48,12 +48,21 @@
         <span class="ml-4">{{ trans('panel.abilities') ?? 'Abilities' }}</span>
     </a>
 
-    <a href="/panel/setting/step/regulatory" class="navbar-item navbar-item-h-52 d-inline-flex-center cursor-pointer {{ ($currentStep == "regulatory") ? 'active' : '' }}">
+      <a href="/panel/setting/step/regulatory" class="navbar-item navbar-item-h-52 d-inline-flex-center cursor-pointer {{ ($currentStep == "regulatory") ? 'active' : '' }}">
     <div class="size-20">
         <x-iconsax-lin-shield-tick class="icons" width="20px" height="20px"/>
     </div>
     <span class="ml-4">{{ trans('panel.regulatory') ?? 'Regulatory & Badges' }}</span>
 </a>
+
+@if($user->can('panel_roles'))
+    <a href="/panel/setting/step/roles" class="navbar-item navbar-item-h-52 d-inline-flex-center cursor-pointer {{ ($currentStep == "roles") ? 'active' : '' }}">
+        <div class="size-20">
+            <x-iconsax-lin-profile-2user class="icons" width="20px" height="20px"/>
+        </div>
+        <span class="ml-4">{{ trans('panel.my_roles') ?? 'My Roles' }}</span>
+    </a>
+@endif
 
 
 <a href="/panel/setting/step/images" class="navbar-item navbar-item-h-52 d-inline-flex-center cursor-pointer {{ ($currentStep == "images") ? 'active' : '' }}">
