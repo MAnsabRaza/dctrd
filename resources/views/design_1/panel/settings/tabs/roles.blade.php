@@ -74,16 +74,20 @@
 
         </div>
 
-        {{-- CREATE NEW --}}
+               {{-- CREATE NEW --}}
         <div class="tab-pane fade {{ $createActive ? 'active show' : '' }}" id="newRole" role="tabpanel">
             <div class="row">
                 <div class="col-12 col-md-6">
-                    <form action="{{ route('panel.roles.request') }}" method="post">
-                        @csrf
+                    {{-- Nested <form> yahan use nahi kar sakte — ye tab pehle se
+                         settings ke #userSettingForm ke andar render hota hai,
+                         aur HTML mein form-in-form invalid hai (browser silently
+                         outer form ko hi submit kar deta tha). Isliye plain <div>
+                         + AJAX (fetch) submit. --}}
+                    <div id="roleRequestBlock">
 
                         <div class="form-group">
                             <label class="input-label">{{ trans('panel.user') }}</label>
-                            <select name="user_id" class="form-control select2 @error('user_id') is-invalid @enderror">
+                            <select id="roleRequestUserId" name="user_id" class="form-control select2 @error('user_id') is-invalid @enderror">
                                 <option value="">{{ trans('public.select') }}</option>
                                 @foreach($users as $u)
                                     <option value="{{ $u->id }}" {{ (string) old('user_id') === (string) $u->id ? 'selected' : '' }}>
@@ -98,7 +102,7 @@
 
                         <div class="form-group">
                             <label class="input-label">{{ trans('panel.role') }}</label>
-                            <select name="role_catalog_id" class="form-control select2 @error('role_catalog_id') is-invalid @enderror">
+                            <select id="roleRequestRoleCatalogId" name="role_catalog_id" class="form-control select2 @error('role_catalog_id') is-invalid @enderror">
                                 <option value="">{{ trans('public.select') }}</option>
                                 @foreach($roleCatalogs as $role)
                                     <option value="{{ $role->id }}" {{ (string) old('role_catalog_id') === (string) $role->id ? 'selected' : '' }}>
@@ -111,18 +115,61 @@
                             @enderror
                         </div>
 
-                        <input type="hidden" name="status" value="pending">
+                        <div id="roleRequestError" class="invalid-feedback d-block" style="display:none;"></div>
 
                         <div class="text-right col-12 mt-3 px-0">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="button" id="roleRequestSubmitBtn" class="btn btn-primary">
                                 {{ trans('public.save') }}
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <script>
+            (function () {
+                var btn = document.getElementById('roleRequestSubmitBtn');
+                if (!btn) return;
+
+                btn.addEventListener('click', function () {
+                    var userId = document.getElementById('roleRequestUserId').value;
+                    var roleCatalogId = document.getElementById('roleRequestRoleCatalogId').value;
+                    var errorBox = document.getElementById('roleRequestError');
+
+                    errorBox.style.display = 'none';
+                    errorBox.textContent = '';
+
+                    var token = document.querySelector('meta[name="csrf-token"]')?.content
+                        || document.querySelector('input[name="_token"]')?.value;
+
+                    btn.disabled = true;
+
+                    fetch("{{ route('panel.roles.request') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: new URLSearchParams({
+                            user_id: userId,
+                            role_catalog_id: roleCatalogId,
+                            status: 'pending',
+                        }),
+                    }).then(function (res) {
+                        if (res.redirected) {
+                            window.location.href = res.url;
+                            return;
+                        }
+                        window.location.reload();
+                    }).catch(function () {
+                        errorBox.textContent = '{{ trans("public.error_try_again") ?? "Something went wrong, please try again." }}';
+                        errorBox.style.display = 'block';
+                    });
+                });
+            })();
+        </script>
     </div>
 </div>
 
