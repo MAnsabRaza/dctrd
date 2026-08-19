@@ -151,7 +151,11 @@ class BookingOrder extends Model
             return collect();
         }
 
-        $decoded = json_decode($priceBreakdown, true);
+                $decoded = json_decode($priceBreakdown, true);
+
+        if (is_string($decoded)) {
+            $decoded = json_decode($decoded, true);
+        }
 
         return collect($decoded['extra_services']['selected'] ?? []);
     }
