@@ -33,7 +33,6 @@ class RoleManagementController extends Controller
 
     return view('design_1.panel.roles.index', $data);
 }
-
     public function requestRole(Request $request, RoleEligibilityService $eligibilityService)
     {
         $data = $request->validate([
@@ -41,9 +40,14 @@ class RoleManagementController extends Controller
             'role_catalog_id' => 'required|exists:role_catalogs,id',
         ]);
 
-        $targetUser = User::findOrFail($data['user_id']);
+        $authUser = auth()->user();
 
-        // Confirm ye role is (selected) user ke liye abhi bhi eligible hai (tampering se bachao)
+        if ((int) $data['user_id'] !== (int) $authUser->id) {
+            abort(403, 'You are not allowed to request a role on behalf of another user.');
+        }
+
+        $targetUser = $authUser;
+
         $eligible = $eligibilityService->eligibleRoles($targetUser)->pluck('id')->toArray();
 
         if (!in_array((int) $data['role_catalog_id'], $eligible)) {

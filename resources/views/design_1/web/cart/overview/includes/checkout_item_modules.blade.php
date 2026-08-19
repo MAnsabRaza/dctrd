@@ -498,11 +498,17 @@ $staffLabel    = $selectedStaff;
     @endif
 
     {{-- CANCELLATION POLICY --}}
+      {{-- CANCELLATION POLICY --}}
     @if($policyModule = $bottomModules->firstWhere('name', 'cancellation_policy'))
         @php
+            // Config se cancellation window nikalo (admin/panel se configurable), default 24 hours
+            $cancellationHours = $policyModule->config['cancellation_hours']
+                ?? $policyModule->config['hours']
+                ?? 24;
+
             $policyText = $policyModule->config['policy_text']
-                ?? trans('cart.free_cancellation_hint')
-                ?? 'Free cancellation up to 24 hours before check-in.';
+                ?? trans('cart.free_cancellation_hint', ['time' => $cancellationHours . ' ' . (trans('cart.hours') ?? 'hours')])
+                ?? ('Free cancellation up to ' . $cancellationHours . ' hours before check-in.');
         @endphp
         <div class="booking-cancellation-card" data-module-name="cancellation_policy" data-price-type="none">
             <label for="cp_agree_{{ $itemKey }}" class="d-flex align-items-center gap-8" style="cursor:pointer;">
