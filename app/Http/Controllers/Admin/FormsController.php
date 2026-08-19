@@ -48,7 +48,6 @@ class FormsController extends Controller
         $userGroups = Group::query()->where('status', 'active')->get();
         $roles = Role::query()->get();
 
-        // ✅ FIX: dropdown khaali reh raha tha kyunke ye query kabhi ban hi nahi rahi thi
         $roleCatalogOptions = RoleCatalog::query()
             ->where('active', true)
             ->orderBy('sort_order')

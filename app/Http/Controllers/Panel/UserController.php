@@ -688,74 +688,73 @@ public function update(Request $request)
     }
 
         private function saveRegulatorySettings(Request $request, User $user): void
-    {
-        $forms = $request->input('regulatory_forms', []);
+{
+    $forms = $request->input('regulatory_forms', []);
 
-        if (empty($forms) or !is_array($forms)) {
-            return;
-        }
-
-        foreach ($forms as $form) {
-            $templateId = !empty($form['template_id']) ? (int) $form['template_id'] : null;
-
-            if (empty($templateId)) {
-                continue;
-            }
-
-            $template = RegulatoryFormTemplate::find($templateId);
-
-            if (empty($template)) {
-                continue;
-            }
-
-            // Server-side check: is template ke role_catalog_id par user ka
-            // ACTIVE role hona chahiye — warna ye form silently skip karo
-            $hasActiveRole = \App\Models\UserRoleRequest::where('user_id', $user->id)
-                ->where('role_catalog_id', $template->role_catalog_id)
-                ->where('status', \App\Models\UserRoleRequest::STATUS_ACTIVE)
-                ->exists();
-
-            if (!$hasActiveRole) {
-                continue;
-            }
-
-            $submissionId = !empty($form['submission_id']) ? (int) $form['submission_id'] : null;
-            $fields = $form['fields'] ?? [];
-
-            if (!is_array($fields)) {
-                $fields = [];
-            }
-
-            $submission = null;
-
-            if (!empty($submissionId)) {
-                $submission = RegulatoryFormSubmission::where('id', $submissionId)
-                    ->where('user_id', $user->id)
-                    ->first();
-            }
-
-            if (empty($submission)) {
-                $submission = RegulatoryFormSubmission::where('user_id', $user->id)
-                    ->where('template_id', $template->id)
-                    ->first();
-            }
-
-            if (empty($submission)) {
-                $submission = new RegulatoryFormSubmission();
-                $submission->user_id = $user->id;
-            }
-
-            $submission->role_catalog_id = $template->role_catalog_id;
-            $submission->template_id = $template->id;
-            $submission->level = $template->level;
-            $submission->data = array_filter($fields, function ($value) {
-                return $value !== null and $value !== '';
-            });
-            $submission->status = 'draft';
-            $submission->save();
-        }
+    if (empty($forms) or !is_array($forms)) {
+        return;
     }
 
+    foreach ($forms as $formInput) {
+        $formId = !empty($formInput['form_id']) ? (int) $formInput['form_id'] : null;
+
+        if (empty($formId)) {
+            continue;
+        }
+
+        $form = \App\Models\Form::where('id', $formId)
+            ->where('connect_regulatory', true)
+            ->first();
+
+        if (empty($form)) {
+            continue;
+        }
+
+        $hasActiveRole = \App\Models\UserRoleRequest::where('user_id', $user->id)
+            ->where('role_catalog_id', $form->regulatory_role_catalog_id)
+            ->where('status', \App\Models\UserRoleRequest::STATUS_ACTIVE)
+            ->exists();
+
+        if (!$hasActiveRole) {
+            continue;
+        }
+
+        $submissionId = !empty($formInput['submission_id']) ? (int) $formInput['submission_id'] : null;
+        $fields = $formInput['fields'] ?? [];
+
+        if (!is_array($fields)) {
+            $fields = [];
+        }
+
+        $submission = null;
+
+        if (!empty($submissionId)) {
+            $submission = RegulatoryFormSubmission::where('id', $submissionId)
+                ->where('user_id', $user->id)
+                ->first();
+        }
+
+        if (empty($submission)) {
+            $submission = RegulatoryFormSubmission::where('user_id', $user->id)
+                ->where('form_id', $form->id)
+                ->first();
+        }
+
+        if (empty($submission)) {
+            $submission = new RegulatoryFormSubmission();
+            $submission->user_id = $user->id;
+        }
+
+        $submission->role_catalog_id = $form->regulatory_role_catalog_id;
+        $submission->form_id = $form->id;
+        $submission->level = $form->regulatory_level;
+        $submission->data = array_filter($fields, function ($value) {
+            return $value !== null and $value !== '';
+        });
+        $submission->status = 'draft';
+        $submission->save();
+    }
+}
     private function handleUploadImagesAndFiles(Request $request, $user, $name)
     {
         $path = $user->{$name};
