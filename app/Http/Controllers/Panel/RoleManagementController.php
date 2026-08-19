@@ -51,9 +51,18 @@ class RoleManagementController extends Controller
         $eligible = $eligibilityService->eligibleRoles($targetUser)->pluck('id')->toArray();
 
         if (!in_array((int) $data['role_catalog_id'], $eligible)) {
+            $message = $eligibilityService->ineligibilityMessage($targetUser, (int) $data['role_catalog_id']);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
             return back()
                 ->withInput()
-                ->withErrors(['role_catalog_id' => $eligibilityService->ineligibilityMessage($targetUser, (int) $data['role_catalog_id'])]);
+                ->withErrors(['role_catalog_id' => $message]);
         }
 
         $roleRequest = $eligibilityService->requestRole($targetUser, (int) $data['role_catalog_id']);
@@ -73,6 +82,15 @@ class RoleManagementController extends Controller
             '[request.id]' => $roleRequest->id,
             '[link]'      => route('admin.role_requests.index'),
         ], 1); // 1 = admin user id, jaisa baaki jagah pattern hai
+
+        // AJAX (settings tab se) => JSON, jahan se aaya wahin rahega.
+        // Normal form (standalone /panel/roles page) => purana redirect behavior.
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Role request submitted successfully. Admin will review it soon.',
+            ]);
+        }
 
         return redirect()
             ->route('panel.roles.index')
