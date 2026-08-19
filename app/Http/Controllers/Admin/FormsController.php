@@ -112,7 +112,10 @@ class FormsController extends Controller
     }
 
 
-    // ✅ helper: "Pakistan, UAE, Saudi Arabia" text ko clean array mein convert karta hai
+    // ✅ helper: "Pakistan, UAE, Saudi Arabia" text ko clean JSON string mein convert karta hai
+    // (json_encode yahan zaroori hai kyunke agar Form model mein 'regulatory_countries' ka
+    // array/json cast nahi hai to Eloquent seedha PHP array save nahi kar sakta —
+    // isi wajah se "Array to string conversion" error aa raha tha)
     private function parseRegulatoryCountries($data)
     {
         if (empty($data['regulatory_countries_text'])) {
@@ -121,8 +124,9 @@ class FormsController extends Controller
 
         $countries = array_map('trim', explode(',', $data['regulatory_countries_text']));
         $countries = array_filter($countries, fn($c) => $c !== '');
+        $countries = array_values($countries);
 
-        return !empty($countries) ? array_values($countries) : null;
+        return !empty($countries) ? json_encode($countries) : null;
     }
 
     private function storeExtraData($form, $data)
