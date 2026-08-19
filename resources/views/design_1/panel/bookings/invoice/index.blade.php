@@ -166,16 +166,16 @@
                                                                         @endif
                                                                     </div>
                                                                 </div>
-                                                                <div class="invoice-detail-item">
+                                                                                                                             <div class="invoice-detail-item">
                                                                     <div class="invoice-detail-name">{{ trans('public.discount') }}</div>
                                                                     <div class="invoice-detail-value">
-                                                                        @if(!empty($sale) and !empty($sale->discount))
-                                                                            {{ handlePrice($sale->discount) }}
+                                                                        @if(!empty($order->sale) and !empty($order->sale->discount))
+                                                                            {{ handlePrice($order->sale->discount) }}
                                                                         @else
                                                                             -
                                                                         @endif
                                                                     </div>
-                                                            </div
+                                                                </div>
                                                                 <hr class="mt-2 mb-2">
                                                                 <div class="invoice-detail-item">
                                                                     <div class="invoice-detail-name">{{ trans('cart.total') }}</div>

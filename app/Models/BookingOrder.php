@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\User;
-
+/**
+ * @property int $id
+ * @property string $status
+ * @property \App\Models\Sale|null $sale
+ * @property \App\Models\Booking|null $booking
+ */
 class BookingOrder extends Model
 {
      public $timestamps = false;

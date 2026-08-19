@@ -150,7 +150,7 @@
                                                                         @endif
                                                                     </div>
                                                                 </div>
-                                                                <div class="invoice-detail-item">
+                                                                                                                               <div class="invoice-detail-item">
                                                                     <div class="invoice-detail-name">{{ trans('public.discount') }}</div>
                                                                     <div class="invoice-detail-value">
                                                                         @if(!empty($order->sale) and !empty($order->sale->discount))
