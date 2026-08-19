@@ -106,7 +106,7 @@
                                                                     <th class="text-center">{{ trans('panel.discount') }}</th>
                                                                     <th class="text-right">{{ trans('cart.total') }}</th>
                                                                 </tr>
-                                                                <tr>
+                                                                                                                               <tr>
                                                                     <td>{{ !empty($item) ? $item->id : $order->id }}</td>
                                                                     <td>{{ !empty($item) ? $item->title : trans('update.deleted_item') }}</td>
                                                                     <td class="text-center">{{ trans('update.booking') }}</td>
@@ -132,6 +132,16 @@
                                                                         @endif
                                                                     </td>
                                                                 </tr>
+                                                                @foreach($order->extra_services as $extra)
+                                                                    <tr>
+                                                                        <td></td>
+                                                                        <td>{{ $extra['label'] ?? '-' }}</td>
+                                                                        <td class="text-center">{{ trans('update.extra_service') ?? 'Extra Service' }}</td>
+                                                                        <td class="text-center">{{ handlePrice($extra['price'] ?? 0) }}</td>
+                                                                        <td class="text-center">-</td>
+                                                                        <td class="text-right">{{ handlePrice($extra['price'] ?? 0) }}</td>
+                                                                    </tr>
+                                                                @endforeach
                                                             </table>
                                                         </div>
                                                         <div class="row mt-4">
@@ -140,6 +150,12 @@
                                                                     <div class="invoice-detail-name">{{ trans('cart.sub_total') }}</div>
                                                                     <div class="invoice-detail-value">{{ !empty($sale) ? handlePrice($sale->amount) : '-' }}</div>
                                                                 </div>
+                                                                   @if($order->extra_services_total > 0)
+                                                                <div class="invoice-detail-item">
+                                                                    <div class="invoice-detail-name">{{ trans('update.extra_services') ?? 'Extra Services' }}</div>
+                                                                    <div class="invoice-detail-value">{{ handlePrice($order->extra_services_total) }}</div>
+                                                                </div>
+                                                                @endif
                                                                 <div class="invoice-detail-item">
                                                                     <div class="invoice-detail-name">{{ trans('cart.tax') }} ({{ getFinancialSettings('tax') }}%)</div>
                                                                     <div class="invoice-detail-value">
@@ -159,7 +175,7 @@
                                                                             -
                                                                         @endif
                                                                     </div>
-                                                                </div>
+                                                            </div
                                                                 <hr class="mt-2 mb-2">
                                                                 <div class="invoice-detail-item">
                                                                     <div class="invoice-detail-name">{{ trans('cart.total') }}</div>

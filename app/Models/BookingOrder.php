@@ -120,9 +120,40 @@ class BookingOrder extends Model
     /**
      * Was this order created manually by an admin (no checkout/Sale behind it)?
      */
-    public function getIsManualAttribute()
+        public function getIsManualAttribute()
     {
         return empty($this->sale_id);
+    }
+
+    /**
+     * Extra services selected for this order — read from
+     * order_item_metas.price_breakdown (key = 'price_breakdown').
+     * Returns collection of ['label' => ..., 'price' => ...]
+     */
+    public function getExtraServicesAttribute()
+    {
+        if (empty($this->id)) {
+            return collect();
+        }
+
+        $priceBreakdown = \Illuminate\Support\Facades\DB::table('order_item_metas')
+            ->join('order_items', 'order_items.id', '=', 'order_item_metas.order_item_id')
+            ->where('order_items.booking_order_id', $this->id)
+            ->where('order_item_metas.key', 'price_breakdown')
+            ->value('order_item_metas.value');
+
+        if (empty($priceBreakdown)) {
+            return collect();
+        }
+
+        $decoded = json_decode($priceBreakdown, true);
+
+        return collect($decoded['extra_services']['selected'] ?? []);
+    }
+
+    public function getExtraServicesTotalAttribute()
+    {
+        return $this->extra_services->sum('price');
     }
 
     public function sendBookingNotifications(string $event = 'created'): void

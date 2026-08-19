@@ -91,8 +91,7 @@ class ErpPostSaleService
             $result['body'] ?? []
         );
     }
-
-    public function buildPayload(Sale $sale, OrderItem $orderItem, Product $product, string $invoiceNumber): array
+public function buildPayload(Sale $sale, OrderItem $orderItem, Product $product, string $invoiceNumber): array
     {
         $order = $orderItem->order ?: $sale->order;
         $buyer = $orderItem->user ?: $sale->buyer ?: optional($order)->user;
@@ -111,8 +110,23 @@ class ErpPostSaleService
             'amount' => (float) ($orderItem->total_amount ?? $sale->total_amount ?? 0),
             'description' => trim(strip_tags($product->summary ?: $product->description ?: '')),
             'customer_email' => optional($buyer)->email,
+            'due_date' => $this->dueDate($sale, $product),
             'tasks' => $this->buildTasks($product),
         ];
+    }
+
+    protected function dueDate(Sale $sale, Product $product): ?string
+    {
+        $days = $product->delivery_estimated_time ?? null;
+
+        if (empty($days) || !is_numeric($days)) {
+            return null;
+        }
+
+        $purchaseTimestamp = $sale->created_at ?: time();
+        $base = is_numeric($purchaseTimestamp) ? (int) $purchaseTimestamp : strtotime((string) $purchaseTimestamp);
+
+        return date('Y-m-d', strtotime('+' . (int) $days . ' days', $base));
     }
 
     protected function buildTasks(Product $product): array

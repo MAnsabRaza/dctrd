@@ -4948,5 +4948,6 @@ return [
 'booking_sales_no_result_hint'=>'No booking sales found. Try adjusting your filters or search criteria.',
 'booking_order_status_success'=>'Completed',
 'booking_order_status_completed'=>'Completed',
+'extra_services'=>'Extra Services',
 
 ];
