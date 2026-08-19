@@ -8,6 +8,8 @@ use App\Models\FormRoleUserGroup;
 use App\Models\FormSubmission;
 use App\Models\Group;
 use App\Models\Role;
+use App\Models\RoleCatalog; // ✅ added
+use App\Models\Country;     // ✅ added (adjust namespace agar aapka Country model kahin aur hai)
 use App\Models\Translation\FormTranslation;
 use Illuminate\Http\Request;
 
@@ -47,10 +49,20 @@ class FormsController extends Controller
         $userGroups = Group::query()->where('status', 'active')->get();
         $roles = Role::query()->get();
 
+        // ✅ FIX: dropdown khaali reh raha tha kyunke ye query kabhi ban hi nahi rahi thi
+        $roleCatalogOptions = RoleCatalog::query()
+            ->where('active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        $countries = Country::query()->get(); // ✅ agar Country model ka naam/columns alag hain to yahan adjust karein
+
         $data = [
             'pageTitle' => trans('update.new_form'),
             'userGroups' => $userGroups,
             'roles' => $roles,
+            'roleCatalogOptions' => $roleCatalogOptions, // ✅ added
+            'countries' => $countries,                    // ✅ added
         ];
 
         return view('admin.forms.create.index', $data);
@@ -84,12 +96,12 @@ class FormsController extends Controller
             'tank_you_message_image' => $data['tank_you_message_image'] ?? null,
             'start_date' => $startDate,
             'end_date' => $endDate,
-          'enable' => false,
-'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
-'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
-'regulatory_level'           => $data['regulatory_level'] ?? null,
-'regulatory_countries'       => !empty($data['regulatory_countries']) ? $data['regulatory_countries'] : null,
-'created_at' => time(),
+            'enable' => false,
+            'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
+            'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
+            'regulatory_level'           => $data['regulatory_level'] ?? null,
+            'regulatory_countries'       => !empty($data['regulatory_countries']) ? $data['regulatory_countries'] : null,
+            'created_at' => time(),
         ]);
 
         $this->storeExtraData($form, $data);
@@ -105,50 +117,50 @@ class FormsController extends Controller
 
 
     private function storeExtraData($form, $data)
-{
-    FormTranslation::query()->updateOrCreate([
-        'form_id' => $form->id,
-        'locale' => mb_strtolower($data['locale']),
-    ], [
-        'title' => $data['title'],
-        'subtitle' => $data['subtitle'] ?? null,
-        'heading_title' => $data['heading_title'] ?? null,
-        'description' => $data['description'] ?? null,
-        'welcome_message_title' => $data['welcome_message_title'] ?? null,
-        'welcome_message_description' => $data['welcome_message_description'] ?? null,
-        'tank_you_message_title' => $data['tank_you_message_title'] ?? null,
-        'tank_you_message_description' => $data['tank_you_message_description'] ?? null,
-    ]);
+    {
+        FormTranslation::query()->updateOrCreate([
+            'form_id' => $form->id,
+            'locale' => mb_strtolower($data['locale']),
+        ], [
+            'title' => $data['title'],
+            'subtitle' => $data['subtitle'] ?? null,
+            'heading_title' => $data['heading_title'] ?? null,
+            'description' => $data['description'] ?? null,
+            'welcome_message_title' => $data['welcome_message_title'] ?? null,
+            'welcome_message_description' => $data['welcome_message_description'] ?? null,
+            'tank_you_message_title' => $data['tank_you_message_title'] ?? null,
+            'tank_you_message_description' => $data['tank_you_message_description'] ?? null,
+        ]);
 
 
-    /* Roles Users Groups */
-    FormRoleUserGroup::query()->where('form_id', $form->id)->delete();
+        /* Roles Users Groups */
+        FormRoleUserGroup::query()->where('form_id', $form->id)->delete();
 
-    $items = [
-        'role_ids' => 'role_id',
-        'users_ids' => 'user_id',   // ✅ fixed
-        'group_ids' => 'group_id',
-    ];
+        $items = [
+            'role_ids' => 'role_id',
+            'users_ids' => 'user_id',
+            'group_ids' => 'group_id',
+        ];
 
-    foreach ($items as $item => $column) {
-        if (!empty($data[$item])) {
-            $insert = [];
+        foreach ($items as $item => $column) {
+            if (!empty($data[$item])) {
+                $insert = [];
 
-            foreach ($data[$item] as $id) {
-                if (!empty($id)) {
-                    $insert[] = [
-                        'form_id' => $form->id,
-                        "{$column}" => $id,
-                    ];
+                foreach ($data[$item] as $id) {
+                    if (!empty($id)) {
+                        $insert[] = [
+                            'form_id' => $form->id,
+                            "{$column}" => $id,
+                        ];
+                    }
                 }
-            }
 
-            if (!empty($insert)) {
-                FormRoleUserGroup::query()->insert($insert);
+                if (!empty($insert)) {
+                    FormRoleUserGroup::query()->insert($insert);
+                }
             }
         }
     }
-}
 
     public function edit(Request $request, $id)
     {
@@ -173,10 +185,20 @@ class FormsController extends Controller
             $userGroups = Group::query()->where('status', 'active')->get();
             $roles = Role::query()->get();
 
+            // ✅ FIX: yehi missing tha edit() mein bhi — isliye edit screen par bhi Importer/roles nahi aa rahe the
+            $roleCatalogOptions = RoleCatalog::query()
+                ->where('active', true)
+                ->orderBy('sort_order')
+                ->get();
+
+            $countries = Country::query()->get();
+
             $data = [
                 'pageTitle' => trans('update.edit_form'),
                 'userGroups' => $userGroups,
                 'roles' => $roles,
+                'roleCatalogOptions' => $roleCatalogOptions, // ✅ added
+                'countries' => $countries,                    // ✅ added
                 'form' => $form,
             ];
 
@@ -215,11 +237,11 @@ class FormsController extends Controller
             'tank_you_message_image' => $data['tank_you_message_image'] ?? null,
             'start_date' => $startDate,
             'end_date' => $endDate,
-         'enable' => (!empty($data['enable']) and $data['enable'] == "on"),
-'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
-'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
-'regulatory_level'           => $data['regulatory_level'] ?? null,
-'regulatory_countries'       => !empty($data['regulatory_countries']) ? $data['regulatory_countries'] : null,
+            'enable' => (!empty($data['enable']) and $data['enable'] == "on"),
+            'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
+            'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
+            'regulatory_level'           => $data['regulatory_level'] ?? null,
+            'regulatory_countries'       => !empty($data['regulatory_countries']) ? $data['regulatory_countries'] : null,
         ]);
 
         $this->storeExtraData($form, $data);
