@@ -4949,5 +4949,6 @@ return [
 'booking_order_status_success'=>'Completed',
 'booking_order_status_completed'=>'Completed',
 'extra_services'=>'Extra Services',
+'extra_service'=>'Extra Service',
 
 ];
