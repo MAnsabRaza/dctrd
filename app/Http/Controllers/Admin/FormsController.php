@@ -9,7 +9,6 @@ use App\Models\FormSubmission;
 use App\Models\Group;
 use App\Models\Role;
 use App\Models\RoleCatalog; // ✅ added
-use App\Models\Country;     // ✅ added (adjust namespace agar aapka Country model kahin aur hai)
 use App\Models\Translation\FormTranslation;
 use Illuminate\Http\Request;
 
@@ -55,14 +54,11 @@ class FormsController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $countries = Country::query()->get(); // ✅ agar Country model ka naam/columns alag hain to yahan adjust karein
-
         $data = [
             'pageTitle' => trans('update.new_form'),
             'userGroups' => $userGroups,
             'roles' => $roles,
             'roleCatalogOptions' => $roleCatalogOptions, // ✅ added
-            'countries' => $countries,                    // ✅ added
         ];
 
         return view('admin.forms.create.index', $data);
@@ -100,7 +96,7 @@ class FormsController extends Controller
             'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
             'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
             'regulatory_level'           => $data['regulatory_level'] ?? null,
-            'regulatory_countries'       => !empty($data['regulatory_countries']) ? $data['regulatory_countries'] : null,
+            'regulatory_countries'       => $this->parseRegulatoryCountries($data), // ✅ text input se array bana
             'created_at' => time(),
         ]);
 
@@ -115,6 +111,19 @@ class FormsController extends Controller
         return redirect(getAdminPanelUrl("/forms/{$form->id}/edit"))->with(['toast' => $toastData]);
     }
 
+
+    // ✅ helper: "Pakistan, UAE, Saudi Arabia" text ko clean array mein convert karta hai
+    private function parseRegulatoryCountries($data)
+    {
+        if (empty($data['regulatory_countries_text'])) {
+            return null;
+        }
+
+        $countries = array_map('trim', explode(',', $data['regulatory_countries_text']));
+        $countries = array_filter($countries, fn($c) => $c !== '');
+
+        return !empty($countries) ? array_values($countries) : null;
+    }
 
     private function storeExtraData($form, $data)
     {
@@ -191,14 +200,11 @@ class FormsController extends Controller
                 ->orderBy('sort_order')
                 ->get();
 
-            $countries = Country::query()->get();
-
             $data = [
                 'pageTitle' => trans('update.edit_form'),
                 'userGroups' => $userGroups,
                 'roles' => $roles,
                 'roleCatalogOptions' => $roleCatalogOptions, // ✅ added
-                'countries' => $countries,                    // ✅ added
                 'form' => $form,
             ];
 
@@ -241,7 +247,7 @@ class FormsController extends Controller
             'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
             'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
             'regulatory_level'           => $data['regulatory_level'] ?? null,
-            'regulatory_countries'       => !empty($data['regulatory_countries']) ? $data['regulatory_countries'] : null,
+            'regulatory_countries'       => $this->parseRegulatoryCountries($data), // ✅ text input se array bana
         ]);
 
         $this->storeExtraData($form, $data);

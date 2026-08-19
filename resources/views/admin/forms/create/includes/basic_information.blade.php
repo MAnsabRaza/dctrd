@@ -186,17 +186,15 @@
                     </select>
                 </div>
 
-                <div class="form-group mb-0">
-                    <label class="input-label">Choose Country's Regulation Laws</label>
-                    <select name="regulatory_countries[]" multiple class="form-control select2">
-                        @foreach($countries ?? [] as $country)
-                            <option value="{{ $country->id }}"
-                                {{ (!empty($form) and in_array($country->id, $form->regulatory_countries ?? [])) ? 'selected' : '' }}>
-                                {{ $country->title }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+               <div class="form-group mb-0">
+    <label class="input-label">Choose Country's Regulation Laws</label>
+    <input type="text"
+           name="regulatory_countries_text"
+           class="form-control"
+           placeholder="e.g. Pakistan, UAE, Saudi Arabia (comma separated)"
+           value="{{ !empty($form) && !empty($form->regulatory_countries) ? implode(', ', (array) $form->regulatory_countries) : old('regulatory_countries_text') }}"/>
+    <div class="text-gray-500 text-small mt-1">Countries ko comma se separate karke likhein.</div>
+</div>
             </div>
         </div>
     </div>
