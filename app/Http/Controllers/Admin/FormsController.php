@@ -64,52 +64,61 @@ class FormsController extends Controller
         return view('admin.forms.create.index', $data);
     }
 
-    public function store(Request $request)
-    {
-        $this->authorize("admin_forms_create");
+   public function store(Request $request)
+{
+    $this->authorize("admin_forms_create");
 
-        $this->validate($request, [
-            'url' => 'required|string|max:255|unique:forms',
-            'title' => 'required|string|max:255',
-            'subtitle' => 'required|string',
-        ]);
+    $this->validate($request, [
+        'url' => 'required|string|max:255|unique:forms',
+        'title' => 'required|string|max:255',
+        'subtitle' => 'required|string',
+    ]);
 
-        $data = $request->all();
-        $startDate = !empty($data['start_date']) ? convertTimeToUTCzone($data['start_date'], getTimezone())->getTimestamp() : null;
-        $endDate = !empty($data['end_date']) ? convertTimeToUTCzone($data['end_date'], getTimezone())->getTimestamp() : null;
+    $data = $request->all();
+    $startDate = !empty($data['start_date']) ? convertTimeToUTCzone($data['start_date'], getTimezone())->getTimestamp() : null;
+    $endDate = !empty($data['end_date']) ? convertTimeToUTCzone($data['end_date'], getTimezone())->getTimestamp() : null;
 
-        $form = Form::query()->create([
-            'url' => $data['url'],
-            'cover' => $data['cover'] ?? null,
-            'image' => $data['image'] ?? null,
-            'header_icon' => $data['header_icon'] ?? null,
-            'header_overlay_image' => $data['header_overlay_image'] ?? null,
-            'enable_login' => (!empty($data['enable_login']) and $data['enable_login'] == "on"),
-            'enable_resubmission' => (!empty($data['enable_resubmission']) and $data['enable_resubmission'] == "on"),
-            'enable_welcome_message' => (!empty($data['enable_welcome_message']) and $data['enable_welcome_message'] == "on"),
-            'enable_tank_you_message' => (!empty($data['enable_tank_you_message']) and $data['enable_tank_you_message'] == "on"),
-            'welcome_message_image' => $data['welcome_message_image'] ?? null,
-            'tank_you_message_image' => $data['tank_you_message_image'] ?? null,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'enable' => false,
-            'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
-            'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
-            'regulatory_level'           => $data['regulatory_level'] ?? null,
-            'regulatory_countries'       => $this->parseRegulatoryCountries($data), // ✅ text input se array bana
-            'created_at' => time(),
-        ]);
-
-        $this->storeExtraData($form, $data);
-
-        $toastData = [
-            'title' => trans('public.request_success'),
-            'msg' => trans('update.new_form_were_successfully_created'),
-            'status' => 'success'
-        ];
-
-        return redirect(getAdminPanelUrl("/forms/{$form->id}/edit"))->with(['toast' => $toastData]);
+    // ===== TEMP DEBUG START =====
+    $arrayFields = collect($data)->filter(fn($v) => is_array($v));
+    if ($arrayFields->isNotEmpty()) {
+        \Log::error('FormsController@store - Array fields detected in request', $arrayFields->toArray());
+    } else {
+        \Log::error('FormsController@store - No array fields found in $data', ['keys' => array_keys($data)]);
     }
+    // ===== TEMP DEBUG END =====
+
+    $form = Form::query()->create([
+        'url' => $data['url'],
+        'cover' => $data['cover'] ?? null,
+        'image' => $data['image'] ?? null,
+        'header_icon' => $data['header_icon'] ?? null,
+        'header_overlay_image' => $data['header_overlay_image'] ?? null,
+        'enable_login' => (!empty($data['enable_login']) and $data['enable_login'] == "on"),
+        'enable_resubmission' => (!empty($data['enable_resubmission']) and $data['enable_resubmission'] == "on"),
+        'enable_welcome_message' => (!empty($data['enable_welcome_message']) and $data['enable_welcome_message'] == "on"),
+        'enable_tank_you_message' => (!empty($data['enable_tank_you_message']) and $data['enable_tank_you_message'] == "on"),
+        'welcome_message_image' => $data['welcome_message_image'] ?? null,
+        'tank_you_message_image' => $data['tank_you_message_image'] ?? null,
+        'start_date' => $startDate,
+        'end_date' => $endDate,
+        'enable' => false,
+        'connect_regulatory'         => (!empty($data['connect_regulatory']) and $data['connect_regulatory'] == 'on'),
+        'regulatory_role_catalog_id' => $data['regulatory_role_catalog_id'] ?? null,
+        'regulatory_level'           => $data['regulatory_level'] ?? null,
+        'regulatory_countries'       => $this->parseRegulatoryCountries($data),
+        'created_at' => time(),
+    ]);
+
+    $this->storeExtraData($form, $data);
+
+    $toastData = [
+        'title' => trans('public.request_success'),
+        'msg' => trans('update.new_form_were_successfully_created'),
+        'status' => 'success'
+    ];
+
+    return redirect(getAdminPanelUrl("/forms/{$form->id}/edit"))->with(['toast' => $toastData]);
+}
 
 
     // ✅ helper: "Pakistan, UAE, Saudi Arabia" text ko clean JSON string mein convert karta hai
