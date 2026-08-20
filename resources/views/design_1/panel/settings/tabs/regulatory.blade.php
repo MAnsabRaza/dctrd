@@ -123,125 +123,146 @@
 </style>
 
 <script>
-(function ($) {
+(function () {
     'use strict';
 
-    var pendingFormId = null;
+    function initRegulatoryForms($) {
+        var pendingFormId = null;
 
-    $(document).on('click', '.js-add-slot-btn', function () {
-        pendingFormId = $(this).data('form-id');
-        $('#addSlotConfirmText').text('I want to apply for ' + $(this).data('label'));
-        $('#addSlotConfirmModal').modal('show');
-    });
-
-    $(document).on('click', '#addSlotConfirmYes', function () {
-        $.post('{{ route("panel.regulatory.add_slot") }}', {
-            _token: '{{ csrf_token() }}',
-            form_id: pendingFormId
-        }, function () {
-            $('#addSlotConfirmModal').modal('hide');
-            window.location.reload();
-        }).fail(function () {
-            showToast('error', 'Error', 'Could not add this section, please try again.');
+        $(document).on('click', '.js-add-slot-btn', function () {
+            pendingFormId = $(this).data('form-id');
+            $('#addSlotConfirmText').text('I want to apply for ' + $(this).data('label'));
+            $('#addSlotConfirmModal').modal('show');
         });
-    });
 
-document.addEventListener('click', function (e) {
-    var $btn = $(e.target).closest('.js-save-draft, .js-submit-review');
-    if (!$btn.length) return;
+        $(document).on('click', '#addSlotConfirmYes', function () {
+            $.post('{{ route("panel.regulatory.add_slot") }}', {
+                _token: '{{ csrf_token() }}',
+                form_id: pendingFormId
+            }, function () {
+                $('#addSlotConfirmModal').modal('hide');
+                window.location.reload();
+            }).fail(function () {
+                showToast('error', 'Error', 'Could not add this section, please try again.');
+            });
+        });
 
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
+        // Submit/Draft — capture phase, taake koi doosra generic handler
+        // pehle na chal jaye (agar future mein aisa koi handler add ho)
+        document.addEventListener('click', function (e) {
+            var $btn = $(e.target).closest('.js-save-draft, .js-submit-review');
+            if (!$btn.length) return;
 
-    var $form   = $btn.closest('.js-regulatory-form');
-    var isDraft = $btn.hasClass('js-save-draft');
-    var url     = isDraft
-        ? '{{ route("panel.regulatory.draft") }}'
-        : '{{ route("panel.regulatory.submit") }}';
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
 
-    $form.find('.js-regulatory-field').removeClass('has-error').find('.js-field-error').text('');
+            var $form   = $btn.closest('.js-regulatory-form');
+            var isDraft = $btn.hasClass('js-save-draft');
+            var url     = isDraft
+                ? '{{ route("panel.regulatory.draft") }}'
+                : '{{ route("panel.regulatory.submit") }}';
 
-    var fields = {};
-    var hasError = false;
+            $form.find('.js-regulatory-field').removeClass('has-error').find('.js-field-error').text('');
 
-    $form.find('.js-regulatory-field').each(function () {
-        var $fieldWrap = $(this);
-        var fieldKey   = $fieldWrap.find('[data-field-key]').first().data('field-key');
-        var isRequired = $fieldWrap.data('required') == 1;
-        var value;
+            var fields = {};
+            var hasError = false;
 
-        var $checkboxGroup = $fieldWrap.find('input[type="checkbox"][name$="[]"]');
-        var $radioGroup     = $fieldWrap.find('input[type="radio"]');
-        var $singleToggle   = $fieldWrap.find('input[type="checkbox"]:not([name$="[]"])');
+            $form.find('.js-regulatory-field').each(function () {
+                var $fieldWrap = $(this);
+                var fieldKey   = $fieldWrap.find('[data-field-key]').first().data('field-key');
+                var isRequired = $fieldWrap.data('required') == 1;
+                var value;
 
-        if ($checkboxGroup.length) {
-            value = $checkboxGroup.filter(':checked').map(function () { return $(this).val(); }).get();
-        } else if ($radioGroup.length) {
-            value = $radioGroup.filter(':checked').val() || '';
-        } else if ($singleToggle.length) {
-            value = $singleToggle.is(':checked') ? '1' : '';
-        } else {
-            value = $fieldWrap.find('[data-field-key]').first().val();
-        }
+                var $checkboxGroup = $fieldWrap.find('input[type="checkbox"][name$="[]"]');
+                var $radioGroup     = $fieldWrap.find('input[type="radio"]');
+                var $singleToggle   = $fieldWrap.find('input[type="checkbox"]:not([name$="[]"])');
 
-        fields[fieldKey] = value;
+                if ($checkboxGroup.length) {
+                    value = $checkboxGroup.filter(':checked').map(function () { return $(this).val(); }).get();
+                } else if ($radioGroup.length) {
+                    value = $radioGroup.filter(':checked').val() || '';
+                } else if ($singleToggle.length) {
+                    value = $singleToggle.is(':checked') ? '1' : '';
+                } else {
+                    value = $fieldWrap.find('[data-field-key]').first().val();
+                }
 
-        var isEmpty = (Array.isArray(value) && value.length === 0) ||
-                      (!Array.isArray(value) && (value === undefined || value === null || value === ''));
+                fields[fieldKey] = value;
 
-        if (isRequired && isEmpty) {
-            hasError = true;
-            $fieldWrap.addClass('has-error');
-            $fieldWrap.find('.js-field-error').text('This field is required.');
-        }
-    });
+                var isEmpty = (Array.isArray(value) && value.length === 0) ||
+                              (!Array.isArray(value) && (value === undefined || value === null || value === ''));
 
-    if (hasError) {
-        showToast('error', 'Error', 'Please fill in all required fields.');
-        return;
+                if (isRequired && isEmpty) {
+                    hasError = true;
+                    $fieldWrap.addClass('has-error');
+                    $fieldWrap.find('.js-field-error').text('This field is required.');
+                }
+            });
+
+            if (hasError) {
+                showToast('error', 'Error', 'Please fill in all required fields.');
+                return;
+            }
+
+            $btn.prop('disabled', true);
+
+            $.post(url, {
+                _token:         '{{ csrf_token() }}',
+                form_id:        $form.data('form-id'),
+                submission_id:  $form.data('submission-id') || '',
+                is_submit:      !isDraft,
+                fields:         fields
+            }, function (res) {
+                showToast('success', '', res.msg);
+                $form.attr('data-submission-id', res.submission_id).data('submission-id', res.submission_id);
+            }).fail(function (xhr) {
+                var msg = 'Something went wrong';
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                showToast('error', 'Error', msg);
+            }).always(function () {
+                $btn.prop('disabled', false);
+            });
+        }, true); // capture phase
+
+        $(document).on('click', '.js-delete-slot', function () {
+            var submissionId = $(this).data('submission-id');
+            var $slot = $(this).closest('.js-regulatory-slot');
+
+            if (!confirm('Are you sure you want to delete this?')) return;
+
+            $.ajax({
+                url: '{{ url("/panel/regulatory") }}/' + submissionId,
+                method: 'DELETE',
+                data: { _token: '{{ csrf_token() }}' }
+            }).done(function () {
+                $slot.remove();
+            }).fail(function () {
+                showToast('error', 'Error', 'Could not delete, please try again.');
+            });
+        });
     }
 
-    $btn.prop('disabled', true);
-
-    $.post(url, {
-        _token:         '{{ csrf_token() }}',
-        form_id:        $form.data('form-id'),
-        submission_id:  $form.data('submission-id') || '',
-        is_submit:      !isDraft,
-        fields:         fields
-    }, function (res) {
-        showToast('success', '', res.msg);
-        $form.attr('data-submission-id', res.submission_id).data('submission-id', res.submission_id);
-    }).fail(function (xhr) {
-        var msg = 'Something went wrong';
-        if (xhr.responseJSON && xhr.responseJSON.errors) {
-            msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
-        } else if (xhr.responseJSON && xhr.responseJSON.message) {
-            msg = xhr.responseJSON.message;
-        }
-        showToast('error', 'Error', msg);
-    }).always(function () {
-        $btn.prop('disabled', false);
-    });
-});
-
-    $(document).on('click', '.js-delete-slot', function () {
-        var submissionId = $(this).data('submission-id');
-        var $slot = $(this).closest('.js-regulatory-slot');
-
-        if (!confirm('Are you sure you want to delete this?')) return;
-
-        $.ajax({
-            url: '{{ url("/panel/regulatory") }}/' + submissionId,
-            method: 'DELETE',
-            data: { _token: '{{ csrf_token() }}' }
-        }).done(function () {
-            $slot.remove();
-        }).fail(function () {
-            showToast('error', 'Error', 'Could not delete, please try again.');
-        });
-    });
-
-})(jQuery);
+    // jQuery is line ke execute hote waqt available nahi thi (script order/timing
+    // issue) — isliye poll karte hain jab tak jQuery load na ho jaye, phir init karo.
+    if (window.jQuery) {
+        initRegulatoryForms(window.jQuery);
+    } else {
+        var tries = 0;
+        var waitForJQuery = setInterval(function () {
+            tries++;
+            if (window.jQuery) {
+                clearInterval(waitForJQuery);
+                initRegulatoryForms(window.jQuery);
+            } else if (tries > 100) { // ~10 seconds tak try karega
+                clearInterval(waitForJQuery);
+                console.error('Regulatory forms: jQuery never became available on this page — check script load order in the layout.');
+            }
+        }, 100);
+    }
+})();
 </script>
