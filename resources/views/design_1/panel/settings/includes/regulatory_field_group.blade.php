@@ -1,23 +1,8 @@
 @php
     $submission = $submission ?? null;
-    $savedCountry = data_get($submission->data ?? [], 'country');
-    $selectedCountry = $savedCountry ?: $userCountry;
 @endphp
 
-<div class="form-group">
-    <label class="form-group-label">Country</label>
-    <select name="regulatory_forms[{{ $formKey }}][fields][country]" data-field-key="country" class="form-control select2">
-        <option value="">Select Country</option>
-        @foreach($countries as $country)
-            @php $countryName = $country->name ?? $country->title; @endphp
-            <option value="{{ $countryName }}" {{ $selectedCountry == $countryName ? 'selected' : '' }}>
-                {{ $countryName }}
-            </option>
-        @endforeach
-    </select>
-</div>
-
-@foreach($fields as $field)
+@forelse($fields as $field)
     @php
         $fieldKey = 'field_' . $field->id;
         $fieldValue = data_get($submission->data ?? [], $fieldKey);
@@ -56,4 +41,6 @@
             <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control">
         @endif
     </div>
-@endforeach
+@empty
+    <p class="text-gray-500">Is form ke liye admin ne abhi tak koi field add nahi ki.</p>
+@endforelse
