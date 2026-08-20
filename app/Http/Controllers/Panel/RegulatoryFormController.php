@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Region;
+use App\Models\Form;
 use App\Models\RegulatoryFormSubmission;
-use App\Models\RegulatoryFormTemplate;
 use App\Models\UserRoleRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,41 +29,43 @@ class RegulatoryFormController extends Controller
         foreach ($userRoles as $userRole) {
             $roleCatalogId = $userRole->role_catalog_id;
 
-            $primaryTemplate = RegulatoryFormTemplate::where('role_catalog_id', $roleCatalogId)
-                ->where('level', 'primary')
-                ->where('active', true)
-                ->first();
+           $primaryForm = Form::where('connect_regulatory', true)
+    ->where('regulatory_role_catalog_id', $roleCatalogId)
+    ->where('regulatory_level', 'primary')
+    ->where('enable', true)
+    ->with('fields.options')
+    ->first();
 
-            if (empty($primaryTemplate)) {
-                continue; // is role ka koi regulatory form define nahi hua
-            }
+if (empty($primaryForm)) {
+    continue; // is role ke liye koi regulatory-linked form nahi bana admin ne
+}
 
-            $primarySubmission = RegulatoryFormSubmission::where('user_id', $user->id)
-                ->where('role_catalog_id', $roleCatalogId)
-                ->where('level', 'primary')
-                ->first();
+$primarySubmission = RegulatoryFormSubmission::where('user_id', $user->id)
+    ->where('role_catalog_id', $roleCatalogId)
+    ->where('level', 'primary')
+    ->first();
 
-            // Secondary/Tertiary/Quaternary templates (agar exist karte hon)
-            $extraTemplates = RegulatoryFormTemplate::where('role_catalog_id', $roleCatalogId)
-                ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
-                ->where('active', true)
-                ->get();
+$extraForms = Form::where('connect_regulatory', true)
+    ->where('regulatory_role_catalog_id', $roleCatalogId)
+    ->whereIn('regulatory_level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
+    ->where('enable', true)
+    ->with('fields.options')
+    ->get();
 
-            // User ke already-added secondary/tertiary slots (multiple ho sakte hain — Branch1, Branch2, ...)
-            $extraSubmissions = RegulatoryFormSubmission::where('user_id', $user->id)
-                ->where('role_catalog_id', $roleCatalogId)
-                ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
-                ->get()
-                ->groupBy('template_id');
+$extraSubmissions = RegulatoryFormSubmission::where('user_id', $user->id)
+    ->where('role_catalog_id', $roleCatalogId)
+    ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
+    ->get()
+    ->groupBy('form_id');
 
-            $stacks[] = [
-                'role'              => $userRole->roleCatalog,
-                'roleRequestStatus' => $userRole->status,
-                'primaryTemplate'   => $primaryTemplate,
-                'primarySubmission' => $primarySubmission,
-                'extraTemplates'    => $extraTemplates,
-                'extraSubmissions'  => $extraSubmissions,
-            ];
+$stacks[] = [
+    'role'              => $userRole->roleCatalog,
+    'roleRequestStatus' => $userRole->status,
+    'primaryForm'       => $primaryForm,
+    'primarySubmission' => $primarySubmission,
+    'extraTemplates'    => $extraForms,       // naam wahi rakha, blade already isi naam ko expect kar raha hai
+    'extraSubmissions'  => $extraSubmissions,
+];
         }
 
         $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
@@ -98,32 +100,31 @@ class RegulatoryFormController extends Controller
     /**
      * "I want to add Brand" / "I want to add Warehouse" button — naya secondary/tertiary slot banata hai.
      */
-        public function addSlot(Request $request)
-    {
-        $data = $request->validate([
-            'template_id' => 'required|exists:regulatory_form_templates,id',
-        ]);
+       public function addSlot(Request $request)
+{
+    $data = $request->validate([
+        'form_id' => 'required|exists:forms,id',
+    ]);
 
-        $user     = auth()->user();
-        $template = RegulatoryFormTemplate::findOrFail($data['template_id']);
+    $user = auth()->user();
+    $form = Form::where('connect_regulatory', true)->findOrFail($data['form_id']);
 
-        // Server-side check: is template ke role_catalog_id par user ka ACTIVE role hona chahiye
-        $this->assertUserHasActiveRole($user->id, $template->role_catalog_id);
+    $this->assertUserHasActiveRole($user->id, $form->regulatory_role_catalog_id);
 
-        $submission = RegulatoryFormSubmission::create([
-            'user_id'         => $user->id,
-            'role_catalog_id' => $template->role_catalog_id,
-            'template_id'     => $template->id,
-            'level'           => $template->level,
-            'data'            => [],
-            'status'          => 'draft',
-        ]);
+    $submission = RegulatoryFormSubmission::create([
+        'user_id'         => $user->id,
+        'role_catalog_id' => $form->regulatory_role_catalog_id,
+        'form_id'         => $form->id,
+        'level'           => $form->regulatory_level,
+        'data'            => [],
+        'status'          => 'draft',
+    ]);
 
-        return response()->json([
-            'code'          => 200,
-            'submission_id' => $submission->id,
-        ]);
-    }
+    return response()->json([
+        'code'          => 200,
+        'submission_id' => $submission->id,
+    ]);
+}
 
        public function destroy($submissionId)
     {
@@ -156,23 +157,20 @@ class RegulatoryFormController extends Controller
         abort_unless($hasActiveRole, 403, 'Is regulatory form ke liye aapka role active nahi hai.');
     }
 
-   private function storeSubmission(Request $request, string $status)
+  private function storeSubmission(Request $request, string $status)
 {
     $data = $request->validate([
-        'template_id'   => 'required|exists:regulatory_form_templates,id',
-        'submission_id' => 'nullable|integer', // exists rule hata di — empty string safe rahegi
+        'form_id'       => 'required|exists:forms,id',
+        'submission_id' => 'nullable|integer',
         'fields'        => 'nullable|array',
     ]);
 
-    $user     = auth()->user();
-    $template = RegulatoryFormTemplate::findOrFail($data['template_id']);
+    $user = auth()->user();
+    $form = Form::where('connect_regulatory', true)->findOrFail($data['form_id']);
 
-    // Server-side check: is template ke role_catalog_id par user ka ACTIVE role hona chahiye
-    $this->assertUserHasActiveRole($user->id, $template->role_catalog_id);
+    $this->assertUserHasActiveRole($user->id, $form->regulatory_role_catalog_id);
 
-    // Empty string / 0 ko null treat karo
     $submissionId = !empty($data['submission_id']) ? (int) $data['submission_id'] : null;
-
     $submission = null;
 
     if ($submissionId) {
@@ -186,19 +184,17 @@ class RegulatoryFormController extends Controller
         $submission->user_id = $user->id;
     }
 
-    $submission->role_catalog_id = $template->role_catalog_id;
-    $submission->template_id     = $template->id;
-    $submission->level           = $template->level;
+    $submission->role_catalog_id = $form->regulatory_role_catalog_id;
+    $submission->form_id         = $form->id;
+    $submission->level           = $form->regulatory_level;
     $submission->data            = $data['fields'] ?? [];
     $submission->status          = $status;
     $submission->save();
 
     return response()->json([
         'code'          => 200,
-        'submission_id' => $submission->id, // JS isay dobara use karega taake next save "update" ho, duplicate na bane
-        'msg'           => $status === 'pending'
-            ? 'Form submitted for review — admin approval ka intezar hai.'
-            : 'Draft saved.',
+        'submission_id' => $submission->id,
+        'msg'           => $status === 'pending' ? 'Form submitted for review — admin approval ka intezar hai.' : 'Draft saved.',
         'status'        => $submission->status,
     ]);
 }
