@@ -16,44 +16,26 @@
                 </h3>
             </div>
 
-            {{-- Primary form — NOTE: <form> nahi, <div> hai (outer settings form ke andar
-                 nested <form> HTML-invalid hai aur browser use silently drop kar deta hai) --}}
-            @if($stack['primaryTemplate'])
+            {{-- Primary form — <div> hi rahega, nested <form> HTML-invalid hai --}}
+            @if($stack['primaryForm'])
                 @php
-                    $savedPrimaryCountry = data_get($stack['primarySubmission']->data ?? [], 'country');
-                    $primarySelectedCountry = $savedPrimaryCountry ?: $userCountry;
-                    $primaryFormKey = 'primary_' . $stack['primaryTemplate']->id;
+                    $primaryFormKey = 'primary_' . $stack['primaryForm']->id;
                 @endphp
 
-                <div class="js-regulatory-form" data-template-id="{{ $stack['primaryTemplate']->id }}"
+                <div class="js-regulatory-form" data-form-id="{{ $stack['primaryForm']->id }}"
                      data-submission-id="{{ $stack['primarySubmission']->id ?? '' }}">
-                    <input type="hidden" name="regulatory_forms[{{ $primaryFormKey }}][template_id]" value="{{ $stack['primaryTemplate']->id }}">
+                    <input type="hidden" name="regulatory_forms[{{ $primaryFormKey }}][form_id]" value="{{ $stack['primaryForm']->id }}">
                     <input type="hidden" name="regulatory_forms[{{ $primaryFormKey }}][submission_id]" value="{{ $stack['primarySubmission']->id ?? '' }}">
 
-                    <h4 class="font-14 font-weight-bold mb-12">{{ $stack['primaryTemplate']->label }}</h4>
+                    <h4 class="font-14 font-weight-bold mb-12">{{ $stack['primaryForm']->title }}</h4>
 
-                    <div class="form-group">
-                        <label class="form-group-label">Country</label>
-                        <select name="regulatory_forms[{{ $primaryFormKey }}][fields][country]" data-field-key="country" class="form-control select2">
-                            <option value="">Select Country</option>
-                            @foreach($countries as $country)
-                                @php
-                                    $countryName = $country->name ?? $country->title;
-                                @endphp
-                                <option value="{{ $countryName }}" {{ $primarySelectedCountry == $countryName ? 'selected' : '' }}>
-                                    {{ $countryName }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    @foreach($stack['primaryTemplate']->fields as $field)
-                        @include('design_1.panel.settings.includes.regulatory_field', [
-                            'field' => $field,
-                            'value' => data_get($stack['primarySubmission']->data ?? [], $field['key']),
-                            'inputName' => "regulatory_forms[{$primaryFormKey}][fields][{$field['key']}]",
-                        ])
-                    @endforeach
+                    @include('design_1.panel.settings.includes.regulatory_field_group', [
+                        'fields'       => $stack['primaryForm']->fields,
+                        'submission'   => $stack['primarySubmission'] ?? null,
+                        'formKey'      => $primaryFormKey,
+                        'countries'    => $countries,
+                        'userCountry'  => $userCountry,
+                    ])
 
                     <div class="d-flex gap-3 mt-16">
                         <button type="button" class="btn btn-outline-secondary js-save-draft">Save Draft</button>
@@ -66,47 +48,30 @@
             @foreach($stack['extraTemplates'] as $extraTemplate)
                 <div class="mt-24 pt-24 border-top">
                     <button type="button" class="btn btn-sm btn-outline-primary js-add-slot-btn"
-                            data-template-id="{{ $extraTemplate->id }}"
-                            data-label="{{ $extraTemplate->label }}">
-                        + I want to add {{ $extraTemplate->label }}
+                            data-form-id="{{ $extraTemplate->id }}"
+                            data-label="{{ $extraTemplate->title }}">
+                        + I want to add {{ $extraTemplate->title }}
                     </button>
 
                     <div class="js-slots-container mt-12">
                         @foreach($stack['extraSubmissions']->get($extraTemplate->id, []) as $slotSubmission)
                             @php
-                                $savedSlotCountry = data_get($slotSubmission->data, 'country');
-                                $slotSelectedCountry = $savedSlotCountry ?: $userCountry;
                                 $slotFormKey = 'submission_' . $slotSubmission->id;
                             @endphp
 
                             <div class="border-gray-200 rounded-12 p-12 mb-12 js-regulatory-slot">
-                                <div class="js-regulatory-form" data-template-id="{{ $extraTemplate->id }}"
+                                <div class="js-regulatory-form" data-form-id="{{ $extraTemplate->id }}"
                                      data-submission-id="{{ $slotSubmission->id }}">
-                                    <input type="hidden" name="regulatory_forms[{{ $slotFormKey }}][template_id]" value="{{ $extraTemplate->id }}">
+                                    <input type="hidden" name="regulatory_forms[{{ $slotFormKey }}][form_id]" value="{{ $extraTemplate->id }}">
                                     <input type="hidden" name="regulatory_forms[{{ $slotFormKey }}][submission_id]" value="{{ $slotSubmission->id }}">
 
-                                    <div class="form-group">
-                                        <label class="form-group-label">Country</label>
-                                        <select name="regulatory_forms[{{ $slotFormKey }}][fields][country]" data-field-key="country" class="form-control select2">
-                                            <option value="">Select Country</option>
-                                            @foreach($countries as $country)
-                                                @php
-                                                    $countryName = $country->name ?? $country->title;
-                                                @endphp
-                                                <option value="{{ $countryName }}" {{ $slotSelectedCountry == $countryName ? 'selected' : '' }}>
-                                                    {{ $countryName }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    @foreach($extraTemplate->fields as $field)
-                                        @include('design_1.panel.settings.includes.regulatory_field', [
-                                            'field' => $field,
-                                            'value' => data_get($slotSubmission->data, $field['key']),
-                                            'inputName' => "regulatory_forms[{$slotFormKey}][fields][{$field['key']}]",
-                                        ])
-                                    @endforeach
+                                    @include('design_1.panel.settings.includes.regulatory_field_group', [
+                                        'fields'       => $extraTemplate->fields,
+                                        'submission'   => $slotSubmission,
+                                        'formKey'      => $slotFormKey,
+                                        'countries'    => $countries,
+                                        'userCountry'  => $userCountry,
+                                    ])
 
                                     <div class="d-flex gap-3 mt-12">
                                         <button type="button" class="btn btn-sm btn-outline-secondary js-save-draft">Save Draft</button>
@@ -145,11 +110,10 @@
 (function ($) {
     'use strict';
 
-    var pendingTemplateId = null;
+    var pendingFormId = null;
 
-    // ── "I want to add Branch/Warehouse" button -> confirm popup ──────
     $(document).on('click', '.js-add-slot-btn', function () {
-        pendingTemplateId = $(this).data('template-id');
+        pendingFormId = $(this).data('form-id');
         $('#addSlotConfirmText').text('I want to apply for ' + $(this).data('label'));
         $('#addSlotConfirmModal').modal('show');
     });
@@ -157,7 +121,7 @@
     $(document).on('click', '#addSlotConfirmYes', function () {
         $.post('{{ route("panel.regulatory.add_slot") }}', {
             _token: '{{ csrf_token() }}',
-            template_id: pendingTemplateId
+            form_id: pendingFormId
         }, function () {
             $('#addSlotConfirmModal').modal('hide');
             window.location.reload();
@@ -166,12 +130,11 @@
         });
     });
 
-    // ── Save Draft / Submit for Review ─────────────────────────────────
     $(document).on('click', '.js-save-draft, .js-submit-review', function (e) {
         e.preventDefault();
 
         var $btn    = $(this);
-        var $form   = $btn.closest('.js-regulatory-form'); // <div>, not <form> — nested form issue se bacha
+        var $form   = $btn.closest('.js-regulatory-form');
         var isDraft = $btn.hasClass('js-save-draft');
         var url     = isDraft
             ? '{{ route("panel.regulatory.draft") }}'
@@ -186,12 +149,11 @@
 
         $.post(url, {
             _token:         '{{ csrf_token() }}',
-            template_id:    $form.data('template-id'),
+            form_id:        $form.data('form-id'),
             submission_id:  $form.data('submission-id') || '',
             fields:         fields
         }, function (res) {
             showToast('success', '', res.msg);
-            // Pehli save ke baad submission_id set kar do, taake agli save "update" ho, naya row na bane
             $form.attr('data-submission-id', res.submission_id).data('submission-id', res.submission_id);
         }).fail(function (xhr) {
             var msg = 'Something went wrong';
@@ -204,9 +166,8 @@
         }).always(function () {
             $btn.prop('disabled', false);
         });
-    }); // <-- YEH closing bracket pehle MISSING thi — yehi asal bug tha
+    });
 
-    // ── Delete secondary/tertiary slot ──────────────────────────────────
     $(document).on('click', '.js-delete-slot', function () {
         var submissionId = $(this).data('submission-id');
         var $slot = $(this).closest('.js-regulatory-slot');
