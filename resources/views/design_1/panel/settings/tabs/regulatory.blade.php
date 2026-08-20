@@ -146,82 +146,85 @@
         });
     });
 
-    $(document).on('click', '.js-save-draft, .js-submit-review', function (e) {
-        e.preventDefault();
+document.addEventListener('click', function (e) {
+    var $btn = $(e.target).closest('.js-save-draft, .js-submit-review');
+    if (!$btn.length) return;
 
-        var $btn    = $(this);
-        var $form   = $btn.closest('.js-regulatory-form');
-        var isDraft = $btn.hasClass('js-save-draft');
-        var url     = isDraft
-            ? '{{ route("panel.regulatory.draft") }}'
-            : '{{ route("panel.regulatory.submit") }}';
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
 
-        // reset previous error states
-        $form.find('.js-regulatory-field').removeClass('has-error').find('.js-field-error').text('');
+    var $form   = $btn.closest('.js-regulatory-form');
+    var isDraft = $btn.hasClass('js-save-draft');
+    var url     = isDraft
+        ? '{{ route("panel.regulatory.draft") }}'
+        : '{{ route("panel.regulatory.submit") }}';
 
-        var fields = {};
-        var hasError = false;
+    $form.find('.js-regulatory-field').removeClass('has-error').find('.js-field-error').text('');
 
-        $form.find('.js-regulatory-field').each(function () {
-            var $fieldWrap = $(this);
-            var fieldKey   = $fieldWrap.find('[data-field-key]').first().data('field-key');
-            var isRequired = $fieldWrap.data('required') == 1;
-            var value;
+    var fields = {};
+    var hasError = false;
 
-            var $checkboxGroup = $fieldWrap.find('input[type="checkbox"][name$="[]"]');
-            var $radioGroup     = $fieldWrap.find('input[type="radio"]');
-            var $singleToggle   = $fieldWrap.find('input[type="checkbox"]:not([name$="[]"])');
+    $form.find('.js-regulatory-field').each(function () {
+        var $fieldWrap = $(this);
+        var fieldKey   = $fieldWrap.find('[data-field-key]').first().data('field-key');
+        var isRequired = $fieldWrap.data('required') == 1;
+        var value;
 
-            if ($checkboxGroup.length) {
-                value = $checkboxGroup.filter(':checked').map(function () { return $(this).val(); }).get();
-            } else if ($radioGroup.length) {
-                value = $radioGroup.filter(':checked').val() || '';
-            } else if ($singleToggle.length) {
-                value = $singleToggle.is(':checked') ? '1' : '';
-            } else {
-                value = $fieldWrap.find('[data-field-key]').first().val();
-            }
+        var $checkboxGroup = $fieldWrap.find('input[type="checkbox"][name$="[]"]');
+        var $radioGroup     = $fieldWrap.find('input[type="radio"]');
+        var $singleToggle   = $fieldWrap.find('input[type="checkbox"]:not([name$="[]"])');
 
-            fields[fieldKey] = value;
-
-            var isEmpty = (Array.isArray(value) && value.length === 0) ||
-                          (!Array.isArray(value) && (value === undefined || value === null || value === ''));
-
-            if (isRequired && isEmpty) {
-                hasError = true;
-                $fieldWrap.addClass('has-error');
-                $fieldWrap.find('.js-field-error').text('This field is required.');
-            }
-        });
-
-        if (hasError) {
-            showToast('error', 'Error', 'Please fill in all required fields.');
-            return;
+        if ($checkboxGroup.length) {
+            value = $checkboxGroup.filter(':checked').map(function () { return $(this).val(); }).get();
+        } else if ($radioGroup.length) {
+            value = $radioGroup.filter(':checked').val() || '';
+        } else if ($singleToggle.length) {
+            value = $singleToggle.is(':checked') ? '1' : '';
+        } else {
+            value = $fieldWrap.find('[data-field-key]').first().val();
         }
 
-        $btn.prop('disabled', true);
+        fields[fieldKey] = value;
 
-        $.post(url, {
-            _token:         '{{ csrf_token() }}',
-            form_id:        $form.data('form-id'),
-            submission_id:  $form.data('submission-id') || '',
-            is_submit:      !isDraft,
-            fields:         fields
-        }, function (res) {
-            showToast('success', '', res.msg);
-            $form.attr('data-submission-id', res.submission_id).data('submission-id', res.submission_id);
-        }).fail(function (xhr) {
-            var msg = 'Something went wrong';
-            if (xhr.responseJSON && xhr.responseJSON.errors) {
-                msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
-            } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                msg = xhr.responseJSON.message;
-            }
-            showToast('error', 'Error', msg);
-        }).always(function () {
-            $btn.prop('disabled', false);
-        });
+        var isEmpty = (Array.isArray(value) && value.length === 0) ||
+                      (!Array.isArray(value) && (value === undefined || value === null || value === ''));
+
+        if (isRequired && isEmpty) {
+            hasError = true;
+            $fieldWrap.addClass('has-error');
+            $fieldWrap.find('.js-field-error').text('This field is required.');
+        }
     });
+
+    if (hasError) {
+        showToast('error', 'Error', 'Please fill in all required fields.');
+        return;
+    }
+
+    $btn.prop('disabled', true);
+
+    $.post(url, {
+        _token:         '{{ csrf_token() }}',
+        form_id:        $form.data('form-id'),
+        submission_id:  $form.data('submission-id') || '',
+        is_submit:      !isDraft,
+        fields:         fields
+    }, function (res) {
+        showToast('success', '', res.msg);
+        $form.attr('data-submission-id', res.submission_id).data('submission-id', res.submission_id);
+    }).fail(function (xhr) {
+        var msg = 'Something went wrong';
+        if (xhr.responseJSON && xhr.responseJSON.errors) {
+            msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+            msg = xhr.responseJSON.message;
+        }
+        showToast('error', 'Error', msg);
+    }).always(function () {
+        $btn.prop('disabled', false);
+    });
+});
 
     $(document).on('click', '.js-delete-slot', function () {
         var submissionId = $(this).data('submission-id');

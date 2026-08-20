@@ -24,46 +24,45 @@
                 @endforeach
             </select>
 
-        @elseif($field->type === 'radio')
-            @foreach($field->options as $option)
-                <div class="custom-control custom-radio">
-                    <input type="radio"
-                           name="{{ $inputName }}"
-                           data-field-key="{{ $fieldKey }}"
-                           value="{{ $option->id }}"
-                           class="custom-control-input"
-                           id="opt_{{ $option->id }}"
-                           {{ (string) $fieldValue === (string) $option->id ? 'checked' : '' }}>
-                    <label class="custom-control-label" for="opt_{{ $option->id }}">{{ $option->title }}</label>
-                </div>
-            @endforeach
+     @elseif($field->type === 'radio')
+    @foreach($field->options as $option)
+        <div class="form-check">
+            <input type="radio"
+                   name="{{ $inputName }}"
+                   data-field-key="{{ $fieldKey }}"
+                   value="{{ $option->id }}"
+                   class="form-check-input"
+                   id="opt_{{ $option->id }}"
+                   {{ (string) $fieldValue === (string) $option->id ? 'checked' : '' }}>
+            <label class="form-check-label" for="opt_{{ $option->id }}">{{ $option->title }}</label>
+        </div>
+    @endforeach
 
-        @elseif($field->type === 'checkbox')
-            @php $selectedValues = (array) ($fieldValue ?? []); @endphp
-            @foreach($field->options as $option)
-                <div class="custom-control custom-checkbox">
-                    <input type="checkbox"
-                           name="{{ $inputName }}[]"
-                           data-field-key="{{ $fieldKey }}"
-                           value="{{ $option->id }}"
-                           class="custom-control-input"
-                           id="opt_{{ $option->id }}"
-                           {{ in_array($option->id, $selectedValues) ? 'checked' : '' }}>
-                    <label class="custom-control-label" for="opt_{{ $option->id }}">{{ $option->title }}</label>
-                </div>
-            @endforeach
-
-        @elseif($field->type === 'toggle')
-            <div class="custom-control custom-switch">
-                <input type="checkbox"
-                       name="{{ $inputName }}"
-                       data-field-key="{{ $fieldKey }}"
-                       value="1"
-                       class="custom-control-input"
-                       id="{{ $fieldKey }}"
-                       {{ !empty($fieldValue) ? 'checked' : '' }}>
-                <label class="custom-control-label" for="{{ $fieldKey }}"></label>
-            </div>
+     @elseif($field->type === 'checkbox')
+    @php $selectedValues = (array) ($fieldValue ?? []); @endphp
+    @foreach($field->options as $option)
+        <div class="form-check">
+            <input type="checkbox"
+                   name="{{ $inputName }}[]"
+                   data-field-key="{{ $fieldKey }}"
+                   value="{{ $option->id }}"
+                   class="form-check-input"
+                   id="opt_{{ $option->id }}"
+                   {{ in_array($option->id, $selectedValues) ? 'checked' : '' }}>
+            <label class="form-check-label" for="opt_{{ $option->id }}">{{ $option->title }}</label>
+        </div>
+    @endforeach
+     @elseif($field->type === 'toggle')
+    <div class="form-check form-switch">
+        <input type="checkbox"
+               name="{{ $inputName }}"
+               data-field-key="{{ $fieldKey }}"
+               value="1"
+               class="form-check-input"
+               id="{{ $fieldKey }}"
+               {{ !empty($fieldValue) ? 'checked' : '' }}>
+        <label class="form-check-label" for="{{ $fieldKey }}"></label>
+    </div>
 
         @elseif($field->type === 'upload')
             <div class="input-group">
