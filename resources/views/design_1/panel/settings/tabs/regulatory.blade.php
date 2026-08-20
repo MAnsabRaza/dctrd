@@ -45,8 +45,7 @@
             @endif
 
             {{-- Secondary/Tertiary/etc --}}
-            {{-- Secondary/Tertiary/etc --}}
-@foreach(($stack['extraTemplates'] ?? []) as $extraTemplate)
+            @foreach(($stack['extraTemplates'] ?? []) as $extraTemplate)
                 <div class="mt-24 pt-24 border-top">
                     <button type="button" class="btn btn-sm btn-outline-primary js-add-slot-btn"
                             data-form-id="{{ $extraTemplate->id }}"
@@ -55,7 +54,7 @@
                     </button>
 
                     <div class="js-slots-container mt-12">
-                     @foreach(($stack['extraSubmissions'] ?? collect())->get($extraTemplate->id, []) as $slotSubmission)
+                        @foreach(($stack['extraSubmissions'] ?? collect())->get($extraTemplate->id, []) as $slotSubmission)
                             @php
                                 $slotFormKey = 'submission_' . $slotSubmission->id;
                             @endphp
@@ -107,6 +106,22 @@
     </div>
 </div>
 
+<style>
+.js-regulatory-field.has-error .form-control,
+.js-regulatory-field.has-error .custom-control-input ~ .custom-control-label {
+    border-color: #dc3545;
+}
+.js-regulatory-field .js-field-error {
+    display: none;
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+}
+.js-regulatory-field.has-error .js-field-error {
+    display: block;
+}
+</style>
+
 <script>
 (function ($) {
     'use strict';
@@ -141,10 +156,48 @@
             ? '{{ route("panel.regulatory.draft") }}'
             : '{{ route("panel.regulatory.submit") }}';
 
+        // reset previous error states
+        $form.find('.js-regulatory-field').removeClass('has-error').find('.js-field-error').text('');
+
         var fields = {};
-        $form.find('[data-field-key]').each(function () {
-            fields[$(this).data('field-key')] = $(this).val();
+        var hasError = false;
+
+        $form.find('.js-regulatory-field').each(function () {
+            var $fieldWrap = $(this);
+            var fieldKey   = $fieldWrap.find('[data-field-key]').first().data('field-key');
+            var isRequired = $fieldWrap.data('required') == 1;
+            var value;
+
+            var $checkboxGroup = $fieldWrap.find('input[type="checkbox"][name$="[]"]');
+            var $radioGroup     = $fieldWrap.find('input[type="radio"]');
+            var $singleToggle   = $fieldWrap.find('input[type="checkbox"]:not([name$="[]"])');
+
+            if ($checkboxGroup.length) {
+                value = $checkboxGroup.filter(':checked').map(function () { return $(this).val(); }).get();
+            } else if ($radioGroup.length) {
+                value = $radioGroup.filter(':checked').val() || '';
+            } else if ($singleToggle.length) {
+                value = $singleToggle.is(':checked') ? '1' : '';
+            } else {
+                value = $fieldWrap.find('[data-field-key]').first().val();
+            }
+
+            fields[fieldKey] = value;
+
+            var isEmpty = (Array.isArray(value) && value.length === 0) ||
+                          (!Array.isArray(value) && (value === undefined || value === null || value === ''));
+
+            if (isRequired && isEmpty) {
+                hasError = true;
+                $fieldWrap.addClass('has-error');
+                $fieldWrap.find('.js-field-error').text('This field is required.');
+            }
         });
+
+        if (hasError) {
+            showToast('error', 'Error', 'Please fill in all required fields.');
+            return;
+        }
 
         $btn.prop('disabled', true);
 
@@ -152,6 +205,7 @@
             _token:         '{{ csrf_token() }}',
             form_id:        $form.data('form-id'),
             submission_id:  $form.data('submission-id') || '',
+            is_submit:      !isDraft,
             fields:         fields
         }, function (res) {
             showToast('success', '', res.msg);

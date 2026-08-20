@@ -8,7 +8,7 @@
         $fieldValue = data_get($submission->data ?? [], $fieldKey);
         $inputName = "regulatory_forms[{$formKey}][fields][{$fieldKey}]";
     @endphp
-    <div class="form-group">
+    <div class="form-group js-regulatory-field" data-required="{{ $field->required ? '1' : '0' }}">
         <label class="form-group-label">
             {{ $field->title }}
             @if($field->required)<span class="text-danger">*</span>@endif
@@ -23,12 +23,27 @@
                     </option>
                 @endforeach
             </select>
-        @elseif(in_array($field->type, ['checkbox', 'radio']))
+
+        @elseif($field->type === 'radio')
+            @foreach($field->options as $option)
+                <div class="custom-control custom-radio">
+                    <input type="radio"
+                           name="{{ $inputName }}"
+                           data-field-key="{{ $fieldKey }}"
+                           value="{{ $option->id }}"
+                           class="custom-control-input"
+                           id="opt_{{ $option->id }}"
+                           {{ (string) $fieldValue === (string) $option->id ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="opt_{{ $option->id }}">{{ $option->title }}</label>
+                </div>
+            @endforeach
+
+        @elseif($field->type === 'checkbox')
             @php $selectedValues = (array) ($fieldValue ?? []); @endphp
             @foreach($field->options as $option)
-                <div class="custom-control custom-{{ $field->type }}">
-                    <input type="{{ $field->type }}"
-                           name="{{ $inputName }}{{ $field->type === 'checkbox' ? '[]' : '' }}"
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox"
+                           name="{{ $inputName }}[]"
                            data-field-key="{{ $fieldKey }}"
                            value="{{ $option->id }}"
                            class="custom-control-input"
@@ -37,10 +52,49 @@
                     <label class="custom-control-label" for="opt_{{ $option->id }}">{{ $option->title }}</label>
                 </div>
             @endforeach
+
+        @elseif($field->type === 'toggle')
+            <div class="custom-control custom-switch">
+                <input type="checkbox"
+                       name="{{ $inputName }}"
+                       data-field-key="{{ $fieldKey }}"
+                       value="1"
+                       class="custom-control-input"
+                       id="{{ $fieldKey }}"
+                       {{ !empty($fieldValue) ? 'checked' : '' }}>
+                <label class="custom-control-label" for="{{ $fieldKey }}"></label>
+            </div>
+
+        @elseif($field->type === 'upload')
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <button type="button" class="input-group-text admin-file-manager" data-input="{{ $fieldKey }}" data-preview="holder">
+                        <i class="fa fa-upload"></i>
+                    </button>
+                </div>
+                <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" id="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control">
+                <div class="input-group-append">
+                    <button type="button" class="input-group-text admin-file-view" data-input="{{ $fieldKey }}">
+                        <i class="fa fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+        @elseif($field->type === 'textarea')
+            <textarea name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" class="form-control" rows="3">{{ $fieldValue }}</textarea>
+
+        @elseif($field->type === 'date')
+            <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control js-datepicker">
+
+        @elseif($field->type === 'number')
+            <input type="number" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control">
+
         @else
             <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control">
         @endif
+
+        <div class="invalid-feedback js-field-error"></div>
     </div>
 @empty
-    <p class="text-gray-500">Is form ke liye admin ne abhi tak koi field add nahi ki.</p>
+    <p class="text-gray-500">No fields have been added to this form yet.</p>
 @endforelse

@@ -691,9 +691,11 @@ public function update(Request $request)
             UserSelectedBankSpecification::query()->insert($specificationInsert);
         }
     }
-private function saveRegulatorySettings(Request $request, User $user): void
+
+    private function saveRegulatorySettings(Request $request, User $user): void
 {
     $forms = $request->input('regulatory_forms', []);
+    $isSubmitForReview = $request->input('is_submit', false); // frontend se bhejna hoga (neeche note dekho)
 
     if (empty($forms) or !is_array($forms)) {
         return;
@@ -708,20 +710,20 @@ private function saveRegulatorySettings(Request $request, User $user): void
 
         $form = \App\Models\Form::where('id', $formId)
             ->where('connect_regulatory', true)
+            ->with('fields')
             ->first();
 
         if (empty($form)) {
             continue;
         }
 
-        // Server-side check: is Form ke role par user ka ACTIVE role hona chahiye
         $hasActiveRole = \App\Models\UserRoleRequest::where('user_id', $user->id)
             ->where('role_catalog_id', $form->regulatory_role_catalog_id)
             ->where('status', \App\Models\UserRoleRequest::STATUS_ACTIVE)
             ->exists();
 
         if (!$hasActiveRole) {
-            continue; // koi galat form_id bhej de tab bhi backend se ignore ho jayega
+            continue;
         }
 
         $submissionId = !empty($formInput['submission_id']) ? (int) $formInput['submission_id'] : null;
@@ -729,6 +731,27 @@ private function saveRegulatorySettings(Request $request, User $user): void
 
         if (!is_array($fields)) {
             $fields = [];
+        }
+
+        // ── Required fields check (sirf Submit for Review par) ──
+        if ($isSubmitForReview) {
+            foreach ($form->fields as $field) {
+                if (!$field->required) {
+                    continue;
+                }
+
+                $key = 'field_' . $field->id;
+                $val = $fields[$key] ?? null;
+
+                $isEmpty = is_array($val) ? empty($val) : ($val === null or $val === '');
+
+                if ($isEmpty) {
+                    abort(response()->json([
+                        'message' => 'Please fill in all required fields.',
+                        'errors' => [$key => ['This field is required.']],
+                    ], 422));
+                }
+            }
         }
 
         $submission = null;
@@ -754,7 +777,7 @@ private function saveRegulatorySettings(Request $request, User $user): void
         $submission->form_id         = $form->id;
         $submission->level           = $form->regulatory_level;
         $submission->data = array_filter($fields, fn($value) => $value !== null and $value !== '');
-        $submission->status = 'draft';
+        $submission->status = $isSubmitForReview ? 'pending' : 'draft';
         $submission->save();
     }
 }
