@@ -15,77 +15,77 @@ class RegulatoryFormController extends Controller
     /**
      * User ke sare (active + pending) roles ke stacked regulatory forms dikhao.
      */
-    public function show()
-    {
-        $user = auth()->user();
+   public function show()
+{
+    $user = auth()->user();
 
-       $userRoles = UserRoleRequest::where('user_id', $user->id)
-    ->where('status', UserRoleRequest::STATUS_ACTIVE)   // pending hata diya
-    ->with('roleCatalog')
-    ->get();
+    $userRoles = UserRoleRequest::where('user_id', $user->id)
+        ->where('status', UserRoleRequest::STATUS_ACTIVE)
+        ->with('roleCatalog')
+        ->get();
 
-        $stacks = [];
+    $stacks = [];
 
-        foreach ($userRoles as $userRole) {
-            $roleCatalogId = $userRole->role_catalog_id;
+    foreach ($userRoles as $userRole) {
+        $roleCatalogId = $userRole->role_catalog_id;
 
-           $primaryForm = Form::where('connect_regulatory', true)
-    ->where('regulatory_role_catalog_id', $roleCatalogId)
-    ->where('regulatory_level', 'primary')
-    ->where('enable', true)
-    ->with('fields.options')
-    ->first();
+        $primaryForm = Form::where('connect_regulatory', true)
+            ->where('regulatory_role_catalog_id', $roleCatalogId)
+            ->where('regulatory_level', 'primary')
+            ->where('enable', true)
+            ->with('fields.options')
+            ->first();
 
-if (empty($primaryForm)) {
-    continue; // is role ke liye koi regulatory-linked form nahi bana admin ne
-}
-
-$primarySubmission = RegulatoryFormSubmission::where('user_id', $user->id)
-    ->where('role_catalog_id', $roleCatalogId)
-    ->where('level', 'primary')
-    ->first();
-
-$extraForms = Form::where('connect_regulatory', true)
-    ->where('regulatory_role_catalog_id', $roleCatalogId)
-    ->whereIn('regulatory_level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
-    ->where('enable', true)
-    ->with('fields.options')
-    ->get();
-
-$extraSubmissions = RegulatoryFormSubmission::where('user_id', $user->id)
-    ->where('role_catalog_id', $roleCatalogId)
-    ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
-    ->get()
-    ->groupBy('form_id');
-
-$stacks[] = [
-    'role'              => $userRole->roleCatalog,
-    'roleRequestStatus' => $userRole->status,
-    'primaryForm'       => $primaryForm,
-    'primarySubmission' => $primarySubmission,
-    'extraTemplates'    => $extraForms,       // naam wahi rakha, blade already isi naam ko expect kar raha hai
-    'extraSubmissions'  => $extraSubmissions,
-];
+        if (empty($primaryForm)) {
+            continue;
         }
 
-        $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
-            ->where('type', Region::$country)
+        $primarySubmission = RegulatoryFormSubmission::where('user_id', $user->id)
+            ->where('role_catalog_id', $roleCatalogId)
+            ->where('level', 'primary')
+            ->first();
+
+        $extraForms = Form::where('connect_regulatory', true)
+            ->where('regulatory_role_catalog_id', $roleCatalogId)
+            ->whereIn('regulatory_level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
+            ->where('enable', true)
+            ->with('fields.options')
             ->get();
 
-        $userCountry = $user->country;
+        $extraSubmissions = RegulatoryFormSubmission::where('user_id', $user->id)
+            ->where('role_catalog_id', $roleCatalogId)
+            ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
+            ->get()
+            ->groupBy('form_id');
 
-        if (!empty($user->country_id)) {
-            $country = Region::where('id', $user->country_id)->first();
-            $userCountry = $country->title ?? $userCountry;
-        }
-
-        return view('design_1.panel.settings.regulatory', [
-            'pageTitle' => 'Regulatory & Badges',
-            'stacks'    => $stacks,
-            'countries' => $countries,
-            'userCountry' => $userCountry,
-        ]);
+        $stacks[] = [
+            'role'              => $userRole->roleCatalog,
+            'roleRequestStatus' => $userRole->status,
+            'primaryForm'       => $primaryForm,
+            'primarySubmission' => $primarySubmission,
+            'extraTemplates'    => $extraForms,      // ⚠️ ye key blade expect karta hai
+            'extraSubmissions'  => $extraSubmissions, // ⚠️ ye bhi
+        ];
     }
+
+    $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
+        ->where('type', Region::$country)
+        ->get();
+
+    $userCountry = $user->country;
+
+    if (!empty($user->country_id)) {
+        $country = Region::where('id', $user->country_id)->first();
+        $userCountry = $country->title ?? $userCountry;
+    }
+
+    return view('design_1.panel.settings.regulatory', [
+        'pageTitle'   => 'Regulatory & Badges',
+        'stacks'      => $stacks,
+        'countries'   => $countries,
+        'userCountry' => $userCountry,
+    ]);
+}
 
     public function saveDraft(Request $request)
     {

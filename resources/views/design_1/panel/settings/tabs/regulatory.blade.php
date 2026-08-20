@@ -45,7 +45,8 @@
             @endif
 
             {{-- Secondary/Tertiary/etc --}}
-            @foreach($stack['extraTemplates'] as $extraTemplate)
+            {{-- Secondary/Tertiary/etc --}}
+@foreach(($stack['extraTemplates'] ?? []) as $extraTemplate)
                 <div class="mt-24 pt-24 border-top">
                     <button type="button" class="btn btn-sm btn-outline-primary js-add-slot-btn"
                             data-form-id="{{ $extraTemplate->id }}"
@@ -54,7 +55,7 @@
                     </button>
 
                     <div class="js-slots-container mt-12">
-                        @foreach($stack['extraSubmissions']->get($extraTemplate->id, []) as $slotSubmission)
+                     @foreach(($stack['extraSubmissions'] ?? collect())->get($extraTemplate->id, []) as $slotSubmission)
                             @php
                                 $slotFormKey = 'submission_' . $slotSubmission->id;
                             @endphp
