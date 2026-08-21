@@ -4950,5 +4950,8 @@ return [
 'booking_order_status_completed'=>'Completed',
 'extra_services'=>'Extra Services',
 'extra_service'=>'Extra Service',
+'regulatory_submissions'=>'Regulatory Submissions',
+'regulatory_submission_approved'=>'Regulatory Submission Approved',
+'regulatory_submission_rejected'=>'Regulatory Submission Rejected',
 
 ];

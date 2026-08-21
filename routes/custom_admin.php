@@ -46,6 +46,7 @@ use App\Http\Controllers\Admin\Store\ProductsController;
 use App\Http\Controllers\Admin\BundleController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\RegulatoryFormSubmissionsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\WebinarController;
 
