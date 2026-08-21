@@ -360,6 +360,21 @@ Route::group(['prefix' => 'users/{id}/availability'], function () {
     Route::post('/row/add', [AvailabilitySettingsController::class, 'addRow'])
         ->name('admin.users.availability.addRow');
 });
+/**
+ * ═════════════════════════════════════════════════════════════════
+ * REGULATORY FORM SUBMISSIONS ROUTES (Admin Panel)
+ * ═════════════════════════════════════════════════════════════════
+ */
+Route::group(['prefix' => 'regulatory-submissions'], function () {
+    Route::get('/', [RegulatoryFormSubmissionsController::class, 'index'])
+        ->name('admin.regulatory_submissions.index');
+    Route::get('/{id}/show', [RegulatoryFormSubmissionsController::class, 'show'])
+        ->name('admin.regulatory_submissions.show');
+    Route::post('/{id}/approve', [RegulatoryFormSubmissionsController::class, 'approve'])
+        ->name('admin.regulatory_submissions.approve');
+    Route::post('/{id}/reject', [RegulatoryFormSubmissionsController::class, 'reject'])
+        ->name('admin.regulatory_submissions.reject');
+});
 
 Route::group(['prefix' => 'abilities'], function () {
     Route::get('/', [AbilityController::class, 'index'])->name('admin.abilities.index');

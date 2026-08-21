@@ -8,6 +8,8 @@ use App\Models\Form;
 use App\Models\RegulatoryFormSubmission;
 use App\Models\UserRoleRequest;
 use Illuminate\Http\Request;
+use App\Models\FormSubmission;
+use App\Models\FormSubmissionItem;
 use Illuminate\Support\Facades\DB;
 
 class RegulatoryFormController extends Controller
@@ -40,10 +42,11 @@ class RegulatoryFormController extends Controller
             continue;
         }
 
-        $primarySubmission = RegulatoryFormSubmission::where('user_id', $user->id)
-            ->where('role_catalog_id', $roleCatalogId)
-            ->where('level', 'primary')
-            ->first();
+       $primarySubmission = RegulatoryFormSubmission::where('user_id', $user->id)
+    ->where('role_catalog_id', $roleCatalogId)
+    ->where('level', 'primary')
+    ->with('formSubmission.items')
+    ->first();
 
         $extraForms = Form::where('connect_regulatory', true)
             ->where('regulatory_role_catalog_id', $roleCatalogId)
@@ -157,7 +160,7 @@ class RegulatoryFormController extends Controller
         abort_unless($hasActiveRole, 403, 'Is regulatory form ke liye aapka role active nahi hai.');
     }
 
-  private function storeSubmission(Request $request, string $status)
+    private function storeSubmission(Request $request, string $status)
 {
     $data = $request->validate([
         'form_id'       => 'required|exists:forms,id',
@@ -171,31 +174,94 @@ class RegulatoryFormController extends Controller
     $this->assertUserHasActiveRole($user->id, $form->regulatory_role_catalog_id);
 
     $submissionId = !empty($data['submission_id']) ? (int) $data['submission_id'] : null;
-    $submission = null;
+    $regSubmission = null;
 
     if ($submissionId) {
-        $submission = RegulatoryFormSubmission::where('id', $submissionId)
+        $regSubmission = RegulatoryFormSubmission::where('id', $submissionId)
             ->where('user_id', $user->id)
             ->first();
     }
 
-    if (empty($submission)) {
-        $submission = new RegulatoryFormSubmission();
-        $submission->user_id = $user->id;
+    if (empty($regSubmission)) {
+        $regSubmission = RegulatoryFormSubmission::where('user_id', $user->id)
+            ->where('form_id', $form->id)
+            ->first();
     }
 
-    $submission->role_catalog_id = $form->regulatory_role_catalog_id;
-    $submission->form_id         = $form->id;
-    $submission->level           = $form->regulatory_level;
-    $submission->data            = $data['fields'] ?? [];
-    $submission->status          = $status;
-    $submission->save();
+    if (empty($regSubmission)) {
+        $regSubmission = new RegulatoryFormSubmission();
+        $regSubmission->user_id = $user->id;
+    }
+
+    $fields = $data['fields'] ?? [];
+
+    // ── Required fields check (sirf Submit for Review par) ──
+    if ($status === 'pending') {
+        foreach ($form->fields as $field) {
+            if (!$field->required) {
+                continue;
+            }
+
+            $key = 'field_' . $field->id;
+            $val = $fields[$key] ?? null;
+            $isEmpty = is_array($val) ? empty($val) : ($val === null or $val === '');
+
+            if ($isEmpty) {
+                abort(response()->json([
+                    'message' => 'Please fill in all required fields.',
+                    'errors' => [$key => ['This field is required.']],
+                ], 422));
+            }
+        }
+    }
+
+    // ── Actual answers Form Builder ke apne tables me jayenge (koi duplicate nahi) ──
+    $formSubmission = null;
+
+    if (!empty($regSubmission->form_submission_id)) {
+        $formSubmission = FormSubmission::where('id', $regSubmission->form_submission_id)
+            ->where('form_id', $form->id)
+            ->first();
+    }
+
+    if (empty($formSubmission)) {
+        $formSubmission = FormSubmission::create([
+            'user_id'    => $user->id,
+            'form_id'    => $form->id,
+            'created_at' => time(),
+        ]);
+    }
+
+    foreach ($fields as $fieldKey => $value) {
+        $fieldId = str_replace('field_', '', $fieldKey);
+
+        FormSubmissionItem::query()->updateOrCreate([
+            'submission_id'  => $formSubmission->id,
+            'form_field_id'  => $fieldId,
+        ], [
+            'value' => is_array($value) ? json_encode($value) : $value,
+        ]);
+    }
+
+    // ── regulatory_form_submissions — sirf reference + workflow status ──
+    $regSubmission->role_catalog_id    = $form->regulatory_role_catalog_id;
+    $regSubmission->form_id            = $form->id;
+    $regSubmission->form_submission_id = $formSubmission->id;
+    $regSubmission->level              = $form->regulatory_level;
+    $regSubmission->status             = $status;
+
+    // agar user dubara draft save kare to purana rejection reason clear ho jaye
+    if ($status !== 'rejected') {
+        $regSubmission->rejection_reason = null;
+    }
+
+    $regSubmission->save();
 
     return response()->json([
         'code'          => 200,
-        'submission_id' => $submission->id,
+        'submission_id' => $regSubmission->id,
         'msg'           => $status === 'pending' ? 'Form submitted for review — admin approval ka intezar hai.' : 'Draft saved.',
-        'status'        => $submission->status,
+        'status'        => $regSubmission->status,
     ]);
 }
 }

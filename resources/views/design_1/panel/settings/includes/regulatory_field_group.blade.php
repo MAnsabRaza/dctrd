@@ -1,11 +1,18 @@
 @php
     $submission = $submission ?? null;
+    $items = optional($submission?->formSubmission)->items ?? collect();
 @endphp
 
 @forelse($fields as $field)
     @php
         $fieldKey = 'field_' . $field->id;
-        $fieldValue = data_get($submission->data ?? [], $fieldKey);
+        $item = $items->firstWhere('form_field_id', $field->id);
+        $fieldValue = $item->value ?? null;
+
+        if ($field->type === 'checkbox' and !empty($fieldValue)) {
+            $fieldValue = json_decode($fieldValue, true);
+        }
+
         $inputName = "regulatory_forms[{$formKey}][fields][{$fieldKey}]";
     @endphp
     <div class="form-group js-regulatory-field" data-required="{{ $field->required ? '1' : '0' }}">

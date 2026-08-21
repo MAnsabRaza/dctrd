@@ -607,6 +607,8 @@ class SectionsTableSeeder extends Seeder
         Section::updateOrCreate(['id' => 3044], ['name' => 'admin_forms_delete', 'section_group_id' => 3040, 'caption' => 'Delete']);
         Section::updateOrCreate(['id' => 3045], ['name' => 'admin_forms_export', 'section_group_id' => 3040, 'caption' => 'Export']);
         Section::updateOrCreate(['id' => 3046], ['name' => 'admin_forms_submissions', 'section_group_id' => 3040, 'caption' => 'Submissions']);
+        Section::updateOrCreate(['id' => 3057], ['name' => 'admin_regulatory_submissions', 'section_group_id' => 3040, 'caption' => 'Regulatory Submissions']);
+Section::updateOrCreate(['id' => 3058], ['name' => 'admin_regulatory_submissions_review', 'section_group_id' => 3040, 'caption' => 'Approve/Reject Regulatory Submissions']);
 
         // AI Content 3050 - 3059
         Section::updateOrCreate(['id' => 3050], ['name' => 'admin_ai_contents', 'caption' => 'AI Contents']);

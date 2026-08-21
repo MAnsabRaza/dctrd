@@ -585,6 +585,14 @@
                     <a class="nav-link" href="{{ getAdminPanelUrl() }}/forms">{{ trans('admin/main.list') }}</a>
                 </li>
             @endcan()
+        @can('admin_regulatory_submissions')
+    <li class="nav-item {{ request()->routeIs('admin.regulatory_submissions.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.regulatory_submissions.index') }}">
+            <x-iconsax-bul-shield-tick class="icons" width="24px" height="24px" />
+            <span>{{ trans('update.regulatory_submissions') }}</span>
+        </a>
+    </li>
+@endcan
 
             @can('admin_forms_submissions')
                 <li class="{{ (request()->is(getAdminPanelUrl('/forms/submissions', false))) ? 'active' : '' }}">
