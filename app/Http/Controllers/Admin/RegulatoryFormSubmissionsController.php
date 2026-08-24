@@ -56,49 +56,51 @@ class RegulatoryFormSubmissionsController extends Controller
         ]);
     }
 
-    public function approve($id)
-    {
-        $this->authorize("admin_regulatory_submissions_review");
+   public function approve($id)
+{
+    $this->authorize("admin_regulatory_submissions_review");
 
-        $submission = RegulatoryFormSubmission::with('form')->findOrFail($id);
+    $submission = RegulatoryFormSubmission::with('form')->findOrFail($id);
 
-        // ✅ Yahi wo lamha hai jahan Form Builder ka asal record (form_submissions +
-        // form_submission_items) banta hai — pehli dafa jab admin Approve dabata hai.
-        // Isse pehle (draft/pending) ye record kabhi nahi bana, isliye Admin ki
-        // generic "Forms > Submissions" list mein pending cheezein show nahi hoti thi.
-        if (empty($submission->form_submission_id)) {
-            $formSubmission = FormSubmission::create([
-                'user_id'    => $submission->user_id,
-                'form_id'    => $submission->form_id,
-                'created_at' => time(),
-            ]);
+    $formSubmission = null;
 
-            foreach ((array) $submission->data as $fieldKey => $value) {
-                $fieldId = str_replace('field_', '', $fieldKey);
-
-                FormSubmissionItem::query()->updateOrCreate([
-                    'submission_id' => $formSubmission->id,
-                    'form_field_id' => $fieldId,
-                ], [
-                    'value' => is_array($value) ? json_encode($value) : $value,
-                ]);
-            }
-
-            $submission->form_submission_id = $formSubmission->id;
-        }
-
-        $submission->status = 'approved';
-        $submission->rejection_reason = null;
-        $submission->reviewed_by = auth()->id();
-        $submission->reviewed_at = now();
-        $submission->save();
-
-        return back()->with(['toast' => [
-            'title'  => trans('public.request_success'),
-            'msg'    => trans('update.regulatory_submission_approved'),
-            'status' => 'success',
-        ]]);
+    if (!empty($submission->form_submission_id)) {
+        $formSubmission = FormSubmission::find($submission->form_submission_id);
     }
+
+    if (empty($formSubmission)) {
+        $formSubmission = FormSubmission::create([
+            'user_id'    => $submission->user_id,
+            'form_id'    => $submission->form_id,
+            'created_at' => time(),
+        ]);
+        $submission->form_submission_id = $formSubmission->id;
+    }
+
+    // Har approve par latest data ke sath items sync/update karo
+    foreach ((array) $submission->data as $fieldKey => $value) {
+        $fieldId = str_replace('field_', '', $fieldKey);
+
+        FormSubmissionItem::query()->updateOrCreate([
+            'submission_id' => $formSubmission->id,
+            'form_field_id' => $fieldId,
+        ], [
+            'value' => is_array($value) ? json_encode($value) : $value,
+        ]);
+    }
+
+    $submission->status = 'approved';
+    $submission->rejection_reason = null;
+    $submission->reviewed_by = auth()->id();
+    $submission->reviewed_at = now();
+    $submission->save();
+
+    return back()->with(['toast' => [
+        'title'  => trans('public.request_success'),
+        'msg'    => trans('update.regulatory_submission_approved'),
+        'status' => 'success',
+    ]]);
+}
 
     public function reject(Request $request, $id)
     {

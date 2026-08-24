@@ -40,7 +40,7 @@
 
     <div class="form-group">
         <label class="input-label font-weight-bold">{{ $field->title }}</label>
-        <p class="mb-0">{{ $value !== null and $value !== '' ? $value : '—' }}</p>
+        <p class="mb-0">{{ $value !== null && $value !== '' ? $value : '—' }}</p>
     </div>
 @endforeach
                         </div>
