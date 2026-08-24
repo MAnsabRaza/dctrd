@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Form;
+use App\Models\FormSubmission;
+use App\Models\FormSubmissionItem;
 use App\Models\RegulatoryFormSubmission;
 use Illuminate\Http\Request;
 
@@ -43,7 +46,6 @@ class RegulatoryFormSubmissionsController extends Controller
                         $q->orderBy('order', 'asc');
                     }]);
                 },
-                'formSubmission.items',
             ])
             ->firstOrFail();
 
@@ -56,9 +58,35 @@ class RegulatoryFormSubmissionsController extends Controller
 
     public function approve($id)
     {
-      $this->authorize("admin_regulatory_submissions_review");
+        $this->authorize("admin_regulatory_submissions_review");
 
-        $submission = RegulatoryFormSubmission::findOrFail($id);
+        $submission = RegulatoryFormSubmission::with('form')->findOrFail($id);
+
+        // ✅ Yahi wo lamha hai jahan Form Builder ka asal record (form_submissions +
+        // form_submission_items) banta hai — pehli dafa jab admin Approve dabata hai.
+        // Isse pehle (draft/pending) ye record kabhi nahi bana, isliye Admin ki
+        // generic "Forms > Submissions" list mein pending cheezein show nahi hoti thi.
+        if (empty($submission->form_submission_id)) {
+            $formSubmission = FormSubmission::create([
+                'user_id'    => $submission->user_id,
+                'form_id'    => $submission->form_id,
+                'created_at' => time(),
+            ]);
+
+            foreach ((array) $submission->data as $fieldKey => $value) {
+                $fieldId = str_replace('field_', '', $fieldKey);
+
+                FormSubmissionItem::query()->updateOrCreate([
+                    'submission_id' => $formSubmission->id,
+                    'form_field_id' => $fieldId,
+                ], [
+                    'value' => is_array($value) ? json_encode($value) : $value,
+                ]);
+            }
+
+            $submission->form_submission_id = $formSubmission->id;
+        }
+
         $submission->status = 'approved';
         $submission->rejection_reason = null;
         $submission->reviewed_by = auth()->id();
@@ -74,7 +102,7 @@ class RegulatoryFormSubmissionsController extends Controller
 
     public function reject(Request $request, $id)
     {
-       $this->authorize("admin_regulatory_submissions_review");
+        $this->authorize("admin_regulatory_submissions_review");
 
         $request->validate([
             'rejection_reason' => 'required|string|max:1000',

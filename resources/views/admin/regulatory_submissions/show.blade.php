@@ -19,34 +19,30 @@
                                 $items = optional($submission->formSubmission)->items ?? collect();
                             @endphp
 
-                            @foreach($form->fields as $field)
-                                @php
-                                    $item = $items->firstWhere('form_field_id', $field->id);
-                                    $value = $item->value ?? null;
+                         @foreach($form->fields as $field)
+    @php
+        $fieldKey = 'field_' . $field->id;
+        $value = data_get($submission->data ?? [], $fieldKey);
 
-                                    if ($field->type === 'checkbox' and !empty($value)) {
-                                        $value = json_decode($value, true);
-                                    }
+        if (in_array($field->type, ['dropdown', 'radio']) and !empty($value)) {
+            $option = $field->options->firstWhere('id', $value);
+            $value = $option->title ?? $value;
+        }
 
-                                    if (in_array($field->type, ['dropdown', 'radio']) and !empty($value)) {
-                                        $option = $field->options->firstWhere('id', $value);
-                                        $value = $option->title ?? $value;
-                                    }
+        if ($field->type === 'checkbox' and is_array($value)) {
+            $value = $field->options->whereIn('id', $value)->pluck('title')->implode(', ');
+        }
 
-                                    if ($field->type === 'checkbox' and is_array($value)) {
-                                        $value = $field->options->whereIn('id', $value)->pluck('title')->implode(', ');
-                                    }
+        if ($field->type === 'toggle') {
+            $value = !empty($value) ? 'Yes' : 'No';
+        }
+    @endphp
 
-                                    if ($field->type === 'toggle') {
-                                        $value = !empty($value) ? 'Yes' : 'No';
-                                    }
-                                @endphp
-
-                                <div class="form-group">
-                                    <label class="input-label font-weight-bold">{{ $field->title }}</label>
-                                    <p class="mb-0">{{ $value !== null and $value !== '' ? $value : '—' }}</p>
-                                </div>
-                            @endforeach
+    <div class="form-group">
+        <label class="input-label font-weight-bold">{{ $field->title }}</label>
+        <p class="mb-0">{{ $value !== null and $value !== '' ? $value : '—' }}</p>
+    </div>
+@endforeach
                         </div>
                     </div>
                 </div>
