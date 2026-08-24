@@ -891,6 +891,7 @@ Route::post('/calendar/{provider}/disconnect', 'Booking\CalendarController@disco
     Route::post('/request', 'RoleManagementController@requestRole')->name('panel.roles.request');
 });
 Route::group(['prefix' => 'regulatory'], function () {
+    Route::get('/list', 'RegulatoryFormController@list')->name('panel.regulatory.list');
     Route::get('/', 'RegulatoryFormController@show')->name('panel.regulatory.show');
     Route::post('/save-draft', 'RegulatoryFormController@saveDraft')->name('panel.regulatory.draft');
     Route::post('/submit', 'RegulatoryFormController@submitForReview')->name('panel.regulatory.submit');

@@ -713,7 +713,10 @@ class SidebarItems
               'icon' => self::getIcon('profile'),
                 'text' => trans('panel.my_roles'),
                 'url' => '/panel/roles',
-                'items' => []
+                'items' => [
+                    ['text' => trans('panel.add_role'), 'url' => '/panel/roles#newRole'],
+                    ['text' => 'Regulatory List', 'url' => '/panel/regulatory/list'],
+                ]
             ];
         }
 

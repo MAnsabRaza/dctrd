@@ -14,6 +14,35 @@ use Illuminate\Support\Facades\DB;
 
 class RegulatoryFormController extends Controller
 {
+    public function list(Request $request)
+    {
+        $user = auth()->user();
+        $status = $request->get('status', 'all');
+
+        $query = RegulatoryFormSubmission::where('user_id', $user->id)
+            ->with([
+                'roleCatalog',
+                'form.fields' => function ($query) {
+                    $query->orderBy('order', 'asc')->with(['options' => function ($q) {
+                        $q->orderBy('order', 'asc');
+                    }]);
+                },
+                'reviewedBy',
+            ]);
+
+        if (!empty($status) and $status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $submissions = $query->orderByDesc('created_at')->paginate(15);
+
+        return view('design_1.panel.regulatory.index', [
+            'pageTitle'   => 'Regulatory List',
+            'submissions' => $submissions,
+            'status'      => $status,
+        ]);
+    }
+
     /**
      * User ke sare (active + pending) roles ke stacked regulatory forms dikhao.
      */
