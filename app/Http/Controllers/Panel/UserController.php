@@ -773,12 +773,22 @@ public function update(Request $request)
             $submission->user_id = $user->id;
         }
 
-        $submission->role_catalog_id = $form->regulatory_role_catalog_id;
+            $submission->role_catalog_id = $form->regulatory_role_catalog_id;
         $submission->form_id         = $form->id;
         $submission->level           = $form->regulatory_level;
         $submission->data = array_filter($fields, fn($value) => $value !== null and $value !== '');
         $submission->status = $isSubmitForReview ? 'pending' : 'draft';
         $submission->save();
+
+        // ── Admin ko notify karo jab user "Submit for Review" kare (draft save par nahi) ──
+        if ($isSubmitForReview) {
+            sendNotification('regulatory_submission_created', [
+                '[u.name]'     => $user->full_name,
+                '[form.title]' => $form->title,
+                '[request.id]' => $submission->id,
+                '[link]'       => getAdminPanelUrl('/regulatory-submissions/' . $submission->id . '/show'),
+            ], 1); // 1 = admin user id, jaisa baaki jagah pattern hai
+        }
     }
 }
 

@@ -228,7 +228,17 @@ class RegulatoryFormController extends Controller
         $submission->rejection_reason = null;
     }
 
-    $submission->save();
+     $submission->save();
+
+    // ── Admin ko notify karo jab user "Submit for Review" kare (draft save par nahi) ──
+    if ($status === 'pending') {
+        sendNotification('regulatory_submission_created', [
+            '[u.name]'     => $user->full_name,
+            '[form.title]' => $form->title,
+            '[request.id]' => $submission->id,
+            '[link]'       => getAdminPanelUrl('/regulatory-submissions/' . $submission->id . '/show'),
+        ], 1); // 1 = admin user id, jaisa baaki jagah pattern hai
+    }
 
     return response()->json([
         'code'          => 200,

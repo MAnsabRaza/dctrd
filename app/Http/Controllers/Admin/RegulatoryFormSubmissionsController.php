@@ -56,53 +56,55 @@ class RegulatoryFormSubmissionsController extends Controller
         ]);
     }
 
-   public function approve($id)
-{
-    $this->authorize("admin_regulatory_submissions_review");
+        public function approve($id)
+    {
+        $this->authorize("admin_regulatory_submissions_review");
 
-    $submission = RegulatoryFormSubmission::with('form')->findOrFail($id);
+        $submission = RegulatoryFormSubmission::with(['form', 'user'])->findOrFail($id);
 
-    $formSubmission = null;
+        if (empty($submission->form_submission_id)) {
+            $formSubmission = FormSubmission::create([
+                'user_id'    => $submission->user_id,
+                'form_id'    => $submission->form_id,
+                'created_at' => time(),
+            ]);
 
-    if (!empty($submission->form_submission_id)) {
-        $formSubmission = FormSubmission::find($submission->form_submission_id);
+            foreach ((array) $submission->data as $fieldKey => $value) {
+                $fieldId = str_replace('field_', '', $fieldKey);
+
+                FormSubmissionItem::query()->updateOrCreate([
+                    'submission_id' => $formSubmission->id,
+                    'form_field_id' => $fieldId,
+                ], [
+                    'value' => is_array($value) ? json_encode($value) : $value,
+                ]);
+            }
+
+            $submission->form_submission_id = $formSubmission->id;
+        }
+
+        $submission->status = 'approved';
+        $submission->rejection_reason = null;
+        $submission->reviewed_by = auth()->id();
+        $submission->reviewed_at = now();
+        $submission->save();
+
+        // ── Jis user ne data submit kiya tha usko notify karo ──
+        sendNotification('regulatory_submission_approved', [
+            '[u.name]'     => optional($submission->user)->full_name,
+            '[form.title]' => optional($submission->form)->title,
+            '[request.id]' => $submission->id,
+            '[link]'       => url('/panel/setting/step/regulatory'),
+        ], $submission->user_id);
+
+        return back()->with(['toast' => [
+            'title'  => trans('public.request_success'),
+            'msg'    => trans('update.regulatory_submission_approved'),
+            'status' => 'success',
+        ]]);
     }
 
-    if (empty($formSubmission)) {
-        $formSubmission = FormSubmission::create([
-            'user_id'    => $submission->user_id,
-            'form_id'    => $submission->form_id,
-            'created_at' => time(),
-        ]);
-        $submission->form_submission_id = $formSubmission->id;
-    }
-
-    // Har approve par latest data ke sath items sync/update karo
-    foreach ((array) $submission->data as $fieldKey => $value) {
-        $fieldId = str_replace('field_', '', $fieldKey);
-
-        FormSubmissionItem::query()->updateOrCreate([
-            'submission_id' => $formSubmission->id,
-            'form_field_id' => $fieldId,
-        ], [
-            'value' => is_array($value) ? json_encode($value) : $value,
-        ]);
-    }
-
-    $submission->status = 'approved';
-    $submission->rejection_reason = null;
-    $submission->reviewed_by = auth()->id();
-    $submission->reviewed_at = now();
-    $submission->save();
-
-    return back()->with(['toast' => [
-        'title'  => trans('public.request_success'),
-        'msg'    => trans('update.regulatory_submission_approved'),
-        'status' => 'success',
-    ]]);
-}
-
-    public function reject(Request $request, $id)
+       public function reject(Request $request, $id)
     {
         $this->authorize("admin_regulatory_submissions_review");
 
@@ -110,12 +112,21 @@ class RegulatoryFormSubmissionsController extends Controller
             'rejection_reason' => 'required|string|max:1000',
         ]);
 
-        $submission = RegulatoryFormSubmission::findOrFail($id);
+        $submission = RegulatoryFormSubmission::with(['form', 'user'])->findOrFail($id);
         $submission->status = 'rejected';
         $submission->rejection_reason = $request->get('rejection_reason');
         $submission->reviewed_by = auth()->id();
         $submission->reviewed_at = now();
         $submission->save();
+
+        // ── Jis user ne data submit kiya tha usko reason ke sath notify karo ──
+        sendNotification('regulatory_submission_rejected', [
+            '[u.name]'     => optional($submission->user)->full_name,
+            '[form.title]' => optional($submission->form)->title,
+            '[reason]'     => $submission->rejection_reason,
+            '[request.id]' => $submission->id,
+            '[link]'       => url('/panel/setting/step/regulatory'),
+        ], $submission->user_id);
 
         return back()->with(['toast' => [
             'title'  => trans('public.request_success'),
