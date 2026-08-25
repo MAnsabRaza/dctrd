@@ -7,11 +7,34 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Check if an index exists on a table (works across MySQL/MariaDB).
+     */
+    private function indexExists(string $table, string $indexName): bool
+    {
+        $dbName = DB::getDatabaseName();
+
+        $result = DB::select(
+            "SELECT COUNT(1) as cnt FROM information_schema.statistics
+             WHERE table_schema = ? AND table_name = ? AND index_name = ?",
+            [$dbName, $table, $indexName]
+        );
+
+        return ($result[0]->cnt ?? 0) > 0;
+    }
+
     public function up(): void
     {
         Schema::table('user_role_requests', function (Blueprint $table) {
-            $table->dropUnique(['user_id', 'role_catalog_id']);
-            $table->index(['user_id', 'role_catalog_id']);
+            // Drop unique only if it actually exists
+            if ($this->indexExists('user_role_requests', 'user_role_requests_user_id_role_catalog_id_unique')) {
+                $table->dropUnique('user_role_requests_user_id_role_catalog_id_unique');
+            }
+
+            // Add plain index only if it doesn't already exist
+            if (!$this->indexExists('user_role_requests', 'user_role_requests_user_id_role_catalog_id_index')) {
+                $table->index(['user_id', 'role_catalog_id']);
+            }
         });
 
         Schema::table('regulatory_form_submissions', function (Blueprint $table) {
@@ -38,8 +61,12 @@ return new class extends Migration
         DB::statement("ALTER TABLE user_role_requests MODIFY status ENUM('pending','active','rejected') NOT NULL DEFAULT 'pending'");
 
         Schema::table('user_role_requests', function (Blueprint $table) {
-            $table->dropIndex(['user_id', 'role_catalog_id']);
-            $table->unique(['user_id', 'role_catalog_id']);
+            if ($this->indexExists('user_role_requests', 'user_role_requests_user_id_role_catalog_id_index')) {
+                $table->dropIndex('user_role_requests_user_id_role_catalog_id_index');
+            }
+            if (!$this->indexExists('user_role_requests', 'user_role_requests_user_id_role_catalog_id_unique')) {
+                $table->unique(['user_id', 'role_catalog_id']);
+            }
         });
 
         Schema::table('role_catalogs', function (Blueprint $table) {
