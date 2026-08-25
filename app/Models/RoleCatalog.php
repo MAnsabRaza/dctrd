@@ -10,11 +10,14 @@ class RoleCatalog extends Model
 
     protected $fillable = [
         'family', 'key', 'label', 'supersedes', 'sort_order', 'active',
+        'visible_in_registration', 'requires_approval',
     ];
 
     protected $casts = [
         'supersedes' => 'array',
         'active'     => 'boolean',
+        'visible_in_registration' => 'boolean',
+        'requires_approval' => 'boolean',
     ];
 
     const FAMILY_INSTRUCTOR   = 'instructor';

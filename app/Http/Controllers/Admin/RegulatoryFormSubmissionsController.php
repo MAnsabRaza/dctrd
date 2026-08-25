@@ -7,6 +7,7 @@ use App\Models\Form;
 use App\Models\FormSubmission;
 use App\Models\FormSubmissionItem;
 use App\Models\RegulatoryFormSubmission;
+use App\Services\RegulatoryAccessService;
 use Illuminate\Http\Request;
 
 class RegulatoryFormSubmissionsController extends Controller
@@ -60,7 +61,10 @@ class RegulatoryFormSubmissionsController extends Controller
     {
         $this->authorize("admin_regulatory_submissions_review");
 
-        $submission = RegulatoryFormSubmission::with(['form', 'user'])->findOrFail($id);
+        $submission = RegulatoryFormSubmission::with(['form.fields.options', 'user'])->findOrFail($id);
+        abort_unless($submission->status === 'pending', 422, 'Only pending regulatory submissions can be approved.');
+
+        $cleanData = app(RegulatoryAccessService::class)->validateStoredSubmissionData($submission);
 
         if (empty($submission->form_submission_id)) {
             $formSubmission = FormSubmission::create([
@@ -69,7 +73,7 @@ class RegulatoryFormSubmissionsController extends Controller
                 'created_at' => time(),
             ]);
 
-            foreach ((array) $submission->data as $fieldKey => $value) {
+            foreach ($cleanData as $fieldKey => $value) {
                 $fieldId = str_replace('field_', '', $fieldKey);
 
                 FormSubmissionItem::query()->updateOrCreate([
@@ -84,7 +88,6 @@ class RegulatoryFormSubmissionsController extends Controller
         }
 
         $submission->status = 'approved';
-        $submission->rejection_reason = null;
         $submission->reviewed_by = auth()->id();
         $submission->reviewed_at = now();
         $submission->save();
@@ -113,6 +116,8 @@ class RegulatoryFormSubmissionsController extends Controller
         ]);
 
         $submission = RegulatoryFormSubmission::with(['form', 'user'])->findOrFail($id);
+        abort_unless($submission->status === 'pending', 422, 'Only pending regulatory submissions can be rejected.');
+
         $submission->status = 'rejected';
         $submission->rejection_reason = $request->get('rejection_reason');
         $submission->reviewed_by = auth()->id();

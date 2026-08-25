@@ -23,6 +23,8 @@ class UserRoleRequest extends Model
     const STATUS_PENDING  = 'pending';
     const STATUS_ACTIVE   = 'active';
     const STATUS_REJECTED = 'rejected';
+    const STATUS_REVOKED = 'revoked';
+    const STATUS_DEACTIVATED = 'deactivated';
 
     public function user()
     {
@@ -54,6 +56,8 @@ class UserRoleRequest extends Model
      */
     public function approve(int $adminId): void
     {
+        abort_unless($this->status === self::STATUS_PENDING, 422, 'Only pending role requests can be approved.');
+
         $this->update([
             'status'      => self::STATUS_ACTIVE,
             'reviewed_at' => now(),
@@ -66,11 +70,35 @@ class UserRoleRequest extends Model
      */
     public function reject(int $adminId, ?string $reason = null): void
     {
+        abort_unless($this->status === self::STATUS_PENDING, 422, 'Only pending role requests can be rejected.');
+
         $this->update([
             'status'           => self::STATUS_REJECTED,
             'reviewed_at'      => now(),
             'reviewed_by'      => $adminId,
             'rejection_reason' => $reason,
+        ]);
+    }
+
+    public function revoke(int $adminId): void
+    {
+        abort_unless($this->status === self::STATUS_ACTIVE, 422, 'Only active roles can be revoked.');
+
+        $this->update([
+            'status' => self::STATUS_REVOKED,
+            'reviewed_at' => now(),
+            'reviewed_by' => $adminId,
+        ]);
+    }
+
+    public function deactivate(int $adminId): void
+    {
+        abort_unless($this->status === self::STATUS_ACTIVE, 422, 'Only active roles can be deactivated.');
+
+        $this->update([
+            'status' => self::STATUS_DEACTIVATED,
+            'reviewed_at' => now(),
+            'reviewed_by' => $adminId,
         ]);
     }
 }

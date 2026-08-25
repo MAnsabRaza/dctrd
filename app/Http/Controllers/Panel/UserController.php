@@ -33,6 +33,7 @@ use App\Models\UserZoomApi;
 use App\Services\CheckoutModuleService;
 use App\Services\UnitConversionService;
 use App\Services\LocationService;
+use App\Services\RegulatoryAccessService;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -63,6 +64,19 @@ class UserController extends Controller
 
     private function makeRegulatoryViewData($user): array
 {
+    $stacks = app(RegulatoryAccessService::class)->viewData($user);
+    $countries = \App\Models\Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
+        ->where('type', \App\Models\Region::$country)
+        ->get();
+    $userCountry = $user->country;
+
+    if (!empty($user->country_id)) {
+        $country = \App\Models\Region::where('id', $user->country_id)->first();
+        $userCountry = $country->title ?? $userCountry;
+    }
+
+    return compact('stacks', 'countries', 'userCountry');
+
     $userRoles = \App\Models\UserRoleRequest::where('user_id', $user->id)
         ->where('status', \App\Models\UserRoleRequest::STATUS_ACTIVE)
         ->with('roleCatalog')
@@ -694,6 +708,39 @@ public function update(Request $request)
 
     private function saveRegulatorySettings(Request $request, User $user): void
 {
+    $forms = $request->input('regulatory_forms', []);
+    $status = $request->boolean('is_submit') ? 'pending' : 'draft';
+    $regulatoryAccess = app(RegulatoryAccessService::class);
+
+    if (empty($forms) || !is_array($forms)) {
+        return;
+    }
+
+    foreach ($forms as $formInput) {
+        if (empty($formInput['form_id'])) {
+            continue;
+        }
+
+        $submission = $regulatoryAccess->storeSubmission(
+            $user,
+            (int) $formInput['form_id'],
+            is_array($formInput['fields'] ?? null) ? $formInput['fields'] : [],
+            $status,
+            !empty($formInput['submission_id']) ? (int) $formInput['submission_id'] : null
+        );
+
+        if ($status === 'pending') {
+            sendNotification('regulatory_submission_created', [
+                '[u.name]' => $user->full_name,
+                '[form.title]' => optional($submission->form)->title,
+                '[request.id]' => $submission->id,
+                '[link]' => getAdminPanelUrl('/regulatory-submissions/' . $submission->id . '/show'),
+            ], 1);
+        }
+    }
+
+    return;
+
     $forms = $request->input('regulatory_forms', []);
     $isSubmitForReview = $request->input('is_submit', false); // frontend se bhejna hoga (neeche note dekho)
 

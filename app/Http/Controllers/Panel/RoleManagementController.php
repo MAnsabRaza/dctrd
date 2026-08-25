@@ -67,38 +67,39 @@ class RoleManagementController extends Controller
 
         $roleRequest = $eligibilityService->requestRole($targetUser, (int) $data['role_catalog_id']);
 
-        // Safety: status hamesha pending force set (agar service ke andar already ho raha ho to ye no-op hai)
-        if ($roleRequest->status !== 'pending') {
-            $roleRequest->status = 'pending';
-            $roleRequest->save();
-        }
-
         $roleRequest->loadMissing('roleCatalog');
 
-        // Admin ko notify karo taake woh Role Requests queue check kare
-        sendNotification('role_request_created', [
-            '[u.name]'    => $targetUser->full_name,
-            '[role.name]' => $roleRequest->roleCatalog->label ?? '',
-            '[request.id]' => $roleRequest->id,
-            '[link]'      => route('admin.role_requests.index'),
-        ], 1); // 1 = admin user id, jaisa baaki jagah pattern hai
+        if ($roleRequest->status === UserRoleRequest::STATUS_PENDING) {
+            sendNotification('role_request_created', [
+                '[u.name]'    => $targetUser->full_name,
+                '[role.name]' => $roleRequest->roleCatalog->label ?? '',
+                '[request.id]' => $roleRequest->id,
+                '[link]'      => route('admin.role_requests.index'),
+            ], 1);
+        }
 
         // AJAX (settings tab se) => JSON, jahan se aaya wahin rahega.
         // Normal form (standalone /panel/roles page) => purana redirect behavior.
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Role request submitted successfully. Admin will review it soon.',
+                'message' => $roleRequest->status === UserRoleRequest::STATUS_ACTIVE
+                    ? 'Role activated successfully.'
+                    : 'Role request submitted successfully. Admin will review it soon.',
             ]);
         }
+
+        $message = $roleRequest->status === UserRoleRequest::STATUS_ACTIVE
+            ? 'Role activated successfully.'
+            : 'Role request submitted successfully. Admin will review it soon.';
 
         return redirect()
             ->route('panel.roles.index')
             ->with('toast', [
                 'title' => trans('public.request_success'),
-                'msg' => 'Role request submitted successfully. Admin will review it soon.',
+                'msg' => $message,
                 'status' => 'success',
             ])
-            ->with('success', 'Role request submitted successfully. Admin will review it soon.');
+            ->with('success', $message);
     }
 }

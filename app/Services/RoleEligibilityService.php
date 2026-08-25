@@ -111,14 +111,20 @@ class RoleEligibilityService
             return $existing;
         }
 
-        // Rejected requests are kept as history. A new submission should create
-        // a fresh pending row instead of reusing the rejected row.
+        $role = RoleCatalog::active()->findOrFail($roleCatalogId);
+        $initialStatus = $role->requires_approval
+            ? UserRoleRequest::STATUS_PENDING
+            : UserRoleRequest::STATUS_ACTIVE;
+
+        // Rejected/revoked/deactivated requests are kept as history. A new
+        // submission creates a fresh row instead of overwriting old records.
         return UserRoleRequest::create([
             'user_id'         => $user->id,
             'role_catalog_id' => $roleCatalogId,
-            'status'          => UserRoleRequest::STATUS_PENDING,
+            'status'          => $initialStatus,
             'is_primary'      => $isPrimary,
             'requested_at'    => now(),
+            'reviewed_at'     => $initialStatus === UserRoleRequest::STATUS_ACTIVE ? now() : null,
         ]);
     }
 }

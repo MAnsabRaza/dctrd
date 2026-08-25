@@ -43,12 +43,16 @@ class RoleCatalogController extends Controller
         $data = $request->validate([
             'label'       => 'required|string|max:255',
             'active'      => 'nullable',
+            'visible_in_registration' => 'nullable',
+            'requires_approval' => 'nullable',
             'supersedes'  => 'nullable|array', // "role bundle" — yeh role kin roles ko already cover karta hai
         ]);
 
         $role->update([
             'label'      => $data['label'],
             'active'     => $request->boolean('active'),
+            'visible_in_registration' => $request->boolean('visible_in_registration'),
+            'requires_approval' => $request->boolean('requires_approval'),
             'supersedes' => $data['supersedes'] ?? [],
         ]);
 

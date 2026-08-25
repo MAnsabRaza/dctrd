@@ -15,6 +15,8 @@
                         <th>Label</th>
                         <th>Bundle (Covers)</th>
                         <th>Active</th>
+                        <th>Registration</th>
+                        <th>Approval</th>
                         <th>Actions</th>
                     </tr>
                     @foreach($roles as $role)
@@ -29,6 +31,8 @@
                                     <span class="text-danger fas fa-times"></span>
                                 @endif
                             </td>
+                            <td>{{ $role->visible_in_registration ? 'Visible' : 'Hidden' }}</td>
+                            <td>{{ $role->requires_approval ? 'Required' : 'Auto active' }}</td>
                             <td>
                                 <a href="{{ getAdminPanelUrl('/role-catalog/'.$role->id.'/edit') }}" class="btn btn-sm btn-primary">Edit</a>
                             </td>

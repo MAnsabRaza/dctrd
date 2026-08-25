@@ -25,6 +25,22 @@
                         </div>
                     </div>
 
+                    <div class="form-group d-flex align-items-center">
+                        <label class="mr-2 mb-0">Visible in registration</label>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" name="visible_in_registration" id="visibleInRegistrationSwitch" class="custom-control-input" {{ $role->visible_in_registration ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="visibleInRegistrationSwitch"></label>
+                        </div>
+                    </div>
+
+                    <div class="form-group d-flex align-items-center">
+                        <label class="mr-2 mb-0">Requires approval</label>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" name="requires_approval" id="requiresApprovalSwitch" class="custom-control-input" {{ $role->requires_approval ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="requiresApprovalSwitch"></label>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label class="input-label">Role Bundle — yeh role kin roles ko already cover karta hai?</label>
                         <p class="text-gray-500 text-small">

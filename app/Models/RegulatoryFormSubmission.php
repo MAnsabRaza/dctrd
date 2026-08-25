@@ -10,7 +10,7 @@ class RegulatoryFormSubmission extends Model
     protected $table = 'regulatory_form_submissions';
 
     protected $fillable = [
-        'user_id', 'role_catalog_id', 'template_id', 'form_id', 'form_submission_id',
+        'user_id', 'role_catalog_id', 'template_id', 'form_id', 'form_submission_id', 'previous_submission_id',
         'level', 'data', 'status', 'rejection_reason', 'reviewed_by', 'reviewed_at',
     ];
 
@@ -45,6 +45,11 @@ class RegulatoryFormSubmission extends Model
     public function formSubmission()
     {
         return $this->belongsTo(FormSubmission::class, 'form_submission_id');
+    }
+
+    public function previousSubmission()
+    {
+        return $this->belongsTo(self::class, 'previous_submission_id');
     }
 
     // ✅ NAYA: kis admin ne review kiya
