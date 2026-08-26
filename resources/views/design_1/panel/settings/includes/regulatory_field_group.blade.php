@@ -1,5 +1,7 @@
 @php
     $submission = $submission ?? null;
+    $isLocked = $isLocked ?? false;
+    $disabledAttr = $isLocked ? 'disabled' : '';
 @endphp
 
 @forelse($fields as $field)
@@ -15,7 +17,7 @@
         </label>
 
         @if($field->type === 'dropdown')
-            <select name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" class="form-control select2">
+            <select name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" class="form-control select2" {{ $disabledAttr }}>
                 <option value="">Select</option>
                 @foreach($field->options as $option)
                     <option value="{{ $option->id }}" {{ (string) $fieldValue === (string) $option->id ? 'selected' : '' }}>
@@ -33,7 +35,8 @@
                    value="{{ $option->id }}"
                    class="form-check-input"
                    id="opt_{{ $option->id }}"
-                   {{ (string) $fieldValue === (string) $option->id ? 'checked' : '' }}>
+                   {{ (string) $fieldValue === (string) $option->id ? 'checked' : '' }}
+                   {{ $disabledAttr }}>
             <label class="form-check-label" for="opt_{{ $option->id }}">{{ $option->title }}</label>
         </div>
     @endforeach
@@ -48,7 +51,8 @@
                    value="{{ $option->id }}"
                    class="form-check-input"
                    id="opt_{{ $option->id }}"
-                   {{ in_array($option->id, $selectedValues) ? 'checked' : '' }}>
+                   {{ in_array($option->id, $selectedValues) ? 'checked' : '' }}
+                   {{ $disabledAttr }}>
             <label class="form-check-label" for="opt_{{ $option->id }}">{{ $option->title }}</label>
         </div>
     @endforeach
@@ -60,18 +64,19 @@
                value="1"
                class="form-check-input"
                id="{{ $fieldKey }}"
-               {{ !empty($fieldValue) ? 'checked' : '' }}>
+               {{ !empty($fieldValue) ? 'checked' : '' }}
+               {{ $disabledAttr }}>
         <label class="form-check-label" for="{{ $fieldKey }}"></label>
     </div>
 
         @elseif($field->type === 'upload')
             <div class="input-group">
                 <div class="input-group-prepend">
-                    <button type="button" class="input-group-text admin-file-manager" data-input="{{ $fieldKey }}" data-preview="holder">
+                    <button type="button" class="input-group-text admin-file-manager" data-input="{{ $fieldKey }}" data-preview="holder" {{ $disabledAttr }}>
                         <i class="fa fa-upload"></i>
                     </button>
                 </div>
-                <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" id="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control">
+                <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" id="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control" {{ $disabledAttr }}>
                 <div class="input-group-append">
                     <button type="button" class="input-group-text admin-file-view" data-input="{{ $fieldKey }}">
                         <i class="fa fa-eye"></i>
@@ -80,16 +85,16 @@
             </div>
 
         @elseif($field->type === 'textarea')
-            <textarea name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" class="form-control" rows="3">{{ $fieldValue }}</textarea>
+            <textarea name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" class="form-control" rows="3" {{ $disabledAttr }}>{{ $fieldValue }}</textarea>
 
         @elseif($field->type === 'date')
-            <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control js-datepicker">
+            <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control js-datepicker" {{ $disabledAttr }}>
 
         @elseif($field->type === 'number')
-            <input type="number" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control">
+            <input type="number" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control" {{ $disabledAttr }}>
 
         @else
-            <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control">
+            <input type="text" name="{{ $inputName }}" data-field-key="{{ $fieldKey }}" value="{{ $fieldValue }}" class="form-control" {{ $disabledAttr }}>
         @endif
 
         <div class="invalid-feedback js-field-error"></div>

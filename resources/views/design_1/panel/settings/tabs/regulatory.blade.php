@@ -32,12 +32,13 @@
 
                     <h4 class="font-14 font-weight-bold mb-12">{{ $stack['primaryForm']->title }}</h4>
 
-                    @include('design_1.panel.settings.includes.regulatory_field_group', [
+                                      @include('design_1.panel.settings.includes.regulatory_field_group', [
                         'fields'       => $stack['primaryForm']->fields,
                         'submission'   => $stack['primarySubmission'] ?? null,
                         'formKey'      => $primaryFormKey,
                         'countries'    => $countries,
                         'userCountry'  => $userCountry,
+                        'isLocked'     => $primaryLocked,
                     ])
 
                     <div class="d-flex gap-3 mt-16">
@@ -80,12 +81,13 @@
                                     <input type="hidden" name="regulatory_forms[{{ $slotFormKey }}][form_id]" value="{{ $extraTemplate->id }}">
                                     <input type="hidden" name="regulatory_forms[{{ $slotFormKey }}][submission_id]" value="{{ $slotSubmission->id }}">
 
-                                    @include('design_1.panel.settings.includes.regulatory_field_group', [
+                                                                       @include('design_1.panel.settings.includes.regulatory_field_group', [
                                         'fields'       => $extraTemplate->fields,
                                         'submission'   => $slotSubmission,
                                         'formKey'      => $slotFormKey,
                                         'countries'    => $countries,
                                         'userCountry'  => $userCountry,
+                                        'isLocked'     => $slotLocked,
                                     ])
 
                                     <div class="d-flex gap-3 mt-12">
