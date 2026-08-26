@@ -8,7 +8,6 @@ class Cart extends Model
 {
 
     public function getDetailsAttribute(){
-       // dd($this->webinar->brief ) ;
         return [
             'id'=>$this->id  ,
             'user'=>$this->user->brief ,

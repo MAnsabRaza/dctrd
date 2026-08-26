@@ -132,7 +132,6 @@ class PaymentsController extends Controller
             }
 
             return $redirect_url;
-            //      dd($redirect_url) ;
             return Redirect::away($redirect_url);
 
         } catch (\Exception $exception) {

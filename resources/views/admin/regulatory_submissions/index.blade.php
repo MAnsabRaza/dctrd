@@ -43,7 +43,7 @@
                                             {{ ucfirst($submission->status) }}
                                         </span>
                                     </td>
-                                    <td>{{ dateTimeFormat($submission->created_at, 'j M Y H:i') }}</td>
+                                    <td>{{ $submission->created_at ? dateTimeFormat($submission->created_at->getTimestamp(), 'j M Y H:i') : '—' }}</td>
                                     <td>
                                         <a href="{{ getAdminPanelUrl('/regulatory-submissions/' . $submission->id . '/show') }}" class="btn btn-sm btn-outline-primary">
                                             {{ trans('update.show_details') }}

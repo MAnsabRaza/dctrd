@@ -77,7 +77,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
             return $result['invoice_url'];
         } catch (\Throwable $e) {
-            dd($e->getMessage());
         }
 
         $toastData = [
@@ -133,7 +132,6 @@ class Channel extends BasePaymentChannel implements IChannel
                 }
             }
         } catch (\Throwable $e) {
-            //dd($e->getMessage());
         }
 
         return null;

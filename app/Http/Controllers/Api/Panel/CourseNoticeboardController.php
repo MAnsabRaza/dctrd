@@ -19,7 +19,6 @@ class CourseNoticeboardController extends Controller
 
         $noticeboards = $webinar
             ->noticeboards;
-        //  dd($noticeboards) ;
         return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), CourseNoticeboardResource::collection($noticeboards));
 
     }

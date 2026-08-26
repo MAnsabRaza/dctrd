@@ -23,13 +23,12 @@ class WebinarsImport implements ToModel, WithHeadingRow
         $user = auth()->user();
         if (!$user)
         {
-            Log::error('Skipping row: No authenticated user found', $row);
+          
             throw new \Exception('You must be logged in to import webinars.');
         }
 
         if (!$user->can('admin_webinars_create'))
         {
-            Log::error('Skipping row: User lacks permission to create webinars', $row);
             throw new \Exception('You do not have permission to import webinars.');
         }
 
@@ -40,7 +39,6 @@ class WebinarsImport implements ToModel, WithHeadingRow
         ];
         foreach ($requiredFields as $field) {
             if (!array_key_exists($field, $row) || (empty($row[$field]) && $row[$field] !== '0')) {
-                Log::warning("Skipping row due to missing or empty field: {$field}", $row);
                 return null; // Skip this row silently for the user
             }
         }
@@ -66,7 +64,6 @@ class WebinarsImport implements ToModel, WithHeadingRow
 
         if ($validator->fails()) {
             $errors = implode(', ', $validator->errors()->all());
-            Log::error("Validation failed for row: {$errors}", $row);
             return null; // Skip this row silently, errors are logged for debugging
         }
 
@@ -79,25 +76,23 @@ class WebinarsImport implements ToModel, WithHeadingRow
         $seo_descriptions = !empty($data['seo_description']) ? array_map('trim', explode('|', $data['seo_description'])) : array_fill(0, count($locales), null);
 
         if (count($locales) !== count($titles) || count($locales) !== count($descriptions) || count($locales) !== count($seo_descriptions)) {
-            Log::error("Skipping row: Locale, title, description, and seo_description must have matching lengths", $row);
             return null;
         }
 
         foreach ($locales as $locale) {
             if (!in_array($locale, ['en', 'ar'])) {
-                Log::error("Skipping row: Unsupported locale: {$locale}", $row);
+             
                 return null;
             }
         }
         foreach ($titles as $title) {
             if (strlen($title) > 255) {
-                Log::error("Skipping row: Title exceeds 255 characters: {$title}", $row);
                 return null;
             }
         }
 
         if (!empty($data['capacity']) && !empty($data['sales_count_number']) && $data['sales_count_number'] > $data['capacity']) {
-            Log::error("Skipping row: Sales count exceeds capacity", $row);
+           
             return null;
         }
 
@@ -118,7 +113,7 @@ class WebinarsImport implements ToModel, WithHeadingRow
                 }
                 $data['start_date'] = $startDate->getTimestamp();
             } catch (\Exception $e) {
-                Log::error("Skipping row: Invalid start_date format: {$data['start_date']}", $row);
+              
                 return null;
             }
         }
@@ -187,7 +182,7 @@ class WebinarsImport implements ToModel, WithHeadingRow
 
                 foreach ($filterIds as $filterId) {
                     if (!is_numeric($filterId) || $filterId > 2147483647 || $filterId < 0) {
-                        Log::error("Skipping row: Invalid filter ID: {$filterId}", $row);
+                      
                         return null;
                     }
                 }
@@ -221,7 +216,7 @@ class WebinarsImport implements ToModel, WithHeadingRow
 
                 foreach ($partners as $partnerId) {
                     if (!is_numeric($partnerId) || $partnerId > 2147483647 || $partnerId < 0) {
-                        Log::error("Skipping row: Invalid partner ID: {$partnerId}", $row);
+                      
                         return null;
                     }
                 }

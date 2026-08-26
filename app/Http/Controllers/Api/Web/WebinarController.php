@@ -487,7 +487,6 @@ class WebinarController extends Controller
     {
         $webinar = Webinar::where('status', 'active')
             ->where('private', false)->where('id', $id)->first();
-        //  dd($webinar->id);
         if (!$webinar) {
             return null;
         }

@@ -36,7 +36,6 @@ class LocationController extends Controller
                 'suggestions' => $suggestions,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Location suggestions error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,

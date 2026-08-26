@@ -30,14 +30,10 @@ class BundleWebinarController extends Controller
         if (!$bundle) {
             abort(404);
         }
-
-        //dd($bundle->webinars)
         ;
         $webinars = $bundle->bundleWebinars->map(function ($bundleWebinar){
             return $bundleWebinar->webinar ;
         });
-
-       // dd($webinars) ;
 
         return apiResponse2(1, 'retrieved', trans('api.public.retrieved'),
             ['webinars' => WebinarResource::collection($webinars)]);

@@ -103,7 +103,6 @@ class SendSMS
             try {
                 $result = Kavenegar::Send($kavenegarNumber, $this->to, $this->content);
             } catch (\Exception $e) {
-                dd($e);
             }
 
         }
@@ -130,7 +129,6 @@ class SendSMS
                 $msg = Msegat::sendMessage($this->to, $this->content);
 
             } catch (\Exception $e) {
-                dd($e);
             }
 
         }
@@ -159,7 +157,6 @@ class SendSMS
                 $text = new \Vonage\SMS\Message\SMS($this->to, $number, $this->content);
                 Vonage::sms()->send($text);
             } catch (\Exception $e) {
-                dd($e);
             }
 
         }
@@ -189,7 +186,6 @@ class SendSMS
                     ->send();
 
             } catch (\Exception $e) {
-                dd($e);
             }
 
         }
@@ -225,10 +221,8 @@ class SendSMS
                 if ($response->successful()) {
 
                 } else {
-                    dd($response, $response->body());
                 }
             } catch (\Exception $e) {
-                dd($e);
             }
 
         }

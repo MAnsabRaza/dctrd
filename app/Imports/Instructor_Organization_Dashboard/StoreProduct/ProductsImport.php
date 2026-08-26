@@ -55,7 +55,6 @@ class ProductsImport implements ToModel, WithHeadingRow
         ]);
 
         if ($validator->fails()) {
-            Log::error('Validation failed for product row:', ['errors' => $validator->errors()->all(), 'row' => $row]);
             return null;
         }
 
@@ -72,19 +71,16 @@ class ProductsImport implements ToModel, WithHeadingRow
             count($locales) !== count($seo_descriptions) ||
             count($locales) !== count($summaries) ||
             count($locales) !== count($descriptions)) {
-            Log::error("Skipping row: Locale, title, seo_description, summary, and description must have matching lengths", $row);
-            return null;
+             return null;
         }
 
         foreach ($locales as $locale) {
             if (!in_array(strtolower($locale), ['en', 'ar'])) {
-                Log::error("Skipping row: Unsupported locale: {$locale}", $row);
                 return null;
             }
         }
         foreach ($titles as $title) {
             if (strlen($title) > 255) {
-                Log::error("Skipping row: Title exceeds 255 characters: {$title}", $row);
                 return null;
             }
         }
@@ -186,7 +182,6 @@ class ProductsImport implements ToModel, WithHeadingRow
 
                 foreach ($filterIds as $filterId) {
                     if (!is_numeric($filterId) || $filterId < 0) {
-                        Log::error("Skipping row: Invalid filter ID: {$filterId}", $row);
                         return null;
                     }
                 }

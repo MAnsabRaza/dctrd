@@ -17,8 +17,6 @@ use App\Models\Newsletter;
 use App\Models\OrgAvailabilityRange;
 use App\Models\OrgAvailabilityRule;
 use App\Models\Region;
-use App\Models\RegulatoryFormSubmission;
-use App\Models\RegulatoryFormTemplate;
 use App\Models\ReserveMeeting;
 use App\Models\Reward;
 use App\Models\RewardAccounting;
@@ -68,69 +66,6 @@ class UserController extends Controller
     $countries = \App\Models\Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
         ->where('type', \App\Models\Region::$country)
         ->get();
-    $userCountry = $user->country;
-
-    if (!empty($user->country_id)) {
-        $country = \App\Models\Region::where('id', $user->country_id)->first();
-        $userCountry = $country->title ?? $userCountry;
-    }
-
-    return compact('stacks', 'countries', 'userCountry');
-
-    $userRoles = \App\Models\UserRoleRequest::where('user_id', $user->id)
-        ->where('status', \App\Models\UserRoleRequest::STATUS_ACTIVE)
-        ->with('roleCatalog')
-        ->get();
-
-    $stacks = [];
-
-    foreach ($userRoles as $userRole) {
-        $roleCatalogId = $userRole->role_catalog_id;
-
-        // ab RegulatoryFormTemplate ki jagah admin Forms builder se aa raha hai
-        $primaryForm = \App\Models\Form::where('connect_regulatory', true)
-            ->where('regulatory_role_catalog_id', $roleCatalogId)
-            ->where('regulatory_level', 'primary')
-            ->where('enable', true)
-            ->with(['fields.options']) // fields + unke dropdown/checkbox/radio options
-            ->first();
-
-        if (empty($primaryForm)) {
-            continue; // is role ke liye koi connected form hi nahi bana admin ne
-        }
-
-        $primarySubmission = \App\Models\RegulatoryFormSubmission::where('user_id', $user->id)
-            ->where('role_catalog_id', $roleCatalogId)
-            ->where('level', 'primary')
-            ->first();
-
-        $extraForms = \App\Models\Form::where('connect_regulatory', true)
-            ->where('regulatory_role_catalog_id', $roleCatalogId)
-            ->whereIn('regulatory_level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
-            ->where('enable', true)
-            ->with(['fields.options'])
-            ->get();
-
-        $extraSubmissions = \App\Models\RegulatoryFormSubmission::where('user_id', $user->id)
-            ->where('role_catalog_id', $roleCatalogId)
-            ->whereIn('level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
-            ->get()
-            ->groupBy('form_id'); // template_id ki jagah form_id se group
-
-        $stacks[] = [
-            'role'              => $userRole->roleCatalog,
-            'roleRequestStatus' => $userRole->status,
-            'primaryForm'       => $primaryForm,
-            'primarySubmission' => $primarySubmission,
-            'extraForms'        => $extraForms,
-            'extraSubmissions'  => $extraSubmissions,
-        ];
-    }
-
-    $countries = \App\Models\Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
-        ->where('type', \App\Models\Region::$country)
-        ->get();
-
     $userCountry = $user->country;
 
     if (!empty($user->country_id)) {
@@ -623,8 +558,6 @@ public function update(Request $request)
                 $data['modules'] ?? [],
                 $data['required_modules'] ?? []
             );
-        } elseif ($step == "regulatory") {
-            $this->saveRegulatorySettings($request, $user);
         }
 
         // ── DB update ────────────────────────────────────────────────
@@ -705,139 +638,6 @@ public function update(Request $request)
             UserSelectedBankSpecification::query()->insert($specificationInsert);
         }
     }
-
-    private function saveRegulatorySettings(Request $request, User $user): void
-{
-    $forms = $request->input('regulatory_forms', []);
-    $status = $request->boolean('is_submit') ? 'pending' : 'draft';
-    $regulatoryAccess = app(RegulatoryAccessService::class);
-
-    if (empty($forms) || !is_array($forms)) {
-        return;
-    }
-
-    foreach ($forms as $formInput) {
-        if (empty($formInput['form_id'])) {
-            continue;
-        }
-
-        $submission = $regulatoryAccess->storeSubmission(
-            $user,
-            (int) $formInput['form_id'],
-            is_array($formInput['fields'] ?? null) ? $formInput['fields'] : [],
-            $status,
-            !empty($formInput['submission_id']) ? (int) $formInput['submission_id'] : null
-        );
-
-        if ($status === 'pending') {
-            sendNotification('regulatory_submission_created', [
-                '[u.name]' => $user->full_name,
-                '[form.title]' => optional($submission->form)->title,
-                '[request.id]' => $submission->id,
-                '[link]' => getAdminPanelUrl('/regulatory-submissions/' . $submission->id . '/show'),
-            ], 1);
-        }
-    }
-
-    return;
-
-    $forms = $request->input('regulatory_forms', []);
-    $isSubmitForReview = $request->input('is_submit', false); // frontend se bhejna hoga (neeche note dekho)
-
-    if (empty($forms) or !is_array($forms)) {
-        return;
-    }
-
-    foreach ($forms as $formInput) {
-        $formId = !empty($formInput['form_id']) ? (int) $formInput['form_id'] : null;
-
-        if (empty($formId)) {
-            continue;
-        }
-
-        $form = \App\Models\Form::where('id', $formId)
-            ->where('connect_regulatory', true)
-            ->with('fields')
-            ->first();
-
-        if (empty($form)) {
-            continue;
-        }
-
-        $hasActiveRole = \App\Models\UserRoleRequest::where('user_id', $user->id)
-            ->where('role_catalog_id', $form->regulatory_role_catalog_id)
-            ->where('status', \App\Models\UserRoleRequest::STATUS_ACTIVE)
-            ->exists();
-
-        if (!$hasActiveRole) {
-            continue;
-        }
-
-        $submissionId = !empty($formInput['submission_id']) ? (int) $formInput['submission_id'] : null;
-        $fields = $formInput['fields'] ?? [];
-
-        if (!is_array($fields)) {
-            $fields = [];
-        }
-
-        // ── Required fields check (sirf Submit for Review par) ──
-        if ($isSubmitForReview) {
-            foreach ($form->fields as $field) {
-                if (!$field->required) {
-                    continue;
-                }
-
-                $key = 'field_' . $field->id;
-                $val = $fields[$key] ?? null;
-
-                $isEmpty = is_array($val) ? empty($val) : ($val === null or $val === '');
-
-                if ($isEmpty) {
-                    abort(response()->json([
-                        'message' => 'Please fill in all required fields.',
-                        'errors' => [$key => ['This field is required.']],
-                    ], 422));
-                }
-            }
-        }
-
-        $submission = null;
-
-        if (!empty($submissionId)) {
-            $submission = RegulatoryFormSubmission::where('id', $submissionId)
-                ->where('user_id', $user->id)
-                ->first();
-        }
-
-        if (empty($submission)) {
-            $submission = RegulatoryFormSubmission::where('user_id', $user->id)
-                ->where('form_id', $form->id)
-                ->first();
-        }
-
-        if (empty($submission)) {
-            $submission = new RegulatoryFormSubmission();
-            $submission->user_id = $user->id;
-        }
-
-            $submission->role_catalog_id = $form->regulatory_role_catalog_id;
-        $submission->form_id         = $form->id;
-        $submission->level           = $form->regulatory_level;
-        $submission->data = array_filter($fields, fn($value) => $value !== null and $value !== '');
-        $submission->status = $isSubmitForReview ? 'pending' : 'draft';
-        $submission->save();
-
-        // ── Admin ko notify karo jab user "Submit for Review" kare (draft save par nahi) ──
-        if ($isSubmitForReview) {
-            sendNotification('regulatory_submission_created', [
-                '[u.name]'     => $user->full_name,
-                '[form.title]' => $form->title,
-                '[request.id]' => $submission->id,
-                '[link]'       => getAdminPanelUrl('/regulatory-submissions/' . $submission->id . '/show'),
-            ], 1); // 1 = admin user id, jaisa baaki jagah pattern hai
-        }
-    }
-}
 
     private function handleUploadImagesAndFiles(Request $request, $user, $name)
     {

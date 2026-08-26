@@ -129,7 +129,6 @@ class Channel extends BasePaymentChannel implements IChannel
         $user = auth()->user();
 
         $verification = \Paytr::paymentVerification($request);
-dd($verification);
         if (!$verification->verifyRequest()) {
             // Throw unauthorized
         }

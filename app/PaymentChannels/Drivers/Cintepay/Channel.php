@@ -75,7 +75,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
             return view('design_1.web.cart.payment.channels.cinetpay', $data);
         } catch (\Exception $e) {
-            dd($e->getMessage());
         }
     }
 
@@ -120,7 +119,6 @@ class Channel extends BasePaymentChannel implements IChannel
                     return $order;
                 }
             } catch (\Exception $e) {
-                dd($e->getMessage());
             }
         }
 

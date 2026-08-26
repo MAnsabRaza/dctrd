@@ -82,10 +82,7 @@ class OrganizationsImport implements ToModel, WithHeadingRow
             foreach ($errorMessages as $error) {
                 $this->errors[] = $error; // Store raw error message
             }
-            Log::error('Validation failed for row:', [
-                'errors' => $errorMessages,
-                'row' => $row
-            ]);
+       
             return null;
         }
         $data = $row;
@@ -155,17 +152,14 @@ class OrganizationsImport implements ToModel, WithHeadingRow
                 return $organization;
             } else {
                 $this->errors[] = "System: Failed to create organization: User::create returned null";
-                Log::error('Failed to create organization: User::create returned null', $row);
+               
                 return null;
             }
         } 
         catch (\Exception $e)
         {
             $this->errors[] = "Failed to create organization: {$e->getMessage()}";
-            Log::error('Failed to create instructor:', [
-                'message' => $e->getMessage(),
-                'row' => $row
-            ]);
+           
             return null;
         }
     }

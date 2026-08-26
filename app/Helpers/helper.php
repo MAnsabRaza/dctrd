@@ -1823,7 +1823,6 @@ function sendNotification($template, $options, $user_id = null, $group_id = null
                     try {
                         \Mail::to($user->email)->send(new \App\Mail\SendNotifications(['title' => $title, 'message' => $message]));
                     } catch (Exception $exception) {
-                        // dd($exception)
                     }
                 }
 
@@ -1852,7 +1851,6 @@ function sendNotificationToEmail($template, $options, $email)
             try {
                 \Mail::to($email)->send(new \App\Mail\SendNotifications(['title' => $title, 'message' => $message]));
             } catch (Exception $exception) {
-                // dd($exception)
             }
         }
 
@@ -2737,7 +2735,6 @@ function convertCurrency($amount, $fromCurrency = null)
         
         return $exchangeService->convert($amount, $fromCurrency, $toCurrency);
     } catch (\Exception $e) {
-        \Log::error('Currency conversion error: ' . $e->getMessage());
         return $amount;
     }
 }
@@ -2762,7 +2759,6 @@ function convertCurrencyForUser($amount, $user = null, $fromCurrency = null)
 
         return $exchangeService->convert((float) $amount, $fromCurrency, $toCurrency);
     } catch (\Exception $e) {
-        \Log::error('User currency conversion error: ' . $e->getMessage());
         return $amount;
     }
 }
@@ -2781,7 +2777,6 @@ function convertCurrencyToDefault($amount, $fromCurrency = null)
 
         return $exchangeService->convert((float) $amount, $fromCurrency, $toCurrency);
     } catch (\Exception $e) {
-        \Log::error('Default currency conversion error: ' . $e->getMessage());
         return $amount;
     }
 }
@@ -2833,7 +2828,6 @@ function convertUnit($value, $type, $fromUnit = null)
 
         return $unitService->convertForUser((float) $value, $type, auth()->user(), $fromUnit);
     } catch (\Exception $e) {
-        \Log::error('Unit conversion error: ' . $e->getMessage());
         return $value;
     }
 }
@@ -2852,7 +2846,6 @@ function convertUnitForUser($value, $type, $fromUnit = null, $user = null)
 
         return $unitService->convertForUser((float) $value, $type, $user, $fromUnit);
     } catch (\Exception $e) {
-        \Log::error('User unit conversion error: ' . $e->getMessage());
         return $value;
     }
 }
@@ -2878,7 +2871,6 @@ function formatUnit($value, $type, $fromUnit = null, $short = false)
 
         return $unitService->formatForUser((float) $value, $type, auth()->user(), $fromUnit, $short);
     } catch (\Exception $e) {
-        \Log::error('Unit formatting error: ' . $e->getMessage());
         return number_format($value, 2);
     }
 }
@@ -2898,7 +2890,6 @@ function formatUnitForUser($value, $type, $fromUnit = null, $user = null, $short
 
         return $unitService->formatForUser((float) $value, $type, $user, $fromUnit, $short);
     } catch (\Exception $e) {
-        \Log::error('User unit formatting error: ' . $e->getMessage());
         return number_format($value, 2);
     }
 }

@@ -83,10 +83,6 @@ class StaffsImport implements ToModel, WithHeadingRow
             foreach ($errorMessages as $error) {
                 $this->errors[] = $error; // Store raw error message
             }
-            Log::error('Validation failed for row:', [
-                'errors' => $errorMessages,
-                'row' => $row
-            ]);
             return null;
         }
         $data = $row;
@@ -151,19 +147,16 @@ class StaffsImport implements ToModel, WithHeadingRow
             Log::info('Attempting to create staff with data:', $userData);
             $staff = User::create($userData);
             if ($staff) {
-                Log::info("Staff created successfully: ID {$staff->id}", $row);
+               
                 return $staff;
             } else {
                 $this->errors[] = "System: Failed to create staff: User::create returned null";
-                Log::error('Failed to create staff: User::create returned null', $row);
+               
                 return null;
             }
         } catch (\Exception $e) {
             $this->errors[] = "Failed to create staff: {$e->getMessage()}";
-            Log::error('Failed to create staff due to exception:', [
-                'message' => $e->getMessage(),
-                'row' => $row
-            ]);
+
             return null;
         }
     }

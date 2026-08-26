@@ -72,8 +72,7 @@ class CourseForumAnswerController extends Controller
      */
     public function show($id)
     {
-        dd('f');
-        //
+        
     }
 
     /**

@@ -79,7 +79,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
             return $response->getTargetUrl();
         } catch (\Exception $exception) {
-            dd($exception);
         }
 
     }
@@ -106,7 +105,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
             $orderStatus = Order::$fail; //  status == "DECLINED"
 
-            //dd($charge);
             if ($charge != null && isset($charge->object) && $charge->object == "charge" && isset($charge->status) && $charge->status == "CAPTURED") {
                 $orderStatus = Order::$paying;
             }

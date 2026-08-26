@@ -55,7 +55,6 @@ trait VideoDemoTrait
                 $data['video_demo'] = $videoUrl;
             }
         } catch (\Exception $ex) {
-            //dd($ex);
 
             $data['video_demo'] = null;
         }
@@ -82,7 +81,6 @@ trait VideoDemoTrait
 
             $data['video_demo'] = $demoPath;
         } catch (\Exception $ex) {
-            //dd($ex);
 
             $data['video_demo'] = null;
         }

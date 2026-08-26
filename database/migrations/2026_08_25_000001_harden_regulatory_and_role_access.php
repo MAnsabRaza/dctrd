@@ -31,9 +31,12 @@ return new class extends Migration
                 $table->dropUnique('user_role_requests_user_id_role_catalog_id_unique');
             }
 
-            // Add plain index only if it doesn't already exist
-            if (!$this->indexExists('user_role_requests', 'user_role_requests_user_id_role_catalog_id_index')) {
-                $table->index(['user_id', 'role_catalog_id']);
+            if ($this->indexExists('user_role_requests', 'user_role_requests_user_id_role_catalog_id_index')) {
+                $table->dropIndex('user_role_requests_user_id_role_catalog_id_index');
+            }
+
+            if (!$this->indexExists('user_role_requests', 'user_role_requests_user_role_idx')) {
+                $table->index(['user_id', 'role_catalog_id'], 'user_role_requests_user_role_idx');
             }
         });
 
@@ -63,9 +66,6 @@ return new class extends Migration
         Schema::table('user_role_requests', function (Blueprint $table) {
             if ($this->indexExists('user_role_requests', 'user_role_requests_user_id_role_catalog_id_index')) {
                 $table->dropIndex('user_role_requests_user_id_role_catalog_id_index');
-            }
-            if (!$this->indexExists('user_role_requests', 'user_role_requests_user_id_role_catalog_id_unique')) {
-                $table->unique(['user_id', 'role_catalog_id']);
             }
         });
 

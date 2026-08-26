@@ -453,7 +453,6 @@ class UserController extends Controller
             $query->where('organ_id', $organization_id);
         }
 
-        //dd($query->get());
         return $query;
     }
 
@@ -1040,20 +1039,17 @@ $calendarLogs = \App\Models\CalendarLog::where('user_id', $user->id)
    private function getPurchasedBookingsData($user)
 {
     try {
-        \Log::info('getPurchasedBookingsData START', ['user_id' => $user->id]);
 
         $baseQuery = BookingOrder::whereNotNull('booking_id')
             ->where('buyer_id', $user->id)
             ->with(['booking.creator', 'sale']);
 
-        \Log::info('baseQuery built');
 
         $manualAddedBookings = (clone $baseQuery)
             ->whereNull('sale_id')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        \Log::info('manualAddedBookings', ['count' => $manualAddedBookings->count()]);
 
         $manualRemovedBookings = BookingOrder::onlyTrashed()
             ->whereNotNull('booking_id')
@@ -1063,23 +1059,19 @@ $calendarLogs = \App\Models\CalendarLog::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        \Log::info('manualRemovedBookings', ['count' => $manualRemovedBookings->count()]);
 
         $purchasedBookings = (clone $baseQuery)
             ->whereNotNull('sale_id')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        \Log::info('purchasedBookings', ['count' => $purchasedBookings->count()]);
 
         $availableBookings = Booking::query()
           ->whereIn('status', ['published', 'draft'])
             ->orderBy('title')
             ->get(['id', 'title', 'price', 'discount_price', 'currency', 'creator_id']);
 
-        \Log::info('availableBookings', ['count' => $availableBookings->count()]);
 
-        \Log::info('getPurchasedBookingsData END — all OK');
 
         return [
             'availableBookings'     => $availableBookings,
@@ -1089,13 +1081,7 @@ $calendarLogs = \App\Models\CalendarLog::where('user_id', $user->id)
         ];
 
     } catch (\Throwable $e) {
-        \Log::error('getPurchasedBookingsData FAILED', [
-            'user_id' => $user->id,
-            'message' => $e->getMessage(),
-            'file'    => $e->getFile(),
-            'line'    => $e->getLine(),
-            'trace'   => $e->getTraceAsString(),
-        ]);
+     
 
         return [
             'availableBookings'     => collect(),

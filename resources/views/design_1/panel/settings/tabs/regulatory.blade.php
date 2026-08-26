@@ -20,10 +20,13 @@
             @if($stack['primaryForm'])
                 @php
                     $primaryFormKey = 'primary_' . $stack['primaryForm']->id;
+                    $primaryStatus = $stack['primarySubmission']->status ?? null;
+                    $primaryLocked = in_array($primaryStatus, ['pending', 'approved'], true);
                 @endphp
 
                 <div class="js-regulatory-form" data-form-id="{{ $stack['primaryForm']->id }}"
-                     data-submission-id="{{ $stack['primarySubmission']->id ?? '' }}">
+                     data-submission-id="{{ $stack['primarySubmission']->id ?? '' }}"
+                     data-submission-status="{{ $primaryStatus ?? '' }}">
                     <input type="hidden" name="regulatory_forms[{{ $primaryFormKey }}][form_id]" value="{{ $stack['primaryForm']->id }}">
                     <input type="hidden" name="regulatory_forms[{{ $primaryFormKey }}][submission_id]" value="{{ $stack['primarySubmission']->id ?? '' }}">
 
@@ -38,30 +41,42 @@
                     ])
 
                     <div class="d-flex gap-3 mt-16">
-                        <button type="button" class="btn btn-outline-secondary js-save-draft">Save Draft</button>
-                        <button type="button" class="btn btn-primary js-submit-review">Submit for Review</button>
+                        <button type="button" class="btn btn-outline-secondary js-save-draft" {{ $primaryLocked ? 'disabled' : '' }}>Save Draft</button>
+                        <button type="button" class="btn btn-primary js-submit-review" {{ $primaryLocked ? 'disabled' : '' }}>Submit for Review</button>
                     </div>
+                    @if($primaryLocked)
+                        <div class="text-gray-500 text-small mt-8">
+                            This form is {{ $primaryStatus }}. You can submit again only if it is rejected.
+                        </div>
+                    @endif
                 </div>
             @endif
 
             {{-- Secondary/Tertiary/etc --}}
             @foreach(($stack['extraTemplates'] ?? []) as $extraTemplate)
+                @php
+                    $templateSubmissions = ($stack['extraSubmissions'] ?? collect())->get($extraTemplate->id, collect());
+                    $templateLocked = collect($templateSubmissions)->contains(fn ($submission) => in_array($submission->status, ['pending', 'approved'], true));
+                @endphp
                 <div class="mt-24 pt-24 border-top">
                     <button type="button" class="btn btn-sm btn-outline-primary js-add-slot-btn"
                             data-form-id="{{ $extraTemplate->id }}"
-                            data-label="{{ $extraTemplate->title }}">
+                            data-label="{{ $extraTemplate->title }}"
+                            {{ $templateLocked ? 'disabled' : '' }}>
                         + I want to add {{ $extraTemplate->title }}
                     </button>
 
                     <div class="js-slots-container mt-12">
-                        @foreach(($stack['extraSubmissions'] ?? collect())->get($extraTemplate->id, []) as $slotSubmission)
+                        @foreach($templateSubmissions as $slotSubmission)
                             @php
                                 $slotFormKey = 'submission_' . $slotSubmission->id;
+                                $slotLocked = in_array($slotSubmission->status, ['pending', 'approved'], true);
                             @endphp
 
                             <div class="border-gray-200 rounded-12 p-12 mb-12 js-regulatory-slot">
                                 <div class="js-regulatory-form" data-form-id="{{ $extraTemplate->id }}"
-                                     data-submission-id="{{ $slotSubmission->id }}">
+                                     data-submission-id="{{ $slotSubmission->id }}"
+                                     data-submission-status="{{ $slotSubmission->status }}">
                                     <input type="hidden" name="regulatory_forms[{{ $slotFormKey }}][form_id]" value="{{ $extraTemplate->id }}">
                                     <input type="hidden" name="regulatory_forms[{{ $slotFormKey }}][submission_id]" value="{{ $slotSubmission->id }}">
 
@@ -74,11 +89,16 @@
                                     ])
 
                                     <div class="d-flex gap-3 mt-12">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary js-save-draft">Save Draft</button>
-                                        <button type="button" class="btn btn-sm btn-primary js-submit-review">Submit for Review</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary js-save-draft" {{ $slotLocked ? 'disabled' : '' }}>Save Draft</button>
+                                        <button type="button" class="btn btn-sm btn-primary js-submit-review" {{ $slotLocked ? 'disabled' : '' }}>Submit for Review</button>
                                         <button type="button" class="btn btn-sm btn-danger js-delete-slot"
-                                                data-submission-id="{{ $slotSubmission->id }}">Delete</button>
+                                                data-submission-id="{{ $slotSubmission->id }}" {{ $slotLocked ? 'disabled' : '' }}>Delete</button>
                                     </div>
+                                    @if($slotLocked)
+                                        <div class="text-gray-500 text-small mt-8">
+                                            This form is {{ $slotSubmission->status }}. You can submit again only if it is rejected.
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -130,6 +150,8 @@
         var pendingFormId = null;
 
         $(document).on('click', '.js-add-slot-btn', function () {
+            if ($(this).prop('disabled')) return;
+
             pendingFormId = $(this).data('form-id');
             $('#addSlotConfirmText').text('I want to apply for ' + $(this).data('label'));
             $('#addSlotConfirmModal').modal('show');
@@ -152,6 +174,7 @@
         document.addEventListener('click', function (e) {
             var $btn = $(e.target).closest('.js-save-draft, .js-submit-review');
             if (!$btn.length) return;
+            if ($btn.prop('disabled')) return;
 
             e.preventDefault();
             e.stopPropagation();
@@ -193,7 +216,7 @@
                 var isEmpty = (Array.isArray(value) && value.length === 0) ||
                               (!Array.isArray(value) && (value === undefined || value === null || value === ''));
 
-                if (isRequired && isEmpty) {
+                if (!isDraft && isRequired && isEmpty) {
                     hasError = true;
                     $fieldWrap.addClass('has-error');
                     $fieldWrap.find('.js-field-error').text('This field is required.');
@@ -216,6 +239,16 @@
             }, function (res) {
                 showToast('success', '', res.msg);
                 $form.attr('data-submission-id', res.submission_id).data('submission-id', res.submission_id);
+                $form.attr('data-submission-status', res.status).data('submission-status', res.status);
+
+                if (res.status === 'pending' || res.status === 'approved') {
+                    $form.find('.js-save-draft, .js-submit-review, .js-delete-slot').prop('disabled', true);
+                    if (!$form.find('.js-regulatory-lock-message').length) {
+                        $form.find('.js-save-draft').closest('.d-flex').after(
+                            '<div class="text-gray-500 text-small mt-8 js-regulatory-lock-message">This form is ' + res.status + '. You can submit again only if it is rejected.</div>'
+                        );
+                    }
+                }
             }).fail(function (xhr) {
                 var msg = 'Something went wrong';
                 if (xhr.responseJSON && xhr.responseJSON.errors) {

@@ -60,7 +60,6 @@ class Channel extends BasePaymentChannel implements IChannel
             $response = $gateway->purchase($reqData)->send();
 
         } catch (\Exception $exception) {
-//            dd($exception);
             throw new \Exception($exception->getMessage(), $exception->getCode());
         }
 
@@ -134,7 +133,6 @@ class Channel extends BasePaymentChannel implements IChannel
                 $response = $gateway->purchase($reqData)->send();
 
             } catch (\Exception $exception) {
-                //dd($exception);
                 throw new \Exception($exception->getMessage(), $exception->getCode());
             }
 

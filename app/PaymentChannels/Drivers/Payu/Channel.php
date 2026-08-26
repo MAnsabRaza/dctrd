@@ -94,7 +94,6 @@ class Channel extends BasePaymentChannel implements IChannel
         try {
             return Payu::initiate($transaction)->redirect($this->makeCallbackUrl());
         } catch (\Exception $exception) {
-            //dd($exception);
         }
 
         $toastData = [

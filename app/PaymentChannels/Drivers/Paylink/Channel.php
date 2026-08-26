@@ -92,7 +92,6 @@ class Channel extends BasePaymentChannel implements IChannel
                 return $response['url'];
             }
         } catch (\Exception $exception) {
-            //dd($exception);
             throw new \Exception($exception->getMessage(), $exception->getCode());
         }
 
@@ -156,7 +155,6 @@ class Channel extends BasePaymentChannel implements IChannel
             }
 
         } catch (\Exception $exception) {
-            //dd($exception);
             throw new \Exception($exception->getMessage(), $exception->getCode());
         }
 

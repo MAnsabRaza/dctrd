@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
-use App\Models\Region;
 use App\Models\RegulatoryFormSubmission;
 use App\Services\RegulatoryAccessService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class RegulatoryFormController extends Controller
 {
@@ -42,26 +40,7 @@ class RegulatoryFormController extends Controller
 
     public function show(RegulatoryAccessService $regulatoryAccess)
     {
-        $user = auth()->user();
-        $stacks = $regulatoryAccess->viewData($user);
-
-        $countries = Region::select(DB::raw('*, ST_AsText(geo_center) as geo_center'))
-            ->where('type', Region::$country)
-            ->get();
-
-        $userCountry = $user->country;
-
-        if (!empty($user->country_id)) {
-            $country = Region::where('id', $user->country_id)->first();
-            $userCountry = $country->title ?? $userCountry;
-        }
-
-        return view('design_1.panel.settings.regulatory', [
-            'pageTitle' => 'Regulatory & Badges',
-            'stacks' => $stacks,
-            'countries' => $countries,
-            'userCountry' => $userCountry,
-        ]);
+        return redirect('/panel/setting/step/regulatory');
     }
 
     public function saveDraft(Request $request)
@@ -82,6 +61,14 @@ class RegulatoryFormController extends Controller
 
         $user = auth()->user();
         $form = $regulatoryAccess->accessibleFormForUser($user, (int) $data['form_id']);
+
+        $lockedSubmission = RegulatoryFormSubmission::where('user_id', $user->id)
+            ->where('role_catalog_id', $form->regulatory_role_catalog_id)
+            ->where('form_id', $form->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->exists();
+
+        abort_if($lockedSubmission, 422, 'This form is already pending or approved. You can resubmit only after rejection.');
 
         $submission = RegulatoryFormSubmission::create([
             'user_id' => $user->id,

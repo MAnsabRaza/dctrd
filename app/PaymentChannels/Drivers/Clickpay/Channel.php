@@ -77,7 +77,6 @@ class Channel extends BasePaymentChannel implements IChannel
             return $pay;
 
         } catch (\Exception $e) {
-            //dd($e->getMessage());
         }
     }
 
@@ -120,7 +119,6 @@ class Channel extends BasePaymentChannel implements IChannel
                     }
                 }
             } catch (\Exception $e) {
-                // dd($e->getMessage());
             }
         }
 

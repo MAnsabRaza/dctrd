@@ -80,7 +80,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
             return $site_url . $billcode;
         } catch (\Exception $e) {
-            //dd($e->getMessage());
         }
 
         $toastData = [

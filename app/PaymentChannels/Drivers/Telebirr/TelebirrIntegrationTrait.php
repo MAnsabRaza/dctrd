@@ -17,7 +17,6 @@ trait TelebirrIntegrationTrait
             ->post($this->base_url . '/payment/v1/token', [
                 'appSecret' => $this->app_secret,
             ]);
-        dd($response);
 
         $client = new Client();
 
@@ -30,7 +29,6 @@ trait TelebirrIntegrationTrait
                 'appSecret' => $this->app_secret,
             ]
         ]);
-dd($response);
         return json_decode($response->getBody(), true);
     }
 
@@ -46,7 +44,7 @@ dd($response);
         $rawRequest = $this->createRawRequest($prepayId);
 
         $url = $this->base_url . $rawRequest . "&version=1.0&trade_type=Checkout";
-dd($url);
+
         return $url;
     }
 

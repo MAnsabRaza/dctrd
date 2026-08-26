@@ -46,7 +46,6 @@ class UserController extends Controller
                 'address' => $address,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Get user address error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,

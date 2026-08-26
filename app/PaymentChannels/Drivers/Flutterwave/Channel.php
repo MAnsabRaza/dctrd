@@ -69,7 +69,6 @@ class Channel extends BasePaymentChannel implements IChannel
                 return $payment['data']['link'];
             }
         } catch (\Exception $e) {
-            //dd($e->getMessage());
         }
 
         $toastData = [

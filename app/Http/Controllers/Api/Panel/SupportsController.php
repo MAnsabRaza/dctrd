@@ -231,7 +231,6 @@ class SupportsController extends Controller
 
     public function close($id)
     {
-      //  dd('ff') ;
         $user = apiAuth();
         $userWebinarsIds = $user->webinars->pluck('id')->toArray();
 

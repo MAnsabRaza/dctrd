@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 class RegulatoryAccessService
 {
     public const LEVELS = ['primary', 'secondary', 'tertiary', 'quaternary', 'extra1'];
+    private const FINAL_OR_REVIEW_STATUSES = ['pending', 'approved'];
 
     public function userHasActiveRole(User $user, int $roleCatalogId): bool
     {
@@ -37,6 +38,7 @@ class RegulatoryAccessService
             ->where('enable', true)
             ->whereNotNull('regulatory_role_catalog_id')
             ->whereIn('regulatory_level', self::LEVELS)
+            ->where($this->countryEligibilityQuery($user))
             ->with(['fields.options'])
             ->firstOrFail();
 
@@ -57,7 +59,7 @@ class RegulatoryAccessService
         foreach ($activeRoles as $userRole) {
             $roleCatalogId = (int) $userRole->role_catalog_id;
 
-            $primaryForm = $this->formsForRole($roleCatalogId)
+            $primaryForm = $this->formsForRole($roleCatalogId, $user)
                 ->where('regulatory_level', 'primary')
                 ->first();
 
@@ -65,7 +67,7 @@ class RegulatoryAccessService
                 continue;
             }
 
-            $extraForms = $this->formsForRole($roleCatalogId)
+            $extraForms = $this->formsForRole($roleCatalogId, $user)
                 ->whereIn('regulatory_level', ['secondary', 'tertiary', 'quaternary', 'extra1'])
                 ->get();
 
@@ -111,9 +113,24 @@ class RegulatoryAccessService
                 ->where('form_id', $form->id)
                 ->where('role_catalog_id', $form->regulatory_role_catalog_id)
                 ->firstOrFail();
+
+            $this->assertSubmissionCanBeEdited($previousSubmission);
         }
 
         $submission = null;
+
+        $activeSubmission = RegulatoryFormSubmission::where('user_id', $user->id)
+            ->where('form_id', $form->id)
+            ->where('role_catalog_id', $form->regulatory_role_catalog_id)
+            ->whereIn('status', self::FINAL_OR_REVIEW_STATUSES)
+            ->latest('id')
+            ->first();
+
+        if ($activeSubmission) {
+            throw ValidationException::withMessages([
+                'form_id' => ['This form is already pending or approved. You can resubmit only after rejection.'],
+            ]);
+        }
 
         if ($previousSubmission && $previousSubmission->status === 'draft') {
             $submission = $previousSubmission;
@@ -145,6 +162,11 @@ class RegulatoryAccessService
         return $submission;
     }
 
+    public function submissionLocksForm(?RegulatoryFormSubmission $submission): bool
+    {
+        return $submission && in_array($submission->status, self::FINAL_OR_REVIEW_STATUSES, true);
+    }
+
     public function validateStoredSubmissionData(RegulatoryFormSubmission $submission): array
     {
         $form = Form::where('id', $submission->form_id)
@@ -154,15 +176,54 @@ class RegulatoryAccessService
         return $this->validateFields($form, (array) $submission->data, true);
     }
 
-    private function formsForRole(int $roleCatalogId)
+    private function formsForRole(int $roleCatalogId, ?User $user = null)
     {
-        return Form::where('connect_regulatory', true)
+        $query = Form::where('connect_regulatory', true)
             ->where('regulatory_role_catalog_id', $roleCatalogId)
             ->where('enable', true)
             ->whereIn('regulatory_level', self::LEVELS)
             ->with(['fields.options' => function ($query) {
                 $query->orderBy('order', 'asc');
             }]);
+
+        if ($user) {
+            $query->where($this->countryEligibilityQuery($user));
+        }
+
+        return $query;
+    }
+
+    private function assertSubmissionCanBeEdited(RegulatoryFormSubmission $submission): void
+    {
+        if ($this->submissionLocksForm($submission)) {
+            throw ValidationException::withMessages([
+                'submission_id' => ['This submission is already pending or approved. You can resubmit only after rejection.'],
+            ]);
+        }
+    }
+
+    private function countryEligibilityQuery(User $user): \Closure
+    {
+        $countries = $this->userCountryCandidates($user);
+
+        return function ($query) use ($countries) {
+            $query->whereNull('regulatory_countries')
+                ->orWhere('regulatory_countries', '[]');
+
+            foreach ($countries as $country) {
+                $query->orWhereJsonContains('regulatory_countries', $country);
+            }
+        };
+    }
+
+    private function userCountryCandidates(User $user): array
+    {
+        $countries = array_filter([
+            $user->country ?? null,
+            optional($user->country_id ? \App\Models\Region::find($user->country_id) : null)->title,
+        ]);
+
+        return array_values(array_unique(array_map('trim', $countries)));
     }
 
     private function validateFields(Form $form, array $fields, bool $requireRequiredFields): array

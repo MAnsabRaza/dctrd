@@ -292,7 +292,6 @@ class SessionController extends Controller
             }
         } catch (\Exception $exception) {
             $session->delete();
-            //dd($exception);
         }
 
         return response()->json([

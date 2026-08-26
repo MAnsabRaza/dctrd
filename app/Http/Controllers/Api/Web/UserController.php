@@ -337,7 +337,6 @@ class UserController extends Controller
 
         // ->setTimezone(getTimezone())
 
-        //  dd($timestamp);
         $user = User::where('id', $id)
             ->whereIn('role_name', [Role::$teacher, Role::$organization])
             ->where('status', 'active')

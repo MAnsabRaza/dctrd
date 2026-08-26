@@ -23,7 +23,6 @@ class MeetingsController extends Controller
             'description'
         ]);
 
-        //dd('f');
         $user = apiAuth();
         $timeId = $request->input('time_id');
         $day = $request->input('date');
@@ -77,7 +76,6 @@ class MeetingsController extends Controller
 
                         $hourlyAmountResult = $this->handleHourlyMeetingAmount($meeting, $meetingTime, $studentCount, $selectedMeetingType);
 
-                        //dd($hourlyAmountResult);
                         if (!is_array($hourlyAmountResult)) {
                             return $hourlyAmountResult;
                             return $hourlyAmountResult['result']; // json response

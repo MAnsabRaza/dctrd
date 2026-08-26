@@ -114,7 +114,6 @@ class NotificationsController extends Controller
             try {
                 \Mail::to($user->email)->send(new SendNotifications(['title' => $data['title'], 'message' => $data['message']]));
             } catch (\Exception $exception) {
-                // dd($exception)
             }
         }
 
@@ -230,7 +229,6 @@ class NotificationsController extends Controller
                 try {
                     $messageFCM->send($fcmMessage);
                 } catch (\Exception $exception) {
-                    //dd($exception);
                 }
             }
         }

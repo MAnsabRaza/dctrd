@@ -75,7 +75,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
     public function verify(Request $request)
     {
-        dd(2);
         $order = null;
 
         if (!empty($order)) {

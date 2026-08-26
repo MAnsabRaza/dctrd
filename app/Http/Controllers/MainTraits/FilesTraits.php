@@ -98,7 +98,6 @@ trait FilesTraits
                 return $videoUrl;
             }
         } catch (\Exception $ex) {
-            //dd($ex);
         }
 
         return null;

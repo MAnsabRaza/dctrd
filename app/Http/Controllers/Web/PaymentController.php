@@ -105,13 +105,7 @@ class PaymentController extends Controller
                     ]);
                 });
             } catch (\Throwable $exception) {
-                Log::error('Account charge payment failed', [
-                    'order_id' => $order->id,
-                    'user_id' => $user->id,
-                    'message' => $exception->getMessage(),
-                    'trace' => $exception->getTraceAsString(),
-                ]);
-
+              
                 $order->update(['status' => Order::$fail]);
 
                 return redirect('/cart')->with(['toast' => [
@@ -241,17 +235,7 @@ if ($gateway === 'offline') {
         return redirect('/payments/status');
 
     } catch (\Throwable $exception) {
-        Log::error('Offline payment request failed', [
-            'order_id'       => $order->id,
-            'user_id'        => $user->id,
-            'account'        => $account ?? $request->input('account'),
-            'referral_code'  => $referenceNumber ?? $request->input('referral_code'),
-            'date_input'     => $dateInput ?? $request->input('date'),
-            'message'        => $exception->getMessage(),
-            'file'           => $exception->getFile(),
-            'line'           => $exception->getLine(),
-            'trace'          => $exception->getTraceAsString(),
-        ]);
+     
 
         $toastData = [
             'title' => trans('cart.fail_purchase'),
@@ -291,16 +275,7 @@ if ($gateway === 'offline') {
     return Redirect::away($redirect_url);
 
 } catch (\Throwable $exception) {
-    Log::error('Payment gateway request failed', [
-        'order_id'      => $order->id,
-        'user_id'       => $user->id,
-        'gateway'       => $gateway,
-        'channel_class' => $paymentChannel->class_name ?? null,
-        'message'       => $exception->getMessage(),
-        'file'          => $exception->getFile(),
-        'line'          => $exception->getLine(),
-        'trace'         => $exception->getTraceAsString(),
-    ]);
+   
 
     $toastData = [
         'title' => trans('cart.fail_purchase'),
@@ -377,13 +352,7 @@ if ($gateway === 'offline') {
         return $this->paymentOrderAfterVerify($order);
 
     } catch (\Throwable $exception) {
-        Log::error('Payment verify failed', [
-            'gateway' => $gateway,
-            'message' => $exception->getMessage(),
-            'file'    => $exception->getFile(),
-            'line'    => $exception->getLine(),
-            'trace'   => $exception->getTraceAsString(),
-        ]);
+     
 
         $toastData = [
             'title' => trans('cart.fail_purchase'),

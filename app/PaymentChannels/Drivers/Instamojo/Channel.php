@@ -57,10 +57,8 @@ class Channel extends BasePaymentChannel implements IChannel
             $data = json_decode($body, true);
             
         } catch (\Exception $e) {
-            dd($e);
         }
 
-        dd($data);
     }
 
     private function makeApi()
@@ -93,10 +91,8 @@ class Channel extends BasePaymentChannel implements IChannel
             ]);
 
             session()->put($this->order_session_key, $order->id);
-            dd($response);
             return $response['longurl'];
         } catch (\Exception $e) {
-            dd($e);
         }
     }
 
@@ -137,7 +133,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
             return $order;
         } catch (\Exception $e) {
-            dd($e, 1);
             print('Error: ' . $e->getMessage());
         }
     }

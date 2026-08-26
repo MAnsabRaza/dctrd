@@ -43,7 +43,7 @@ class Zoom
 
             return $result;
         } catch (\Exception $e) {
-            dd($e);
+            return null;
         }
     }
 

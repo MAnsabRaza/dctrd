@@ -277,7 +277,6 @@ class UsersController extends Controller
 
     public function followToggle(Request $request, $id)
     {
-        // dd('ff') ;
         $authUser = apiAuth();
         validateParam($request->all(), [
             'status' => 'required|boolean'

@@ -446,7 +446,6 @@ class SettingsController extends Controller
                 'message' => 'Failed to update exchange rates. Check logs for details.',
             ], 500);
         } catch (\Exception $e) {
-            \Log::error('Manual exchange rate update failed: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,

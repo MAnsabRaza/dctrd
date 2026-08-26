@@ -46,6 +46,7 @@ class RoleEligibilityService
         $excludeKeys = array_unique(array_merge($currentKeys, $coveredKeys));
 
         return RoleCatalog::active()
+            ->where('visible_in_registration', true)
             ->whereNotIn('key', $excludeKeys)
             ->orderBy('family')
             ->orderBy('sort_order')
@@ -111,7 +112,9 @@ class RoleEligibilityService
             return $existing;
         }
 
-        $role = RoleCatalog::active()->findOrFail($roleCatalogId);
+        $role = RoleCatalog::active()
+            ->where('visible_in_registration', true)
+            ->findOrFail($roleCatalogId);
         $initialStatus = $role->requires_approval
             ? UserRoleRequest::STATUS_PENDING
             : UserRoleRequest::STATUS_ACTIVE;

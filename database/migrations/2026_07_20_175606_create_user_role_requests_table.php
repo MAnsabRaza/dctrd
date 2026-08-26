@@ -31,7 +31,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['user_id', 'role_catalog_id']);
+            $table->index(['user_id', 'role_catalog_id'], 'user_role_requests_user_role_idx');
             $table->index(['user_id', 'status']);
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

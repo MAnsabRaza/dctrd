@@ -61,7 +61,6 @@ class Channel extends BasePaymentChannel implements IChannel
             }
 
         } catch (\Exception $exception) {
-            dd($exception);
         }
 
         $toastData = [
@@ -115,7 +114,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
                 return $order;
             } catch (\Exception $exception) {
-                //dd($exception->getMessage());
             }
         }
 

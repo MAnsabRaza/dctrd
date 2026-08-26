@@ -125,7 +125,6 @@ class VerificationController extends Controller
         validateParam($request->all(), $rules);
         $authUser = auth('api')->check() ? auth('api')->user() : null;
         $referralCode = $request->input('referral_code', null);
-        // dd($authUser);
         if (empty($authUser)) {
             $authUser = User::where($username, $value)
                 ->first();

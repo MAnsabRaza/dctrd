@@ -183,7 +183,6 @@ class QuizzesResultController extends Controller
                 'answer' => $sheet['answer']
             ];
         }
-        //  dd($questionn);
 
 
         if ($quiz) {

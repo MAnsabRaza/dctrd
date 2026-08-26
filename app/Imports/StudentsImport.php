@@ -87,10 +87,7 @@ class StudentsImport implements ToModel, WithHeadingRow
             foreach ($errorMessages as $error) {
                 $this->errors[] = $error; // Store raw error message
             }
-            Log::error('Validation failed for row:', [
-                'errors' => $errorMessages,
-                'row' => $row
-            ]);
+         
             return null;
         }
         $data = $row;
@@ -154,21 +151,17 @@ class StudentsImport implements ToModel, WithHeadingRow
             Log::info('Attempting to create student with data:', $userData);
             $student = User::create($userData);
             if ($student) {
-                Log::info("student created successfully: ID {$student->id}", $row);
                 return $student;
             } else {
                 $this->errors[] = "System: Failed to create student: User::create returned null";
-                Log::error('Failed to create student: User::create returned null', $row);
+             
                 return null;
             }
         } 
          catch (\Exception $e)
         {
             $this->errors[] = "Failed to create student: {$e->getMessage()}";
-            Log::error('Failed to create instructor:', [
-                'message' => $e->getMessage(),
-                'row' => $row
-            ]);
+           
             return null;
         }
     }

@@ -144,7 +144,6 @@ class Channel extends BasePaymentChannel implements IChannel
         $tokenResponse = $this->invokeCurlRequest("POST", $idServiceURL, $tokenHeaders, http_build_query(array('grant_type' => 'client_credentials')));
 
         $tokenResponse = json_decode($tokenResponse);
-        //dd($tokenResponse);
         $access_token = $tokenResponse->access_token;
 
         return $access_token;

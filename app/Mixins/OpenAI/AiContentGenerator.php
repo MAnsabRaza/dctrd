@@ -84,7 +84,6 @@ class AiContentGenerator
             }
 
         } catch (\Exception $exception) {
-            dd($exception);
         }
 
         return $contents;
@@ -123,7 +122,6 @@ class AiContentGenerator
                 }
             }
         } catch (\Exception $exception) {
-            dd($exception);
         }
 
         return $images;

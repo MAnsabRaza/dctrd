@@ -15,6 +15,9 @@ class Form extends Model implements TranslatableContract
     public $timestamps = false;
     protected $dateFormat = 'U';
     protected $guarded = ['id'];
+    protected $casts = [
+        'regulatory_countries' => 'array',
+    ];
 
     public $translatedAttributes = ['title', 'subtitle', 'heading_title', 'description', 'welcome_message_title', 'welcome_message_description', 'tank_you_message_title', 'tank_you_message_description'];
 

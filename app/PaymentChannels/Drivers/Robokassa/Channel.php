@@ -74,9 +74,6 @@ class Channel extends BasePaymentChannel implements IChannel
             ]
         )->send();
 
-        /*} catch (\Exception $exception) {
-            dd($exception);
-        }*/
 
         if ($response->isRedirect()) {
             return $response->redirect();

@@ -99,7 +99,6 @@ class AssignmentController extends Controller
 
             $histories = $query->orderBy('created_at', 'desc')
                 ->get();
-            //  dd($histories);
             foreach ($histories as &$history) {
                 $history->usedAttemptsCount = 0;
 
@@ -123,7 +122,6 @@ class AssignmentController extends Controller
                 }
             }
             $resource = WebinarAssignmentHistoryResource::collection($histories);
-            //  dd($resource->groupBy('id')) ;
             //  $resource=$resource->groupBy('student_id')
 
             $data = [
@@ -212,7 +210,6 @@ class AssignmentController extends Controller
             }
 
             $resource = WebinarAssignmentHistoryResource::collection($histories);
-            //  dd($resource->groupBy('id')) ;
             //  $resource=$resource->groupBy('student_id')
 
             $data = [

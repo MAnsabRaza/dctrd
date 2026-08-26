@@ -17,7 +17,6 @@ class LevelAccess
     {
         $user = apiAuth();
         $user_level = $user->role_name;
-       // dd($user->id) ;
         $level_access = [
             'user' => ['user', 'teacher', 'organization'],
             'teacher' => ['organization', 'teacher'],

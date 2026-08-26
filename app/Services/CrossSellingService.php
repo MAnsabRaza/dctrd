@@ -64,7 +64,6 @@ class CrossSellingService
             return $relation->target;
         })->filter();
 
-        // dd($targets);
 
         $description = $validSettings->pluck('description')->filter()->first() ?? 'منتجات مقترحة';
         $display_on = $validSettings->pluck('display_on')->filter()->first();

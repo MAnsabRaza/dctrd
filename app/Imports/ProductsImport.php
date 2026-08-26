@@ -69,7 +69,6 @@ class ProductsImport implements ToModel, WithHeadingRow
             foreach ($validator->errors()->all() as $error) {
                 $this->errors[] = "Row {$this->rowNumber}: {$error}";
             }
-            Log::error('Validation failed for product row:', ['errors' => $validator->errors()->all(), 'row' => $row]);
             throw new \Exception("Row {$this->rowNumber}: Validation failed - " . implode(', ', $validator->errors()->all()));
         }
 
@@ -88,14 +87,12 @@ class ProductsImport implements ToModel, WithHeadingRow
             count($locales) !== count($summaries) ||
             count($locales) !== count($descriptions)) {
             $this->errors[] = "Row {$this->rowNumber}: Locale, title, seo_description, summary, and description must have matching formates and lengths in instructions table";
-            Log::error("Skipping row: Locale, title, seo_description, summary, and description must have formates and lengths in instructions table", $row);
             throw new \Exception("Row {$this->rowNumber}: Locale, title, seo_description, summary, and description must have matching formates and lengths in instructions table");
         }
 
         foreach ($locales as $locale) {
             if (!in_array(strtolower($locale), ['en', 'ar'])) {
                 $this->errors[] = "Row {$this->rowNumber}: Unsupported locale: {$locale}";
-                Log::error("Skipping row: Unsupported locale: {$locale}", $row);
                 throw new \Exception("Row {$this->rowNumber}: Unsupported locale: {$locale}");
             }
         }
@@ -103,7 +100,6 @@ class ProductsImport implements ToModel, WithHeadingRow
         foreach ($titles as $title) {
             if (strlen($title) > 255) {
                 $this->errors[] = "Row {$this->rowNumber}: Title exceeds 255 characters: {$title}";
-                Log::error("Skipping row: Title exceeds 255 characters: {$title}", $row);
                 throw new \Exception("Row {$this->rowNumber}: Title exceeds 255 characters: {$title}");
             }
         }
@@ -208,7 +204,6 @@ class ProductsImport implements ToModel, WithHeadingRow
                 foreach ($filterIds as $filterId) {
                     if (!is_numeric($filterId) || $filterId < 0) {
                         $this->errors[] = "Row {$this->rowNumber}: Invalid filter ID: {$filterId}";
-                        Log::error("Skipping row: Invalid filter ID: {$filterId}", $row);
                         throw new \Exception("Row {$this->rowNumber}: Invalid filter ID: {$filterId}");
                     }
                 }
