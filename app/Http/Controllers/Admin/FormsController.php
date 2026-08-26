@@ -41,7 +41,7 @@ class FormsController extends Controller
         return view('admin.forms.lists.index', $data);
     }
 
-    public function create()
+       public function create()
     {
         $this->authorize("admin_forms_create");
 
@@ -54,11 +54,17 @@ class FormsController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        // ✅ added: regulatory countries dropdown ke liye regions table se list
+        $countries = \App\Models\Region::where('type', \App\Models\Region::$country)
+            ->orderBy('title')
+            ->get();
+
         $data = [
             'pageTitle' => trans('update.new_form'),
             'userGroups' => $userGroups,
             'roles' => $roles,
             'roleCatalogOptions' => $roleCatalogOptions, // ✅ added
+            'countries' => $countries, // ✅ added
         ];
 
         return view('admin.forms.create.index', $data);
@@ -126,17 +132,19 @@ class FormsController extends Controller
     // array/json cast nahi hai to Eloquent seedha PHP array save nahi kar sakta —
     // isi wajah se "Array to string conversion" error aa raha tha)
     private function parseRegulatoryCountries($data)
-    {
-        if (empty($data['regulatory_countries_text'])) {
-            return null;
-        }
+{
+    $countries = $data['regulatory_countries'] ?? [];
 
-        $countries = array_map('trim', explode(',', $data['regulatory_countries_text']));
-        $countries = array_filter($countries, fn($c) => $c !== '');
-        $countries = array_values($countries);
-
-        return !empty($countries) ? json_encode($countries) : null;
+    if (!is_array($countries) || empty($countries)) {
+        return null;
     }
+
+    $countries = array_map('trim', $countries);
+    $countries = array_filter($countries, fn($c) => $c !== '');
+    $countries = array_values($countries);
+
+    return !empty($countries) ? $countries : null;
+}
 
     private function storeExtraData($form, $data)
     {
@@ -204,7 +212,7 @@ class FormsController extends Controller
             $locale = $request->get('locale', mb_strtolower(app()->getLocale()));
             storeContentLocale($locale, $form->getTable(), $form->id);
 
-            $userGroups = Group::query()->where('status', 'active')->get();
+                       $userGroups = Group::query()->where('status', 'active')->get();
             $roles = Role::query()->get();
 
             // ✅ FIX: yehi missing tha edit() mein bhi — isliye edit screen par bhi Importer/roles nahi aa rahe the
@@ -213,11 +221,17 @@ class FormsController extends Controller
                 ->orderBy('sort_order')
                 ->get();
 
+            // ✅ added: regulatory countries dropdown ke liye regions table se list
+            $countries = \App\Models\Region::where('type', \App\Models\Region::$country)
+                ->orderBy('title')
+                ->get();
+
             $data = [
                 'pageTitle' => trans('update.edit_form'),
                 'userGroups' => $userGroups,
                 'roles' => $roles,
                 'roleCatalogOptions' => $roleCatalogOptions, // ✅ added
+                'countries' => $countries, // ✅ added
                 'form' => $form,
             ];
 

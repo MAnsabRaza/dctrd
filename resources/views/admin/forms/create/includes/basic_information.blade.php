@@ -186,14 +186,21 @@
                     </select>
                 </div>
 
-               <div class="form-group mb-0">
+                          <div class="form-group mb-0">
+    @php
+        $selectedCountries = !empty($form) && !empty($form->regulatory_countries)
+            ? (array) $form->regulatory_countries
+            : (array) old('regulatory_countries', []);
+    @endphp
     <label class="input-label">Choose Country's Regulation Laws</label>
-    <input type="text"
-           name="regulatory_countries_text"
-           class="form-control"
-           placeholder="e.g. Pakistan, UAE, Saudi Arabia (comma separated)"
-           value="{{ !empty($form) && !empty($form->regulatory_countries) ? implode(', ', (array) $form->regulatory_countries) : old('regulatory_countries_text') }}"/>
-    <div class="text-gray-500 text-small mt-1">Countries ko comma se separate karke likhein.</div>
+    <select name="regulatory_countries[]" class="form-control select2" multiple data-placeholder="Select countries">
+        @foreach($countries ?? [] as $country)
+            <option value="{{ $country->title }}" {{ in_array($country->title, $selectedCountries) ? 'selected' : '' }}>
+                {{ $country->title }}
+            </option>
+        @endforeach
+    </select>
+    <div class="text-gray-500 text-small mt-1">Jo countries select karoge unhi ke users ko yeh form dikhega. Koi bhi select na karo to sab users ke liye visible hoga.</div>
 </div>
             </div>
         </div>
