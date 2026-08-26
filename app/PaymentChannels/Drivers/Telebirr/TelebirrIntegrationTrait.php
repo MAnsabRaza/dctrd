@@ -171,7 +171,6 @@ trait TelebirrIntegrationTrait
         $privateKey = openssl_pkey_get_private($privateKey);
 
         if (!$privateKey) {
-            dd("Error loading PrivateKey");
         }
 
         openssl_sign($data, $signature, $privateKey, OPENSSL_ALGO_SHA256);
