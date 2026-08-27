@@ -20,7 +20,7 @@ class ProductsImport implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         $this->rowNumber++; // Increment row number
-        Log::info('Processing product row:', $row);
+       
 
         if (!auth()->user()->can('admin_store_new_product')) {
             $this->errors[] = "Row {$this->rowNumber}: Unauthorized access.";
@@ -33,7 +33,6 @@ class ProductsImport implements ToModel, WithHeadingRow
         foreach ($requiredFields as $field) {
             if (!array_key_exists($field, $row) || (empty($row[$field]) && $row[$field] !== '0')) {
                 $this->errors[] = "Row {$this->rowNumber}: Missing or empty field: {$field}";
-                Log::warning("Skipping row due to missing or empty field: {$field}", $row);
                 throw new \Exception("Row {$this->rowNumber}: Missing or empty field: {$field}");
             }
         }

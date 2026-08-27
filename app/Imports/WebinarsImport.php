@@ -16,8 +16,6 @@ class WebinarsImport implements ToModel, WithHeadingRow
 {
     public function model(array $row)
     {
-        // Log the row for debugging
-        Log::info('Processing row:', $row);
 
         // Get authenticated user and check authorization
         $user = auth()->user();

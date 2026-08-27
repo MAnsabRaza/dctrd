@@ -18,11 +18,6 @@ class PerfexExportAbility extends AbstractAbility
         ])->timeout(15)->post($endpoint, $payload);
 
         if ($response->failed()) {
-            Log::error("PerfexExportAbility push failed", [
-                'entity' => $entity,
-                'status' => $response->status(),
-                'body'   => $response->body(),
-            ]);
             throw new \RuntimeException("Perfex push failed: " . $response->status());
         }
 

@@ -16,7 +16,7 @@ class InstructorsImport implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         // Log the row for debugging
-        Log::info('Processing row:', $row);
+      
         // Get authenticated user
         $user = auth()->user();
         // Check required fields
@@ -25,7 +25,7 @@ class InstructorsImport implements ToModel, WithHeadingRow
             if (!array_key_exists($field, $row) || (empty($row[$field]) && $row[$field] !== '0')) 
             {
                 $this->errors[] = "Row skipped: Missing or empty field '{$field}'";
-                Log::warning("Skipping row due to missing or empty field: {$field}", $row);
+                
                 return null;
             }
         }
@@ -147,7 +147,7 @@ class InstructorsImport implements ToModel, WithHeadingRow
 
         // Create the instructor user
         try {
-            Log::info('Attempting to create instructor with data:', $userData);
+           
             $instructor = User::create($userData);
             if ($instructor) {
                 return $instructor;

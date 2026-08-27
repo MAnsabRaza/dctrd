@@ -15,8 +15,6 @@ class StaffsImport implements ToModel, WithHeadingRow
 
     public function model(array $row)
     {
-        // Log the row for debugging
-        Log::info('Processing row:', $row);
 
       // Check required fields
         $requiredFields = ['status'];
@@ -24,7 +22,6 @@ class StaffsImport implements ToModel, WithHeadingRow
         {
             if (!array_key_exists($field, $row) || (empty($row[$field]) && $row[$field] !== '0')) {
                 $this->errors[] = "Row skipped: Missing or empty field '{$field}'";
-                Log::warning("Skipping row due to missing or empty field: {$field}", $row);
                 return null;
             }
         }
@@ -144,7 +141,6 @@ class StaffsImport implements ToModel, WithHeadingRow
 
         // Create the staff user
         try {
-            Log::info('Attempting to create staff with data:', $userData);
             $staff = User::create($userData);
             if ($staff) {
                

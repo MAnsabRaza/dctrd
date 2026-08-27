@@ -16,14 +16,14 @@ class OrganizationsImport implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         // Log the row for debugging
-        Log::info('Processing row:', $row);
+       
         // Check required fields
         $requiredFields = ['status'];
         foreach ($requiredFields as $field) 
         {
             if (!array_key_exists($field, $row) || (empty($row[$field]) && $row[$field] !== '0')) {
                 $this->errors[] = "Row skipped: Missing or empty field '{$field}'";
-                Log::warning("Skipping row due to missing or empty field: {$field}", $row);
+             
                 return null;
             }
         }
@@ -145,10 +145,10 @@ class OrganizationsImport implements ToModel, WithHeadingRow
         // Create the organization user
         try
         {
-            Log::info('Attempting to create organization with data:', $userData);
+           
             $organization = User::create($userData);
             if ($organization) {
-                Log::info("organization created successfully: ID {$organization->id}", $row);
+               
                 return $organization;
             } else {
                 $this->errors[] = "System: Failed to create organization: User::create returned null";

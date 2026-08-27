@@ -75,10 +75,7 @@ class Channel extends BasePaymentChannel implements IChannel
         $response = Http::withHeaders($headers)->post($endpoint, $body);
 
         if ($response->failed()) {
-            \Log::error('bKash grantToken failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
+          
             throw new \RuntimeException('bKash token grant failed');
         }
 
@@ -109,10 +106,7 @@ class Channel extends BasePaymentChannel implements IChannel
         $response = Http::withHeaders($headers)->post($endpoint, $payload);
 
         if ($response->failed()) {
-            \Log::error('bKash createPayment failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
+        
             throw new \RuntimeException('bKash create payment failed');
         }
 
@@ -137,10 +131,7 @@ class Channel extends BasePaymentChannel implements IChannel
         $response = Http::withHeaders($headers)->post($endpoint, $payload);
 
         if ($response->failed()) {
-            \Log::error('bKash executePayment failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
+          
             throw new \RuntimeException('bKash execute payment failed');
         }
 
@@ -166,7 +157,7 @@ class Channel extends BasePaymentChannel implements IChannel
             $paymentId = (string) ($createResp['paymentID'] ?? '');
 
             if ($bkashUrl === '' || $paymentId === '') {
-                \Log::error('bKash createPayment missing redirect url or paymentID', [ 'resp' => $createResp ]);
+                
                 throw new \RuntimeException('bKash create payment response invalid');
             }
 
@@ -175,7 +166,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
             return str_replace(["\r", "\n"], '', $bkashUrl);
         } catch (\Throwable $e) {
-            \Log::error('bKash paymentRequest failed', [ 'message' => $e->getMessage() ]);
             $toastData = [
                 'title' => trans('cart.fail_purchase'),
                 'msg' => trans('cart.gateway_error'),
@@ -224,7 +214,7 @@ class Channel extends BasePaymentChannel implements IChannel
                 }
             }
         } catch (\Throwable $e) {
-            \Log::error('bKash verify failed', [ 'message' => $e->getMessage() ]);
+            
         }
 
         return $order;

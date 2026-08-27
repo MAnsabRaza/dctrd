@@ -85,12 +85,7 @@ class FormsController extends Controller
     $endDate = !empty($data['end_date']) ? convertTimeToUTCzone($data['end_date'], getTimezone())->getTimestamp() : null;
 
     // ===== TEMP DEBUG START =====
-    $arrayFields = collect($data)->filter(fn($v) => is_array($v));
-    if ($arrayFields->isNotEmpty()) {
-        \Log::error('FormsController@store - Array fields detected in request', $arrayFields->toArray());
-    } else {
-        \Log::error('FormsController@store - No array fields found in $data', ['keys' => array_keys($data)]);
-    }
+   $arrayFields = collect($data)->filter(fn($v) => is_array($v));
     // ===== TEMP DEBUG END =====
 
     $form = Form::query()->create([

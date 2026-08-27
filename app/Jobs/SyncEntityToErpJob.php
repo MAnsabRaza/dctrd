@@ -50,11 +50,6 @@ class SyncEntityToErpJob implements ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        \Log::error('SyncEntityToErpJob permanently failed', [
-            'vendor_id'   => $this->vendorId,
-            'entity_type' => $this->entityType,
-            'local_id'    => $this->localId,
-            'error'       => $exception->getMessage(),
-        ]);
+       
     }
 }

@@ -16,14 +16,12 @@ class ProductsImport implements ToModel, WithHeadingRow
 {
     public function model(array $row)
     {
-        Log::info('Processing product row:', $row);
         $requiredFields = [
             'type', 'locale', 'title' // Removed 'creator_id' since we’ll use auth()->id()
         ];
         foreach ($requiredFields as $field) {
             if (!array_key_exists($field, $row) || (empty($row[$field]) && $row[$field] !== '0')) 
             {
-                Log::warning("Skipping row due to missing or empty field: {$field}", $row);
                 return null;
             }
         }

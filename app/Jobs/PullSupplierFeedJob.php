@@ -45,7 +45,7 @@ class PullSupplierFeedJob implements ShouldQueue
         $result = $client->pullSupplierFeed();
 
         if (empty($result['success'])) {
-            \Log::warning('PullSupplierFeedJob failed', ['vendor_id' => $this->vendorId, 'result' => $result]);
+           
             return;
         }
 

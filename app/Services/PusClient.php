@@ -43,11 +43,7 @@ class PusClient
 
             return true;
         } catch (\Throwable $e) {
-            Log::error('PusClient::createLink exception', [
-                'model' => class_basename($model),
-                'id'    => $model->id ?? null,
-                'error' => $e->getMessage(),
-            ]);
+           
             return false;
         }
     }
@@ -70,7 +66,6 @@ class PusClient
 
             return true;
         } catch (\Throwable $e) {
-            Log::error('PusClient::deleteOrDisable exception', ['error' => $e->getMessage()]);
             return false;
         }
     }
@@ -149,11 +144,7 @@ class PusClient
         ]);
 
         if (!$response->successful()) {
-            Log::warning('PusClient::generateAndStoreQrImage failed', [
-                'model'  => class_basename($model),
-                'id'     => $model->id ?? null,
-                'status' => $response->status(),
-            ]);
+            
             return null;
         }
 

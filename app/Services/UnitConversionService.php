@@ -24,14 +24,12 @@ class UnitConversionService
         }
 
         if (!isset($this->config['conversions'][$type])) {
-            Log::warning("Invalid unit type: {$type}");
             return $value;
         }
 
         $conversions = $this->config['conversions'][$type];
 
         if (!isset($conversions[$fromUnit]) || !isset($conversions[$toUnit])) {
-            Log::warning("Invalid units for conversion: {$fromUnit} to {$toUnit}");
             return $value;
         }
 

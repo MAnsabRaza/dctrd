@@ -25,11 +25,6 @@ class ErpPostSaleService
         $vendorId = (int) ($product->creator_id ?: $sale->seller_id);
 
         if (empty($order) || empty($buyer) || empty($vendorId)) {
-            Log::warning('ERP post-sale skipped because order, buyer, or vendor is missing.', [
-                'sale_id' => $sale->id,
-                'order_item_id' => $orderItem->id,
-            ]);
-
             return null;
         }
 
@@ -175,11 +170,6 @@ public function buildPayload(Sale $sale, OrderItem $orderItem, Product $product,
             'last_attempted_at' => now(),
         ]);
 
-        Log::error('ERP post-sale sync failed', [
-            'sync_id' => $sync->id,
-            'message' => $message,
-            'response' => $response,
-        ]);
 
         return $sync;
     }

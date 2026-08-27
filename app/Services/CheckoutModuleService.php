@@ -145,12 +145,6 @@ public function calculateExtraPriceBreakdown(Collection $modules, array $submitt
         $config    = $module->config ?? [];
         $type      = $priceRule['type'] ?? 'none';
         $data      = $submittedData[$module->name] ?? null;
-         \Log::info('MODULE PRICE CHECK', [
-        'module_name' => $module->name,
-        'type' => $type,
-        'data_received' => $data,
-        'config' => $config,
-    ]);
 
         if ($this->isEmptyValue($data)) {
             continue;

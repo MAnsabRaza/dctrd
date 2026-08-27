@@ -306,11 +306,11 @@ class BookingOrderController extends Controller
         try {
             app(CalendarSyncService::class)->syncBooking($order, $action);
         } catch (\Throwable $exception) {
-            Log::warning('Booking order calendar sync failed after status change.', [
-                'booking_order_id' => $order->id,
-                'action' => $action,
-                'error' => $exception->getMessage(),
-            ]);
+                return [
+        'success' => false,
+        'error' => $exception->getMessage(),
+    ];
+           
         }
     }
 
@@ -319,11 +319,10 @@ class BookingOrderController extends Controller
         try {
             $order->sendBookingNotifications($event);
         } catch (\Throwable $exception) {
-            Log::warning('Booking order notification failed after status change.', [
-                'booking_order_id' => $order->id,
-                'event' => $event,
-                'error' => $exception->getMessage(),
-            ]);
+           return [
+        'success' => false,
+        'error' => $exception->getMessage(),
+    ];
         }
     }
 }

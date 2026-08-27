@@ -2387,7 +2387,10 @@ function convertPriceToUserCurrency($price, $userCurrencyItem = null)
             }
         }
     } catch (\Throwable $e) {
-        \Log::warning('Price exchange conversion failed: ' . $e->getMessage());
+           return [
+        'success' => false,
+        'error' => $e->getMessage(),
+    ];
     }
 
     return $price + 0;
@@ -2417,7 +2420,10 @@ function convertPriceToDefaultCurrency($price, $userCurrencyItem = null)
             }
         }
     } catch (\Throwable $e) {
-        \Log::warning('Price default currency conversion failed: ' . $e->getMessage());
+          return [
+        'success' => false,
+        'error' => $e->getMessage(),
+    ];
     }
 
     return $price;

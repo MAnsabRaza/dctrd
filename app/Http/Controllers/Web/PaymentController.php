@@ -123,15 +123,7 @@ class PaymentController extends Controller
         // Offline payment for cart checkout
        // Offline payment for cart checkout
 if ($gateway === 'offline') {
-    Log::info('Offline payment request received', [
-        'order_id' => $order->id,
-        'user_id' => $user->id,
-        'amount' => $order->total_amount,
-        'account' => $request->input('account'),
-        'referral_code' => $request->input('referral_code'),
-        'date_input' => $request->input('date'),
-        'has_attachment' => $request->hasFile('attachment'),
-    ]);
+    
 
     // Validate offline settings enabled and create offline payment request for this order
     if (empty(getOfflineBankSettings('offline_banks_status'))) {
@@ -152,11 +144,7 @@ if ($gateway === 'offline') {
         ]);
 
         if ($validator->fails()) {
-            Log::warning('Offline payment request validation failed', [
-                'order_id' => $order->id,
-                'user_id' => $user->id,
-                'errors' => $validator->errors()->toArray(),
-            ]);
+          
 
             return redirect('/payments/status?t=' . $order->id)->with(['toast' => [
                 'title' => trans('cart.fail_purchase'),
@@ -170,10 +158,7 @@ if ($gateway === 'offline') {
         $dateInput = $request->input('date') ?: now()->format('Y/m/d H:i');
 
         if (empty($account)) {
-            Log::warning('Offline payment request failed because no bank account is configured', [
-                'order_id' => $order->id,
-                'user_id' => $user->id,
-            ]);
+            
 
             return redirect('/payments/status?t=' . $order->id)->with(['toast' => [
                 'title' => trans('cart.fail_purchase'),
@@ -192,12 +177,7 @@ if ($gateway === 'offline') {
         try {
             $date = convertTimeToUTCzone($dateInput, getTimezone());
         } catch (\Throwable $exception) {
-            Log::warning('Offline payment date parse failed; using current time', [
-                'order_id' => $order->id,
-                'user_id' => $user->id,
-                'date_input' => $dateInput,
-                'message' => $exception->getMessage(),
-            ]);
+         
 
             $date = now();
         }

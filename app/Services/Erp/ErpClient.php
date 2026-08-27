@@ -97,10 +97,7 @@ class ErpClient
                 'body'    => $response->json() ?? [],
             ];
         } catch (\Throwable $e) {
-            Log::error('ErpClient call failed', [
-                'uri'   => $uri,
-                'error' => $e->getMessage(),
-            ]);
+       
 
             return [
                 'success' => false,

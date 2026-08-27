@@ -563,9 +563,6 @@ public function update(Request $request)
         // ── DB update ────────────────────────────────────────────────
         if (!empty($updateData)) {
             $user->update($updateData);
-            Log::info('After User Update', [
-                 'address' => $user->fresh()->address,
-            ]);
         }
         
 

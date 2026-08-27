@@ -47,13 +47,7 @@ class PluginLicenseController extends Controller
         // Validate the purchase code with forceCheck=true to bypass cache
         $validationResult = $this->licenseService->func3847291650($purchaseCode, true);
         
-        // Debug logging
-        Log::debug('Plugins Bundle purchase code validation result', [
-            'code' => substr($purchaseCode, 0, 4) . '****', // Mask the code for security
-            'valid' => $validationResult['valid'] ?? false,
-            'error' => $validationResult['error'] ?? null,
-            'message' => $validationResult['message'] ?? null
-        ]);
+        
         
         if (!$validationResult['valid']) {
             $errorType = $validationResult['error'] ?? PluginBundleLicenseService::ERROR_INVALID_CODE;

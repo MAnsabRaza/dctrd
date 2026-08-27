@@ -170,11 +170,7 @@ class Channel extends BasePaymentChannel implements IChannel
             ])->post('https://api.tabby.ai/api/v2/checkout', $payload);
 
             if ($response->failed()) {
-                \Log::error('Tabby API request failed', [
-                    'status' => $response->status(),
-                    'message' => optional($response->json())['message'] ?? $response->body(),
-                    'response' => $response->json(),
-                ]);
+                
                 throw new \RuntimeException('Tabby checkout creation failed');
             }
 
@@ -187,7 +183,7 @@ class Channel extends BasePaymentChannel implements IChannel
             // Sanitize to prevent header injection and invalid redirects
             $paymentUrl = str_replace(["\r", "\n"], '', trim($paymentUrl));
             if (!filter_var($paymentUrl, FILTER_VALIDATE_URL)) {
-                \Log::error('Tabby paymentUrl is invalid', ['url' => $paymentUrl]);
+              
                 $toastData = [
                     'title' => trans('cart.fail_purchase'),
                     'msg' => trans('cart.gateway_error'),
@@ -197,18 +193,12 @@ class Channel extends BasePaymentChannel implements IChannel
             }
 
             // Log raw and hex-encoded URL for debugging header issues
-            try {
-                \Log::debug('Tabby paymentUrl (raw)', ['url' => $paymentUrl]);
-                \Log::debug('Tabby paymentUrl (hex)', ['hex' => bin2hex($paymentUrl)]);
-            } catch (\Throwable $__) {}
-
+         
             // Return URL (controller decides Redirect/away). Avoid headers here.
             return $paymentUrl;
         } catch (\Exception $e) {
             // Handle exceptions with friendly message
-            \Log::error('Tabby API request failed', [
-                'message' => $e->getMessage(),
-            ]);
+          
             $toastData = [
                 'title' => trans('cart.fail_purchase'),
                 'msg' => trans('cart.gateway_error'),

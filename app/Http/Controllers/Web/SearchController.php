@@ -162,13 +162,7 @@ class SearchController extends Controller
     $hasRadius = $request->filled('radius_km');
     $hasScope  = method_exists($modelClass, 'scopeNearby');
 
-    // TEMP DEBUG
-    \Log::info("applyNearby check for {$modelClass}", [
-        'hasLat'    => $hasLat,
-        'hasLng'    => $hasLng,
-        'hasRadius' => $hasRadius,
-        'hasScope'  => $hasScope,
-    ]);
+  
 
     if ($hasLat && $hasLng && $hasRadius && $hasScope) {
         $query->nearby(
@@ -232,14 +226,6 @@ class SearchController extends Controller
         $selectedTypes       = array_filter((array) $request->get('types', []));
         $searchAll           = empty($selectedTypes);
 
-          \Log::info('SEARCH DEBUG', [
-        'raw_types'     => $request->get('types', []),
-        'selectedTypes' => $selectedTypes,
-        'searchAll'     => $searchAll,
-        'lat'           => $request->get('lat'),
-        'lng'           => $request->get('lng'),
-        'radius_km'     => $request->get('radius_km'),
-    ]);
 
         // Helper: should we search this type?
         $shouldSearch = fn(string $type): bool => $searchAll || in_array($type, $selectedTypes);
@@ -426,10 +412,7 @@ if ($searchOrganizations) {
                 ->with(['creator', 'category']);
 
             // TEMP DEBUG: search text match hone se pehle count
-            \Log::info('Bookings matching search text (before category/nearby)', [
-                'search' => $search,
-                'count'  => (clone $bookingsQuery)->count(),
-            ]);
+          
 
             if (!empty($selectedBookingCats)) {
                 $bookingsQuery->whereIn('category_id', $selectedBookingCats);
@@ -439,13 +422,6 @@ if ($searchOrganizations) {
             $this->applyRatingFilter($bookingsQuery, $request, 'rating');
             $bookingsNearby = $this->applyNearby($bookingsQuery, $request, Booking::class);
 
-            // TEMP DEBUG: nearby apply hone ke baad count + actual SQL
-            \Log::info('Bookings after nearby applied', [
-                'nearbyApplied' => $bookingsNearby,
-                'count'         => (clone $bookingsQuery)->count(),
-                'sql'           => $bookingsQuery->toSql(),
-                'bindings'      => $bookingsQuery->getBindings(),
-            ]);
 
             $this->applySort($bookingsQuery, $request, $bookingsNearby, 'price', 'rating');
 
@@ -453,7 +429,7 @@ if ($searchOrganizations) {
             $bookings      = $bookingsQuery->limit(20)->get();
 
             // TEMP DEBUG: final count
-            \Log::info('Final bookingsCount', ['bookingsCount' => $bookingsCount]);
+         
         }
         // ── FIX-A: Booking Bundles ────────────────────────────────────────────
         if ($shouldSearch('booking_bundles')) {

@@ -423,9 +423,7 @@ class CartController extends Controller
         app(BookingCartExpiryService::class)->expireAbandonedPendingBookings();
 
         $user = auth()->user();
-          \Log::info('CHECKOUT RAW REQUEST', [
-        'checkout_modules_raw' => $request->input('checkout_modules'),
-    ]);
+     
 
         if (empty($carts)) {
             $carts = Cart::where('creator_id', $user->id)
@@ -541,13 +539,7 @@ class CartController extends Controller
                 $extraPriceByCart[$cart->id] = $itemExtraPrice;
                 $extraPriceBreakdownByCart[$cart->id] = $checkoutModuleService->calculateExtraPriceBreakdown($modules, $itemData);
                 $extraPrice += $itemExtraPrice;
-                 \Log::info('EXTRA PRICE PER CART ITEM', [
-        'cart_id' => $cart->id,
-        'itemData_submitted' => $itemData,
-        'modules_available' => $modules->pluck('name'),
-        'item_extra_price' => $itemExtraPrice,
-        'breakdown' => $extraPriceBreakdownByCart[$cart->id],
-    ]);
+                
             }
 
             if (!empty($moduleErrors)) {

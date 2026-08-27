@@ -81,11 +81,6 @@ class Channel extends BasePaymentChannel implements IChannel
         }
 
         if (isset($map[$currency]) && $country !== $map[$currency]) {
-            \Log::warning('Tamara country_code normalized to match currency', [
-                'from_country' => $country,
-                'to_country' => $map[$currency],
-                'currency' => $currency,
-            ]);
             $this->country_code = $map[$currency];
         }
 
@@ -109,16 +104,12 @@ class Channel extends BasePaymentChannel implements IChannel
         return Client::create($clientConfiguration);
     }
 
-    private function assertConfig(): void
-    {
-        if (empty($this->base_url) || empty($this->api_token)) {
-            \Log::error('Tamara configuration missing', [
-                'base_url' => $this->base_url,
-                'has_api_token' => !empty($this->api_token),
-            ]);
-            throw new \InvalidArgumentException('Tamara base_url or api_token is not configured');
-        }
+   private function assertConfig(): void
+{
+    if (empty($this->base_url) || empty($this->api_token)) {
+        throw new \InvalidArgumentException('Tamara base_url or api_token is not configured');
     }
+}
 
     public function paymentRequest(Order $order)
     {
@@ -134,11 +125,6 @@ class Channel extends BasePaymentChannel implements IChannel
 
 
         $tamaraClient = $this->getTamaraClient();
-        \Log::debug('Tamara createCheckout init', [
-            'base_url' => $this->base_url,
-            'country' => $this->country_code,
-            'currency' => $this->currency,
-        ]);
 
         //$response = $tamaraClient->getPaymentTypes($this->country_code);
         $merchantUrl = app()->make(MerchantUrl::class);
@@ -223,10 +209,7 @@ class Channel extends BasePaymentChannel implements IChannel
         try {
             $response = $tamaraClient->createCheckout($request);
         } catch (\Throwable $e) {
-            \Log::error('Tamara createCheckout exception', [
-                'exception' => get_class($e),
-                'message' => $e->getMessage(),
-            ]);
+        
 
             $toastData = [
                 'title' => trans('cart.fail_purchase'),
@@ -239,13 +222,7 @@ class Channel extends BasePaymentChannel implements IChannel
         // Guard against failed API responses which return no checkout response
         if (!is_object($response) || !method_exists($response, 'isSuccess') || !$response->isSuccess() || !method_exists($response, 'getCheckoutResponse') || !$response->getCheckoutResponse()) {
             // Surface a friendly error while preserving details in logs
-            \Log::error('Tamara createCheckout failed', [
-                'status' => method_exists($response, 'getStatusCode') ? $response->getStatusCode() : null,
-                'message' => method_exists($response, 'getMessage') ? $response->getMessage() : null,
-                'errors' => method_exists($response, 'getErrors') ? $response->getErrors() : null,
-                'content' => method_exists($response, 'getContent') ? $response->getContent() : null,
-                'type' => is_object($response) ? get_class($response) : gettype($response),
-            ]);
+          
 
             $toastData = [
                 'title' => trans('cart.fail_purchase'),
@@ -260,7 +237,6 @@ class Channel extends BasePaymentChannel implements IChannel
         // Sanitize to avoid header injection/new lines
         $checkoutUrl = str_replace(["\r", "\n"], '', trim($checkoutUrl));
         if (!filter_var($checkoutUrl, FILTER_VALIDATE_URL)) {
-            \Log::error('Tamara checkoutUrl is invalid', ['url' => $checkoutUrl]);
             $toastData = [
                 'title' => trans('cart.fail_purchase'),
                 'msg' => trans('cart.gateway_error'),

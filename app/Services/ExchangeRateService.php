@@ -35,7 +35,6 @@ class ExchangeRateService
         }
 
         if (!$this->supportsCurrency($from) || !$this->supportsCurrency($to)) {
-            Log::warning("Unsupported currency pair requested: {$from} to {$to}");
             return null;
         }
 
@@ -64,7 +63,6 @@ class ExchangeRateService
         $rate = $this->getRate($from, $to);
         
         if (!$rate) {
-            Log::warning("Exchange rate not found for {$from} to {$to}, returning original amount");
             return $amount;
         }
 
@@ -77,7 +75,6 @@ class ExchangeRateService
     public function updateRates(): bool
     {
         if (!$this->isEnabled()) {
-            Log::info('Exchange rate updates are disabled');
             return false;
         }
 
@@ -86,7 +83,6 @@ class ExchangeRateService
             $rates = $this->fetchFromPrimaryApi();
             
             if (!$rates && $this->config['fallback_on_failure']) {
-                Log::warning('Primary API failed, trying backup API');
                 $provider = $this->config['backup_api']['provider'] ?? 'backup';
                 $rates = $this->fetchFromBackupApi();
             }
@@ -94,17 +90,13 @@ class ExchangeRateService
             if ($rates) {
                 $this->storeRates($rates, $provider);
                 $this->clearCache();
-                Log::info('Exchange rates updated successfully', ['count' => count($rates)]);
                 return true;
             }
 
-            Log::error('Failed to fetch exchange rates from all APIs');
+           
             return false;
         } catch (\Exception $e) {
-            Log::error('Exchange rate update failed: ' . $e->getMessage(), [
-                'exception' => get_class($e),
-                'trace' => $e->getTraceAsString()
-            ]);
+           
             return false;
         }
     }
@@ -135,20 +127,16 @@ class ExchangeRateService
                 $data = $response->json();
                 
                 if ($this->hasProviderError($data)) {
-                    Log::error('Primary API returned error', ['error' => $data['error'] ?? $data['result'] ?? 'Unknown error']);
+                    
                     return null;
                 }
                 
                 return $this->normalizeRates($data);
             }
 
-            Log::error('Primary API request failed', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
+           
             return null;
         } catch (\Exception $e) {
-            Log::error('Primary API exception: ' . $e->getMessage());
             return null;
         }
     }
@@ -180,20 +168,14 @@ class ExchangeRateService
                 $data = $response->json();
                 
                 if ($this->hasProviderError($data)) {
-                    Log::error('Backup API returned error', ['error' => $data['error'] ?? $data['result'] ?? 'Unknown error']);
                     return null;
                 }
                 
                 return $this->normalizeRates($data);
             }
 
-            Log::error('Backup API request failed', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
             return null;
         } catch (\Exception $e) {
-            Log::error('Backup API exception: ' . $e->getMessage());
             return null;
         }
     }
@@ -221,7 +203,10 @@ class ExchangeRateService
                     'fetched_at' => $now,
                 ]);
             } catch (\Exception $e) {
-                Log::warning("Failed to store rate for {$currency}: " . $e->getMessage());
+                 return [
+        'success' => false,
+        'error' => $e->getMessage(),
+    ];
             }
         }
 
@@ -298,7 +283,10 @@ class ExchangeRateService
                 }
             }
         } catch (\Exception $e) {
-            Log::warning('Failed to clear exchange rate cache: ' . $e->getMessage());
+             return [
+        'success' => false,
+        'error' => $e->getMessage(),
+    ];
         }
     }
 
@@ -385,7 +373,6 @@ class ExchangeRateService
 
         if ($providerBase !== $this->baseCurrency) {
             if (empty($rates[$this->baseCurrency]) || (float) $rates[$this->baseCurrency] <= 0) {
-                Log::warning("Exchange API returned {$providerBase}-based rates without {$this->baseCurrency} cross-rate");
                 return null;
             }
 

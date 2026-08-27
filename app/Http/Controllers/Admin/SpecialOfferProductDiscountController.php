@@ -154,7 +154,7 @@ class SpecialOfferProductDiscountController extends Controller
         }
         catch (\Exception $e)
         {
-            Log::info("Error : ".$e->getMessage());
+            
             return back()->withInput()->with('error', 'Something went wrong: ' . $e->getMessage());
         }
     }
