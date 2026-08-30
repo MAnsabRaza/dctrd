@@ -98,6 +98,24 @@
         @php
             $erpStaffIds = old('erp_staff_ids', $product->erp_staff_ids ?: []);
             $erpTaskTemplates = old('erp_task_templates', implode("\n", $product->erp_task_templates ?: []));
+
+            // Category/Subcategory: DIRECT from product_categories table — NO API.
+            // $productCategories is already passed to every step by the panel controller
+            // (same variable used for the main category dropdown in step_2.blade.php),
+            // with subCategories eager-loaded.
+            $erpCategoriesMap = [];
+            foreach ($productCategories as $erpTopCategory) {
+                $erpSubs = [];
+                if (!empty($erpTopCategory->subCategories) and count($erpTopCategory->subCategories)) {
+                    foreach ($erpTopCategory->subCategories as $erpSub) {
+                        $erpSubs[] = ['id' => $erpSub->id, 'title' => $erpSub->title];
+                    }
+                }
+                $erpCategoriesMap[$erpTopCategory->id] = $erpSubs;
+            }
+
+            $erpSelectedCategoryId = old('erp_category_id', $product->erp_category_id);
+            $erpSelectedSubcategoryId = old('erp_subcategory_id', $product->erp_subcategory_id);
         @endphp
 
         <div class="border-top pt-24 mt-24">
@@ -122,10 +140,13 @@
                     <div class="col-12 col-md-6">
                         <div class="form-group">
                             <label class="form-group-label">Category Mapping</label>
-                            <select id="erpCategorySelect" name="erp_category_id" class="form-control select2" data-selected="{{ old('erp_category_id', $product->erp_category_id) }}" data-selected-name="{{ old('erp_category_name', $product->erp_category_name) }}">
-                                @if(!empty($product->erp_category_id))
-                                    <option value="{{ $product->erp_category_id }}" selected>{{ $product->erp_category_name ?: $product->erp_category_id }}</option>
-                                @endif
+                            <select id="erpCategorySelect" name="erp_category_id" class="form-control select2">
+                                <option value="">Select a category</option>
+                                @foreach($productCategories as $erpTopCategory)
+                                    <option value="{{ $erpTopCategory->id }}" {{ ((string) $erpSelectedCategoryId === (string) $erpTopCategory->id) ? 'selected' : '' }}>
+                                        {{ $erpTopCategory->title }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -133,10 +154,8 @@
                     <div class="col-12 col-md-6">
                         <div class="form-group">
                             <label class="form-group-label">Subcategory Mapping</label>
-                            <select id="erpSubcategorySelect" name="erp_subcategory_id" class="form-control select2" data-selected="{{ old('erp_subcategory_id', $product->erp_subcategory_id) }}" data-selected-name="{{ old('erp_subcategory_name', $product->erp_subcategory_name) }}">
-                                @if(!empty($product->erp_subcategory_id))
-                                    <option value="{{ $product->erp_subcategory_id }}" selected>{{ $product->erp_subcategory_name ?: $product->erp_subcategory_id }}</option>
-                                @endif
+                            <select id="erpSubcategorySelect" name="erp_subcategory_id" class="form-control select2" {{ empty($erpSelectedCategoryId) ? 'disabled' : '' }}>
+                                <option value="">{{ empty($erpSelectedCategoryId) ? 'Select a category first' : 'Select a subcategory' }}</option>
                             </select>
                         </div>
                     </div>
@@ -159,6 +178,12 @@
                 <p id="erpPostSaleMessage" class="text-gray-500 font-12 mt-8"></p>
             </div>
         </div>
+
+        <script>
+            // Category → Subcategory map built directly from product_categories (no API call)
+            var erpCategoriesMap = @json($erpCategoriesMap);
+            var erpSelectedSubcategoryId = "{{ $erpSelectedSubcategoryId }}";
+        </script>
     @endif
 
     <div class="form-group mt-20 d-flex align-items-center">
@@ -216,7 +241,6 @@
             var staffSelect = document.getElementById('erpStaffSelect');
             var categoryName = document.getElementById('erpCategoryName');
             var subcategoryName = document.getElementById('erpSubcategoryName');
-            var categories = [];
 
             function setMessage(message) {
                 if (erpMessage) {
@@ -270,59 +294,102 @@
                 }
             }
 
-            function updateSubcategories() {
+            // Subcategory options come from the local erpCategoriesMap (built from
+            // product_categories server-side) — no fetch, no API call.
+            function updateSubcategories(preselectId) {
                 if (!categorySelect || !subcategorySelect) {
                     return;
                 }
 
-                var selectedCategory = categories.find(function (item) {
-                    return String(optionId(item)) === String(categorySelect.value);
-                });
-                var children = selectedCategory ? (selectedCategory.children || selectedCategory.subcategories || []) : [];
-                fillSelect(subcategorySelect, children, subcategorySelect.getAttribute('data-selected'));
-                categoryName.value = selectedCategory ? optionLabel(selectedCategory) : (categorySelect.selectedOptions[0] ? categorySelect.selectedOptions[0].textContent : '');
-                subcategoryName.value = subcategorySelect.selectedOptions[0] ? subcategorySelect.selectedOptions[0].textContent : '';
+                var categoryId = categorySelect.value;
+                subcategorySelect.innerHTML = '';
+
+                var subs = (window.erpCategoriesMap && erpCategoriesMap[categoryId]) || [];
+
+                if (!categoryId || subs.length === 0) {
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = categoryId ? 'No subcategories' : 'Select a category first';
+                    subcategorySelect.appendChild(emptyOpt);
+                    subcategorySelect.disabled = true;
+                } else {
+                    var placeholderOpt = document.createElement('option');
+                    placeholderOpt.value = '';
+                    placeholderOpt.textContent = 'Select a subcategory';
+                    subcategorySelect.appendChild(placeholderOpt);
+
+                    subs.forEach(function (sub) {
+                        var opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = sub.title;
+                        if (preselectId && String(preselectId) === String(sub.id)) {
+                            opt.selected = true;
+                        }
+                        subcategorySelect.appendChild(opt);
+                    });
+
+                    subcategorySelect.disabled = false;
+                }
+
+                if (window.$ && $.fn.select2) {
+                    $(subcategorySelect).trigger('change.select2');
+                }
+
+                if (categoryName) {
+                    categoryName.value = categorySelect.selectedOptions[0] ? categorySelect.selectedOptions[0].textContent : '';
+                }
+                if (subcategoryName) {
+                    subcategoryName.value = subcategorySelect.selectedOptions[0] ? subcategorySelect.selectedOptions[0].textContent : '';
+                }
             }
 
-            function loadErpOptions() {
-                if (!erpSwitch || !erpSwitch.checked) {
+            // Staff is the ONLY thing still fetched from Perfex (via our own backend route).
+            function loadErpStaff() {
+                if (!erpSwitch || !erpSwitch.checked || !staffSelect) {
                     return;
                 }
 
-                setMessage('Loading Perfex ERP options...');
+                setMessage('Loading staff from Perfex...');
 
-                Promise.all([
-                    fetch('/panel/store/products/erp/post-sale/categories').then(function (response) { return response.json(); }),
-                    fetch('/panel/store/products/erp/post-sale/staff').then(function (response) { return response.json(); })
-                ]).then(function (responses) {
-                    categories = responses[0].data || [];
-                    fillSelect(categorySelect, categories, categorySelect.getAttribute('data-selected'));
-                    updateSubcategories();
-                    fillSelect(staffSelect, responses[1].data || [], selectedValues(staffSelect));
-                    setMessage('');
-                }).catch(function () {
-                    setMessage('Perfex ERP options could not be loaded right now. Saved values will remain.');
-                });
+                fetch('/panel/store/products/erp/post-sale/staff')
+                    .then(function (response) { return response.json(); })
+                    .then(function (response) {
+                        fillSelect(staffSelect, response.data || [], selectedValues(staffSelect));
+                        setMessage('');
+                    })
+                    .catch(function () {
+                        setMessage('Could not load staff list from Perfex. Saved values will remain.');
+                    });
             }
 
             if (erpSwitch) {
                 erpSwitch.addEventListener('change', function () {
                     toggleErpFields(this.checked);
-                    loadErpOptions();
+                    loadErpStaff();
                 });
             }
 
             if (categorySelect) {
-                categorySelect.addEventListener('change', updateSubcategories);
+                categorySelect.addEventListener('change', function () {
+                    updateSubcategories(null);
+                });
             }
 
             if (subcategorySelect) {
                 subcategorySelect.addEventListener('change', function () {
-                    subcategoryName.value = subcategorySelect.selectedOptions[0] ? subcategorySelect.selectedOptions[0].textContent : '';
+                    if (subcategoryName) {
+                        subcategoryName.value = subcategorySelect.selectedOptions[0] ? subcategorySelect.selectedOptions[0].textContent : '';
+                    }
                 });
             }
 
-            loadErpOptions();
+            // Initial state on page load: if a category is already selected
+            // (editing an existing product), populate its subcategories immediately.
+            if (categorySelect && categorySelect.value) {
+                updateSubcategories(typeof erpSelectedSubcategoryId !== 'undefined' ? erpSelectedSubcategoryId : null);
+            }
+
+            loadErpStaff();
         });
     </script>
 @endpush
