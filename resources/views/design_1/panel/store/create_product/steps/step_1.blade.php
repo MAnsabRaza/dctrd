@@ -225,171 +225,174 @@
             container.style.display = show ? '' : 'none';
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+               document.addEventListener('DOMContentLoaded', function () {
             var locationSwitch = document.getElementById('productLocationSwitch');
             if (locationSwitch) {
                 locationSwitch.addEventListener('change', function () {
                     toggleProductLocation(this.checked);
                 });
             }
+        });
 
-            var erpSwitch = document.getElementById('erpPostSaleSwitch');
-            var erpFields = document.getElementById('erpPostSaleFields');
-            var erpMessage = document.getElementById('erpPostSaleMessage');
-            var categorySelect = document.getElementById('erpCategorySelect');
-            var subcategorySelect = document.getElementById('erpSubcategorySelect');
-            var staffSelect = document.getElementById('erpStaffSelect');
-            var categoryName = document.getElementById('erpCategoryName');
-            var subcategoryName = document.getElementById('erpSubcategoryName');
+        // ERP block runs inside jQuery's ready + a short defer, so it executes
+        // AFTER the site-wide `.select2` auto-initializer has already wrapped
+        // these <select> elements. Select2 fires jQuery-level events, so every
+        // binding below uses $(...).on(...) instead of addEventListener.
+        (function ($) {
+            'use strict';
 
-            function setMessage(message) {
-                if (erpMessage) {
-                    erpMessage.textContent = message || '';
-                }
+            if (!$) {
+                return;
             }
 
-            function toggleErpFields(show) {
-                if (erpFields) {
-                    erpFields.style.display = show ? '' : 'none';
-                }
-            }
+            $(function () {
 
-            function optionLabel(item) {
-                return item.name || item.title || item.label || item.text || item.id;
-            }
+                var $erpSwitch        = $('#erpPostSaleSwitch');
+                var $erpFields        = $('#erpPostSaleFields');
+                var $erpMessage       = $('#erpPostSaleMessage');
+                var $categorySelect   = $('#erpCategorySelect');
+                var $subcategorySelect = $('#erpSubcategorySelect');
+                var $staffSelect      = $('#erpStaffSelect');
+                var $categoryName     = $('#erpCategoryName');
+                var $subcategoryName  = $('#erpSubcategoryName');
 
-            function optionId(item) {
-                return item.id || item.value || optionLabel(item);
-            }
-
-            function selectedValues(select) {
-                try {
-                    return JSON.parse(select.getAttribute('data-selected') || '[]').map(String);
-                } catch (e) {
-                    return [];
-                }
-            }
-
-            function fillSelect(select, items, selected) {
-                if (!select) {
-                    return;
+                if (!$categorySelect.length) {
+                    return; // ERP section not rendered on this step/product
                 }
 
-                var selectedList = Array.isArray(selected) ? selected.map(String) : [String(selected || '')];
-                select.innerHTML = '';
+                function setMessage(message) {
+                    $erpMessage.text(message || '');
+                }
 
-                items.forEach(function (item) {
-                    var id = String(optionId(item));
-                    var option = document.createElement('option');
-                    option.value = id;
-                    option.textContent = optionLabel(item);
-                    if (selectedList.indexOf(id) !== -1) {
-                        option.selected = true;
+                function toggleErpFields(show) {
+                    $erpFields.toggle(!!show);
+                }
+
+                function optionLabel(item) {
+                    return item.name || item.title || item.label || item.text || item.id;
+                }
+
+                function optionId(item) {
+                    return item.id || item.value || optionLabel(item);
+                }
+
+                function selectedValues($select) {
+                    try {
+                        return JSON.parse($select.attr('data-selected') || '[]').map(String);
+                    } catch (e) {
+                        return [];
                     }
-                    select.appendChild(option);
-                });
-
-                if (window.$ && $.fn.select2) {
-                    $(select).trigger('change.select2');
-                }
-            }
-
-            // Subcategory options come from the local erpCategoriesMap (built from
-            // product_categories server-side) — no fetch, no API call.
-            function updateSubcategories(preselectId) {
-                if (!categorySelect || !subcategorySelect) {
-                    return;
                 }
 
-                var categoryId = categorySelect.value;
-                subcategorySelect.innerHTML = '';
+                function fillSelect($select, items, selected) {
+                    if (!$select.length) {
+                        return;
+                    }
 
-                var subs = (window.erpCategoriesMap && erpCategoriesMap[categoryId]) || [];
+                    var selectedList = Array.isArray(selected) ? selected.map(String) : [String(selected || '')];
+                    $select.empty();
 
-                if (!categoryId || subs.length === 0) {
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = categoryId ? 'No subcategories' : 'Select a category first';
-                    subcategorySelect.appendChild(emptyOpt);
-                    subcategorySelect.disabled = true;
-                } else {
-                    var placeholderOpt = document.createElement('option');
-                    placeholderOpt.value = '';
-                    placeholderOpt.textContent = 'Select a subcategory';
-                    subcategorySelect.appendChild(placeholderOpt);
-
-                    subs.forEach(function (sub) {
-                        var opt = document.createElement('option');
-                        opt.value = sub.id;
-                        opt.textContent = sub.title;
-                        if (preselectId && String(preselectId) === String(sub.id)) {
-                            opt.selected = true;
+                    items.forEach(function (item) {
+                        var id = String(optionId(item));
+                        var $option = $('<option></option>').val(id).text(optionLabel(item));
+                        if (selectedList.indexOf(id) !== -1) {
+                            $option.prop('selected', true);
                         }
-                        subcategorySelect.appendChild(opt);
+                        $select.append($option);
                     });
 
-                    subcategorySelect.disabled = false;
+                    if ($.fn.select2) {
+                        $select.trigger('change.select2');
+                    }
                 }
 
-                if (window.$ && $.fn.select2) {
-                    $(subcategorySelect).trigger('change.select2');
+                // Subcategory options come purely from erpCategoriesMap, built
+                // server-side from product_categories — no API call here.
+                function updateSubcategories(preselectId) {
+                    if (!$subcategorySelect.length) {
+                        return;
+                    }
+
+                    var categoryId = $categorySelect.val();
+                    $subcategorySelect.empty();
+
+                    var subs = (window.erpCategoriesMap && window.erpCategoriesMap[categoryId]) || [];
+
+                    if (!categoryId || subs.length === 0) {
+                        $subcategorySelect.append(
+                            $('<option></option>').val('').text(categoryId ? 'No subcategories' : 'Select a category first')
+                        );
+                        $subcategorySelect.prop('disabled', true);
+                    } else {
+                        $subcategorySelect.append($('<option></option>').val('').text('Select a subcategory'));
+
+                        subs.forEach(function (sub) {
+                            var $opt = $('<option></option>').val(sub.id).text(sub.title);
+                            if (preselectId && String(preselectId) === String(sub.id)) {
+                                $opt.prop('selected', true);
+                            }
+                            $subcategorySelect.append($opt);
+                        });
+
+                        $subcategorySelect.prop('disabled', false);
+                    }
+
+                    if ($.fn.select2) {
+                        $subcategorySelect.trigger('change.select2');
+                    }
+
+                    $categoryName.val($categorySelect.find('option:selected').text() || '');
+                    $subcategoryName.val($subcategorySelect.find('option:selected').text() || '');
                 }
 
-                if (categoryName) {
-                    categoryName.value = categorySelect.selectedOptions[0] ? categorySelect.selectedOptions[0].textContent : '';
+                function loadErpStaff() {
+                    if (!$erpSwitch.is(':checked') || !$staffSelect.length) {
+                        return;
+                    }
+
+                    setMessage('Loading staff from Perfex...');
+
+                    fetch('/panel/store/products/erp/post-sale/staff')
+                        .then(function (response) { return response.json(); })
+                        .then(function (response) {
+                            fillSelect($staffSelect, response.data || [], selectedValues($staffSelect));
+                            setMessage('');
+                        })
+                        .catch(function () {
+                            setMessage('Could not load staff list from Perfex. Saved values will remain.');
+                        });
                 }
-                if (subcategoryName) {
-                    subcategoryName.value = subcategorySelect.selectedOptions[0] ? subcategorySelect.selectedOptions[0].textContent : '';
-                }
-            }
 
-            // Staff is the ONLY thing still fetched from Perfex (via our own backend route).
-            function loadErpStaff() {
-                if (!erpSwitch || !erpSwitch.checked || !staffSelect) {
-                    return;
-                }
-
-                setMessage('Loading staff from Perfex...');
-
-                fetch('/panel/store/products/erp/post-sale/staff')
-                    .then(function (response) { return response.json(); })
-                    .then(function (response) {
-                        fillSelect(staffSelect, response.data || [], selectedValues(staffSelect));
-                        setMessage('');
-                    })
-                    .catch(function () {
-                        setMessage('Could not load staff list from Perfex. Saved values will remain.');
-                    });
-            }
-
-            if (erpSwitch) {
-                erpSwitch.addEventListener('change', function () {
+                // Toggle switch (native checkbox — vanilla change works fine here,
+                // but jQuery is used for consistency)
+                $erpSwitch.on('change', function () {
                     toggleErpFields(this.checked);
                     loadErpStaff();
                 });
-            }
 
-            if (categorySelect) {
-                categorySelect.addEventListener('change', function () {
+                // Category → Subcategory: bind on BOTH plain change and select2's
+                // own event, so it works whether select2 wraps this field or not.
+                $categorySelect.on('change select2:select select2:unselect', function () {
                     updateSubcategories(null);
                 });
-            }
 
-            if (subcategorySelect) {
-                subcategorySelect.addEventListener('change', function () {
-                    if (subcategoryName) {
-                        subcategoryName.value = subcategorySelect.selectedOptions[0] ? subcategorySelect.selectedOptions[0].textContent : '';
-                    }
+                $subcategorySelect.on('change select2:select select2:unselect', function () {
+                    $subcategoryName.val($subcategorySelect.find('option:selected').text() || '');
                 });
-            }
 
-            // Initial state on page load: if a category is already selected
-            // (editing an existing product), populate its subcategories immediately.
-            if (categorySelect && categorySelect.value) {
-                updateSubcategories(typeof erpSelectedSubcategoryId !== 'undefined' ? erpSelectedSubcategoryId : null);
-            }
+                // Initial state on page load / edit — deferred one tick so it runs
+                // AFTER the global `.select2` initializer has finished wrapping
+                // the elements (avoids the race condition that left Subcategory
+                // stuck on "Select a category first").
+                setTimeout(function () {
+                    if ($categorySelect.val()) {
+                        updateSubcategories(typeof erpSelectedSubcategoryId !== 'undefined' ? erpSelectedSubcategoryId : null);
+                    }
+                    loadErpStaff();
+                }, 0);
 
-            loadErpStaff();
-        });
+            });
+
+        })(window.jQuery);
     </script>
 @endpush
