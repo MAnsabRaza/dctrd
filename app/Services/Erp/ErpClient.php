@@ -65,7 +65,13 @@ class ErpClient
 
     public function getStaff()
     {
-        return $this->call('GET', '/api/post_sale_staff');
+        $result = $this->call('GET', '/api/post_sale_staff');
+
+        if (!empty($result['success'])) {
+            return $result;
+        }
+
+        return $this->call('GET', '/api/staff');
     }
 
     public function createProjectFromOrder(array $payload)

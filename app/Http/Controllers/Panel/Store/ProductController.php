@@ -302,7 +302,33 @@ class ProductController extends Controller
 
     public function erpPostSaleCategories()
     {
-        return $this->fetchErpOptions('categories');
+        $user = auth()->user();
+
+        if (empty($user) || (!$user->isTeacher() && !$user->isOrganization()) || !$user->checkCanAccessToStore()) {
+            abort(403);
+        }
+
+        $categories = ProductCategory::where('parent_id', null)
+            ->with('subCategories')
+            ->orderBy('order', 'asc')
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'title' => $category->title,
+                    'subcategories' => $category->subCategories->map(fn ($subcategory) => [
+                        'id' => $subcategory->id,
+                        'title' => $subcategory->title,
+                    ])->values(),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => null,
+            'data' => $categories,
+        ]);
     }
 
     public function erpPostSaleStaff()
@@ -353,12 +379,52 @@ class ProductController extends Controller
 
         $client = new ErpClient($credential);
         $result = $type === 'staff' ? $client->getStaff() : $client->getPostSaleCategories();
+        $items = $this->normalizeErpOptions($result['body'] ?? [], $type);
+        $success = !empty($result['success']);
 
         return response()->json([
-            'success' => !empty($result['success']),
-            'message' => $result['error'] ?? null,
-            'data' => $result['body']['data'] ?? $result['body'] ?? [],
-        ], !empty($result['success']) ? 200 : 502);
+            'success' => $success,
+            'message' => $success ? null : ($result['error'] ?? ('Perfex HTTP ' . ($result['status'] ?? 0))),
+            'data' => $items,
+        ], $success ? 200 : ($type === 'staff' ? 200 : 502));
+    }
+
+    private function normalizeErpOptions(array $body, string $type): array
+    {
+        $items = $body['data'] ?? $body['staff'] ?? $body['staffs'] ?? $body['result'] ?? $body;
+
+        if (!is_array($items)) {
+            return [];
+        }
+
+        if (isset($items['id']) || isset($items['staffid']) || isset($items['staff_id'])) {
+            $items = [$items];
+        }
+
+        return collect($items)
+            ->filter(fn ($item) => is_array($item))
+            ->map(function ($item) use ($type) {
+                if ($type !== 'staff') {
+                    return $item;
+                }
+
+                $id = $item['id'] ?? $item['staffid'] ?? $item['staff_id'] ?? null;
+                $firstLastName = trim(($item['firstname'] ?? '') . ' ' . ($item['lastname'] ?? ''));
+                $name = $item['name'] ?? $item['full_name'] ?? $firstLastName;
+
+                if (empty($name)) {
+                    $name = $item['email'] ?? $id;
+                }
+
+                return [
+                    'id' => $id,
+                    'name' => $name,
+                    'email' => $item['email'] ?? null,
+                ];
+            })
+            ->filter(fn ($item) => !empty($item['id']))
+            ->values()
+            ->all();
     }
 
     public function update(Request $request, $id)
