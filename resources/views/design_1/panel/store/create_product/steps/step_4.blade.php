@@ -87,13 +87,170 @@
                     <p class="mt-4 font-12 text-gray-500">{!! trans('update.product_faq_no_result_hint') !!}</p>
                 </div>
             @endif
+                </div>
+    </div>
+
+    {{-- ERP Post-Sale Automation --}}
+    <div class="d-flex align-items-center justify-content-between mt-32 p-12 rounded-16 border-gray-300 border-dashed">
+        <div class="d-flex align-items-center">
+            <div class="d-flex-center size-48 bg-primary-20 rounded-12">
+                <x-iconsax-bul-video-tick class="icons text-primary" width="24px" height="24px"/>
+            </div>
+
+            <div class="ml-8">
+                <h5 class="font-14 font-weight-bold">Link Post-Sale Processes with ERP</h5>
+                <p class="mt-4 font-12 text-gray-500">Automatically create a Perfex CRM project, tasks, and staff assignment after this product is purchased.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-16 rounded-16 border-gray-200 mt-16">
+
+        {{-- Enable Toggle --}}
+        <div class="form-group">
+            <div class="d-flex align-items-center">
+                <div class="custom-switch mr-8">
+                    <input id="erpPostSaleEnabledSwitch" type="checkbox" name="erp_post_sale_enabled" class="custom-control-input" {{ (!empty($product) and $product->erp_post_sale_enabled) ? 'checked' : '' }}>
+                    <label class="custom-control-label cursor-pointer" for="erpPostSaleEnabledSwitch"></label>
+                </div>
+
+                <div class="">
+                    <label class="cursor-pointer" for="erpPostSaleEnabledSwitch">Enable ERP Post-Sale Process</label>
+                </div>
+            </div>
+            <p class="text-gray-500 font-12 mt-8">When enabled, a Perfex project/task will be created automatically after a successful order for this product.</p>
+        </div>
+
+        {{-- ERP fields, hidden until toggle is on --}}
+        <div id="erpPostSaleFieldsWrapper" class="{{ (!empty($product) and $product->erp_post_sale_enabled) ? '' : 'd-none' }}">
+
+            <div class="row">
+                {{-- Category (parent categories only, from product_categories table) --}}
+                <div class="col-12 col-md-6">
+                    <div class="form-group">
+                        <label class="form-group-label">Category</label>
+
+                        <select name="erp_category_id" id="erpCategorySelect" class="select2 form-control @error('erp_category_id') is-invalid @enderror">
+                            <option value="">Select a category</option>
+                            @foreach($erpParentCategories as $erpParentCategory)
+                                <option value="{{ $erpParentCategory->id }}" {{ (!empty($product) and $product->erp_category_id == $erpParentCategory->id) ? 'selected' : '' }}>
+                                    {{ $erpParentCategory->title }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        @error('erp_category_id')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                {{-- Subcategory: disabled until a Category is chosen, populated via JS from the map below --}}
+                <div class="col-12 col-md-6">
+                    <div class="form-group">
+                        <label class="form-group-label">Subcategory</label>
+
+                        <select name="erp_subcategory_id" id="erpSubcategorySelect" class="select2 form-control @error('erp_subcategory_id') is-invalid @enderror" disabled>
+                            <option value="">Select a category first</option>
+                        </select>
+
+                        @error('erp_subcategory_id')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
+            {{-- Staff to Assign (from Perfex API) --}}
+            <div class="form-group">
+                <label class="form-group-label">Staff to Assign</label>
+
+                <select name="erp_staff_ids[]" id="erpStaffSelect" class="select2 form-control @error('erp_staff_ids') is-invalid @enderror" multiple data-placeholder="Select staff members">
+                    @if(!empty($erpPerfexStaff))
+                        @foreach($erpPerfexStaff as $staffMember)
+                            <option value="{{ $staffMember['staffid'] }}" {{ (!empty($product) and !empty($product->erp_staff_ids) and in_array($staffMember['staffid'], $product->erp_staff_ids)) ? 'selected' : '' }}>
+                                {{ trim($staffMember['firstname'] . ' ' . $staffMember['lastname']) }}
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
+
+                @if(empty($erpPerfexStaff))
+                    <p class="text-gray-500 font-12 mt-8">Could not load staff list from Perfex. You can save this product and add staff later.</p>
+                @endif
+
+                @error('erp_staff_ids')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+
         </div>
     </div>
 
 </div>
 
+{{-- Category → Subcategory map, built entirely from product_categories (no API) --}}
+<script>
+    var erpCategoriesMap = @json($erpCategoriesMap);
+    var erpSelectedSubcategoryId = "{{ !empty($product) ? $product->erp_subcategory_id : '' }}";
+</script>
 
 @push('scripts_bottom')
     <script src="/assets/default/vendors/sortable/jquery-ui.min.js"></script>
     <script src="/assets/default/vendors/bootstrap-tagsinput/bootstrap-tagsinput.min.js"></script>
+
+    <script>
+        (function ($) {
+            'use strict';
+
+            function toggleErpFields() {
+                if ($('#erpPostSaleEnabledSwitch').is(':checked')) {
+                    $('#erpPostSaleFieldsWrapper').removeClass('d-none');
+                } else {
+                    $('#erpPostSaleFieldsWrapper').addClass('d-none');
+                }
+            }
+
+            function loadSubcategories(categoryId, preselectId) {
+                var $sub = $('#erpSubcategorySelect');
+                $sub.empty();
+
+                var subs = erpCategoriesMap[categoryId] || [];
+
+                if (!categoryId || subs.length === 0) {
+                    $sub.append('<option value="">No subcategories</option>');
+                    $sub.prop('disabled', true);
+                    $sub.trigger('change.select2');
+                    return;
+                }
+
+                $sub.append('<option value="">Select a subcategory</option>');
+                subs.forEach(function (sub) {
+                    var selected = (preselectId && String(preselectId) === String(sub.id)) ? 'selected' : '';
+                    $sub.append('<option value="' + sub.id + '" ' + selected + '>' + sub.title + '</option>');
+                });
+
+                $sub.prop('disabled', false);
+                $sub.trigger('change.select2');
+            }
+
+            $(document).on('change', '#erpPostSaleEnabledSwitch', toggleErpFields);
+
+            $(document).on('change', '#erpCategorySelect', function () {
+                loadSubcategories($(this).val(), null);
+            });
+
+            $(function () {
+                toggleErpFields();
+
+                var initialCategoryId = $('#erpCategorySelect').val();
+                if (initialCategoryId) {
+                    loadSubcategories(initialCategoryId, erpSelectedSubcategoryId);
+                } else {
+                    $('#erpSubcategorySelect').prop('disabled', true);
+                }
+            });
+
+        })(jQuery);
+    </script>
 @endpush
