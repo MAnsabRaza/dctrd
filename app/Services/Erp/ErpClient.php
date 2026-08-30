@@ -70,7 +70,7 @@ class ErpClient
 
     public function createProjectFromOrder(array $payload)
     {
-        return $this->call('POST', '/api/create_project_from_order', $payload);
+        return $this->call('POST', '/_ERP/admin/projects/project', $payload);
     }
 
     /**
