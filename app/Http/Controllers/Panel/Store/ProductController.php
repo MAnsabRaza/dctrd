@@ -258,7 +258,7 @@ class ProductController extends Controller
             abort(404);
         }
 
-        $data = [
+               $data = [
             'pageTitle' => trans('update.edit_product') . ' | ' . $product->title,
             'product' => $product,
             'currentStep' => $step,
@@ -267,11 +267,16 @@ class ProductController extends Controller
             'stepCount' => $stepCount,
         ];
 
-        if ($step == 2) {
-            $productCategories = ProductCategory::where('parent_id', null)
-                ->with('subCategories')
-                ->get();
+        // $productCategories is needed on step 1 (ERP Category/Subcategory mapping)
+        // AND on step 2 (main product category select), so load it unconditionally
+        // instead of only inside the step==2 branch.
+        $productCategories = ProductCategory::where('parent_id', null)
+            ->with('subCategories')
+            ->get();
 
+        $data['productCategories'] = $productCategories;
+
+        if ($step == 2) {
             $productCategoryFilters = !empty($product->category) ? $product->category->filters : [];
 
             if (empty($product->category) and !empty($request->old('category_id'))) {
@@ -283,7 +288,6 @@ class ProductController extends Controller
             }
 
             $data['productCategoryFilters'] = $productCategoryFilters;
-            $data['productCategories'] = $productCategories;
         } elseif ($step == 4) {
             $specificationIds = ProductSpecificationCategory::where('category_id', $product->category_id)
                 ->pluck('specification_id')
