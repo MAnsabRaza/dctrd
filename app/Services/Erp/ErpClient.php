@@ -24,9 +24,7 @@ class ErpClient
         $apiKey = $this->credential->api_key;
 
         return Http::withHeaders([
-                'X-API-KEY' => $apiKey,
                 'authtoken' => $apiKey,
-                'Authorization' => 'Bearer ' . $apiKey,
                 'Accept' => 'application/json',
             ])
             ->baseUrl(rtrim($this->credential->base_url, '/'))

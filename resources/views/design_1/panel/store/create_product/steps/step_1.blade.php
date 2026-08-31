@@ -161,14 +161,14 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <!-- <div class="form-group">
                     <label class="form-group-label">Staff to Assign</label>
                     <select id="erpStaffSelect" name="erp_staff_ids[]" class="form-control select2" multiple data-selected='@json($erpStaffIds)'>
                         @foreach($erpStaffIds as $staffId)
                             <option value="{{ $staffId }}" selected>{{ $staffId }}</option>
                         @endforeach
                     </select>
-                </div>
+                </div> -->
 
                 <div class="form-group">
                     <label class="form-group-label">Task Templates</label>
