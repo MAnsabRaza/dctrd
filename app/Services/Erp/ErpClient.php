@@ -21,9 +21,13 @@ class ErpClient
 
     protected function http()
     {
+        $apiKey = $this->credential->api_key;
+
         return Http::withHeaders([
-                'X-API-KEY' => $this->credential->api_key,
-                'Accept'    => 'application/json',
+                'X-API-KEY' => $apiKey,
+                'authtoken' => $apiKey,
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Accept' => 'application/json',
             ])
             ->baseUrl(rtrim($this->credential->base_url, '/'))
             ->timeout(15)
@@ -65,12 +69,12 @@ class ErpClient
 
     public function getStaff()
     {
-        return $this->call('GET', '/_ERP/admin/resource_workload');
+        return $this->call('GET', '/_ERP/api/staffs');
     }
 
     public function createProjectFromOrder(array $payload)
     {
-        return $this->call('POST', '/_ERP/admin/projects/project', $payload);
+        return $this->call('POST', '/_ERP/api/create_project_from_order', $payload);
     }
 
     /**

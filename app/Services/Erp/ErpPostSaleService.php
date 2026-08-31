@@ -71,7 +71,7 @@ class ErpPostSaleService
 
             $sync->update([
                 'status' => 'success',
-                'remote_project_id' => Arr::get($body, 'project_id'),
+                'remote_project_id' => Arr::get($body, 'project_id') ?: Arr::get($body, 'id') ?: Arr::get($body, 'data.project_id') ?: Arr::get($body, 'data.id'),
                 'response_payload' => $body,
                 'error_message' => null,
             ]);
@@ -86,12 +86,15 @@ class ErpPostSaleService
             $result['body'] ?? []
         );
     }
-public function buildPayload(Sale $sale, OrderItem $orderItem, Product $product, string $invoiceNumber): array
+    public function buildPayload(Sale $sale, OrderItem $orderItem, Product $product, string $invoiceNumber): array
     {
         $order = $orderItem->order ?: $sale->order;
         $buyer = $orderItem->user ?: $sale->buyer ?: optional($order)->user;
         $category = $product->erp_category_name ?: optional($product->category)->title;
         $subcategory = $product->erp_subcategory_name ?: '';
+        $invoiceTitle = collect([$category ?: 'Rocket LMS', $subcategory])->filter()->implode(' / ');
+        $projectName = $invoiceTitle . ' - ' . $invoiceNumber . ' - ' . $product->title;
+        $staffIds = $this->staffIds($product)->all();
 
         return [
             'invoice_number' => $invoiceNumber,
@@ -99,13 +102,16 @@ public function buildPayload(Sale $sale, OrderItem $orderItem, Product $product,
             'product_id' => $product->id,
             'product_variant' => optional($orderItem->productOrder)->id,
             'purchase_date' => date('Y-m-d', $sale->created_at ?: time()),
+            'project_name' => $projectName,
             'product_title' => $product->title,
             'category' => $category ?: 'Rocket LMS',
             'subcategory' => $subcategory,
             'amount' => (float) ($orderItem->total_amount ?? $sale->total_amount ?? 0),
             'description' => trim(strip_tags($product->summary ?: $product->description ?: '')),
             'customer_email' => optional($buyer)->email,
+            'customer_name' => optional($buyer)->full_name,
             'due_date' => $this->dueDate($sale, $product),
+            'staff_ids' => $staffIds,
             'tasks' => $this->buildTasks($product),
         ];
     }
@@ -126,10 +132,7 @@ public function buildPayload(Sale $sale, OrderItem $orderItem, Product $product,
 
     protected function buildTasks(Product $product): array
     {
-        $staffIds = collect($product->erp_staff_ids ?: [])
-            ->filter(fn ($id) => is_numeric($id))
-            ->map(fn ($id) => (int) $id)
-            ->values();
+        $staffIds = $this->staffIds($product);
 
         $templateTitles = collect($product->erp_task_templates ?: [])
             ->map(fn ($title) => trim((string) $title))
@@ -149,10 +152,19 @@ public function buildPayload(Sale $sale, OrderItem $orderItem, Product $product,
             $tasks[] = [
                 'title' => $title,
                 'assigned_to' => $staffIds[$index % $staffIds->count()],
+                'assigned' => [$staffIds[$index % $staffIds->count()]],
             ];
         }
 
         return $tasks;
+    }
+
+    protected function staffIds(Product $product)
+    {
+        return collect($product->erp_staff_ids ?: [])
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->values();
     }
 
     protected function invoiceNumber(int $orderId): string
